@@ -2,7 +2,7 @@
 
 PROJECT_STATUS: ACTIVE
 CONTROL_FORMAT_VERSION: 4
-STATE_REVISION: 1
+STATE_REVISION: 2
 CURRENT_PHASE: BOOTSTRAP
 CURRENT_UNIT: SETUP-REPO-001
 CURRENT_UNIT_STATUS: COMMITTING
@@ -12,6 +12,7 @@ CURRENT_UNIT_STATUS: COMMITTING
 - external selection controller: unconfigured
 - global ownership proof: partial
 - independent liveness observer: unconfigured
+- GitHub write surface: repository preflight/bootstrap writes are currently blocked before provider mutation
 
 ## Queue
 
