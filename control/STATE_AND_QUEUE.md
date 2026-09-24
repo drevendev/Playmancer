@@ -2,7 +2,7 @@
 
 PROJECT_STATUS: ACTIVE
 CONTROL_FORMAT_VERSION: 4
-STATE_REVISION: 2
+STATE_REVISION: 3
 CURRENT_PHASE: BOOTSTRAP
 CURRENT_UNIT: SETUP-REPO-001
 CURRENT_UNIT_STATUS: COMMITTING
@@ -12,11 +12,11 @@ CURRENT_UNIT_STATUS: COMMITTING
 - external selection controller: unconfigured
 - global ownership proof: partial
 - independent liveness observer: unconfigured
-- GitHub write surface: repository preflight/bootstrap writes are currently blocked before provider mutation
+- repository bootstrap publication: updating existing branch files works, but this run could not create the remaining control/navigation files, move the prepared Git ref, or open the draft PR because those connector mutations were blocked before provider execution
 
 ## Queue
 
-- SETUP-REPO-001 — REVIEW
+- SETUP-REPO-001 — REVIEW after draft PR publication
 - P01 — DRAFT
 - P02 — REVIEW
 - P03 — REVIEW
@@ -31,3 +31,4 @@ CURRENT_UNIT_STATUS: COMMITTING
 - https://github.com/drevendev/Playmancer/issues/1
 - https://github.com/drevendev/Playmancer/issues/1#issuecomment-5815966373
 - https://github.com/drevendev/Playmancer/issues/1#issuecomment-5816985218
+- last confirmed branch commit: 43e12c9a2c0683ffc4cf0a497a4c20a806d66ec7
