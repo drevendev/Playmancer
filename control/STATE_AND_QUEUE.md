@@ -8,7 +8,7 @@ CURRENT_PHASE:           BOOTSTRAP
 CURRENT_MODE:            RECOVERY
 SELECTION_RECEIPT:       — (unfinished bootstrap recovery; no ordinary selection)
 
-STATE_REVISION:          5
+STATE_REVISION:          6
 
 CURRENT_UNIT:            SETUP-REPO-001
 CURRENT_RUN_ID:          bootstrap-recovery-2026-09-24T20:19Z
@@ -25,7 +25,7 @@ LAST_INDEXED_REVISION:   1
 NEXT_PLANNING_CHECK:     after SETUP-REPO-001 review/merge
 NEXT_REVIEW_CHECK:       after draft PR publication
 MAINTENANCE_USED:        setup only; total bound unresolved
-LAST_VERIFIED_PROGRESS:  bootstrap candidate head d7d8da5bf40b31db1c525ffe59d5488c35dea2db read back
+LAST_VERIFIED_PROGRESS:  coherent bootstrap content commit d7d8da5bf40b31db1c525ffe59d5488c35dea2db read back; later state-only blocker bookkeeping also read back
 ```
 
 ## Blockers
@@ -54,7 +54,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 | Managed resource/action | Stable reference | Expected revision/content | Observed result | Recovery if pending |
 | --- | --- | --- | --- | --- |
 | target repository | `drevendev/Playmancer` | public, master, owner-delegated worker | `andy-zen-dev`: pull/push/triage true; admin/maintain false | re-check drift-prone permissions each wake |
-| bootstrap branch | `setup/repository-canonical-bootstrap` | descendant of master base `d08e705...` | candidate head `d7d8da5bf40b31db1c525ffe59d5488c35dea2db` read back | only fast-forward from current head |
+| bootstrap branch | `setup/repository-canonical-bootstrap` | descendant of master base `d08e705...` | coherent candidate content + state-only blocker bookkeeping read back | re-read exact ref immediately before any new branch/PR transition |
 | branch protection | `master` | observe enforcement | protection read forbidden; rulesets endpoint returned empty | keep protection/enforcement unknown |
 | issue bootstrap | issue #1 | product/research anchor | body + two research receipts read | preserve as evidence; do not duplicate |
 | draft PR | bootstrap branch -> master | one candidate PR | two creation attempts were blocked before provider execution; no PR exists | retry only when the PR-write surface changes/permits execution |
@@ -64,7 +64,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 | Source reference | Observed revision | Required slice | Coverage | Consequence / missing slice |
 | --- | --- | --- | --- | --- |
 | Playmancer issue #1 | updated 2026-09-24 + two comments | bootstrap product/research direction | complete | adopted as evidence anchor |
-| Playmancer bootstrap branch | `52cb0af193dc5da34456d9619341b738b146136a` | existing controls and head | complete | recover same branch, do not recreate |
+| Playmancer bootstrap branch | current `setup/repository-canonical-bootstrap` ref | controls, candidate content, and blocker bookkeeping | complete for this recovery | re-read exact ref before next mutation |
 | EndlessZen repository mode | `89adb273...` | repository-canonical preflight/contract | complete | contract candidate produced |
 | EndlessZen control/navigation templates | `89adb273...` | format-4 required controls and navigation | complete for bootstrap decision | ordinary selection remains gated |
 
@@ -72,7 +72,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 
 | Unit / delivered revision | Remaining action / evidence | Owner / accepted? | Trigger | Authority / bound |
 | --- | --- | --- | --- | --- |
-| SETUP-REPO-001 | open one draft PR for candidate head `d7d8da5bf40b31db1c525ffe59d5488c35dea2db` | owner-delegated worker / no | PR-write surface permits provider execution | one bootstrap transaction |
+| SETUP-REPO-001 | open one draft PR from the current bootstrap branch after exact-ref readback | owner-delegated worker / no | PR-write surface permits provider execution | one bootstrap transaction |
 | SETUP-REPO-001 | later exact-head review and merge | later review wake / no | draft PR exists | run/context-separated review |
 
 ## Standing obligations
@@ -106,8 +106,9 @@ allocated permanent unit identifiers.
 
 ## Notes for the next run
 
-Recover `SETUP-REPO-001` before ordinary work. The coherent candidate is branch head
-`d7d8da5bf40b31db1c525ffe59d5488c35dea2db`; no PR existed at the last readback because
-PR creation was blocked before provider execution. If a PR appears, verify its exact
-head instead of creating another. Do not claim format-4 unattended readiness while the
-recorded setup gates remain unresolved.
+Recover `SETUP-REPO-001` before ordinary work. The coherent control content landed in
+commit `d7d8da5bf40b31db1c525ffe59d5488c35dea2db`; later commits only record the PR-write
+blocker/recovery state. Re-read the branch ref immediately before any transition. No PR
+existed at the last search because PR creation was blocked before provider execution. If
+a PR appears, verify its exact head instead of creating another. Do not claim format-4
+unattended readiness while the recorded setup gates remain unresolved.
