@@ -3,7 +3,7 @@
 Created: 2026-09-24
 Profile: engineering + research
 Status: ACTIVE
-CONTROL_FORMAT_VERSION: 4
+CONTROL_FORMAT_VERSION: 2
 MODEL_REVISION: unknown
 
 > This project is seeded from the exact operating-model source
@@ -48,28 +48,20 @@ Issue #1 is the bootstrap/product evidence anchor. Its P01–P08 labels are prop
 research-question identifiers, not permanent unit-registry identifiers until a later
 controlled allocation records them.
 
-## Canonical write ownership
+## Future control-format migrations
 
-```text
-OWNERSHIP_CONTROL: GitHub same-path blob-SHA preconditions for file replacement and
-                   non-forced fast-forward ref advancement for constructed commits;
-                   protected scope is all canonical repository paths. Collision and
-                   transfer behavior for the scheduled surface is not yet fully
-                   exercised, so unattended multi-file canonical mutation remains a
-                   setup gate until evidence is recorded in STATE_AND_QUEUE.
-```
+This bootstrap deliberately retains **control format 2**. Format 3 is not adopted
+because provider-enforced ownership/exclusion has not yet been proven for every
+canonical-write entry point. Format 4 is therefore also not adopted: an approved
+external selection policy/controller and persisted receipt replay remain future
+migration gates.
 
-## Mode selection
-
-```text
-SELECTION_POLICY:     unconfigured — ordinary unattended selection blocked
-FIXED_SHARE_POLICY:   —
-SELECTION_CONTROLLER: unconfigured — owner-directed setup recovery only
-```
-
-The current bootstrap/recovery work is explicitly prioritized by owner direction.
-No worker-selected ordinary mode is treated as a valid format-4 selection receipt until
-an external controller and persisted receipt path are configured and verified.
+The partial GitHub evidence gathered during setup — blob-SHA replacement preconditions
+and non-forced fast-forward branch publication — is useful migration evidence, but it
+is not recorded as an adopted `OWNERSHIP_CONTROL`. Adopt format 3 only after the
+pinned EndlessZen migration contract is satisfied and the pair is read back
+coherently. Adopt format 4 only from that coherent format-3 pair after its separate
+selection-controller gates pass.
 
 ## Liveness
 

@@ -11,8 +11,8 @@
 ## Ordinary work eligibility
 
 Issue #1 provides the initial P01–P08 research queue, but those labels are not yet
-permanent unit-registry IDs. Do not allocate downstream identifiers or treat ordinary
-work as format-4 unattended selection until:
+permanent unit-registry IDs. The bootstrap deliberately retains control format 2.
+Do not claim format-3 ownership or format-4 mechanically governed selection until:
 
 - repository-canonical bootstrap is merged;
 - ownership collision/transfer evidence is verified for the scheduled execution path;

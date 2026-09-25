@@ -2,38 +2,36 @@
 
 ```text
 PROJECT_STATUS:          ACTIVE
-CONTROL_FORMAT_VERSION:  4
+CONTROL_FORMAT_VERSION:  2
 REVIEW_STATUS:           INACTIVE
 CURRENT_PHASE:           BOOTSTRAP
 CURRENT_MODE:            RECOVERY
-SELECTION_RECEIPT:       — (unfinished bootstrap recovery; no ordinary selection)
-
-STATE_REVISION:          6
+STATE_REVISION:          7
 
 CURRENT_UNIT:            SETUP-REPO-001
-CURRENT_RUN_ID:          bootstrap-recovery-2026-09-24T20:19Z
-CURRENT_UNIT_CLAIMED_AT: 2026-09-24T20:19Z
+CURRENT_RUN_ID:          bootstrap-recovery-2026-09-25T18:43Z
+CURRENT_UNIT_CLAIMED_AT: 2026-09-25T18:43Z
 CURRENT_UNIT_STATUS:     COMMITTING
 
 RUNS_COMPLETED:          0
 RUNS_SINCE_REPORT:       0
-LAST_RUN_STARTED_AT:     2026-09-24T20:19Z
+LAST_RUN_STARTED_AT:     2026-09-25T18:43Z
 LAST_COMMITTED_RUN_AT:   —
-LAST_RESULT:             coherent bootstrap candidate committed; draft PR creation blocked before provider execution
-LAST_INDEXED_REVISION:   1
+LAST_RESULT:             bootstrap control pair corrected to retained format 2; draft PR pending
+LAST_INDEXED_REVISION:   2
 
 NEXT_PLANNING_CHECK:     after SETUP-REPO-001 review/merge
 NEXT_REVIEW_CHECK:       after draft PR publication
 MAINTENANCE_USED:        setup only; total bound unresolved
-LAST_VERIFIED_PROGRESS:  coherent bootstrap content commit d7d8da5bf40b31db1c525ffe59d5488c35dea2db read back; later state-only blocker bookkeeping also read back
+LAST_VERIFIED_PROGRESS:  prior coherent bootstrap read back; format-2 correction requires exact-head readback before PR review
 ```
 
 ## Blockers
 
 | Unit | Blocker | Attempted | What would unblock it | Since |
 | --- | --- | --- | --- | --- |
-| ordinary selection | external selection controller + persisted receipt replay unconfigured | read pinned format-4 contract | configure/verify controller outside worker choice | 2026-09-24 |
-| canonical ownership | collision/transfer behavior only partially evidenced | same-path SHA updates and non-force ref path identified | exercise scheduled-surface collision/transfer evidence | 2026-09-24 |
+| format-4 migration | external selection controller + persisted receipt replay unconfigured | read pinned format-4 contract | configure/verify controller outside worker choice before format-4 adoption | 2026-09-24 |
+| format-3 migration | collision/transfer behavior only partially evidenced | same-path SHA updates and non-force ref path identified | prove ownership/exclusion across canonical-write entry points before format-3 adoption | 2026-09-24 |
 | unattended readiness | independent liveness observer unconfigured | recorded owner/operator schedule boundary | configure observer independent of worker path | 2026-09-24 |
 | unattended readiness | finite total operating/maintenance bounds not supplied | per-wake one-unit bound exists | owner/lifecycle authority supplies finite totals | 2026-09-24 |
 
@@ -46,7 +44,7 @@ SETUP_PLAN:       repository-canonical Playmancer; exact operating-model source
 OWNERSHIP_EVIDENCE: partial — same-path update uses current blob SHA; constructed Git
                     commit can be published through force=false fast-forward ref move;
                     scheduled-surface collision/transfer trial not yet recorded
-SELECTION_SETUP:  unconfigured; owner-directed bootstrap recovery only
+SELECTION_SETUP:  unconfigured; retained format 2; owner-directed bootstrap/recovery only
 SCHEDULE:         recurring worker exists; lifecycle owned outside project state
 SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent liveness
 ```
@@ -66,7 +64,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 | Playmancer issue #1 | updated 2026-09-24 + two comments | bootstrap product/research direction | complete | adopted as evidence anchor |
 | Playmancer bootstrap branch | current `setup/repository-canonical-bootstrap` ref | controls, candidate content, and blocker bookkeeping | complete for this recovery | re-read exact ref before next mutation |
 | EndlessZen repository mode | `89adb273...` | repository-canonical preflight/contract | complete | contract candidate produced |
-| EndlessZen control/navigation templates | `89adb273...` | format-4 required controls and navigation | complete for bootstrap decision | ordinary selection remains gated |
+| EndlessZen control/migration contract | `89adb273...` | format compatibility through format 4 | complete for bootstrap decision | retain format 2; formats 3/4 remain explicit migration gates |
 
 ## Pending continuation
 
@@ -106,9 +104,9 @@ allocated permanent unit identifiers.
 
 ## Notes for the next run
 
-Recover `SETUP-REPO-001` before ordinary work. The coherent control content landed in
-commit `d7d8da5bf40b31db1c525ffe59d5488c35dea2db`; later commits only record the PR-write
-blocker/recovery state. Re-read the branch ref immediately before any transition. No PR
-existed at the last search because PR creation was blocked before provider execution. If
-a PR appears, verify its exact head instead of creating another. Do not claim format-4
-unattended readiness while the recorded setup gates remain unresolved.
+Recover `SETUP-REPO-001` before ordinary work. This branch deliberately retains
+control format 2: format 3 still lacks proven ownership/exclusion across canonical
+write entry points, and format 4 additionally lacks a bound external controller with
+persisted receipt replay. Re-read the exact branch head before publication. Open only
+one bootstrap PR; a later wake must review its exact head before merge. Do not stamp
+formats 3 or 4 until their pinned migration gates are actually satisfied.
