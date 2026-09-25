@@ -6,7 +6,7 @@ CONTROL_FORMAT_VERSION:  2
 REVIEW_STATUS:           INACTIVE
 CURRENT_PHASE:           BOOTSTRAP
 CURRENT_MODE:            RECOVERY
-STATE_REVISION:          7
+STATE_REVISION:          8
 
 CURRENT_UNIT:            SETUP-REPO-001
 CURRENT_RUN_ID:          bootstrap-recovery-2026-09-25T18:43Z
@@ -17,13 +17,13 @@ RUNS_COMPLETED:          0
 RUNS_SINCE_REPORT:       0
 LAST_RUN_STARTED_AT:     2026-09-25T18:43Z
 LAST_COMMITTED_RUN_AT:   —
-LAST_RESULT:             bootstrap control pair corrected to retained format 2; draft PR pending
+LAST_RESULT:             retained format-2 correction published in draft PR #2; exact-head review pending
 LAST_INDEXED_REVISION:   2
 
 NEXT_PLANNING_CHECK:     after SETUP-REPO-001 review/merge
-NEXT_REVIEW_CHECK:       after draft PR publication
+NEXT_REVIEW_CHECK:       exact-head review of draft PR #2
 MAINTENANCE_USED:        setup only; total bound unresolved
-LAST_VERIFIED_PROGRESS:  prior coherent bootstrap read back; format-2 correction requires exact-head readback before PR review
+LAST_VERIFIED_PROGRESS:  format-2 correction head 2bb8554eeb6817da937030d62c1c735eb6d7f228 read back; draft PR #2 opened
 ```
 
 ## Blockers
@@ -55,7 +55,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 | bootstrap branch | `setup/repository-canonical-bootstrap` | descendant of master base `d08e705...` | coherent candidate content + state-only blocker bookkeeping read back | re-read exact ref immediately before any new branch/PR transition |
 | branch protection | `master` | observe enforcement | protection read forbidden; rulesets endpoint returned empty | keep protection/enforcement unknown |
 | issue bootstrap | issue #1 | product/research anchor | body + two research receipts read | preserve as evidence; do not duplicate |
-| draft PR | bootstrap branch -> master | one candidate PR | two creation attempts were blocked before provider execution; no PR exists | retry only when the PR-write surface changes/permits execution |
+| draft PR | `#2` bootstrap branch -> master | one candidate PR | opened 2026-09-25 from verified format-2 correction head | later wake re-reads exact PR head/comments/checks before merge |
 
 ## Read coverage for the current decision
 
@@ -70,8 +70,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 
 | Unit / delivered revision | Remaining action / evidence | Owner / accepted? | Trigger | Authority / bound |
 | --- | --- | --- | --- | --- |
-| SETUP-REPO-001 | open one draft PR from the current bootstrap branch after exact-ref readback | owner-delegated worker / no | PR-write surface permits provider execution | one bootstrap transaction |
-| SETUP-REPO-001 | later exact-head review and merge | later review wake / no | draft PR exists | run/context-separated review |
+| SETUP-REPO-001 / PR #2 | exact-head review and merge decision | later review wake / no | draft PR exists | run/context-separated review |
 
 ## Standing obligations
 
@@ -107,6 +106,7 @@ allocated permanent unit identifiers.
 Recover `SETUP-REPO-001` before ordinary work. This branch deliberately retains
 control format 2: format 3 still lacks proven ownership/exclusion across canonical
 write entry points, and format 4 additionally lacks a bound external controller with
-persisted receipt replay. Re-read the exact branch head before publication. Open only
-one bootstrap PR; a later wake must review its exact head before merge. Do not stamp
-formats 3 or 4 until their pinned migration gates are actually satisfied.
+persisted receipt replay. Draft PR #2 now carries this bootstrap candidate. A later wake must re-read its exact
+head, comments, checks, and repository rules before any merge. Do not create a duplicate
+bootstrap PR. Do not stamp formats 3 or 4 until their pinned migration gates are actually
+satisfied.
