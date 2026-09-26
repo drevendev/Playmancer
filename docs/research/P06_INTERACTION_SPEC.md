@@ -27,6 +27,8 @@ Accessibility references reviewed 2026-09-26:
   https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum
 - WCAG 2.2 Understanding 2.4.11 Focus Not Obscured (Minimum):
   https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum
+- WCAG 2.2 Understanding 4.1.3 Status Messages:
+  https://www.w3.org/WAI/WCAG21/Understanding/status-messages
 
 The APG is implementation guidance, not a substitute for testing with browsers and
 assistive technology. WCAG conformance is not claimed by this research document.
@@ -160,6 +162,30 @@ card includes:
 
 Deterministic ranking/tie behavior follows the P03 receipt.
 
+### Result-update status
+
+Changing a seed, weight, mode, or hard constraint may recompute the result set without a
+page navigation. That update must be perceivable without stealing focus.
+
+Required behavior:
+
+- keep keyboard focus on the control the user just operated; do not jump focus to the
+  first result merely because ranking changed;
+- expose one concise programmatically determinable status message after a settled update,
+  for example “18 results updated” or “No results match the current filters”;
+- announce the result count/state, not the entire reordered result list;
+- coalesce rapid repeated changes such as held increment/decrement controls so assistive
+  technology is not flooded with stale announcements;
+- if an update becomes perceptibly delayed, expose a waiting state and then replace it
+  with the final result status; do not fabricate progress percentages;
+- preserve the same visible status text or an equivalent nearby summary for users who do
+  not consume live-region announcements.
+
+The W3C status-message guidance specifically treats short messages such as “18 results
+returned” or “No results returned” as status information that should be programmatically
+determinable without forcing a change of context. The result cards themselves remain
+ordinary navigable content.
+
 ### Local map is secondary
 
 The local map visualizes the current seeds and a bounded neighborhood of results. It is
@@ -259,6 +285,8 @@ Before the interaction is considered release-ready:
   equivalent-control exceptions;
 - opening/closing filters, explanations and map details leaves focus in a predictable
   place;
+- basket/mode/weight/filter changes keep focus on the operated control and expose one
+  concise result-update status without announcing the whole reordered list;
 - no keyboard trap exists in the map or suggestion popup;
 - a user can reach every recommendation and explanation while completely ignoring the
   map.
@@ -340,6 +368,8 @@ Prototype validation should include at least:
   and sharing;
 - mobile-width walkthroughs;
 - reduced-motion walkthrough;
+- screen-reader smoke pass confirming settled result updates are announced once while
+  focus remains on the control that triggered the update;
 - stale/missing canonical ID recovery;
 - empty hard-filter result;
 - sparse candidate evidence;
