@@ -93,3 +93,21 @@ test("maxHops is a hard route bound rather than a request to invent a shortcut",
   assert.equal(findBridgeRoute(graph, "game:a", "game:c", { maxHops: 1 }).status, "no-route");
   assert.deepEqual(findBridgeRoute(graph, "game:a", "game:c", { maxHops: 2 }).nodes, ["game:a", "game:b", "game:c"]);
 });
+
+
+test("hop-bounded search keeps a costlier lower-hop state when it is the only feasible route", () => {
+  const result = findBridgeRoute({
+    nodes: ["game:a", "game:b", "game:x", "game:z"],
+    edges: [
+      { from: "game:a", to: "game:b", similarity: 0.95 },
+      { from: "game:b", to: "game:x", similarity: 0.95 },
+      { from: "game:a", to: "game:x", similarity: 0.8 },
+      { from: "game:x", to: "game:z", similarity: 0.9 },
+    ],
+  }, "game:a", "game:z", { maxHops: 2 });
+
+  assert.equal(result.status, "route");
+  assert.deepEqual(result.nodes, ["game:a", "game:x", "game:z"]);
+  assert.equal(result.hops, 2);
+  close(result.totalCost, 0.3);
+});

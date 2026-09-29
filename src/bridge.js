@@ -85,13 +85,14 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
 
   const initial = { node: startId, nodes: [startId], edges: [], hops: 0, totalCost: 0 };
   const queue = [initial];
-  const best = new Map([[startId, initial]]);
+  const stateKey = (node, hops) => `${node}\u0000${hops}`;
+  const best = new Map([[stateKey(startId, 0), initial]]);
 
   while (queue.length > 0) {
     queue.sort(compareState);
     const current = queue.shift();
 
-    const known = best.get(current.node);
+    const known = best.get(stateKey(current.node, current.hops));
     if (known && compareState(current, known) > 0) continue;
     if (current.node === endId) {
       return {
@@ -124,9 +125,10 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
         totalCost: current.totalCost + edge.cost,
       };
 
-      const previous = best.get(next.node);
+      const key = stateKey(next.node, next.hops);
+      const previous = best.get(key);
       if (!previous || compareState(next, previous) < 0) {
-        best.set(next.node, next);
+        best.set(key, next);
         queue.push(next);
       }
     }
