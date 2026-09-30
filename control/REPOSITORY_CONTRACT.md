@@ -1,6 +1,6 @@
 # REPOSITORY_CONTRACT — drevendev/Playmancer
 
-Verified: 2026-09-24
+Verified: 2026-10-01
 
 ```text
 REPOSITORY:         drevendev/Playmancer
@@ -12,7 +12,7 @@ PROJECT_STATE_ROLE: canonical
 CANONICAL_PATHS:    control/PROJECT_MANIFEST.md; control/STATE_AND_QUEUE.md;
                     control/CHANGELOG.md; control/UNIT_REGISTRY.csv;
                     control/INDEX.md; control/EXECUTION_ORDER.md
-LAST_VERIFIED:      2026-09-24
+LAST_VERIFIED:      2026-10-01
 ```
 
 The authenticated provider identity is `andy-zen-dev`. The repository reports
@@ -29,8 +29,7 @@ CAN_CREATE_ISSUES:   yes
 CAN_CREATE_BRANCHES: yes
 CAN_OPEN_PRS:        yes
 CAN_MERGE:           yes, only after a later exact-head verification and when GitHub permits
-CAN_COMMIT_DIRECTLY: yes, only for initial empty-repository base and the narrow
-                     post-transition reconciliation declared below
+CAN_COMMIT_DIRECTLY: no on `master`; the active ruleset requires the pull-request route
 ```
 
 ## Mutation path
@@ -42,18 +41,21 @@ REVIEW_MODEL:              owner-delegated Playmancer worker produces; a later s
                            current checks, comments, repository rules, and permissions allow
 REVIEW_INDEPENDENCE:       run=required; context=required; actor=not-required;
                            enforcement=not-required
-DEFAULT_BRANCH_PROTECTION: unknown — protection endpoint was not accessible to the integration
-REQUIRED_CHECKS:           unknown until workflows/rules exist and are observable
-REQUIRED_REVIEWS:          none declared by owner direction; provider enforcement unknown
-ACCEPTANCE_ENFORCEMENT:    unknown
+DEFAULT_BRANCH_PROTECTION: active ruleset `Protect master` (#24273337); PR required;
+                           deletion and non-fast-forward blocked; current user cannot bypass
+REQUIRED_CHECKS:           none enforced by the active ruleset at 2026-10-01 readback
+REQUIRED_REVIEWS:          PR required; 0 approving reviews; no CODEOWNERS or last-push approval rule
+ACCEPTANCE_ENFORCEMENT:    provider enforces PR route; semantic acceptance remains later exact-head review
 WHO_DECIDES:               owner-delegated Playmancer worker in a later review wake
 GATE_BEARING_ACTIONS:      merge/check/review effects to be re-read on the exact candidate
-GATE_BEARING_IDENTITIES:   unknown until a candidate exposes them
+GATE_BEARING_IDENTITIES:   current user `andy-zen-dev`; ruleset readback says bypass=never
 EVIDENCE_ONLY_CHANNEL:     none
 ```
 
-A repository-rulesets read on 2026-09-24 returned an empty set. That does not prove the
-separately inaccessible branch-protection surface is absent.
+Ruleset readback on 2026-10-01 verified repository ruleset `Protect master`
+(`#24273337`) as active for the default branch. Its rules require a pull request, block
+deletion and non-fast-forward updates, require zero approving reviews, and define no
+required status checks. The current authenticated user cannot bypass the ruleset.
 
 ## Repository selection projection
 
@@ -70,19 +72,20 @@ GitHub labels or boards are not currently consumed as canonical selection signal
 ## Post-transition control reconciliation
 
 ```text
-POST_TRANSITION_RECONCILIATION: direct-control-commit
+POST_TRANSITION_RECONCILIATION: protected-follow-up-pr
 RECONCILIATION_SCOPE:           control/STATE_AND_QUEUE.md, control/CHANGELOG.md,
                                 control/EXECUTION_ORDER.md; only fields/facts made
                                 knowable by an already-completed repository transition
 TRANSITION_BINDING:             exact observed transition + exact current master head
-RECONCILIATION_AUTHORITY:       owner-delegated project authority plus the explicit rule
-                                against recursive bookkeeping PRs; semantic changes excluded
+RECONCILIATION_AUTHORITY:       owner-delegated project authority; semantic changes excluded;
+                                GitHub ruleset remains authoritative
 ```
 
-The reconciliation commit must be built from the exact current default-branch head and
-published by non-forced fast-forward. Drift aborts the write. It may record merge SHA,
-unit completion, issue closure, or an already-declared next pointer; it may not change
-requirements, acceptance, goals, or queue priority.
+The reconciliation must follow the protected pull-request path; direct commits or Git
+ref/object updates to `master` are not permitted. It may record merge SHA, unit
+completion, issue closure, or an already-declared next pointer; it may not change
+requirements, acceptance, goals, or queue priority. Keep this follow-up bounded and
+delete its head branch after merge when the branch-lifecycle safety checks pass.
 
 ## Communication
 
