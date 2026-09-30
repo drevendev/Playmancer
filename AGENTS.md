@@ -38,6 +38,32 @@ exception is the narrowly scoped post-transition control reconciliation declared
 
 Write repository prose, issues, commits, and pull requests in English.
 
+## Branch lifecycle — owner instruction, 2026-09-30
+
+Before creating a branch, enumerate existing branches and open/closed PRs. Reuse the
+existing branch for the same work; do not mix unrelated changes merely to avoid a new
+branch. Prefer finishing and merging existing work over opening another workstream.
+Create a new branch only for a ready, bounded change with a documented rationale and
+PR destination. Do not pre-create empty research or placeholder branches.
+
+A blocked PR or write operation is not a reason to create replacement, parallel, or
+additional stacked branches. Recover the existing work, or do useful read-only/local
+work without multiplying remote refs. Do not retry unchanged blocked mutations or
+switch endpoints to bypass a safety denial.
+
+Before deleting any branch, refresh its exact head and establish that its work is
+preserved in a named retained ref (or a verified merged PR), and that no open PR uses
+it as head/base and no active work depends on that branch name. Preserve all unique
+unmerged work and the bases of active stacked work. Record the deleted name, exact
+head, and surviving reference. Never delete `master`, and never force-push it.
+After a merge, delete the completed head only when these safety checks pass.
+
+GitHub-enforced branch protection takes precedence over any local direct-commit
+exception, including post-transition bookkeeping. Use a PR when the server requires
+one; do not bypass protection through Git-object/ref mutations. Changing protection
+requires actual administrative capability. A document or a prepared configuration is
+not proof that protection is enabled: report it as active only after provider readback.
+
 ## Product boundaries
 
 Playmancer is multi-seed game discovery. Preserve Intersection, Blend, and Bridge as
