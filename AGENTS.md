@@ -32,9 +32,10 @@ changes. Do not merge a semantic change in the same wake that produced it. A lat
 stateless wake must re-read the exact head, acceptance criteria, comments, checks, and
 relevant repository rules before merge.
 
-Direct commits to `master` are not the normal mutation path. The only standing
-exception is the narrowly scoped post-transition control reconciliation declared in
-`control/REPOSITORY_CONTRACT.md`; it cannot change project meaning or priority.
+`master` is protected and all default-branch changes use the pull-request path. There
+is no local direct-commit exception: the narrowly scoped post-transition control
+reconciliation declared in `control/REPOSITORY_CONTRACT.md` also uses a bounded
+follow-up pull request and cannot change project meaning or priority.
 
 Write repository prose, issues, commits, and pull requests in English.
 

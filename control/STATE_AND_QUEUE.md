@@ -6,24 +6,24 @@ CONTROL_FORMAT_VERSION:  2
 REVIEW_STATUS:           PENDING
 CURRENT_PHASE:           BOOTSTRAP
 CURRENT_MODE:            RECOVERY
-STATE_REVISION:          9
+STATE_REVISION:          10
 
 CURRENT_UNIT:            SETUP-REPO-001
-CURRENT_RUN_ID:          bootstrap-recovery-2026-09-30T22:17Z
-CURRENT_UNIT_CLAIMED_AT: 2026-09-30T22:17Z
+CURRENT_RUN_ID:          bootstrap-recovery-2026-10-01T04:24Z
+CURRENT_UNIT_CLAIMED_AT: 2026-10-01T04:24Z
 CURRENT_UNIT_STATUS:     REVIEW
 
 RUNS_COMPLETED:          0
 RUNS_SINCE_REPORT:       0
-LAST_RUN_STARTED_AT:     2026-09-30T22:17Z
+LAST_RUN_STARTED_AT:     2026-10-01T04:24Z
 LAST_COMMITTED_RUN_AT:   —
-LAST_RESULT:             active master protection reconciled into bootstrap controls; exact-head review pending
-LAST_INDEXED_REVISION:   3
+LAST_RESULT:             rev-4 partial-write recovery completed; stale direct-commit exceptions removed; exact-head review pending
+LAST_INDEXED_REVISION:   4
 
 NEXT_PLANNING_CHECK:     after SETUP-REPO-001 review/merge
-NEXT_REVIEW_CHECK:       exact-head review of PR #2 after protection reconciliation
+NEXT_REVIEW_CHECK:       exact-head review of PR #2 after rev-4 coherence recovery
 MAINTENANCE_USED:        setup only; total bound unresolved
-LAST_VERIFIED_PROGRESS:  ruleset #24273337 `Protect master` read back active; PR route required; no bypass for current user
+LAST_VERIFIED_PROGRESS:  AGENTS, manifest, state, contract, and changelog aligned on protected-master PR-only mutation
 ```
 
 ## Blockers
