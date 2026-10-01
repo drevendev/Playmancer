@@ -15,3 +15,7 @@ Append-only semantic/navigation history for repository-canonical project control
                      recorded PR-only default-branch mutation, no current-user bypass,
                      deletion/non-fast-forward protection, and no enforced status checks
                      replaced direct post-transition master commit with protected PR reconciliation
+2026-10-01 | rev 4 | corrected: SETUP-REPO-001
+                     aligned AGENTS and PROJECT_MANIFEST with active protected-master rules
+                     removed stale direct-commit exceptions; post-transition reconciliation
+                     now consistently uses a bounded follow-up pull request
