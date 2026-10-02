@@ -18,7 +18,7 @@ function readLocation() {
   try { state = decodeState(location.hash); $("error").hidden = true; }
   catch (error) {
     state = { ...initialState(), seeds: [] };
-    $("error").textContent = error.message + " Use ‘Start a new basket’ to begin explicitly.";
+    $("error").textContent = error.message + " Use ‘Reset to sample basket’ to recover explicitly.";
     $("error").hidden = false;
   }
   render(true);
