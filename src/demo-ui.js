@@ -143,6 +143,7 @@ $("platform").addEventListener("change", (event) => { state.platform = event.tar
 $("coop").addEventListener("change", (event) => { state.coopOnly = event.target.checked; commit(); });
 $("lambda").addEventListener("input", (event) => { state.lambda = Number(event.target.value); commit(); });
 $("restore").addEventListener("click", () => { state.excluded = []; commit(); $("recommendations").focus(); });
+$("clear").addEventListener("click", () => { state = { ...initialState(), seeds: [] }; $("search").value = ""; commit(true); $("search").focus(); });
 $("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); });
 $("share").addEventListener("click", async () => {
   const url = new URL(location.href); url.hash = encodeState(state);
