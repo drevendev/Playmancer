@@ -106,7 +106,15 @@ export function pairEvidence(a, b) {
 export function recommend(input, catalog = CATALOG) {
   const state = validateState(input);
   if (state.seeds.length === 0) return { ranked: [], uncertain: [], excluded: [], seeds: [] };
-  const games = new Map(catalog.map((game) => [game.id, game]));
+  if (!Array.isArray(catalog)) throw new TypeError("catalog must be an array");
+  const games = new Map();
+  for (const game of catalog) {
+    if (!game || typeof game !== "object" || typeof game.id !== "string" || game.id.trim() === "") {
+      throw new TypeError("catalog entries must have a non-empty canonical id");
+    }
+    if (games.has(game.id)) throw new Error(`Duplicate catalog ID: ${game.id}`);
+    games.set(game.id, game);
+  }
   for (const seed of state.seeds) {
     if (!games.has(seed.id)) throw new Error(`Seed ${seed.id} is unavailable in this catalog snapshot.`);
   }

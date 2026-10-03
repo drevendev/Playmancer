@@ -69,6 +69,14 @@ test("catalog order does not change the ranked output", () => {
     assert.deepEqual(recommend(state, [...CATALOG].reverse()), recommend(state));
   }
 });
+test("catalog identity collisions fail closed before scores and evidence can diverge", () => {
+  const tide = CATALOG.find((game) => game.id === "demo:tide");
+  const collision = { ...tide, mechanics: ["puzzle"], themes: ["space"] };
+  assert.throws(
+    () => recommend(initialState(), [...CATALOG, collision]),
+    /Duplicate catalog ID: demo:tide/,
+  );
+});
 test("ranking fails closed when the selected seed is absent from the catalog snapshot", () => {
   const catalog = CATALOG.filter((game) => game.id !== "demo:ember");
   assert.throws(
