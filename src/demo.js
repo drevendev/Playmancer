@@ -107,10 +107,13 @@ export function recommend(input, catalog = CATALOG) {
   const state = validateState(input);
   if (state.seeds.length === 0) return { ranked: [], uncertain: [], excluded: [], seeds: [] };
   const games = new Map(catalog.map((game) => [game.id, game]));
+  for (const seed of state.seeds) {
+    if (!games.has(seed.id)) throw new Error(`Seed ${seed.id} is unavailable in this catalog snapshot.`);
+  }
   const evidence = new Map();
   const hidden = new Set(state.excluded);
   const candidates = catalog.map((game) => {
-    const pairs = state.seeds.map((seed) => ({ id: seed.id, ...pairEvidence(game, games.get(seed.id) ?? BY_ID.get(seed.id)) }));
+    const pairs = state.seeds.map((seed) => ({ id: seed.id, ...pairEvidence(game, games.get(seed.id)) }));
     evidence.set(game.id, pairs);
     return { id: game.id, affinities: Object.fromEntries(pairs.map((pair) => [pair.id, pair.affinity])),
       evidenceCoverage: Math.min(...pairs.map((pair) => pair.coverage)),

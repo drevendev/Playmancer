@@ -69,6 +69,13 @@ test("catalog order does not change the ranked output", () => {
     assert.deepEqual(recommend(state, [...CATALOG].reverse()), recommend(state));
   }
 });
+test("ranking fails closed when the selected seed is absent from the catalog snapshot", () => {
+  const catalog = CATALOG.filter((game) => game.id !== "demo:ember");
+  assert.throws(
+    () => recommend(initialState(), catalog),
+    /Seed demo:ember is unavailable in this catalog snapshot\./,
+  );
+});
 test("unequal weights can change real fixture ordering", () => {
   const state = { ...initialState(), mode: "arithmetic" };
   const a = recommend({ ...state, seeds: [{ id: "demo:ember", weight: 10 }, { id: "demo:harvest", weight: 1 }] });
