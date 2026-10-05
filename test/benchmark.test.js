@@ -19,7 +19,14 @@ const input = {
     candidate('unknown', { a: 0.8, b: 0.8 }, 0.5, 'unknown'),
     candidate('blocked', { a: 1, b: 1 }, 1, 'fail'),
   ],
-  baskets: [{ id: 'B001', seeds: [{ id: 'a', weight: 1 }, { id: 'b', weight: 1 }], constraints: { platform: ['pc'] } }],
+  baskets: [{
+    id: 'B001',
+    seeds: [{ id: 'a', weight: 1 }, { id: 'b', weight: 1 }],
+    constraints: { platform: ['pc'] },
+    candidateConstraintStates: {
+      balanced: 'pass', 'specialist-a': 'pass', unknown: 'unknown', blocked: 'fail',
+    },
+  }],
   modes: ['intersection', 'blend'],
   blend: { lambda: 0.3, limit: 2 },
 };
@@ -49,6 +56,7 @@ test('benchmark preserves empty ranked results instead of inventing fallback rec
   const report = runBenchmark({
     ...input,
     candidates: [candidate('blocked', { a: 1, b: 1 }, 1, 'fail')],
+    baskets: [{ ...input.baskets[0], candidateConstraintStates: { blocked: 'fail' } }],
     modes: ['intersection'],
   });
   assert.deepEqual(report.results[0].ranked, []);
