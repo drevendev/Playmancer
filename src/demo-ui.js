@@ -14,6 +14,11 @@ const notes = {
 const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails a required filter",
   "hard-constraint-unknown": "required filter evidence is unknown", "missing-seed-affinity": "insufficient comparable feature evidence" };
 let state;
+function clearShareFeedback() {
+  $("share-box").hidden = true;
+  $("share-link").value = "";
+  $("share-status").textContent = "";
+}
 function readLocation() {
   try { state = decodeState(location.hash); $("error").hidden = true; }
   catch (error) {
@@ -21,13 +26,14 @@ function readLocation() {
     $("error").textContent = error.message + " Use ‘Reset to sample basket’ to recover explicitly.";
     $("error").hidden = false;
   }
+  $("search").value = "";
+  clearShareFeedback();
   render(true);
 }
 function commit(rebuildSeeds = false) {
   state = validateState(state);
   $("error").hidden = true;
-  $("share-box").hidden = true;
-  $("share-status").textContent = "";
+  clearShareFeedback();
   try { history.replaceState(null, "", encodeState(state)); }
   catch { /* Local file browsers may prohibit History API updates; sharing still works. */ }
   render(rebuildSeeds);
@@ -64,7 +70,9 @@ function drawSearch() {
   const query = $("search").value.trim().toLowerCase();
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
-  const matches = CATALOG.filter((game) => !chosen.has(game.id) && game.name.toLowerCase().includes(query));
+  const matches = query
+    ? CATALOG.filter((game) => !chosen.has(game.id) && game.name.toLowerCase().includes(query))
+    : [];
   for (const game of matches) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
@@ -73,12 +81,15 @@ function drawSearch() {
     button.disabled = state.seeds.length >= 5;
     button.addEventListener("click", () => {
       if (state.seeds.length >= 5 || state.seeds.some((seed) => seed.id === game.id)) return;
-      state.seeds.push({ id: game.id, weight: 1 }); $("search").value = ""; commit(true); $("search").focus();
+      state.seeds.push({ id: game.id, weight: 1 });
+      state.excluded = state.excluded.filter((id) => id !== game.id);
+      $("search").value = ""; commit(true); $("search").focus();
     });
     row.append(button); $("search-results").append(row);
   }
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
-    : matches.length ? `${matches.length} available fictional profiles.` : "No profiles match. Try another name.";
+    : !query ? "Type a game name to see matching fictional profiles."
+    : matches.length ? `${matches.length} matching fictional profiles.` : "No profiles match. Try another name.";
 }
 function drawResults() {
   const result = recommend(state);
@@ -90,8 +101,10 @@ function drawResults() {
     const title = element("div", undefined, "card-title");
     title.append(element("h3", game.name), element("p", game.description, "hint"));
     const fit = element("div", undefined, "fit");
-    const score = state.mode === "blend" ? item.scores.arithmetic : item.scores[state.mode];
-    fit.append(element("strong", score.toFixed(3)), element("small", state.mode === "blend" ? "average fit / 1" : "fit / 1"));
+    const blendSelection = state.mode === "blend" && item.blend;
+    const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
+    const scoreLabel = blendSelection ? "selection objective / 1" : state.mode === "blend" ? "average fit / 1" : "fit / 1";
+    fit.append(element("strong", score.toFixed(3)), element("small", scoreLabel));
     top.append(element("span", String(index + 1).padStart(2, "0"), "rank"), title, fit);
     card.append(top, element("p", `Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
     const affinities = element("div", undefined, "affinities");
@@ -106,7 +119,7 @@ function drawResults() {
     for (const pair of item.evidence) {
       why.append(element("p", `${BY_ID.get(pair.id).name} — shared: ${pair.shared.join(", ") || "none"}. Seed tags not shared: ${pair.notShared.join(", ") || "none"}.`));
     }
-    if (item.blend) why.append(element("p", `Blend selection objective: ${item.blend.objective.toFixed(3)}; uncovered-strand gain: ${item.blend.gain.toFixed(3)}; relevance weight λ: ${state.lambda}.`));
+    if (item.blend) why.append(element("p", `Blend selection objective: ${item.blend.objective.toFixed(3)}; average fit: ${item.scores.arithmetic.toFixed(3)}; uncovered-strand gain: ${item.blend.gain.toFixed(3)}; relevance weight λ: ${state.lambda}.`));
     if (state.mode === "intersection" && score === 0) why.append(element("p", "No overlap with at least one seed: this is not a strong whole-basket match."));
     why.append(element("p", `Comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}%. Mechanics use 70% and themes 30%; popularity is not used.`));
     card.append(why);
@@ -123,7 +136,8 @@ function drawResults() {
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
   $("partition-list").replaceChildren();
   for (const item of [...result.uncertain, ...result.excluded]) {
-    const reason = state.excluded.includes(item.id) ? "hidden by you" : reasons[item.reason] ?? item.reason;
+    const reason = item.reason === "seed" ? reasons.seed
+      : state.excluded.includes(item.id) ? "hidden by you" : reasons[item.reason] ?? item.reason;
     $("partition-list").append(element("li", `${BY_ID.get(item.id).name}: ${reason}.`));
   }
 }
@@ -143,7 +157,7 @@ $("platform").addEventListener("change", (event) => { state.platform = event.tar
 $("coop").addEventListener("change", (event) => { state.coopOnly = event.target.checked; commit(); });
 $("lambda").addEventListener("input", (event) => { state.lambda = Number(event.target.value); commit(); });
 $("restore").addEventListener("click", () => { state.excluded = []; commit(); $("recommendations").focus(); });
-$("clear").addEventListener("click", () => { state = { ...initialState(), seeds: [] }; $("search").value = ""; commit(true); $("search").focus(); });
+$("clear").addEventListener("click", () => { state = { ...state, seeds: [], excluded: [] }; $("search").value = ""; commit(true); $("search").focus(); });
 $("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); });
 $("share").addEventListener("click", async () => {
   const url = new URL(location.href); url.hash = encodeState(state);
