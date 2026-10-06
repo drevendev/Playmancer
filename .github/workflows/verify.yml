@@ -1,0 +1,49 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - feat/p08-ranking-invariants-v0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  node:
+    name: Node tests and deterministic build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+      - run: npm run build
+      - name: Verify byte-identical builds
+        run: |
+          rm -rf /tmp/playmancer-build-a /tmp/playmancer-build-b
+          node scripts/build-demo.mjs /tmp/playmancer-build-a
+          node scripts/build-demo.mjs /tmp/playmancer-build-b
+          cmp /tmp/playmancer-build-a/index.html /tmp/playmancer-build-b/index.html
+          cmp /tmp/playmancer-build-a/.nojekyll /tmp/playmancer-build-b/.nojekyll
+
+  browser:
+    name: Chromium product flow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/browser-smoke.py
