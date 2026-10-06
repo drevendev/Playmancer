@@ -61,8 +61,13 @@ with sync_playwright() as p:
     check('removing all seeds does not restore defaults',page.locator('#results > li').count()==0 and 'Add a profile' in page.locator('#empty').inner_text())
     page.locator('#search').fill('Orbit'); page.locator('#search').focus(); page.keyboard.press('Tab'); page.keyboard.press('Enter')
     check('search and add work with keyboard only',page.locator('#seeds > li').count()==1 and 'Orbit Cartographer' in page.locator('#seeds').inner_text())
-    while page.locator('#seeds > li').count()<5: page.locator('#search-results button').first.click()
-    check('five-seed cap disables additions without creating duplicates',page.locator('#search-results button:enabled').count()==0)
+    for query in ['Ember', 'Harvest', 'Tide', 'Grove']:
+        page.locator('#search').fill(query)
+        candidate = page.locator('#search-results button').first
+        check(f'{query} remains available for the five-seed basket', candidate.count()==1 and candidate.is_enabled())
+        candidate.click()
+    page.locator('#search').fill('Forge')
+    check('five-seed cap disables additions without creating duplicates',page.locator('#seeds > li').count()==5 and page.locator('#search-results button:enabled').count()==0 and 'Five games selected' in page.locator('#search-hint').inner_text())
     page.locator('#reset').click()
     for width in [360,390,800,1280]:
         page.set_viewport_size({'width':width,'height':1000})
