@@ -21,6 +21,11 @@ test("share round trip preserves ordered seeds, raw weights, constraints, exclus
   assert.deepEqual(decodeState(encodeState(state)), state);
   assert.deepEqual(recommend(decodeState(encodeState(state))), recommend(state));
 });
+test("selected seeds are canonicalized out of explicit exclusions", () => {
+  const state = validateState({ ...initialState(), seeds: [{ id: "demo:grove", weight: 2 }], excluded: ["demo:grove", "demo:tide"] });
+  assert.deepEqual(state.excluded, ["demo:tide"]);
+  assert.deepEqual(decodeState(encodeState(state)), state);
+});
 test("empty basket gives empty results, not a default fallback", () => {
   assert.deepEqual(recommend({ ...initialState(), seeds: [] }).ranked, []);
 });
