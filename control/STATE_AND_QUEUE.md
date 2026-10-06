@@ -3,27 +3,27 @@
 ```text
 PROJECT_STATUS:          ACTIVE
 CONTROL_FORMAT_VERSION:  2
-REVIEW_STATUS:           INACTIVE
+REVIEW_STATUS:           PENDING
 CURRENT_PHASE:           BOOTSTRAP
 CURRENT_MODE:            RECOVERY
-STATE_REVISION:          8
+STATE_REVISION:          10
 
 CURRENT_UNIT:            SETUP-REPO-001
-CURRENT_RUN_ID:          bootstrap-recovery-2026-09-25T18:43Z
-CURRENT_UNIT_CLAIMED_AT: 2026-09-25T18:43Z
-CURRENT_UNIT_STATUS:     COMMITTING
+CURRENT_RUN_ID:          bootstrap-recovery-2026-10-01T04:24Z
+CURRENT_UNIT_CLAIMED_AT: 2026-10-01T04:24Z
+CURRENT_UNIT_STATUS:     REVIEW
 
 RUNS_COMPLETED:          0
 RUNS_SINCE_REPORT:       0
-LAST_RUN_STARTED_AT:     2026-09-25T18:43Z
+LAST_RUN_STARTED_AT:     2026-10-01T04:24Z
 LAST_COMMITTED_RUN_AT:   —
-LAST_RESULT:             retained format-2 correction published in draft PR #2; exact-head review pending
-LAST_INDEXED_REVISION:   2
+LAST_RESULT:             rev-4 partial-write recovery completed; stale direct-commit exceptions removed; exact-head review pending
+LAST_INDEXED_REVISION:   4
 
 NEXT_PLANNING_CHECK:     after SETUP-REPO-001 review/merge
-NEXT_REVIEW_CHECK:       exact-head review of draft PR #2
+NEXT_REVIEW_CHECK:       exact-head review of PR #2 after rev-4 coherence recovery
 MAINTENANCE_USED:        setup only; total bound unresolved
-LAST_VERIFIED_PROGRESS:  format-2 correction head 2bb8554eeb6817da937030d62c1c735eb6d7f228 read back; draft PR #2 opened
+LAST_VERIFIED_PROGRESS:  AGENTS, manifest, state, contract, and changelog aligned on protected-master PR-only mutation
 ```
 
 ## Blockers
@@ -53,7 +53,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 | --- | --- | --- | --- | --- |
 | target repository | `drevendev/Playmancer` | public, master, owner-delegated worker | `andy-zen-dev`: pull/push/triage true; admin/maintain false | re-check drift-prone permissions each wake |
 | bootstrap branch | `setup/repository-canonical-bootstrap` | descendant of master base `d08e705...` | coherent candidate content + state-only blocker bookkeeping read back | re-read exact ref immediately before any new branch/PR transition |
-| branch protection | `master` | observe enforcement | protection read forbidden; rulesets endpoint returned empty | keep protection/enforcement unknown |
+| branch protection | `master` | enforce PR-only mutation and protect ref | ruleset `Protect master` #24273337 active: PR required; deletion/non-fast-forward blocked; 0 required approvals; no required status checks; current user cannot bypass | re-read ruleset before merge if it changes |
 | issue bootstrap | issue #1 | product/research anchor | body + two research receipts read | preserve as evidence; do not duplicate |
 | draft PR | `#2` bootstrap branch -> master | one candidate PR | opened 2026-09-25 from verified format-2 correction head | later wake re-reads exact PR head/comments/checks before merge |
 
@@ -70,7 +70,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 
 | Unit / delivered revision | Remaining action / evidence | Owner / accepted? | Trigger | Authority / bound |
 | --- | --- | --- | --- | --- |
-| SETUP-REPO-001 / PR #2 | exact-head review and merge decision | later review wake / no | draft PR exists | run/context-separated review |
+| SETUP-REPO-001 / PR #2 | exact-head review and merge decision | later review wake / no | protection-reconciled candidate exists | run/context-separated review |
 
 ## Standing obligations
 
@@ -84,7 +84,7 @@ SCHEDULED_SMOKE:  observed wakes exist, but this does not satisfy independent li
 ## Queue
 
 ```text
-1. CURRENT  SETUP-REPO-001 — complete candidate publication, then review
+1. CURRENT  SETUP-REPO-001 — review the protection-reconciled candidate, then merge if still clean
 2. PENDING  issue #1 P01 — source rights / publishability
 3. PENDING  issue #1 P02 — sample-validate canonical identity
 4. PENDING  issue #1 P03 — benchmark basket ranking
@@ -106,7 +106,9 @@ allocated permanent unit identifiers.
 Recover `SETUP-REPO-001` before ordinary work. This branch deliberately retains
 control format 2: format 3 still lacks proven ownership/exclusion across canonical
 write entry points, and format 4 additionally lacks a bound external controller with
-persisted receipt replay. Draft PR #2 now carries this bootstrap candidate. A later wake must re-read its exact
-head, comments, checks, and repository rules before any merge. Do not create a duplicate
+persisted receipt replay. PR #2 carries this bootstrap candidate. Master is protected by active ruleset
+`Protect master` (#24273337), which requires the PR route and blocks deletion and
+non-fast-forward updates; the current user cannot bypass it. A later wake must re-read
+the exact PR head, comments, checks, and repository rules before any merge. Do not create a duplicate
 bootstrap PR. Do not stamp formats 3 or 4 until their pinned migration gates are actually
 satisfied.
