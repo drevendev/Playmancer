@@ -1,0 +1,2 @@
+UNIT_ID,AREA,FILE,ANCHOR,STATEMENT,TYPE,PRIORITY,STATUS,DEPENDS_ON,ACCEPTANCE
+SETUP-REPO-001,setup,control/INDEX.md,Bootstrap transaction,Establish the repository-canonical Playmancer control and navigation plane,setup,P0,REVIEW,,Candidate controls are published in one PR and a later exact-head review verifies coherent readback and recorded setup gaps
