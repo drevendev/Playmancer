@@ -59,10 +59,11 @@ restoration, invalid-version rejection, reduced-motion preference and no horizon
 overflow at 360/390/800/1280 CSS pixels. It is not a hosted-navigation, screen-reader,
 Safari, Firefox, or complete WCAG conformance test.
 
-On 2026-10-06 GitHub Actions run `37449981781` passed on the current product
-candidate: the full Node test suite, deterministic static build, two byte-identical
-builds including `.nojekyll`, and the Chromium product flow. GitHub Pages has not
-yet been deployed or live-verified.
+GitHub Actions is configured to run the full Node test suite, deterministic static
+build checks, and the Chromium product flow for this candidate. Merge acceptance
+requires a fresh successful run on the exact head being merged; this README therefore
+does not pin a workflow run ID that would become stale when the document itself changes.
+GitHub Pages has not yet been deployed or live-verified.
 
 ## Model limitations
 
