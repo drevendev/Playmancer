@@ -28,7 +28,7 @@ readiness are not claimed by this prototype.
 
 ## Run and build
 
-Node 22 is the locally verified runtime. There are no npm dependencies or API keys.
+Node 22 is the verified runtime. There are no npm dependencies or API keys.
 
 ```sh
 npm test
@@ -59,9 +59,11 @@ restoration, invalid-version rejection, reduced-motion preference and no horizon
 overflow at 360/390/800/1280 CSS pixels. It is not a hosted-navigation, screen-reader,
 Safari, Firefox, or complete WCAG conformance test.
 
-On 2026-10-02 the prepared change passed **34 Node tests** and **21 offline Chromium
-checks**. The original ranking module and its 15 tests were verified against their
-GitHub blob hashes before reuse. No hosted CI or Pages deployment was run.
+GitHub Actions is configured to run the full Node test suite, deterministic static
+build checks, and the Chromium product flow for this candidate. Merge acceptance
+requires a fresh successful run on the exact head being merged; this README therefore
+does not pin a workflow run ID that would become stale when the document itself changes.
+GitHub Pages has not yet been deployed or live-verified.
 
 ## Model limitations
 
@@ -74,4 +76,5 @@ Popularity, ratings and projection coordinates are not ranking inputs.
 The underlying ranking core and research branches are retained. This product slice
 uses the existing ranking branch rather than creating another workstream. Semantic
 changes still require later exact-head verification before merge; protected `master`
-is not bypassed. Bootstrap PR #2 remains a separate open control-plane correction.
+is not bypassed. Bootstrap PR #2 is merged into protected `master`; this product
+candidate remains subject to its own later exact-head acceptance and merge.

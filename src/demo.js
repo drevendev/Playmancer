@@ -54,8 +54,10 @@ export function validateState(value) {
   if (!Array.isArray(value.excluded) || value.excluded.length > CATALOG.length || value.excluded.some((id) => !BY_ID.has(id)) || new Set(value.excluded).size !== value.excluded.length) {
     throw new Error("Invalid excluded game IDs.");
   }
+  const seedIds = new Set(seeds.map((seed) => seed.id));
+  const excluded = value.excluded.filter((id) => !seedIds.has(id));
   return { v: 1, catalog: CATALOG_VERSION, method: METHOD_VERSION, mode: value.mode, seeds,
-    platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded: [...value.excluded] };
+    platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded };
 }
 
 export function encodeState(state) {

@@ -103,7 +103,16 @@ export function runBenchmark(input) {
   }
 
   const modes = normalizeModes(input.modes);
-  const blend = input.blend ?? {};
+  const blend = assertObject(input.blend ?? {}, 'blend');
+  // Same candidate catalog, basket constraints, and top-k across every method.
+  // Accept legacy blend.limit as a shared top-k, never as a Blend-only cap.
+  const topK = input.topK ?? blend.limit ?? input.candidates.length;
+  if (!Number.isInteger(topK) || topK < 0) {
+    throw new RangeError('topK must be a non-negative integer');
+  }
+  if (blend.limit !== undefined && blend.limit !== topK) {
+    throw new RangeError('blend.limit must match topK');
+  }
   const results = [];
   const basketIds = new Set();
 
@@ -121,7 +130,7 @@ export function runBenchmark(input) {
 
     for (const mode of modes) {
       const partition = mode === 'blend'
-        ? blendCandidates(scoped.candidates, basket.seeds, blend)
+        ? blendCandidates(scoped.candidates, basket.seeds, { ...blend, limit: topK })
         : rankCandidates(scoped.candidates, basket.seeds, { mode });
 
       results.push({
@@ -134,7 +143,8 @@ export function runBenchmark(input) {
         seed_weights: partition.seeds.map((seed) => seed.weight),
         constraints,
         constraint_state_source: scoped.source,
-        ranked: partition.ranked.map((item, index) => rankedRecord(item, index + 1, mode)),
+        top_k: topK,
+        ranked: partition.ranked.slice(0, topK).map((item, index) => rankedRecord(item, index + 1, mode)),
         uncertain: partition.uncertain.map(partitionRecord),
         excluded: partition.excluded.map(partitionRecord),
       });
@@ -147,6 +157,7 @@ export function runBenchmark(input) {
     method_version: methodVersion,
     candidate_count: input.candidates.length,
     basket_count: input.baskets.length,
+    top_k: topK,
     modes,
     results,
   };
