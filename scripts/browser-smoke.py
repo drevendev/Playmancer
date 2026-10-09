@@ -26,6 +26,7 @@ def check(name, condition):
         print('RESULTS',page.locator('#results').inner_text()[:1400])
     assert condition, name
     checks.append(name)
+    print("PASS", name, flush=True)
 with sync_playwright() as p:
     browser = p.chromium.launch(**launch_options)
     context = browser.new_context(viewport={'width':1280,'height':1000}, reduced_motion='reduce')
@@ -86,6 +87,63 @@ with sync_playwright() as p:
     check('unavailable version displays error and never silently substitutes a basket',page.locator('#error').is_visible() and page.locator('#seeds > li').count()==0 and page.locator('#results > li').count()==0)
     page.locator('#reset').click()
     check('explicit reset recovers from bad link',page.locator('#error').is_hidden() and page.locator('#seeds > li').count()==2)
+    # Empty-state reasons must be actionable without silently relaxing hard constraints.
+    page.locator('#clear').click()
+    page.locator('#search').fill('Lantern')
+    page.locator('#search-results button').first.click()
+    check('sparse basket names the actual missing-mechanics seed',
+          'Lantern Trail has no mechanics metadata' in page.locator('#empty').inner_text())
+    page.get_by_role('button', name='Remove Lantern Trail from basket').click()
+    check('sparse recovery explicitly removes only selected game',page.locator('#seeds > li').count()==0)
+    page.locator('#reset').click()
+    page.locator('#platform').select_option('mac')
+    page.locator('#coop').check()
+    while page.locator('#results > li').count():
+        page.locator('#results button').first.click()
+    check('zero-results panel states filters were not relaxed',
+          'Hard filters and hidden results have not been relaxed' in page.locator('#empty').inner_text()
+          and page.locator('#platform').input_value()=='mac' and page.locator('#coop').is_checked())
+    check('zero-results panel gives specific diagnosis and explicit actions',
+          'required filter' in page.locator('#empty').inner_text()
+          and page.get_by_role('button',name='Allow any platform').count()==1)
+    page.get_by_role('button',name='Allow any platform').click()
+    check('explicit recovery changes only one selected filter',
+          page.locator('#platform').input_value()=='any' and page.locator('#coop').is_checked())
+    page.locator('#reset').click()
+    page.locator('#intro-empty').click()
+    check('first-screen build action opens an empty basket with search focus',
+          page.locator('#seeds > li').count()==0 and page.evaluate('document.activeElement.id')=='search')
+    page.locator('#intro-sample').click()
+    check('first-screen sample action shows results and focuses recommendations',
+          page.locator('#results > li').count()>0 and page.evaluate('document.activeElement.id')=='recommendations')
+    for width in [280, 320, 390, 800, 1280]:
+        for size in [16, 24, 32]:
+            page.set_viewport_size({'width':width,'height':1000})
+            page.evaluate('(size) => { document.documentElement.style.fontSize = size + "px"; }',size)
+            check(f'no overflow at {width}px with root text {size}px',page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
+    page.evaluate('document.documentElement.style.fontSize = ""')
+    page.set_viewport_size({'width':390,'height':844})
+    box = page.locator('label.check').bounding_box()
+    check('co-op has a native label with at least 44px touch height',box['height']>=44)
+    before = page.locator('#coop').is_checked()
+    page.locator('label.check span').click()
+    check('clicking co-op label toggles the actual constraint',page.locator('#coop').is_checked()!=before)
+    page.locator('#coop').focus(); page.keyboard.press('Space')
+    check('co-op remains keyboard operable',page.locator('#coop').is_checked()==before)
+    page.locator('#jump-results').click()
+    check('existing mobile shortcut retains one working focus action',page.evaluate('document.activeElement.id')=='recommendations')
+    old_state = {'v':1,'catalog':'synthetic-demo-1','method':'feature-overlap-1',
+                 'mode':'intersection','seeds':[{'id':'demo:ember','weight':1}],
+                 'platform':'any','coopOnly':False,'lambda':0.3,'excluded':[]}
+    page.evaluate('(hash) => { location.hash = hash; }','#basket='+__import__('urllib.parse',fromlist=['quote']).quote(json.dumps(old_state)))
+    page.wait_for_function("!document.getElementById('error').hidden")
+    check('old method link is rejected visibly without silently upgrading',page.locator('#seeds > li').count()==0 and 'not silently upgraded' in page.locator('#error').inner_text())
+    page.locator('#intro-sample').click()
+    check('explicit first-screen sample recovers an incompatible link',page.locator('#error').is_hidden() and page.locator('#results > li').count()>0)
+    for width, name in [(390,'release-mobile'),(1280,'release-desktop')]:
+        page.set_viewport_size({'width':width,'height':1000})
+        page.evaluate('scrollTo(0,0)')
+        page.screenshot(path=str(ARTIFACTS/(name+'.png')),full_page=True)
     check('no JavaScript exceptions',not errors)
     browser.close()
 report = {'passed': len(checks), 'checks': checks}

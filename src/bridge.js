@@ -46,6 +46,32 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
     throw new RangeError("startId and endId must exist in graph.nodes");
   }
 
+  const adjacency = new Map([...nodeIds].map((id) => [id, []]));
+  const undirectedPairs = new Set();
+  for (const edge of graph.edges) {
+    if (!edge || typeof edge !== "object") throw new TypeError("each edge must be an object");
+    const from = assertCanonicalId(edge.from, "edge.from");
+    const to = assertCanonicalId(edge.to, "edge.to");
+    if (!nodeIds.has(from) || !nodeIds.has(to)) {
+      throw new RangeError(`edge endpoints must exist in graph.nodes: ${from} -> ${to}`);
+    }
+    if (from === to) throw new TypeError(`self edge is not allowed: ${from}`);
+    const similarity = assertUnitInterval(edge.similarity, `similarity ${from} -> ${to}`);
+    const featureChanges = edge.featureChanges ?? [];
+    if (!Array.isArray(featureChanges) || featureChanges.some((value) => typeof value !== "string")) {
+      throw new TypeError("edge.featureChanges must be an array of strings");
+    }
+    // Parallel undirected edges make route explanations depend on input order.
+    const pairKey = JSON.stringify(from < to ? [from, to] : [to, from]);
+    if (undirectedPairs.has(pairKey)) {
+      throw new TypeError(`duplicate undirected edge: ${from} <-> ${to}`);
+    }
+    undirectedPairs.add(pairKey);
+    const cost = 1 - similarity;
+    adjacency.get(from).push({ to, similarity, cost, featureChanges: [...featureChanges] });
+    adjacency.get(to).push({ to: from, similarity, cost, featureChanges: [...featureChanges] });
+  }
+
   if (startId === endId) {
     return {
       status: "route",
@@ -60,27 +86,8 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
     };
   }
 
-  const adjacency = new Map([...nodeIds].map((id) => [id, []]));
-  for (const edge of graph.edges) {
-    if (!edge || typeof edge !== "object") throw new TypeError("each edge must be an object");
-    const from = assertCanonicalId(edge.from, "edge.from");
-    const to = assertCanonicalId(edge.to, "edge.to");
-    if (!nodeIds.has(from) || !nodeIds.has(to)) {
-      throw new RangeError(`edge endpoints must exist in graph.nodes: ${from} -> ${to}`);
-    }
-    if (from === to) throw new TypeError(`self edge is not allowed: ${from}`);
-    const similarity = assertUnitInterval(edge.similarity, `similarity ${from} -> ${to}`);
-    const featureChanges = edge.featureChanges ?? [];
-    if (!Array.isArray(featureChanges) || featureChanges.some((value) => typeof value !== "string")) {
-      throw new TypeError("edge.featureChanges must be an array of strings");
-    }
-    const cost = 1 - similarity;
-    adjacency.get(from).push({ to, similarity, cost, featureChanges: [...featureChanges] });
-    adjacency.get(to).push({ to: from, similarity, cost, featureChanges: [...featureChanges] });
-  }
-
   for (const list of adjacency.values()) {
-    list.sort((a, b) => a.to.localeCompare(b.to));
+    list.sort((a, b) => a.to < b.to ? -1 : a.to > b.to ? 1 : 0);
   }
 
   const initial = { node: startId, nodes: [startId], edges: [], hops: 0, totalCost: 0 };
