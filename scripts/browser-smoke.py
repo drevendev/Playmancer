@@ -53,6 +53,10 @@ with sync_playwright() as p:
     share=page.locator('#share-link').input_value()
     reopened=context.new_page(); reopened.evaluate('(hash) => { location.hash = hash; }', __import__('urllib.parse',fromlist=['urlsplit']).urlsplit(share).fragment); reopened.set_content((ROOT / '_site/index.html').read_text()); reopened.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
     check('shared URL restores weights filters mode and ranking',reopened.locator('#weight-ember').input_value()=='2' and reopened.locator('#mode').input_value()=='blend' and reopened.locator('#platform').input_value()=='linux' and reopened.locator('#coop').is_checked() and reopened.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')==expected)
+    # The share-restoration tab has finished its work. Do not leave the main
+    # interaction page backgrounded while exercising its viewport/compositor.
+    reopened.close()
+    page.bring_to_front()
     while page.locator('#results > li').count():
         page.locator('#results button').first.click()
     check('explicit exclusions produce empty results without fallback',page.locator('#empty').is_visible() and 'not been relaxed' in page.locator('#empty').inner_text())
@@ -140,11 +144,31 @@ with sync_playwright() as p:
     check('old method link is rejected visibly without silently upgrading',page.locator('#seeds > li').count()==0 and 'not silently upgraded' in page.locator('#error').inner_text())
     page.locator('#intro-sample').click()
     check('explicit first-screen sample recovers an incompatible link',page.locator('#error').is_hidden() and page.locator('#results > li').count()>0)
-    for width, name in [(390,'release-mobile'),(1280,'release-desktop')]:
-        page.set_viewport_size({'width':width,'height':1000})
-        page.evaluate('scrollTo(0,0)')
-        page.screenshot(path=str(ARTIFACTS/(name+'.png')),full_page=True)
     check('no JavaScript exceptions',not errors)
+    context.close()
+    # Capture the same built sample in fresh, foreground contexts. Reusing the
+    # heavily resized interaction tab caused a compositor timeout on hosted
+    # Chromium after every functional assertion passed. Screenshots remain
+    # mandatory: no swallowed timeout, fallback mockup or skipped visual gate.
+    for width, name in [(390,'release-mobile'),(1280,'release-desktop')]:
+        visual_context = browser.new_context(viewport={'width':width,'height':1000}, reduced_motion='reduce')
+        try:
+            page = visual_context.new_page()
+            visual_errors = []
+            page.on('pageerror', lambda error: visual_errors.append(str(error)))
+            page.bring_to_front()
+            page.set_content((ROOT / '_site/index.html').read_text())
+            page.wait_for_function("document.querySelectorAll('#results > li').length === 6")
+            page.evaluate("document.fonts.ready")
+            page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+            check(f'{name} renders the built sample without script errors',
+                  page.locator('#seeds > li').count()==2 and not visual_errors)
+            png = page.screenshot(path=str(ARTIFACTS/(name+'.png')),full_page=True,animations='disabled')
+            check(f'{name} captured a complete PNG at the requested width',
+                  png.startswith(b'\x89PNG\r\n\x1a\n') and int.from_bytes(png[16:20],'big')==width
+                  and int.from_bytes(png[20:24],'big')>1000 and not visual_errors)
+        finally:
+            visual_context.close()
     browser.close()
 report = {'passed': len(checks), 'checks': checks}
 (ARTIFACTS / 'browser-results.json').write_text(json.dumps(report, indent=2) + '\n')
