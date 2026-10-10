@@ -25,7 +25,11 @@ const script = parts.join("\n\n");
 const entry = '<script type="module" src="./src/demo-ui.js"></script>';
 const template = await readFile(join(root, "index.html"), "utf8");
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
-const html = template.replace(entry, `<script type="module">\n${script}\n</script>`);
+const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
+if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
+if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
+const html = template.replace(entry, `<script type="module">\n${script}\n</script>`)
+  .replace("</head>", `<meta name="playmancer-revision" content="${revision}">\n</head>`);
 await mkdir(output, { recursive: true });
 await writeFile(join(output, "index.html"), html);
 await writeFile(join(output, ".nojekyll"), "");

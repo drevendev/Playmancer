@@ -2,7 +2,7 @@ import { blendCandidates, rankCandidates } from "./ranking.js";
 
 // Authored, fictional profiles. No commercial catalog, artwork, or API data.
 export const CATALOG_VERSION = "synthetic-demo-1";
-export const METHOD_VERSION = "feature-overlap-1";
+export const METHOD_VERSION = "feature-overlap-2";
 export const DEMO_MODES = ["intersection", "blend", "arithmetic"];
 export const PLATFORMS = ["any", "windows", "linux", "mac"];
 export const FEATURE_GROUPS = [{ key: "mechanics", weight: 0.7 }, { key: "themes", weight: 0.3 }];
