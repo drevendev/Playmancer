@@ -91,6 +91,57 @@ function drawSearch() {
     : !query ? "Type a game name to see matching fictional profiles."
     : matches.length ? `${matches.length} matching fictional profiles.` : "No profiles match. Try another name.";
 }
+function drawEmptyRecovery(result) {
+  const empty = $("empty");
+  empty.hidden = result.ranked.length > 0;
+  empty.replaceChildren();
+  if (result.ranked.length > 0) return;
+  if (state.seeds.length === 0) {
+    empty.append(element("p", "Add a profile to start. Two or more let you compare different preferences."));
+    return;
+  }
+
+  empty.append(element("p", "No eligible results. Hard filters and hidden results have not been relaxed."));
+  const list = element("ul", undefined, "empty-reasons");
+  const hidden = result.excluded.filter((item) => state.excluded.includes(item.id));
+  const failed = result.excluded.filter((item) => item.reason === "hard-constraint-fail" && !state.excluded.includes(item.id));
+  const unknown = result.uncertain.filter((item) => item.reason === "hard-constraint-unknown");
+  const missing = result.uncertain.filter((item) => item.reason === "missing-seed-affinity");
+  const sparseSeeds = state.seeds.filter((seed) => BY_ID.get(seed.id)?.mechanics == null);
+  const explain = (count, singular, plural) => {
+    if (count) list.append(element("li", `${count} ${count === 1 ? singular : plural}.`));
+  };
+  explain(hidden.length, "profile was explicitly hidden", "profiles were explicitly hidden");
+  explain(failed.length, "profile fails a required filter", "profiles fail a required filter");
+  explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
+  explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
+  if (sparseSeeds.length) {
+    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no mechanics metadata. Comparisons to these basket games cannot meet the 70% evidence threshold.`));
+  }
+  if (!list.children.length) list.append(element("li", "No catalog profiles remain outside your basket."));
+  empty.append(list);
+
+  const actions = element("div", undefined, "actions empty-actions");
+  const addAction = (label, mutate) => {
+    const button = element("button", label);
+    button.type = "button";
+    button.addEventListener("click", () => {
+      mutate();
+      commit(true);
+      $("recommendations").focus();
+    });
+    actions.append(button);
+  };
+  if (hidden.length) addAction(`Restore ${hidden.length} hidden ${hidden.length === 1 ? "profile" : "profiles"}`, () => { state.excluded = []; });
+  if (failed.length && state.platform !== "any") addAction("Allow any platform", () => { state.platform = "any"; });
+  if (failed.length && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
+  for (const seed of sparseSeeds) {
+    const name = BY_ID.get(seed.id).name;
+    addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); });
+  }
+  if (actions.children.length) empty.append(actions);
+}
+
 function drawResults() {
   const result = recommend(state);
   $("results").replaceChildren();
@@ -130,8 +181,7 @@ function drawResults() {
     hide.addEventListener("click", () => { state.excluded.push(item.id); commit(false); $("recommendations").focus(); });
     footer.append(hide); card.append(footer); $("results").append(card);
   });
-  $("empty").hidden = result.ranked.length > 0;
-  $("empty").textContent = state.seeds.length ? "No eligible results. Your filters and exclusions have not been relaxed. Change them explicitly to explore another basket." : "Add a profile to start. Two or more let you compare different preferences.";
+  drawEmptyRecovery(result);
   $("status").textContent = `${result.ranked.length} shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).`;
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
   $("partition-list").replaceChildren();
@@ -169,3 +219,7 @@ $("versions").textContent = `Catalog: ${CATALOG_VERSION} · Method: ${METHOD_VER
 document.querySelector(".skip").addEventListener("click", (event) => { event.preventDefault(); $("recommendations").focus(); });
 window.addEventListener("hashchange", readLocation);
 readLocation();
+
+// First-screen actions reuse the authoritative reset/clear paths, not a second state store.
+$("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
+$("intro-empty").addEventListener("click", () => { $("clear").click(); $("search").focus(); });

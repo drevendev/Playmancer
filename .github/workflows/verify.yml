@@ -25,6 +25,7 @@ jobs:
           node-version: 22
       - run: npm test
       - run: npm run build
+      - run: python3 scripts/pages-preflight.py _site
       - name: Verify byte-identical builds
         run: |
           rm -rf /tmp/playmancer-build-a /tmp/playmancer-build-b

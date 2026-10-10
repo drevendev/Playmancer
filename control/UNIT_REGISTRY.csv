@@ -1,2 +1,3 @@
 UNIT_ID,AREA,FILE,ANCHOR,STATEMENT,TYPE,PRIORITY,STATUS,DEPENDS_ON,ACCEPTANCE
-SETUP-REPO-001,setup,control/INDEX.md,Bootstrap transaction,Establish the repository-canonical Playmancer control and navigation plane,setup,P0,REVIEW,,Candidate controls are published in one PR and a later exact-head review verifies coherent readback and recorded setup gaps
+SETUP-REPO-001,setup,control/INDEX.md,Bootstrap transaction,Establish the repository-canonical Playmancer control and navigation plane,setup,P0,DONE,,Candidate controls are published in one PR and a later exact-head review verifies coherent readback and recorded setup gaps
+PLAY-PREVIEW-001,ux,README.md,Playable preview 0.1,Ship tested accessible synthetic basket preview hardening in PR #4,implementation,P0,REVIEW,SETUP-REPO-001,Exact-head Node build and Chromium pass with no material review finding before later safe merge
