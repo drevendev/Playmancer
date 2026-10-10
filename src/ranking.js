@@ -121,16 +121,20 @@ function scoreWithSeeds(candidate, seeds) {
     };
   }
 
-  const affinities = {};
+  // Only explicit evidence counts. Inherited properties must not masquerade as
+  // a seed match, and a legal string key like "__proto__" must not disappear.
+  const affinityEntries = [];
   const missingSeedIds = [];
   for (const seed of seeds) {
-    const value = candidate.affinities[seed.id];
+    const value = Object.hasOwn(candidate.affinities, seed.id)
+      ? candidate.affinities[seed.id] : undefined;
     if (value === undefined || value === null) {
       missingSeedIds.push(seed.id);
       continue;
     }
-    affinities[seed.id] = assertUnitInterval(value, `affinity ${id} -> ${seed.id}`);
+    affinityEntries.push([seed.id, assertUnitInterval(value, `affinity ${id} -> ${seed.id}`)]);
   }
+  const affinities = Object.fromEntries(affinityEntries);
 
   if (missingSeedIds.length > 0) {
     return {
