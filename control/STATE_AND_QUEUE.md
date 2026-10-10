@@ -1,14 +1,17 @@
 # STATE_AND_QUEUE — Playmancer
 
-Updated: 2026-10-09. GitHub owns current PR/check/ref facts; re-read them before acting.
+Updated: 2026-10-10. GitHub owns current PR/check/ref facts; re-read them before acting.
 
 ```text
 PROJECT_STATUS:          ACTIVE
 CONTROL_FORMAT_VERSION:  2
 CURRENT_PHASE:           PRODUCT_DELIVERY
 CURRENT_MODE:            OWNER_DIRECTED
+STATE_REVISION:          11
+LAST_INDEXED_REVISION:   5
+CURRENT_UNIT:            PLAY-PREVIEW-001
 CURRENT_SCOPE:           issue #1 P03/P06/P07/P08 — preview release hardening
-CURRENT_UNIT_STATUS:     PRODUCED_AWAITING_LATER_ACCEPTANCE
+CURRENT_UNIT_STATUS:     REVIEW
 WORKING_BRANCH:          feat/p08-ranking-invariants-v0
 LAST_VERIFIED_MASTER:    f736ad8adc0a18a2afc9a10aed1baaac1cac0d4c
 WORKER_SCHEDULE_MUTATION: none

@@ -19,3 +19,8 @@ Append-only semantic/navigation history for repository-canonical project control
                      aligned AGENTS and PROJECT_MANIFEST with active protected-master rules
                      removed stale direct-commit exceptions; post-transition reconciliation
                      now consistently uses a bounded follow-up pull request
+2026-10-10 | rev 5 | reconciled: PLAY-PREVIEW-001
+                     marked merged bootstrap SETUP-REPO-001 as DONE in registry
+                     aligned execution order and current claim with live PR #4
+                     restored STATE_REVISION/LAST_INDEXED_REVISION for cold-wake delta reads
+                     preserved format 2 and the separate Pages/rights gates
