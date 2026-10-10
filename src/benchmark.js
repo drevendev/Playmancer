@@ -38,7 +38,7 @@ function rankedRecord(item, rank, mode) {
   return {
     candidate_id: item.id,
     rank,
-    score: mode === 'blend' ? item.blend?.objective ?? null : item.scores?.[mode] ?? null,
+    score: mode === 'blend' ? (item.blend?.objective ?? item.scores?.arithmetic ?? null) : (item.scores?.[mode] ?? null),
     per_seed_affinity: item.affinities,
     evidence_coverage: item.evidenceCoverage,
     diagnostics: mode === 'blend' ? item.blend : null,

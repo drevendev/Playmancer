@@ -67,3 +67,24 @@ test('duplicate basket ids and unsupported modes fail fast', () => {
   assert.throws(() => runBenchmark({ ...input, baskets: [input.baskets[0], input.baskets[0]] }), /duplicate basket id/);
   assert.throws(() => runBenchmark({ ...input, modes: ['bridge'] }), /unsupported benchmark mode/);
 });
+
+
+test('single-seed Blend reports its measured arithmetic relevance rather than null', () => {
+  const oneSeed = {
+    ...input,
+    baskets: [{ ...input.baskets[0], seeds: [{ id: 'a', weight: 1 }] }],
+    modes: ['arithmetic', 'blend'],
+  };
+  const report = runBenchmark(oneSeed);
+  const baseline = report.results[0].ranked;
+  const blended = report.results[1].ranked;
+  assert.ok(baseline.length > 0);
+  assert.deepEqual(blended.map(({ candidate_id }) => candidate_id),
+    baseline.map(({ candidate_id }) => candidate_id));
+  assert.deepEqual(blended.map(({ score }) => score), baseline.map(({ score }) => score));
+  for (const row of blended) {
+    assert.equal(typeof row.score, 'number');
+    assert.ok(Number.isFinite(row.score));
+    assert.equal(row.diagnostics, null); // A one-strand basket has no diversity-gain diagnostics.
+  }
+});
