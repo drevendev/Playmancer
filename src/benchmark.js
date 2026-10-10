@@ -84,6 +84,22 @@ function candidatesForBasket(candidates, candidateIds, basket, constraints) {
   };
 }
 
+
+function excludedIdsForBasket(basket, candidateIds) {
+  const raw = Object.hasOwn(basket, 'excludedCandidateIds') ? basket.excludedCandidateIds : [];
+  if (!Array.isArray(raw)) throw new TypeError('excludedCandidateIds must be an array');
+  const seen = new Set();
+  const seeds = new Set(basket.seeds.map((seed) => seed.id));
+  for (const id of raw) {
+    assertString(id, 'excluded candidate id');
+    if (seeds.has(id)) throw new TypeError('seed cannot be explicitly excluded: ' + id);
+    if (!candidateIds.has(id)) throw new TypeError('unknown excluded candidate id: ' + id);
+    if (seen.has(id)) throw new TypeError('duplicate excluded candidate id: ' + id);
+    seen.add(id);
+  }
+  return [...seen].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+}
+
 export function runBenchmark(input) {
   assertObject(input, 'benchmark input');
   const protocolVersion = assertString(input.protocolVersion ?? 'p05-v0', 'protocolVersion');
@@ -127,11 +143,23 @@ export function runBenchmark(input) {
     const constraints = basket.constraints === undefined ? {} : basket.constraints;
     assertObject(constraints, `constraints for ${basketId}`);
     const scoped = candidatesForBasket(input.candidates, candidateIds, basket, constraints);
+    const excludedIds = excludedIdsForBasket(basket, candidateIds);
+    const hidden = new Set(excludedIds);
+    const eligibleCandidates = scoped.candidates.filter((candidate) => !hidden.has(candidate.id));
+    const explicitlyExcluded = scoped.candidates
+      .filter((candidate) => hidden.has(candidate.id))
+      .map((candidate) => {
+        if (!Number.isFinite(candidate.evidenceCoverage) ||
+            candidate.evidenceCoverage < 0 || candidate.evidenceCoverage > 1) {
+          throw new RangeError('invalid evidenceCoverage for excluded candidate: ' + candidate.id);
+        }
+        return { id: candidate.id, reason: 'basket-exclusion', evidenceCoverage: candidate.evidenceCoverage };
+      });
 
     for (const mode of modes) {
       const partition = mode === 'blend'
-        ? blendCandidates(scoped.candidates, basket.seeds, { ...blend, limit: topK })
-        : rankCandidates(scoped.candidates, basket.seeds, { mode });
+        ? blendCandidates(eligibleCandidates, basket.seeds, { ...blend, limit: topK })
+        : rankCandidates(eligibleCandidates, basket.seeds, { mode });
 
       results.push({
         protocol_version: protocolVersion,
@@ -142,11 +170,14 @@ export function runBenchmark(input) {
         seed_ids: partition.seeds.map((seed) => seed.id),
         seed_weights: partition.seeds.map((seed) => seed.weight),
         constraints,
+        excluded_candidate_ids: excludedIds,
         constraint_state_source: scoped.source,
         top_k: topK,
         ranked: partition.ranked.slice(0, topK).map((item, index) => rankedRecord(item, index + 1, mode)),
         uncertain: partition.uncertain.map(partitionRecord),
-        excluded: partition.excluded.map(partitionRecord),
+        excluded: [...partition.excluded, ...explicitlyExcluded]
+          .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+          .map(partitionRecord),
       });
     }
   }
