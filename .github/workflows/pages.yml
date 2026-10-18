@@ -1,0 +1,78 @@
+name: Publish Playmancer Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+# No publication from pull-request heads or unreviewed branches.
+permissions: {}
+
+concurrency:
+  group: playmancer-pages-master
+  cancel-in-progress: false
+
+jobs:
+  verify-and-package:
+    if: github.ref == 'refs/heads/master'
+    name: Verify and package exact master
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Node correctness suite
+        run: npm test
+      - name: Build static player
+        run: npm run build
+      - name: Check public static payload
+        run: python3 scripts/pages-preflight.py _site
+      - name: Compare two independently built payloads
+        run: |
+          node scripts/build-demo.mjs /tmp/playmancer-pages-a
+          node scripts/build-demo.mjs /tmp/playmancer-pages-b
+          cmp _site/index.html /tmp/playmancer-pages-a/index.html
+          cmp _site/index.html /tmp/playmancer-pages-b/index.html
+          cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll
+          cmp _site/.nojekyll /tmp/playmancer-pages-b/.nojekyll
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install browser test runtime
+        run: |
+          python -m pip install --disable-pip-version-check playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Run offline Chromium player flow
+        run: python scripts/browser-smoke.py
+      - name: Upload verified Pages payload
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  publish:
+    if: github.ref == 'refs/heads/master'
+    name: Deploy verified master to Pages
+    timeout-minutes: 10
+    needs: verify-and-package
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Requires Pages to have been provisioned with GitHub Actions as source.
+      # Intentionally does NOT attempt to bypass missing repository admin rights.
+      - name: Verify Pages configuration
+        uses: actions/configure-pages@v5
+        with:
+          enablement: false
+      - name: Publish reviewed static artifact
+        id: deployment
+        uses: actions/deploy-pages@v4

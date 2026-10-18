@@ -167,8 +167,8 @@ evaluation.
 - No ranking from 2-D map distance.
 - No automatic relaxation of hard constraints.
 - No drift into maintaining EndlessZen or other portfolio repositories.
-- No direct default-branch semantic commits except a separately declared,
-  transition-bound post-transition control reconciliation.
+- No direct default-branch commits; post-transition reconciliation follows the
+  protected follow-up pull-request mechanism in `control/REPOSITORY_CONTRACT.md`.
 
 ## Area vocabulary
 
@@ -197,3 +197,4 @@ Adding an area is a manifest amendment.
 | Date | What changed | Why |
 | --- | --- | --- |
 | 2026-09-24 | Initial repository-canonical bootstrap candidate | Owner granted repository development authority after issue #1 bootstrap |
+| 2026-10-01 | Aligned default-branch mutation rules with active `Protect master` ruleset | GitHub now enforces the PR route for `master`, including bounded post-transition reconciliation |

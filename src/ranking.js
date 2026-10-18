@@ -1,5 +1,10 @@
 const MODES = new Set(["union", "arithmetic", "leastMisery", "intersection"]);
 
+// Canonical IDs are identifiers, not display names: use a locale-free UTF-16 ordering.
+function compareCanonicalIds(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 function assertCanonicalId(value, label = "canonical id") {
   if (typeof value !== "string" || value.trim() === "") {
     throw new TypeError(`${label} must be a non-empty string`);
@@ -19,7 +24,10 @@ export function normalizeSeeds(seeds) {
     throw new TypeError("seeds must be a non-empty array");
   }
 
-  const weights = new Map();
+  // Scale first: summing two finite 1e308 weights would otherwise overflow.
+  // Scale individual entries before merging duplicates so ratios stay finite.
+  const accepted = [];
+  let maxWeight = 0;
   for (const seed of seeds) {
     if (!seed || typeof seed !== "object") {
       throw new TypeError("each seed must be an object");
@@ -30,16 +38,21 @@ export function normalizeSeeds(seeds) {
       throw new RangeError(`weight for ${id} must be a finite non-negative number`);
     }
     if (weight === 0) continue;
-    weights.set(id, (weights.get(id) ?? 0) + weight);
+    accepted.push({ id, weight });
+    maxWeight = Math.max(maxWeight, weight);
   }
 
-  const total = [...weights.values()].reduce((sum, weight) => sum + weight, 0);
-  if (total <= 0) {
+  if (maxWeight === 0) {
     throw new RangeError("at least one seed must have positive weight");
   }
+  const weights = new Map();
+  for (const { id, weight } of accepted) {
+    weights.set(id, (weights.get(id) ?? 0) + weight / maxWeight);
+  }
+  const total = [...weights.values()].reduce((sum, weight) => sum + weight, 0);
 
   return [...weights.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => compareCanonicalIds(a, b))
     .map(([id, weight]) => ({ id, weight: weight / total }));
 }
 
@@ -64,7 +77,11 @@ function candidateBase(candidate) {
 }
 
 export function scoreCandidate(candidate, seedsInput) {
-  const seeds = normalizeSeeds(seedsInput);
+  return scoreWithSeeds(candidate, normalizeSeeds(seedsInput));
+}
+
+// Only public entry points normalize. Batch scoring and Blend share these exact weights.
+function scoreWithSeeds(candidate, seeds) {
   const { id, evidenceCoverage } = candidateBase(candidate);
   const seedIds = new Set(seeds.map((seed) => seed.id));
 
@@ -104,16 +121,20 @@ export function scoreCandidate(candidate, seedsInput) {
     };
   }
 
-  const affinities = {};
+  // Only explicit evidence counts. Inherited properties must not masquerade as
+  // a seed match, and a legal string key like "__proto__" must not disappear.
+  const affinityEntries = [];
   const missingSeedIds = [];
   for (const seed of seeds) {
-    const value = candidate.affinities[seed.id];
+    const value = Object.hasOwn(candidate.affinities, seed.id)
+      ? candidate.affinities[seed.id] : undefined;
     if (value === undefined || value === null) {
       missingSeedIds.push(seed.id);
       continue;
     }
-    affinities[seed.id] = assertUnitInterval(value, `affinity ${id} -> ${seed.id}`);
+    affinityEntries.push([seed.id, assertUnitInterval(value, `affinity ${id} -> ${seed.id}`)]);
   }
+  const affinities = Object.fromEntries(affinityEntries);
 
   if (missingSeedIds.length > 0) {
     return {
@@ -153,7 +174,7 @@ function scalarComparator(mode) {
     if (scoreDelta !== 0) return scoreDelta;
     const coverageDelta = b.evidenceCoverage - a.evidenceCoverage;
     if (coverageDelta !== 0) return coverageDelta;
-    return a.id.localeCompare(b.id);
+    return compareCanonicalIds(a.id, b.id);
   };
 }
 
@@ -161,13 +182,19 @@ export function rankCandidates(candidates, seedsInput, { mode = "intersection" }
   if (!Array.isArray(candidates)) throw new TypeError("candidates must be an array");
   if (!MODES.has(mode)) throw new TypeError(`unsupported scalar mode: ${mode}`);
   const seeds = normalizeSeeds(seedsInput);
-  const scored = candidates.map((candidate) => scoreCandidate(candidate, seeds));
+  const seen = new Set();
+  const scored = candidates.map((candidate) => {
+    const id = assertCanonicalId(candidate?.id, "candidate id");
+    if (seen.has(id)) throw new TypeError(`duplicate candidate id: ${id}`);
+    seen.add(id);
+    return scoreWithSeeds(candidate, seeds);
+  });
   return {
     mode,
     seeds,
     ranked: scored.filter((item) => item.status === "rankable").sort(scalarComparator(mode)),
-    uncertain: scored.filter((item) => item.status === "uncertain").sort((a, b) => a.id.localeCompare(b.id)),
-    excluded: scored.filter((item) => item.status === "excluded").sort((a, b) => a.id.localeCompare(b.id)),
+    uncertain: scored.filter((item) => item.status === "uncertain").sort((a, b) => compareCanonicalIds(a.id, b.id)),
+    excluded: scored.filter((item) => item.status === "excluded").sort((a, b) => compareCanonicalIds(a.id, b.id)),
   };
 }
 
@@ -176,8 +203,8 @@ export function blendCandidates(candidates, seedsInput, { lambda = 0.5, limit = 
   assertUnitInterval(lambda, "lambda");
   if (!Number.isInteger(limit) || limit < 0) throw new RangeError("limit must be a non-negative integer");
 
-  const seeds = normalizeSeeds(seedsInput);
-  const partition = rankCandidates(candidates, seeds, { mode: "arithmetic" });
+  const partition = rankCandidates(candidates, seedsInput, { mode: "arithmetic" });
+  const seeds = partition.seeds;
   if (seeds.length === 1) {
     return {
       mode: "blend",
@@ -205,13 +232,15 @@ export function blendCandidates(candidates, seedsInput, { lambda = 0.5, limit = 
     });
 
     evaluated.sort((a, b) => {
+      // Relevance-only Blend must use arithmetic ranking's exact tie-breaks.
+      if (lambda === 1) return scalarComparator("arithmetic")(a.item, b.item);
       if (b.objective !== a.objective) return b.objective - a.objective;
       if (b.gain !== a.gain) return b.gain - a.gain;
       if (b.arithmetic !== a.arithmetic) return b.arithmetic - a.arithmetic;
       if (b.item.evidenceCoverage !== a.item.evidenceCoverage) {
         return b.item.evidenceCoverage - a.item.evidenceCoverage;
       }
-      return a.item.id.localeCompare(b.item.id);
+      return compareCanonicalIds(a.item.id, b.item.id);
     });
 
     const chosen = evaluated[0];
