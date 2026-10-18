@@ -25,3 +25,17 @@ thresholds can legitimately remove an intermediate or the whole route.
 This contract/CLI is an intermediate deliverable. A separately reviewed, accessible
 browser journey with versioned share restoration is still needed before promoting
 Bridge as a visible product capability. Real-catalog rights remain a separate gate.
+
+## Strict positive-evidence policy (Bridge method v2)
+
+The adapter now refuses edges with zero shared confirmed features even when the
+CLI threshold is 0. Each unordered eligible pair is classified as insufficient
+metadata, confirmed zero support, below the requested threshold, or connected;
+these disjoint counts are diagnostics, not measures of model quality. Missing
+required platform/co-op metadata remains a separate eligibility abstention.
+
+Route method `bridge-features-preview-2` intentionally invalidates version-1 Bridge
+links rather than silently altering their saved path topology. Older basket links
+without Bridge remain compatible. New no-route messages explain separate reasons
+and never relax an explicit filter. This is synthetic/experimental code pending
+independent exact-head acceptance and merge of PR #12, not a live Pages claim.

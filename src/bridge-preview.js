@@ -1,9 +1,9 @@
-// Independent, synthetic-only Bridge integration candidate for issue #9.
-// A standalone experiment: this is NOT an exposed UI mode or a production catalog path.
+// Bounded feature-based Bridge experiment for the synthetic browser and JSON CLI.
+// A route is evidence of metadata connections, not measured player usefulness.
 import { findBridgeRoute } from './bridge.js';
 
 const GROUPS = [{ key: 'mechanics', weight: .7 }, { key: 'themes', weight: .3 }];
-export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-1';
+export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-2';
 const VERSION = BRIDGE_ROUTE_METHOD_VERSION;
 function requireId(value, name) {
   if (typeof value !== 'string' || !/^[a-z0-9]+:[a-z0-9][a-z0-9._-]*$/.test(value))
@@ -79,11 +79,19 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   }
   const eligible=[...ids.values()].filter(g=>states.get(g.id)==='pass').sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
   const edges=[];
+  // Disjoint counts over unordered eligible pairs: unknown evidence is not zero fit.
+  const pairEvidence={insufficient:0,zero_support:0,below_threshold:0,connected:0};
   for(let i=0;i<eligible.length;i++)for(let j=i+1;j<eligible.length;j++){
     const e=featureEvidence(eligible[i],eligible[j]);
-    if(e.affinity!==null && e.affinity>=minSimilarity)
+    if(e.affinity===null) pairEvidence.insufficient++;
+    else if(e.affinity<=0) pairEvidence.zero_support++;
+    else if(e.affinity<minSimilarity) pairEvidence.below_threshold++;
+    else {
+      pairEvidence.connected++;
       edges.push({from:eligible[i].id,to:eligible[j].id,similarity:e.affinity});
+    }
   }
+  common.pair_evidence=pairEvidence;
   const route=findBridgeRoute({nodes:eligible.map(g=>g.id),edges},startId,endId,{maxHops});
   if(route.status!=='route') return {...common,status:'no-route',reason:route.reason,eligible_count:eligible.length,edge_count:edges.length};
   const steps=[];

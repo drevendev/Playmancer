@@ -59,7 +59,11 @@ export function renderBridge(state) {
       " edge(s) at the chosen threshold. " + route.eligibility.unknown +
       " game(s) have unknown required filter metadata; " + route.eligibility.fail +
       " fail filters; " + route.eligibility.excluded +
-      " are hidden. Adjust route controls explicitly if desired.";
+      " are hidden. Among eligible game pairs, " + route.pair_evidence.insufficient +
+      " lack enough comparable feature data; " + route.pair_evidence.zero_support +
+      " have no shared evidence; " + route.pair_evidence.below_threshold +
+      " are below your similarity threshold. These are separate reasons, not confidence scores. " +
+      "No filter was relaxed. Adjust route controls explicitly if desired.";
     return;
   }
   status.textContent = String(route.hops) + " connection(s), " +
