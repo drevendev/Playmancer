@@ -61,7 +61,7 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
     if (!sources.has(item.sourceId)) throw new Error(`Unknown source: ${id}`);
     // Explicit allowlist: arbitrary input fields never become public assets.
     const game = { id, kind: item.kind, name: catalogText(item.name, `name for ${id}`),
-      description: catalogText(item.description, `description for ${id}`),
+      description: item.description == null ? null : catalogText(item.description, `description for ${id}`),
       aliases: catalogList(item.aliases ?? [], `aliases for ${id}`), externalIds: [], sourceId: item.sourceId,
       parentId: item.parentId ?? null };
     if (item.kind === "game" && game.parentId !== null) throw new Error(`Base game cannot have parentId: ${id}`);
@@ -83,8 +83,17 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
     }
     if (requirePublishable) {
       const permitted = new Set(sources.get(item.sourceId).rights.fields);
-      for (const key of Object.keys(game)) {
-        if (!permitted.has(key)) throw new Error(`Field not cleared for publication: ${id}/${key}`);
+      for (const [key, value] of Object.entries(game)) {
+        // Identity always needs rights. Other fields need clearance only when
+        // publishing observed information. Known-empty feature arrays are still
+        // observations; empty alias/product lists and nulls carry no sourced data.
+        const requiredIdentity = ["id", "kind", "name", "sourceId"].includes(key);
+        const hasObservedValue = Array.isArray(value)
+          ? value.length > 0 || ["mechanics", "themes", "platforms"].includes(key)
+          : value !== null;
+        if ((requiredIdentity || hasObservedValue) && !permitted.has(key)) {
+          throw new Error(`Field not cleared for publication: ${id}/${key}`);
+        }
       }
     }
     return game;

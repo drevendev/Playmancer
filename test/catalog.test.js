@@ -126,3 +126,56 @@ test('catalog CLI supports the publication flag without a file and rejects unkno
     assert.equal(bad.status, 1); assert.equal(bad.stdout, ''); assert.match(bad.stderr, /Usage:/);
   }
 });
+
+test('a licensed identifiers-only catalog can publish without inventing description or feature coverage', () => {
+  const input = fixture();
+  input.kind = 'real';
+  input.sources[0].kind = 'licensed';
+  input.sources[0].rights.status = 'approved';
+  input.sources[0].rights.fields = ['id', 'kind', 'name', 'sourceId'];
+  input.games = [{ id: 'real:only-id', kind: 'game', name: 'Known title', sourceId: input.sources[0].id }];
+  const validated = validateCatalogSnapshot(input, { requirePublishable: true });
+  assert.equal(validated.games[0].description, null);
+  for (const key of ['mechanics', 'themes', 'platforms', 'coop', 'parentId']) {
+    assert.equal(validated.games[0][key], null);
+  }
+  assert.deepEqual(validated.games[0].aliases, []);
+  assert.deepEqual(validated.games[0].externalIds, []);
+  assert.deepEqual(catalogCoverage(validated).mechanics, { known: 0, total: 1 });
+  assert.ok(Object.isFrozen(validated.games[0]));
+});
+test('publication rejects uncleared observed fields even with otherwise approved identity', () => {
+  const input = fixture();
+  input.kind = 'real';
+  input.sources[0].kind = 'licensed';
+  input.sources[0].rights.status = 'approved';
+  input.sources[0].rights.fields = ['id', 'kind', 'name', 'sourceId'];
+  input.games = [{ id: 'real:base', kind: 'game', name: 'Known title', sourceId: input.sources[0].id }];
+  const record = input.games[0];
+  const assertUncleared = (field, value) => {
+    record[field] = value;
+    assert.throws(() => validateCatalogSnapshot(input, { requirePublishable: true }), new RegExp('Field not cleared.*' + field));
+    delete record[field];
+  };
+  assertUncleared('description', 'Description with unapproved redistribution');
+  assertUncleared('mechanics', []);
+  assertUncleared('platforms', ['linux']);
+  assertUncleared('coop', false);
+  assertUncleared('aliases', ['Known alternative']);
+  assertUncleared('externalIds', [{provider: 'store', id: '123'}]);
+  input.sources[0].rights.fields = ['id', 'kind', 'sourceId'];
+  assert.throws(() => validateCatalogSnapshot(input, { requirePublishable: true }), /Field not cleared.*name/);
+});
+test('explicit approval permits partial known-empty metadata without licensing a description', () => {
+  const input = fixture();
+  input.kind = 'real';
+  input.sources[0].kind = 'licensed';
+  input.sources[0].rights.status = 'approved';
+  input.sources[0].rights.fields = ['id', 'kind', 'name', 'sourceId', 'mechanics'];
+  input.games = [{ id: 'real:base', kind: 'game', name: 'Known title',
+    sourceId: input.sources[0].id, mechanics: [] }];
+  const validated = validateCatalogSnapshot(input, { requirePublishable: true });
+  assert.deepEqual(validated.games[0].mechanics, []);
+  assert.equal(validated.games[0].description, null);
+  assert.deepEqual(catalogCoverage(validated).mechanics, { known: 1, total: 1 });
+});

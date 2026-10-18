@@ -45,8 +45,9 @@ parents, cycles, self-links and parent kinds other than game/remake are rejected
 Base games cannot claim a parent. No record is silently collapsed into a franchise,
 edition or original title. Resolver output is a canonical ID or `null`, never a guess.
 
-Missing mechanics/themes/platforms/co-op metadata becomes `null`. An observed empty
-list is known empty; `coop: false` is known unsupported. Coverage reports count
+Missing mechanics/themes/platforms/co-op metadata becomes `null`. A missing or
+unlicensed description may also be `null`; it is never fabricated. An observed empty
+feature list is known empty; `coop: false` is known unsupported. Coverage reports count
 known records independently for each field and retain the full catalog denominator.
 The twelve-profile demo is validated without changing its ranking input semantics.
 
@@ -56,7 +57,15 @@ A synthetic snapshot requires synthetic sources. A real snapshot requires licens
 source records; it cannot adopt the synthetic label as a rights shortcut. Every
 source has attribution and a nonempty reviewed-rights reference. For publication,
 synthetic sources need the synthetic status, licensed sources need approved status,
-and every projected game field must be in the source's explicit field allowlist.
+and every **observed** projected field must be in the source's explicit field allowlist.
+The essential identity fields (`id`, `kind`, `name`, `sourceId`) always require
+clearance. Non-null descriptions, observed feature arrays (including known-empty
+arrays), boolean co-op values including `false`, typed parent links, nonempty aliases
+and nonempty external-product IDs require their respective field approvals. Missing
+optional data remains `null` or an empty alias/product list without claiming observed
+metadata or obtaining rights to missing content. This permits publishable, partial
+real catalogs with no description/artwork rights; it does **not** authorize copying
+descriptions or other data lacking a recorded field approval.
 Unreviewed or denied status blocks publication but may be structurally inspected.
 
 `validateCatalogSnapshot` returns a detached, recursively frozen public projection.
