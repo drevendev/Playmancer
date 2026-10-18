@@ -1,0 +1,99 @@
+// Visible, explicitly experimental Bridge routes: separate from basket ranking modes.
+import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";
+import { BY_ID, CATALOG, CATALOG_VERSION, BRIDGE_STATE_VERSION } from "./demo.js";
+
+const bridgeEl = (id) => document.getElementById(id);
+const bridgeNode = (tag, text, cls) => {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (cls) node.className = cls;
+  return node;
+};
+const DEFAULT_BRIDGE = Object.freeze({
+  version: BRIDGE_STATE_VERSION, method: BRIDGE_ROUTE_METHOD_VERSION,
+  startId: null, endId: null, maxHops: 3, minSimilarity: 0.31
+});
+const bridgeSettings = (state) => state.bridge ?? DEFAULT_BRIDGE;
+
+export function renderBridge(state) {
+  const form = bridgeSettings(state);
+  const selected = new Set(state.seeds.map((item) => item.id));
+  for (const [name, id] of [["bridge-start", form.startId], ["bridge-end", form.endId]]) {
+    const select = bridgeEl(name);
+    const first = bridgeNode("option", "Choose favorite…"); first.value = "";
+    select.replaceChildren(first);
+    for (const seed of state.seeds) {
+      const option = bridgeNode("option", BY_ID.get(seed.id).name);
+      option.value = seed.id;
+      select.append(option);
+    }
+    select.value = id && selected.has(id) ? id : "";
+    select.disabled = state.seeds.length < 2;
+  }
+  bridgeEl("bridge-hops").value = String(form.maxHops);
+  bridgeEl("bridge-threshold").value = String(form.minSimilarity);
+  const status = bridgeEl("bridge-status"), steps = bridgeEl("bridge-steps");
+  steps.replaceChildren();
+  if (state.seeds.length < 2) {
+    status.textContent = "Add at least two distinct favorites to your basket.";
+    return;
+  }
+  if (!form.startId || !form.endId) {
+    status.textContent = "Select both favorites to calculate a route.";
+    return;
+  }
+  const route = buildBridgePreview({
+    catalog: CATALOG, snapshotId: CATALOG_VERSION,
+    startId: form.startId, endId: form.endId,
+    platform: state.platform, coopOnly: state.coopOnly,
+    excluded: state.excluded, maxHops: form.maxHops,
+    minSimilarity: form.minSimilarity
+  });
+  if (route.status === "unavailable-endpoint") {
+    status.textContent = "Route unavailable: " + BY_ID.get(route.affected_id).name +
+      " is " + route.reason + " under your current filters. No filter was relaxed.";
+    return;
+  }
+  if (route.status === "no-route") {
+    status.textContent = "No supported route within " + form.maxHops +
+      " edge(s) at the chosen threshold. " + route.eligibility.unknown +
+      " game(s) have unknown required filter metadata; " + route.eligibility.fail +
+      " fail filters; " + route.eligibility.excluded +
+      " are hidden. Adjust route controls explicitly if desired.";
+    return;
+  }
+  status.textContent = String(route.hops) + " connection(s), " +
+    String(Math.max(0, route.hops - 1)) + " intermediate game(s), " +
+    String(route.eligible_count) + " eligible profiles. Total graph cost " +
+    route.total_cost.toFixed(3) + "; not a quality or confidence estimate.";
+  for (const part of route.steps) {
+    const row = bridgeNode("li"), card = bridgeNode("div", undefined, "bridge-step");
+    card.append(bridgeNode("h3", BY_ID.get(part.from).name + " → " + BY_ID.get(part.to).name));
+    card.append(bridgeNode("p", "Connection similarity " + part.affinity.toFixed(3) +
+      " · comparable evidence weight " + Math.round(part.evidence_coverage * 100) + "%.", "bridge-key"));
+    for (const group of part.groups) {
+      card.append(bridgeNode("p", group.group + ": shared " +
+        (group.shared.join(", ") || "none") + "; gained " +
+        (group.gained.join(", ") || "none") + "; lost " +
+        (group.lost.join(", ") || "none") + "."));
+    }
+    row.append(card); steps.append(row);
+  }
+}
+export function bindBridgeControls(getState, updateBridge) {
+  for (const key of ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"]) {
+    bridgeEl(key).addEventListener("change", () => {
+      const next = { ...bridgeSettings(getState()),
+        startId: bridgeEl("bridge-start").value || null,
+        endId: bridgeEl("bridge-end").value || null,
+        maxHops: Number(bridgeEl("bridge-hops").value),
+        minSimilarity: Number(bridgeEl("bridge-threshold").value)
+      };
+      if (next.startId && next.endId && next.startId === next.endId) {
+        if (key === "bridge-start") next.endId = null;
+        else next.startId = null;
+      }
+      updateBridge(next);
+    });
+  }
+}

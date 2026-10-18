@@ -1,8 +1,10 @@
 import { blendCandidates, rankCandidates } from "./ranking.js";
+import { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";
 
 // Authored, fictional profiles. No commercial catalog, artwork, or API data.
 export const CATALOG_VERSION = "synthetic-demo-1";
 export const METHOD_VERSION = "feature-overlap-2";
+export const BRIDGE_STATE_VERSION = "bridge-ui-experiment-1";
 export const DEMO_MODES = ["intersection", "blend", "arithmetic"];
 export const PLATFORMS = ["any", "windows", "linux", "mac"];
 export const FEATURE_GROUPS = [{ key: "mechanics", weight: 0.7 }, { key: "themes", weight: 0.3 }];
@@ -35,6 +37,26 @@ export function initialState() {
     platform: "any", coopOnly: false, lambda: 0.3, excluded: [] };
 }
 
+export function validateBridgeSettings(value, seedIds) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Invalid Bridge link state.");
+  if (value.version !== BRIDGE_STATE_VERSION || value.method !== BRIDGE_ROUTE_METHOD_VERSION)
+    throw new Error("The Bridge link uses an incompatible route version; no route was substituted.");
+  const expected = ["version", "method", "startId", "endId", "maxHops", "minSimilarity"];
+  if (Object.keys(value).some((key) => !expected.includes(key))) throw new Error("Unrecognized Bridge link fields.");
+  const startId = value.startId, endId = value.endId;
+  for (const id of [startId, endId]) {
+    if (id !== null && (typeof id !== "string" || !seedIds.has(id)))
+      throw new Error("The Bridge link references a game absent from the basket.");
+  }
+  if (startId && endId && startId === endId) throw new Error("Bridge endpoints must be distinct.");
+  if (!Number.isInteger(value.maxHops) || value.maxHops < 1 || value.maxHops > 4)
+    throw new Error("Invalid Bridge hop limit.");
+  if (![0.05, 0.31, 0.54].includes(value.minSimilarity))
+    throw new Error("Unsupported Bridge similarity threshold.");
+  return { version: BRIDGE_STATE_VERSION, method: BRIDGE_ROUTE_METHOD_VERSION,
+    startId, endId, maxHops: value.maxHops, minSimilarity: value.minSimilarity };
+}
+
 export function validateState(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Invalid basket state.");
   if (value.v !== 1 || value.catalog !== CATALOG_VERSION || value.method !== METHOD_VERSION) {
@@ -56,8 +78,10 @@ export function validateState(value) {
   }
   const seedIds = new Set(seeds.map((seed) => seed.id));
   const excluded = value.excluded.filter((id) => !seedIds.has(id));
+  const bridge = value.bridge == null ? null : validateBridgeSettings(value.bridge, seedIds);
   return { v: 1, catalog: CATALOG_VERSION, method: METHOD_VERSION, mode: value.mode, seeds,
-    platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded };
+    platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded,
+    ...(bridge === null ? {} : { bridge }) };
 }
 
 export function encodeState(state) {

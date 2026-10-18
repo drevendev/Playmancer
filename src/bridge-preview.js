@@ -3,7 +3,8 @@
 import { findBridgeRoute } from './bridge.js';
 
 const GROUPS = [{ key: 'mechanics', weight: .7 }, { key: 'themes', weight: .3 }];
-const VERSION = 'bridge-features-preview-1';
+export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-1';
+const VERSION = BRIDGE_ROUTE_METHOD_VERSION;
 function requireId(value, name) {
   if (typeof value !== 'string' || !/^[a-z0-9]+:[a-z0-9][a-z0-9._-]*$/.test(value))
     throw new TypeError(`${name} must be a canonical game ID`);
