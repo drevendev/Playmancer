@@ -17,8 +17,8 @@ const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
   if (expectedImports[index]) {
-    if (!source.startsWith(expectedImports[index])) throw new Error(`Unexpected import in ${path}`);
-    source = source.slice(expectedImports[index].length);
+    if (source.split(expectedImports[index]).length !== 2) throw new Error(`Unexpected import in ${path}`);
+    source = source.replace(expectedImports[index], "");
   }
   source = source.replace(/^export /gm, "");
   if (path === "src/bridge.js") {
