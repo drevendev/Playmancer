@@ -1,7 +1,7 @@
 import { blendCandidates, rankCandidates } from './ranking.js';
 
 const SCALAR_MODES = new Set(['union', 'arithmetic', 'leastMisery', 'intersection']);
-const DEFAULT_MODES = ['union', 'arithmetic', 'intersection', 'blend'];
+const DEFAULT_MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const CONSTRAINT_STATES = new Set(['pass', 'fail', 'unknown']);
 
 function assertObject(value, label) {
@@ -102,7 +102,7 @@ function excludedIdsForBasket(basket, candidateIds) {
 
 export function runBenchmark(input) {
   assertObject(input, 'benchmark input');
-  const protocolVersion = assertString(input.protocolVersion ?? 'p05-v0', 'protocolVersion');
+  const protocolVersion = assertString(input.protocolVersion ?? 'p05-v1', 'protocolVersion');
   const catalogSnapshotId = assertString(input.catalogSnapshotId, 'catalogSnapshotId');
   const methodVersion = assertString(input.methodVersion, 'methodVersion');
   if (!Array.isArray(input.candidates)) throw new TypeError('candidates must be an array');
@@ -122,13 +122,19 @@ export function runBenchmark(input) {
   const blend = assertObject(input.blend ?? {}, 'blend');
   // Same candidate catalog, basket constraints, and top-k across every method.
   // Accept legacy blend.limit as a shared top-k, never as a Blend-only cap.
-  const topK = input.topK ?? blend.limit ?? input.candidates.length;
+  const topK = input.topK ?? blend.limit ?? 10;
   if (!Number.isInteger(topK) || topK < 0) {
     throw new RangeError('topK must be a non-negative integer');
   }
   if (blend.limit !== undefined && blend.limit !== topK) {
     throw new RangeError('blend.limit must match topK');
   }
+  const lambda = blend.lambda === undefined ? 0.5 : blend.lambda;
+  if (!Number.isFinite(lambda) || lambda < 0 || lambda > 1) throw new RangeError('blend.lambda must be in [0, 1]');
+  for (const key of Object.keys(blend)) {
+    if (!['lambda', 'limit'].includes(key)) throw new TypeError(`unsupported Blend option: ${key}`);
+  }
+  const blendParameters = { lambda, limit: topK };
   const results = [];
   const basketIds = new Set();
 
@@ -158,7 +164,7 @@ export function runBenchmark(input) {
 
     for (const mode of modes) {
       const partition = mode === 'blend'
-        ? blendCandidates(eligibleCandidates, basket.seeds, { ...blend, limit: topK })
+        ? blendCandidates(eligibleCandidates, basket.seeds, blendParameters)
         : rankCandidates(eligibleCandidates, basket.seeds, { mode });
 
       results.push({
@@ -167,6 +173,8 @@ export function runBenchmark(input) {
         basket_id: basketId,
         mode,
         method_version: methodVersion,
+        report_schema_version: 'p05-report-1',
+        blend_parameters: mode === 'blend' ? { ...blendParameters } : null,
         seed_ids: partition.seeds.map((seed) => seed.id),
         seed_weights: partition.seeds.map((seed) => seed.weight),
         constraints,
@@ -182,7 +190,9 @@ export function runBenchmark(input) {
     }
   }
 
-  return {
+  return canonicalBenchmarkJSON({
+    report_schema_version: 'p05-report-1',
+    blend_parameters: modes.includes('blend') ? { ...blendParameters } : null,
     protocol_version: protocolVersion,
     catalog_snapshot_id: catalogSnapshotId,
     method_version: methodVersion,
@@ -191,5 +201,17 @@ export function runBenchmark(input) {
     top_k: topK,
     modes,
     results,
-  };
+  });
+}
+
+// Canonical, detached reports for parsed-JSON inputs. Arrays remain ordered;
+// object insertion order cannot change the serialized evidence. Unknowns stay null.
+function canonicalBenchmarkJSON(value) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return value;
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (Array.isArray(value)) return value.map(canonicalBenchmarkJSON);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.keys(value).sort().map(key => [key, canonicalBenchmarkJSON(value[key])]));
+  }
+  throw new TypeError('Benchmark reports require finite, ordinary JSON data');
 }

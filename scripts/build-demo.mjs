@@ -2,12 +2,13 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
 
-// Deliberately bounded to these three dependency-free modules, not a general bundler.
+// Deliberately bounded to these four dependency-free modules, not a general bundler.
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = resolve(process.argv[2] ?? join(root, "_site"));
-const modules = ["src/ranking.js", "src/demo.js", "src/demo-ui.js"];
-const expectedImports = [null, 'import { blendCandidates, rankCandidates } from "./ranking.js";\n',
+const modules = ["src/ranking.js", "src/catalog.js", "src/demo.js", "src/demo-ui.js"];
+const expectedImports = [null, null, 'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { validateCatalogSnapshot } from "./catalog.js";\n',
   'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";\n'];
+await import(new URL("../src/demo.js", import.meta.url));
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");

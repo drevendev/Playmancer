@@ -24,3 +24,8 @@ Append-only semantic/navigation history for repository-canonical project control
                      aligned execution order and current claim with live PR #4
                      restored STATE_REVISION/LAST_INDEXED_REVISION for cold-wake delta reads
                      preserved format 2 and the separate Pages/rights gates
+2026-10-18 | rev 6 | reconciled: PLAY-RECOVERY-002
+                     closed stale PR #4 review and recorded merged benchmark PR #5
+                     added issue #6 catalog/evaluation recovery candidate and #7–#10 roadmap
+                     kept local candidate acceptance separate from deployed/live evidence
+                     retained format 2 and owner-controlled schedule lifecycle
