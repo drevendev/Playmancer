@@ -83,3 +83,20 @@ Publication references, checked 2026-10-09:
 [GitHub custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages),
 [configure-pages](https://github.com/actions/configure-pages),
 [deploy-pages](https://github.com/actions/deploy-pages).
+
+## Reproducible benchmark (JSON input)
+
+`npm run benchmark` runs a small **synthetic** constraint-scoped example from
+`examples/benchmark.synthetic.json`. The runner also accepts arbitrary *parsed
+JSON* inputs via `node scripts/run-ranking-benchmark.mjs path.json`; it does not
+promise safe handling of arbitrary JavaScript objects or getters passed directly
+to the library API. No external dataset or measured human usefulness is claimed.
+
+By default the report compares **union, arithmetic, least-misery, Intersection,
+and Blend** on the same eligible candidate set, baskets, constraints, and
+bounded top-k (10 unless explicitly supplied). It reports the effective Blend
+lambda/limit, an explicit report schema version, and canonical detached JSON
+with independently comparable seeds, exclusion reasons and evidence coverage.
+Missing required eligibility stays unknown, never pass. See
+[benchmark contract](docs/BENCHMARK_PROTOCOL.md) and
+[delivery roadmap](docs/ROADMAP.md) for validation limits and next gates.

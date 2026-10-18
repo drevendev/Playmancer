@@ -24,3 +24,10 @@ Append-only semantic/navigation history for repository-canonical project control
                      aligned execution order and current claim with live PR #4
                      restored STATE_REVISION/LAST_INDEXED_REVISION for cold-wake delta reads
                      preserved format 2 and the separate Pages/rights gates
+
+2026-10-18 | rev 6 | reconciled: PLAY-PREVIEW-001 / PLAY-EVAL-002
+                     confirmed PR #4 and PR #5 merged in GitHub native state
+                     updated execution order and registry; retained format 2
+                     opened focused Issue #6 benchmark/report follow-up for
+                     later exact-head PR acceptance, not a merge claim
+                     prioritized Pages #7, Bridge #8, real pilot #9, evaluation #10
