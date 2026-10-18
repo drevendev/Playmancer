@@ -1,0 +1,84 @@
+{
+  "protocolVersion": "p05-v1",
+  "catalogSnapshotId": "synthetic-benchmark-1",
+  "methodVersion": "p03-v0",
+  "topK": 3,
+  "blend": {
+    "lambda": 0.3
+  },
+  "candidates": [
+    {
+      "id": "balanced",
+      "affinities": {
+        "a": 0.7,
+        "b": 0.7
+      },
+      "evidenceCoverage": 1,
+      "hardConstraintState": "pass"
+    },
+    {
+      "id": "strand-a",
+      "affinities": {
+        "a": 0.95,
+        "b": 0.1
+      },
+      "evidenceCoverage": 1,
+      "hardConstraintState": "pass"
+    },
+    {
+      "id": "strand-b",
+      "affinities": {
+        "a": 0.1,
+        "b": 0.95
+      },
+      "evidenceCoverage": 1,
+      "hardConstraintState": "pass"
+    },
+    {
+      "id": "unknown",
+      "affinities": {
+        "a": 0.8,
+        "b": 0.8
+      },
+      "evidenceCoverage": 1,
+      "hardConstraintState": "unknown"
+    },
+    {
+      "id": "blocked",
+      "affinities": {
+        "a": 1,
+        "b": 1
+      },
+      "evidenceCoverage": 1,
+      "hardConstraintState": "fail"
+    }
+  ],
+  "baskets": [
+    {
+      "id": "two-strands",
+      "seeds": [
+        {
+          "id": "a",
+          "weight": 1
+        },
+        {
+          "id": "b",
+          "weight": 1
+        }
+      ],
+      "constraints": {
+        "platform": [
+          "pc"
+        ]
+      },
+      "candidateConstraintStates": {
+        "balanced": "pass",
+        "strand-a": "pass",
+        "strand-b": "pass",
+        "unknown": "unknown",
+        "blocked": "fail"
+      },
+      "excludedCandidateIds": []
+    }
+  ]
+}

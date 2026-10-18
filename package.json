@@ -1,10 +1,12 @@
 {
   "name": "playmancer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "build": "node scripts/build-demo.mjs"
+    "build": "node scripts/build-demo.mjs",
+    "validate:catalog": "node scripts/validate-catalog.mjs",
+    "benchmark": "node scripts/run-ranking-benchmark.mjs examples/benchmark.synthetic.json"
   }
 }

@@ -3,9 +3,8 @@ name: Verify
 on:
   pull_request:
   push:
-    branches:
-      - master
-      - feat/p08-ranking-invariants-v0
+    branches: [master]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -24,6 +23,12 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - run: npm run validate:catalog
+      - name: Verify reproducible five-method benchmark
+        run: |
+          node scripts/run-ranking-benchmark.mjs examples/benchmark.synthetic.json > /tmp/benchmark-a.json
+          node scripts/run-ranking-benchmark.mjs examples/benchmark.synthetic.json > /tmp/benchmark-b.json
+          cmp /tmp/benchmark-a.json /tmp/benchmark-b.json
       - run: npm run build
       - run: python3 scripts/pages-preflight.py _site
       - name: Verify byte-identical builds
@@ -48,3 +53,14 @@ jobs:
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/browser-smoke.py
+      - name: Retain actual browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-${{ github.sha }}
+          path: |
+            .test-artifacts/*.png
+            .test-artifacts/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14

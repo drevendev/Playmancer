@@ -2,17 +2,18 @@ import { readFile, mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
 
-// Deliberately bounded to six explicit dependency-free modules, not a general bundler.
+// Deliberately bounded to seven explicit dependency-free modules, not a general bundler.
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = resolve(process.argv[2] ?? join(root, "_site"));
-const modules = ["src/ranking.js", "src/bridge.js", "src/bridge-preview.js", "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"];
+const modules = ["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js", "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"];
 const expectedImports = [
-  null, null,
+  null, null, null,
   "import { findBridgeRoute } from './bridge.js';\n",
-  'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\n',
+  'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { validateCatalogSnapshot } from "./catalog.js";\nimport { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\n',
   'import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\nimport { BY_ID, CATALOG, CATALOG_VERSION, BRIDGE_STATE_VERSION } from "./demo.js";\n',
   'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
 ];
+await import(new URL("../src/demo.js", import.meta.url));
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
