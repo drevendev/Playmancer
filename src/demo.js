@@ -1,4 +1,5 @@
 import { blendCandidates, rankCandidates } from "./ranking.js";
+import { validateCatalogSnapshot } from "./catalog.js";
 
 // Authored, fictional profiles. No commercial catalog, artwork, or API data.
 export const CATALOG_VERSION = "synthetic-demo-1";
@@ -22,6 +23,14 @@ export const CATALOG = [
   profile("lantern", "Lantern Trail", "A deliberately sparse fictional profile: only its themes are known.", null, ["fantasy", "nature"], ["windows"], null),
   profile("silent", "Silent Archive", "A deliberately incomplete fictional profile with no comparable features.", null, null, null, null),
 ];
+// The same catalog used by the player is checked before rendering/building.
+export const DEMO_SNAPSHOT = validateCatalogSnapshot({
+  schemaVersion: 1, snapshotId: CATALOG_VERSION, kind: "synthetic",
+  sources: [{ id: "authored-demo", kind: "synthetic", attribution: "Playmancer authored fictional profiles",
+    rights: { status: "synthetic", reference: "README.md#catalog-contract",
+      fields: ["id", "kind", "name", "description", "aliases", "externalIds", "sourceId", "parentId", "mechanics", "themes", "platforms", "coop"] } }],
+  games: CATALOG.map(game => ({ ...game, kind: "game", aliases: [], externalIds: [], sourceId: "authored-demo", parentId: null })),
+}, { requirePublishable: true });
 for (const game of CATALOG) {
   for (const key of ["mechanics", "themes", "platforms"]) if (game[key]) Object.freeze(game[key]);
   Object.freeze(game);
