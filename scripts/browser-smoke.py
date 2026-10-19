@@ -164,7 +164,7 @@ with sync_playwright() as p:
     check('Bridge link retains explicit endpoints and algorithm version',
           bridge_link['bridge']['startId']=='demo:ember'
           and bridge_link['bridge']['endId']=='demo:harvest'
-          and bridge_link['bridge']['method']=='bridge-features-preview-1'
+          and bridge_link['bridge']['method']=='bridge-features-preview-2'
           and bridge_link['bridge']['maxHops']==3)
     page.locator('#platform').select_option('linux')
     page.locator('#bridge-end').select_option('demo:harvest')
@@ -178,6 +178,21 @@ with sync_playwright() as p:
     page.locator('#reset').click()
     check('reset restores original two-seed basket without forced Bridge mode',
           page.locator('#seeds > li').count()==2 and page.locator('#bridge-start').input_value()=='')
+    # The old route algorithm must never be upgraded silently during URL restoration.
+    stale_bridge_link = json.loads(json.dumps(bridge_link))
+    stale_bridge_link['bridge']['method'] = 'bridge-features-preview-1'
+    page.evaluate('(hash) => { location.hash = hash; }',
+                  '#basket='+__import__('urllib.parse',fromlist=['quote']).quote(json.dumps(stale_bridge_link)))
+    page.wait_for_function("!document.getElementById('error').hidden")
+    check('stale Bridge link fails closed without substituting another route',
+          'incompatible route version' in page.locator('#error').inner_text()
+          and page.locator('#seeds > li').count()==0
+          and page.locator('#bridge-steps li').count()==0)
+    page.locator('#intro-sample').click()
+    check('explicit sample action recovers after stale Bridge URL',
+          page.locator('#error').is_hidden()
+          and page.locator('#seeds > li').count()==2
+          and page.locator('#results > li').count()>0)
     check('no JavaScript exceptions',not errors)
     context.close()
     # Capture the same built sample in fresh, foreground contexts. Reusing the
