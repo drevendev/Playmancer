@@ -39,3 +39,20 @@ links rather than silently altering their saved path topology. Older basket link
 without Bridge remain compatible. New no-route messages explain separate reasons
 and never relax an explicit filter. This is synthetic/experimental code pending
 independent exact-head acceptance and merge of PR #12, not a live Pages claim.
+
+## Exact feature-rational routes (Bridge method v3)
+
+Version 3 compares weighted Jaccard affinity as exact rational feature-count
+fractions, including the threshold equality boundary. Floating-point route
+addition could break mathematical ties; converting already-rounded affinity
+numbers to BigInts could still rank equally good feature routes differently.
+Displayed similarity remains a Number, but route ordering uses exact fractions.
+
+For disconnected eligible components, a bounded reachability pass avoids
+the expensive rational shortest-route search. Feature sets are cached per
+eligible game, and sorted evidence arrays are built for selected route steps.
+This does not constitute a mobile latency or player-quality benchmark.
+
+Saved v1 and v2 Bridge links fail visibly instead of silently restoring a
+different path. Existing basket links without Bridge remain compatible.
+The catalog is fictional, and neither Pages nor human usefulness is verified.

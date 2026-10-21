@@ -11,7 +11,7 @@ test('routes explicit favorites through shared feature evidence, never UI coordi
   assert.equal(original.steps.length,3);
   assert.deepEqual(original.steps[0].groups.find(g=>g.group==='mechanics').gained,['combat']);
   assert.deepEqual(original.steps[0].groups.find(g=>g.group==='mechanics').lost,['crafting']);
-  assert.equal(original.route_method_version,'bridge-features-preview-2');
+  assert.equal(original.route_method_version,'bridge-features-preview-3');
   const changed=catalog.map((g,i)=>({...g,x:i*1000000,y:-i*7777777}));
   assert.deepEqual(buildBridgePreview({...params(),catalog:changed}),original);
 });

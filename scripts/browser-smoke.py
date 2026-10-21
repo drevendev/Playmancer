@@ -164,7 +164,7 @@ with sync_playwright() as p:
     check('Bridge link retains explicit endpoints and algorithm version',
           bridge_link['bridge']['startId']=='demo:ember'
           and bridge_link['bridge']['endId']=='demo:harvest'
-          and bridge_link['bridge']['method']=='bridge-features-preview-2'
+          and bridge_link['bridge']['method']=='bridge-features-preview-3'
           and bridge_link['bridge']['maxHops']==3)
     page.locator('#platform').select_option('linux')
     page.locator('#bridge-end').select_option('demo:harvest')
@@ -174,13 +174,19 @@ with sync_playwright() as p:
     page.locator('#platform').select_option('any')
     page.get_by_role('button', name='Remove Cloud Harvest').click()
     check('removing a focal game clears stale Bridge endpoints',
-          page.locator('#bridge-end').input_value()=='' and 'Select both' in page.locator('#bridge-status').inner_text())
+          page.locator('#seeds > li').count()==1
+          and page.locator('#bridge-start').input_value()==''
+          and page.locator('#bridge-end').input_value()==''
+          and page.locator('#bridge-start').is_disabled()
+          and page.locator('#bridge-end').is_disabled()
+          and page.locator('#bridge-steps li').count()==0
+          and 'Add at least two distinct favorites' in page.locator('#bridge-status').inner_text())
     page.locator('#reset').click()
     check('reset restores original two-seed basket without forced Bridge mode',
           page.locator('#seeds > li').count()==2 and page.locator('#bridge-start').input_value()=='')
     # The old route algorithm must never be upgraded silently during URL restoration.
     stale_bridge_link = json.loads(json.dumps(bridge_link))
-    stale_bridge_link['bridge']['method'] = 'bridge-features-preview-1'
+    stale_bridge_link['bridge']['method'] = 'bridge-features-preview-2'
     page.evaluate('(hash) => { location.hash = hash; }',
                   '#basket='+__import__('urllib.parse',fromlist=['quote']).quote(json.dumps(stale_bridge_link)))
     page.wait_for_function("!document.getElementById('error').hidden")

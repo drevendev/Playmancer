@@ -18,8 +18,45 @@ function comparePath(a, b) {
   return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
 }
 
+// Path comparison is exact. Floating addition can break true ties and
+// indiscriminate fixed-precision rounding can reverse distinct route costs.
+function gcd(a, b) {
+  while (b !== 0n) [a, b] = [b, a % b];
+  return a;
+}
+function bridgeDecimalRatio(value) {
+  const [mantissa, exponent = "0"] = String(value).split("e");
+  const [whole, fraction = ""] = mantissa.split(".");
+  const scale = fraction.length - Number(exponent);
+  let numerator = BigInt(whole + fraction), denominator = 1n;
+  if (scale > 0) denominator = 10n ** BigInt(scale);
+  if (scale < 0) numerator *= 10n ** BigInt(-scale);
+  const factor = gcd(numerator, denominator);
+  return { numerator: numerator / factor, denominator: denominator / factor };
+}
+function addRatio(a, b) {
+  const numerator = a.numerator * b.denominator + b.numerator * a.denominator;
+  const denominator = a.denominator * b.denominator;
+  const factor = gcd(numerator, denominator);
+  return { numerator: numerator / factor, denominator: denominator / factor };
+}
+function edgeExactCost(edge, similarity) {
+  // The feature adapter supplies the exact rational Jaccard result. Without it,
+  // interpret each generic graph edge as the decimal numeric input it received.
+  const ratio = edge.exactSimilarity === undefined
+    ? bridgeDecimalRatio(similarity) : edge.exactSimilarity;
+  if (!ratio || typeof ratio.numerator !== "bigint" ||
+      typeof ratio.denominator !== "bigint" || ratio.denominator <= 0n ||
+      ratio.numerator < 0n || ratio.numerator > ratio.denominator ||
+      Math.abs(Number(ratio.numerator) / Number(ratio.denominator) - similarity) > 1e-12) {
+    throw new TypeError("edge exactSimilarity must agree with displayed similarity");
+  }
+  return { numerator: ratio.denominator - ratio.numerator, denominator: ratio.denominator };
+}
 function compareState(a, b) {
-  if (a.totalCost !== b.totalCost) return a.totalCost - b.totalCost;
+  const exactDifference = a.exactCost.numerator * b.exactCost.denominator -
+    b.exactCost.numerator * a.exactCost.denominator;
+  if (exactDifference !== 0n) return exactDifference < 0n ? -1 : 1;
   if (a.hops !== b.hops) return a.hops - b.hops;
   return comparePath(a.nodes, b.nodes);
 }
@@ -68,8 +105,9 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
     }
     undirectedPairs.add(pairKey);
     const cost = 1 - similarity;
-    adjacency.get(from).push({ to, similarity, cost, featureChanges: [...featureChanges] });
-    adjacency.get(to).push({ to: from, similarity, cost, featureChanges: [...featureChanges] });
+    const exactCost = edgeExactCost(edge, similarity);
+    adjacency.get(from).push({ to, similarity, cost, exactCost, featureChanges: [...featureChanges] });
+    adjacency.get(to).push({ to: from, similarity, cost, exactCost, featureChanges: [...featureChanges] });
   }
 
   if (startId === endId) {
@@ -86,11 +124,30 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
     };
   }
 
+  // The route comparator and simple-path search are expensive on dense graphs.
+  // If the target lies in another connected component, no valid route exists
+  // regardless of weights or hop budget. Graph edges were validated above.
+  const reachable = new Set([startId]), pending = [startId];
+  let found = false;
+  for (let offset = 0; offset < pending.length && !found; offset++) {
+    for (const edge of adjacency.get(pending[offset])) {
+      if (edge.to === endId) { found = true; break; }
+      if (!reachable.has(edge.to)) {
+        reachable.add(edge.to);
+        pending.push(edge.to);
+      }
+    }
+  }
+  if (!found) {
+    return { status: "no-route", reason: "disconnected-or-hop-bound", startId, endId, maxHops };
+  }
+
   for (const list of adjacency.values()) {
     list.sort((a, b) => a.to < b.to ? -1 : a.to > b.to ? 1 : 0);
   }
 
-  const initial = { node: startId, nodes: [startId], edges: [], hops: 0, totalCost: 0 };
+  const initial = { node: startId, nodes: [startId], edges: [], hops: 0,
+    totalCost: 0, exactCost: { numerator: 0n, denominator: 1n } };
   const queue = [initial];
   const stateKey = (node, hops) => `${node}\u0000${hops}`;
   const best = new Map([[stateKey(startId, 0), initial]]);
@@ -130,6 +187,7 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
         }],
         hops: current.hops + 1,
         totalCost: current.totalCost + edge.cost,
+        exactCost: addRatio(current.exactCost, edge.exactCost),
       };
 
       const key = stateKey(next.node, next.hops);

@@ -3,8 +3,17 @@
 import { findBridgeRoute } from './bridge.js';
 
 const GROUPS = [{ key: 'mechanics', weight: .7 }, { key: 'themes', weight: .3 }];
-export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-2';
+export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-3';
 const VERSION = BRIDGE_ROUTE_METHOD_VERSION;
+function decimalRatio(value) {
+  const [mantissa, exponent = '0'] = String(value).split('e');
+  const [whole, fraction = ''] = mantissa.split('.');
+  const scale = fraction.length - Number(exponent);
+  let numerator = BigInt(whole + fraction), denominator = 1n;
+  if (scale > 0) denominator = 10n ** BigInt(scale);
+  if (scale < 0) numerator *= 10n ** BigInt(-scale);
+  return { numerator, denominator };
+}
 function requireId(value, name) {
   if (typeof value !== 'string' || !/^[a-z0-9]+:[a-z0-9][a-z0-9._-]*$/.test(value))
     throw new TypeError(`${name} must be a canonical game ID`);
@@ -17,22 +26,39 @@ function assertFeatureList(value, name) {
   if (new Set(value).size !== value.length) throw new TypeError(`duplicate ${name}`);
   return [...value];
 }
-function featureEvidence(a,b) {
-  let sum=0, coverage=0;
+function featureEvidence(a,b, includeGroups = true, leftCache = null, rightCache = null) {
+  let coverage=0;
+  let numerator=0n, denominator=1n, coverageUnits=0;
   const groups=[];
   for(const {key,weight} of GROUPS) {
     if(a[key]===null || b[key]===null) continue;
-    const left=new Set(a[key]), right=new Set(b[key]);
-    const shared=[...left].filter(x=>right.has(x)).sort();
-    const gained=[...right].filter(x=>!left.has(x)).sort();
-    const lost=[...left].filter(x=>!right.has(x)).sort();
-    const union=new Set([...left,...right]).size;
-    sum += weight * (union ? shared.length/union : 0);
+    const left=leftCache?.[key] ?? new Set(a[key]);
+    const right=rightCache?.[key] ?? new Set(b[key]);
+    // Pair screening is O(n²): construct explanation arrays only for chosen route steps.
+    let sharedCount = 0;
+    for (const feature of left) if (right.has(feature)) sharedCount++;
+    const union = left.size + right.size - sharedCount;
+    if (includeGroups) {
+      const shared=[...left].filter(x=>right.has(x)).sort();
+      const gained=[...right].filter(x=>!left.has(x)).sort();
+      const lost=[...left].filter(x=>!right.has(x)).sort();
+      groups.push({ group:key, shared, gained, lost });
+    }
     coverage += weight;
-    groups.push({ group:key, shared, gained, lost });
+    const units = key === 'mechanics' ? 7 : 3;
+    coverageUnits += units;
+    if (union) {
+      numerator = numerator * BigInt(union) + BigInt(units * sharedCount) * denominator;
+      denominator *= BigInt(union);
+    }
   }
-  return { affinity:coverage>=.7?sum/coverage:null, coverage,
-    groups };
+  // Jaccard is a rational number of feature counts. Convert it to Number once
+  // for display, but keep the exact fraction for thresholds and route ordering.
+  const exactSimilarity = coverageUnits >= 7
+    ? { numerator, denominator: denominator * BigInt(coverageUnits) } : null;
+  return { affinity: exactSimilarity === null ? null
+    : Number(exactSimilarity.numerator) / Number(exactSimilarity.denominator),
+    coverage, groups, exactSimilarity };
 }
 function classify(game, {platform, coopOnly}, exclusions) {
   if (exclusions.has(game.id)) return 'excluded';
@@ -78,17 +104,27 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
     if(states.get(id)!=='pass') return {...common,status:'unavailable-endpoint',reason:states.get(id),affected_id:id};
   }
   const eligible=[...ids.values()].filter(g=>states.get(g.id)==='pass').sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+  // Build immutable feature lookup sets once, not inside every eligible pair.
+  const featuresById = new Map(eligible.map(game => [game.id, {
+    mechanics: game.mechanics === null ? null : new Set(game.mechanics),
+    themes: game.themes === null ? null : new Set(game.themes)
+  }]));
   const edges=[];
   // Disjoint counts over unordered eligible pairs: unknown evidence is not zero fit.
   const pairEvidence={insufficient:0,zero_support:0,below_threshold:0,connected:0};
+  const thresholdRatio = decimalRatio(minSimilarity);
   for(let i=0;i<eligible.length;i++)for(let j=i+1;j<eligible.length;j++){
-    const e=featureEvidence(eligible[i],eligible[j]);
+    const e=featureEvidence(eligible[i],eligible[j], false,
+      featuresById.get(eligible[i].id), featuresById.get(eligible[j].id));
     if(e.affinity===null) pairEvidence.insufficient++;
     else if(e.affinity<=0) pairEvidence.zero_support++;
-    else if(e.affinity<minSimilarity) pairEvidence.below_threshold++;
+    else if(e.exactSimilarity.numerator * thresholdRatio.denominator <
+            thresholdRatio.numerator * e.exactSimilarity.denominator)
+      pairEvidence.below_threshold++;
     else {
       pairEvidence.connected++;
-      edges.push({from:eligible[i].id,to:eligible[j].id,similarity:e.affinity});
+      edges.push({from:eligible[i].id,to:eligible[j].id,
+        similarity:e.affinity,exactSimilarity:e.exactSimilarity});
     }
   }
   common.pair_evidence=pairEvidence;

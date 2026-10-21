@@ -22,7 +22,7 @@ test('default fixture returns explainable two-hop route', () => {
   assert.equal(report.catalog_snapshot_id, 'synthetic-bridge-cli-1');
   assert.equal(report.steps.length, 2);
   assert.ok(report.steps.every(s => s.groups.some(g => g.shared.length > 0)));
-  assert.equal(report.route_method_version, 'bridge-features-preview-1');
+  assert.equal(report.route_method_version, 'bridge-features-preview-3');
 });
 test('identical input reproduces byte-identical JSON without invented timestamps', () => {
   assert.equal(run(), run());
