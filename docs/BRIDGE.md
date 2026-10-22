@@ -22,9 +22,14 @@ The example is fictional, with no third-party data or artwork. `no-route` is
 valid: constraints must not be relaxed to manufacture a path. Higher similarity
 thresholds can legitimately remove an intermediate or the whole route.
 
-This contract/CLI is an intermediate deliverable. A separately reviewed, accessible
-browser journey with versioned share restoration is still needed before promoting
-Bridge as a visible product capability. Real-catalog rights remain a separate gate.
+An experimental Bridge panel is implemented in the list-first browser preview
+(`index.html`, `src/bridge-ui.js`). Players select two distinct basket favorites,
+choose a hop limit and similarity threshold, and inspect explained intermediate
+steps. Bridge remains separate from Intersection and Blend basket ranking. Share
+links preserve versioned route settings; incompatible prior route versions fail
+visibly instead of substituting a different route. This source implementation
+is not evidence of a live Pages deployment, rights-cleared catalog or measured
+player usefulness. Hosted publication and verification are a separate gate (#7).
 
 ## Strict positive-evidence policy (Bridge method v2)
 
@@ -37,8 +42,8 @@ required platform/co-op metadata remains a separate eligibility abstention.
 Route method `bridge-features-preview-2` intentionally invalidates version-1 Bridge
 links rather than silently altering their saved path topology. Older basket links
 without Bridge remain compatible. New no-route messages explain separate reasons
-and never relax an explicit filter. This is synthetic/experimental code pending
-independent exact-head acceptance and merge of PR #12, not a live Pages claim.
+and never relax an explicit filter. These semantics apply to synthetic
+catalog data; they do not establish hosted publication or player usefulness.
 
 ## Exact feature-rational routes (Bridge method v3)
 
@@ -51,7 +56,17 @@ Displayed similarity remains a Number, but route ordering uses exact fractions.
 For disconnected eligible components, a bounded reachability pass avoids
 the expensive rational shortest-route search. Feature sets are cached per
 eligible game, and sorted evidence arrays are built for selected route steps.
-This does not constitute a mobile latency or player-quality benchmark.
+The search frontier uses a binary min-heap with the same exact cost, hop-count
+and complete-ID ordering. This does not constitute a mobile latency or
+player-quality benchmark.
+
+The standalone graph API validates supplied rational evidence, including
+fractions too large for Number conversion and denominator-only overflow.
+Whole ID components determine lexical ties; embedded separator characters
+cannot alias distinct paths. Browser catalog IDs remain more restrictive.
+The displayed-similarity validation tolerance remains 1e-12; it is not a
+route-cost rounding threshold. These repairs preserve the browser method
+version and its valid catalog-input semantics.
 
 Saved v1 and v2 Bridge links fail visibly instead of silently restoring a
 different path. Existing basket links without Bridge remain compatible.
