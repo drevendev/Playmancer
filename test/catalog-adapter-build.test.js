@@ -51,7 +51,8 @@ test('alternative build publishes only allowlisted metadata and remains determin
 test('inline JSON preserves script-like text, replacement tokens and Unicode separators literally', () => temporary(dir => {
   const input = structuredClone(fixture);
   input.snapshotId = 'fixture-$&-$`-$\'-<version>';
-  input.games[2].name = 'Literal </script><script>window.bad=true</script> $& $` $\' \u2028 \u2029';
+  // Keep separators inside a valid trimmed name; trailing separators are whitespace.
+  input.games[2].name = 'Literal </script><script>window.bad=true</script> $& $` $\' \u2028 \u2029 end';
   input.games[2].description = '<img src=x onerror=window.bad=true> & "$1"';
   const path = join(dir, 'input.json');
   writeFileSync(path, JSON.stringify(input));
