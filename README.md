@@ -24,7 +24,15 @@ player-facing rankings and compatible share links keep their semantics.
 - Share ordered IDs/weights, mode, filters, exclusions and catalog/method versions.
 - Use visible focus, native 44px-class controls, reduced motion and narrow reflow.
 
-**Bridge is still a separately tested route experiment, not an exposed UI mode.**
+**Bridge two favorites** is a separately labelled experimental route panel, not a
+fourth basket-ranking mode. Select two distinct games already in your basket, set a
+maximum hop count and minimum connection similarity, and inspect the supported
+intermediate games, shared features, added/lost features and evidence coverage.
+The existing platform/co-op requirements and hidden-game exclusions also apply to
+routes; unsupported endpoints and absent routes are explained without relaxing a
+filter. Bridge uses only authored fictional profiles; its graph cost is not a
+confidence score or evidence of real-player recommendation quality.
+
 The next delivery gates are in [the roadmap](docs/ROADMAP.md), including the remaining
 scope of [product epic #1](https://github.com/drevendev/Playmancer/issues/1).
 
@@ -36,6 +44,7 @@ Use Node.js 22. There are no npm dependencies or API keys.
 npm test
 npm run validate:catalog
 npm run benchmark
+node scripts/run-bridge-preview.mjs # deterministic fictional-route JSON
 npm run build
 python3 scripts/pages-preflight.py _site
 # Optional local hosting; this is not public deployment.
@@ -85,8 +94,9 @@ python3 scripts/browser-smoke.py
 
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` may select an installed Chromium. The harness tests
 the exact built document offline: sample/empty actions, keyboard controls, filters,
-sharing, recovery, 280–1280px reflow and increased root text sizes. It saves PNGs and
-JSON in `.test-artifacts/`. CI retains those specific files as a browser artifact,
+sharing, Bridge endpoint/route/evidence behavior, recovery, 280–1280px reflow
+and increased root text sizes. PNGs and JSON are saved in `.test-artifacts/`.
+CI retains those specific files as a browser artifact,
 including when the browser step fails; missing evidence is not a pass.
 
 The full Node suite, catalog publication validation, reproducible benchmark output,
@@ -103,7 +113,7 @@ or weaken protection. Invalid catalog/build inputs fail before output replacemen
 
 The HTML records `playmancer-revision` from `GITHUB_SHA` or `PLAYMANCER_REVISION`;
 local builds use `unpublished`. Build success is not deployment evidence.
-As of 2026-10-18, Pages is unprovisioned and no public URL is live-verified; [#7](https://github.com/drevendev/Playmancer/issues/7)
+As of 2026-10-22, Pages is unprovisioned and no public URL is live-verified; [#7](https://github.com/drevendev/Playmancer/issues/7)
 tracks the exact deployment and hosted-player acceptance gates.
 
 Use focused PRs and preserve the full regression suite. Newly authored semantic work
