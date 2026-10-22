@@ -29,3 +29,12 @@ Append-only semantic/navigation history for repository-canonical project control
                      added issue #6 catalog/evaluation recovery candidate and #7–#10 roadmap
                      kept local candidate acceptance separate from deployed/live evidence
                      retained format 2 and owner-controlled schedule lifecycle
+2026-10-22 | rev 13 | reconciled: PLAY-CONTROL-001
+                      marked #6/PR #11 DONE and recorded actual master 0c6ed23
+                      selected #12 for later exact-head acceptance; recorded stacked #20
+                      required immediate dependent retarget/sync after base merge
+                      aligned state/index counters and registry/roadmap at revision 13
+                      preserved format 2 and separate publication/rights/usefulness gates
+                      counter 12 previously exceeded indexed/changelog revision 6;
+                      missing revisions 7–12 are not invented or retroactively asserted
+                      no runtime code, protected-master write or scheduler mutation

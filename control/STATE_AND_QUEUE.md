@@ -1,57 +1,68 @@
 # STATE_AND_QUEUE — Playmancer
 
-Updated: 2026-10-18. Re-read GitHub for current PR/check/ref facts.
+Reconciled: 2026-10-22. These are dated navigation facts, not live PR/check authority.
+Re-read GitHub before claims, repairs, acceptance, merge or publication.
 
 ```text
 PROJECT_STATUS:          ACTIVE
 CONTROL_FORMAT_VERSION:  2
 CURRENT_PHASE:           PRODUCT_DELIVERY
 CURRENT_MODE:            OWNER_DIRECTED
-STATE_REVISION:          12
-LAST_INDEXED_REVISION:   6
-CURRENT_UNIT:            PLAY-RECOVERY-002
-CURRENT_SCOPE:           issue #6 — preview 0.2 catalog/evaluation delivery
+STATE_REVISION:          13
+LAST_INDEXED_REVISION:   13
+CURRENT_UNIT:            PLAY-BRIDGE-001
+CURRENT_SCOPE:           issues #9/#18/#19 — explained Bridge and release repairs
 CURRENT_UNIT_STATUS:     REVIEW
-WORKING_BRANCH:          feat/preview-02-delivery
-LAST_VERIFIED_MASTER:    3839c79eff9f8f5ae174eee0abf181c5a1cf8181
+WORKING_BRANCH:          feat/p08-bridge-routing-v0
+LAST_VERIFIED_MASTER:    0c6ed23faabb3bad7b3adb86ae9a0d5013bd25c8
 WORKER_SCHEDULE_MUTATION: none
 ```
 
-## Reconciled delivery facts
+## Delivered versus awaiting acceptance
 
-Bootstrap PR #2 and product PR #3 are merged. Preview-hardening PR #4 merged on
-2026-10-10 as `fb84bc1217a04039dfeebb6439c167c02e33bc48`; its old REVIEW claim is
-complete. Benchmark PR #5 merged on 2026-10-18 as
-`3839c79eff9f8f5ae174eee0abf181c5a1cf8181`. Do not reopen their obsolete claims.
+PRs #2, #3, #4 and #5 are merged. Preview 0.2 PR #11 merged on 2026-10-18 as
+`0c6ed23faabb3bad7b3adb86ae9a0d5013bd25c8`, closing #6. PLAY-RECOVERY-002 is DONE.
+Do not resurrect their finished review claims or the obsolete preview-02 branch.
 
-The #6 implementation branch carries the next semantic candidate. Its presence here
-is not acceptance or publication. Use its native PR as the claim, independently review
-the exact head in a later run and merge only with applicable checks/provider rules.
-No formal self-approval or invented second developer is required by current zero-
-approval protection; real future requirements still take precedence.
+At this reconciliation, PR #12 is OPEN/READY at
+`3c5ff7f35985b34241381717f2cff75fcd317ea8`; Verify run 39732338511 is successful.
+It contains explained Bridge, precision/ID repairs, first-screen discovery and a
+bounded route cache. It is PR_OPENED/BUILT, not MERGED, DEPLOYED or LIVE_VERIFIED.
 
-## Compact queue
+PR #20 is OPEN/READY at `5679f65d7e2d0b1da86bebbd7b1b885a5e7385ee`; Verify run
+39734899397 is successful. Its validated snapshot adapter/build gate addresses
+#13/#21. It is stacked on #12's branch, not yet based on master or merged.
 
-[docs/ROADMAP.md](../docs/ROADMAP.md) contains the ordered #6–#10 delivery gates.
-Close/repair the current #6 PR before new work. Then finish #7 Pages when authorized
-provisioning is available; otherwise advance the independent #9 Bridge slice or #8
-rights/identity sample. Keep epic #1 open for real catalog, hosted delivery and human
-usefulness. Do not repeatedly repackage local candidates or re-run unchanged audits.
+## Closing-first queue
 
-## Scoped capabilities and remaining gates
+1. Reconcile partial effects or changed regressions first. Independently accept the
+   current exact head of #12 in a later run, or repair that branch if findings remain.
+2. Immediately after merging #12, retarget #20 to master, synchronize its base safely,
+   refresh the exact head and applicable checks, then independently accept it. Do not
+   delete the base branch while a dependent PR still uses it.
+3. Accept this separate #17 control reconciliation against fresh native facts; if
+   product PRs moved meanwhile, refresh only the dated navigation snapshot.
+4. Follow the independent gates in `docs/ROADMAP.md`. Pages #7, rights #8, human
+   evaluation #10, cross-browser #14 and responsiveness #15 are not completed by CI.
+   #16 is focused adoption of useful archived regressions, not an oracle-count race.
 
-Interactive 2026-10-18: authenticated `andy-zen-dev`, push/triage/pull true,
-admin/maintain false. The native expected-head PR #5 merge succeeded. Prior scheduled
-safety denials are historical, not proof that this context cannot write. A new explicit
-denial stops the affected action without endpoint/account/protection bypass.
+New semantic production and acceptance/merge remain separate turns. Actual provider
+checks/approvals are mandatory; do not invent a second developer when zero approvals
+are required. Epic #1 remains open. Do not add a Drive queue or per-wake ledger.
 
-Clone DNS failure has a working alternative: reconstruct executable sources/original
-tests from verified Git blobs and the exact root tree. A clone is not a prerequisite.
-Pages remained unprovisioned at inspection (`has_pages=false`); #7's reopening trigger
-is authorized GitHub Actions Pages configuration. No public URL is live-verified.
+## Capabilities and bounded blockers
+
+Interactive 2026-10-22: authenticated `andy-zen-dev`, push/triage/pull true,
+admin/maintain false. Reviews, Issues, commits and PR creation succeeded. Earlier
+scheduled safety denials are historical, not a permanent global write blocker.
+A new explicit denial blocks its affected operation without endpoint/protection bypass.
+
+Hosted CI runs full source acceptance even when local clone DNS fails. Exact-blob
+reconstruction remains a local alternative; do not repeat unchanged clone failures.
+Pages is unprovisioned (`has_pages=false`); #7 reopens deployment work when authorized
+administration configures GitHub Actions Pages. No public URL is live-verified.
 
 Format 2 remains unchanged. Ownership/exclusion migration, external selection receipt
 replay, independent liveness observation and finite total maintenance bounds remain
-unproven; do not claim full EndlessZen unattended conformance. They do not block
-owner-authorized product work. Scheduler lifecycle stays outside worker authority.
-No Drive queue, second worker or per-wake ledger.
+unproven. No full EndlessZen unattended-conformance claim is made. The existing hourly
+schedule, title and cadence remain owner-controlled and unchanged.
