@@ -15,6 +15,24 @@ const DEFAULT_BRIDGE = Object.freeze({
 });
 const bridgeSettings = (state) => state.bridge ?? DEFAULT_BRIDGE;
 
+// One-entry cache for the complete JSON route input. Ranking weights/mode are
+// deliberately absent from that input; filters, exclusions, endpoints, policy
+// and catalog data/version are included. Failed computations are never cached.
+export function createBridgeRouteCache(compute = buildBridgePreview) {
+  let previousKey, previousResult;
+  let hasResult = false;
+  return (input) => {
+    const key = JSON.stringify(input);
+    if (hasResult && key === previousKey) return previousResult;
+    const result = compute(input);
+    previousKey = key;
+    previousResult = result;
+    hasResult = true;
+    return result;
+  };
+}
+const cachedBridgePreview = createBridgeRouteCache();
+
 export function renderBridge(state) {
   const form = bridgeSettings(state);
   const selected = new Set(state.seeds.map((item) => item.id));
@@ -42,7 +60,7 @@ export function renderBridge(state) {
     status.textContent = "Select both favorites to calculate a route.";
     return;
   }
-  const route = buildBridgePreview({
+  const route = cachedBridgePreview({
     catalog: CATALOG, snapshotId: CATALOG_VERSION,
     startId: form.startId, endId: form.endId,
     platform: state.platform, coopOnly: state.coopOnly,
@@ -85,6 +103,20 @@ export function renderBridge(state) {
   }
 }
 export function bindBridgeControls(getState, updateBridge) {
+  // A button, not an anchor: #basket= owns URL restoration state.
+  if (!bridgeEl("intro-bridge")) {
+    const jump = bridgeNode("button", "Explore Bridge routes");
+    jump.id = "intro-bridge";
+    jump.type = "button";
+    jump.setAttribute("aria-controls", "bridge-lab");
+    bridgeEl("intro-empty").after(jump);
+    const title = bridgeEl("bridge-title");
+    title.tabIndex = -1;
+    jump.addEventListener("click", () => {
+      bridgeEl("bridge-lab").scrollIntoView({ block: "start", behavior: "auto" });
+      title.focus({ preventScroll: true });
+    });
+  }
   for (const key of ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"]) {
     bridgeEl(key).addEventListener("change", () => {
       const next = { ...bridgeSettings(getState()),
