@@ -48,7 +48,7 @@ for (const [index, path] of modules.entries()) {
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
     if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
-    if (selectedSnapshot !== null) source = source.replace(slot, `const BUILD_CATALOG_SNAPSHOT = ${inlineJSON(selectedSnapshot)};`);
+    if (selectedSnapshot !== null) source = source.replace(slot, () => `const BUILD_CATALOG_SNAPSHOT = ${inlineJSON(selectedSnapshot)};`);
   }
   if (expectedImports[index]) {
     if (source.split(expectedImports[index]).length !== 2) throw new Error(`Unexpected import in ${path}`);
@@ -76,8 +76,8 @@ const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "u
 if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
 if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
 const escapeAttribute = value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const html = template.replace(entry, `<script type="module">\n${script}\n</script>`)
-  .replace("</head>", `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
+const html = template.replace(entry, () => `<script type="module">\n${script}\n</script>`)
+  .replace("</head>", () => `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
 await mkdir(output, { recursive: true });
 const temporary = join(output, `.index.html.${process.pid}.tmp`);
 try {
