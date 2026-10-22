@@ -13,9 +13,13 @@ function assertUnitInterval(value, label) {
 }
 
 function comparePath(a, b) {
-  const aKey = a.join("\u0000");
-  const bKey = b.join("\u0000");
-  return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+  // Compare full ID components: joining with a sentinel is not injective
+  // when this standalone graph API accepts separator characters in IDs.
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    if (a[i] < b[i]) return -1;
+    if (a[i] > b[i]) return 1;
+  }
+  return a.length - b.length;
 }
 
 // Path comparison is exact. Floating addition can break true ties and
@@ -41,15 +45,33 @@ function addRatio(a, b) {
   return { numerator: numerator / factor, denominator: denominator / factor };
 }
 function edgeExactCost(edge, similarity) {
-  // The feature adapter supplies the exact rational Jaccard result. Without it,
-  // interpret each generic graph edge as the decimal numeric input it received.
+  // The feature adapter supplies exact weighted-Jaccard fractions; generic
+  // edges without one use the decimal value of their declared similarity.
   const ratio = edge.exactSimilarity === undefined
     ? bridgeDecimalRatio(similarity) : edge.exactSimilarity;
   if (!ratio || typeof ratio.numerator !== "bigint" ||
       typeof ratio.denominator !== "bigint" || ratio.denominator <= 0n ||
-      ratio.numerator < 0n || ratio.numerator > ratio.denominator ||
-      Math.abs(Number(ratio.numerator) / Number(ratio.denominator) - similarity) > 1e-12) {
+      ratio.numerator < 0n || ratio.numerator > ratio.denominator) {
     throw new TypeError("edge exactSimilarity must agree with displayed similarity");
+  }
+  // Number(BigInt)/Number(BigInt) is NaN for large fractions (Infinity/Infinity).
+  // Denominator-only overflow also produces a finite but incorrect zero.
+  // Use the fast path only when both conversions retain a finite value.
+  const numericNumerator = Number(ratio.numerator);
+  const numericDenominator = Number(ratio.denominator);
+  const observed = numericNumerator / numericDenominator;
+  if (Number.isFinite(numericNumerator) && Number.isFinite(numericDenominator)) {
+    if (Math.abs(observed - similarity) > 1e-12) {
+      throw new TypeError("edge exactSimilarity must agree with displayed similarity");
+    }
+  } else {
+    const shown = bridgeDecimalRatio(similarity);
+    const delta = ratio.numerator * shown.denominator -
+      shown.numerator * ratio.denominator;
+    const magnitude = delta < 0n ? -delta : delta;
+    if (magnitude * 1000000000000n > ratio.denominator * shown.denominator) {
+      throw new TypeError("edge exactSimilarity must agree with displayed similarity");
+    }
   }
   return { numerator: ratio.denominator - ratio.numerator, denominator: ratio.denominator };
 }
@@ -59,6 +81,37 @@ function compareState(a, b) {
   if (exactDifference !== 0n) return exactDifference < 0n ? -1 : 1;
   if (a.hops !== b.hops) return a.hops - b.hops;
   return comparePath(a.nodes, b.nodes);
+}
+
+// Priority queue: keep the exact route order without re-sorting the entire
+// frontier after every expansion. The comparator remains the sole source of
+// truth for rational costs, hop count and component-wise ID tie-breaking.
+function pushMin(queue, state) {
+  let index = queue.length;
+  queue.push(state);
+  while (index > 0) {
+    const parent = Math.floor((index - 1) / 2);
+    if (compareState(queue[parent], state) <= 0) break;
+    queue[index] = queue[parent];
+    index = parent;
+  }
+  queue[index] = state;
+}
+function popMin(queue) {
+  const smallest = queue[0];
+  const tail = queue.pop();
+  if (queue.length === 0) return smallest;
+  let index = 0;
+  while (2 * index + 1 < queue.length) {
+    const left = 2 * index + 1;
+    const right = left + 1;
+    const child = right < queue.length && compareState(queue[right], queue[left]) < 0 ? right : left;
+    if (compareState(tail, queue[child]) <= 0) break;
+    queue[index] = queue[child];
+    index = child;
+  }
+  queue[index] = tail;
+  return smallest;
 }
 
 export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 } = {}) {
@@ -153,8 +206,7 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
   const best = new Map([[stateKey(startId, 0), initial]]);
 
   while (queue.length > 0) {
-    queue.sort(compareState);
-    const current = queue.shift();
+    const current = popMin(queue);
 
     const known = best.get(stateKey(current.node, current.hops));
     if (known && compareState(current, known) > 0) continue;
@@ -194,7 +246,7 @@ export function findBridgeRoute(graph, startIdInput, endIdInput, { maxHops = 8 }
       const previous = best.get(key);
       if (!previous || compareState(next, previous) < 0) {
         best.set(key, next);
-        queue.push(next);
+        pushMin(queue, next);
       }
     }
   }
