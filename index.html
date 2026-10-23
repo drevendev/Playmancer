@@ -27,6 +27,10 @@
 
 /* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
 #bridge-lab{margin-top:28px}
+/* Keep the Bridge heading focus outline clear of the synthetic-data label. */
+#bridge-lab .eyebrow{margin-bottom:14px}
+/* 400% root-text scaling must wrap long Bridge status words on narrow screens. */
+#bridge-lab .bridge-status{overflow-wrap:anywhere}
 #bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
 #bridge-lab .bridge-controls label{margin:0}
 #bridge-lab .bridge-controls select{margin-top:7px;width:100%}
