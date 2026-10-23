@@ -1,22 +1,55 @@
-import { readFile, mkdir, writeFile } from "node:fs/promises";
+import { readFile, mkdir, writeFile, rename, rm, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
+import { Script } from "node:vm";
+import { validateCatalogSnapshot } from "../src/catalog.js";
 
 // Deliberately bounded to seven explicit dependency-free modules, not a general bundler.
 const root = fileURLToPath(new URL("../", import.meta.url));
-const output = resolve(process.argv[2] ?? join(root, "_site"));
+let output = join(root, "_site"), catalogPath = null, hasOutput = false;
+const args = process.argv.slice(2);
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--catalog") {
+    if (catalogPath !== null || !args[i + 1] || args[i + 1].startsWith("--")) {
+      throw new Error("Expected one --catalog snapshot.json argument");
+    }
+    catalogPath = resolve(args[++i]);
+  } else if (args[i].startsWith("--") || hasOutput) {
+    throw new Error("Usage: node scripts/build-demo.mjs [output-directory] [--catalog snapshot.json]");
+  } else {
+    output = resolve(args[i]);
+    hasOutput = true;
+  }
+}
+// Ordinary parsed JSON only. API access is not a redistribution permission;
+// the validator checks recorded field approvals, not their legal truth.
+let selectedSnapshot = null;
+if (catalogPath !== null) {
+  if ((await stat(catalogPath)).size > 1048576) throw new Error("Catalog input exceeds the 1 MiB limit");
+  const input = JSON.parse(await readFile(catalogPath, "utf8"));
+  selectedSnapshot = validateCatalogSnapshot(input, { requirePublishable: true });
+  if (selectedSnapshot.games.length > 250) throw new Error("Catalog exceeds the 250-profile engineering bound");
+}
 const modules = ["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js", "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"];
 const expectedImports = [
   null, null, null,
   "import { findBridgeRoute } from './bridge.js';\n",
   'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { validateCatalogSnapshot } from "./catalog.js";\nimport { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\n',
   'import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\nimport { BY_ID, CATALOG, CATALOG_VERSION, BRIDGE_STATE_VERSION } from "./demo.js";\n',
-  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
+  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
 ];
-await import(new URL("../src/demo.js", import.meta.url));
+const defaultDemo = await import(new URL("../src/demo.js", import.meta.url));
+const effectiveSnapshot = selectedSnapshot ?? defaultDemo.DEMO_SNAPSHOT;
+const inlineJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,
+  character => "\\u" + character.charCodeAt(0).toString(16).padStart(4, "0"));
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
+  if (path === "src/demo.js") {
+    const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
+    if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
+    if (selectedSnapshot !== null) source = source.replace(slot, () => `const BUILD_CATALOG_SNAPSHOT = ${inlineJSON(selectedSnapshot)};`);
+  }
   if (expectedImports[index]) {
     if (source.split(expectedImports[index]).length !== 2) throw new Error(`Unexpected import in ${path}`);
     source = source.replace(expectedImports[index], "");
@@ -33,15 +66,25 @@ for (const [index, path] of modules.entries()) {
   parts.push(`// ${path}\n${source}`);
 }
 const script = parts.join("\n\n");
+// Compile, never execute, the merged browser code before replacing an artifact.
+// Individual modules can parse while conflicting declarations break their bundle.
+new Script(script, { filename: "playmancer-browser-bundle.js" });
 const entry = '<script type="module" src="./src/demo-ui.js"></script>';
 const template = await readFile(join(root, "index.html"), "utf8");
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
 const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
 if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
 if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
-const html = template.replace(entry, `<script type="module">\n${script}\n</script>`)
-  .replace("</head>", `<meta name="playmancer-revision" content="${revision}">\n</head>`);
+const escapeAttribute = value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const html = template.replace(entry, () => `<script type="module">\n${script}\n</script>`)
+  .replace("</head>", () => `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
 await mkdir(output, { recursive: true });
-await writeFile(join(output, "index.html"), html);
-await writeFile(join(output, ".nojekyll"), "");
+const temporary = join(output, `.index.html.${process.pid}.tmp`);
+try {
+  await writeFile(temporary, html);
+  await writeFile(join(output, ".nojekyll"), "");
+  await rename(temporary, join(output, "index.html"));
+} finally {
+  await rm(temporary, { force: true });
+}
 console.log(`Built ${Buffer.byteLength(html)} bytes into ${output}`);

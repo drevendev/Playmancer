@@ -2,16 +2,16 @@ import { blendCandidates, rankCandidates } from "./ranking.js";
 import { validateCatalogSnapshot } from "./catalog.js";
 import { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";
 
-// Authored, fictional profiles. No commercial catalog, artwork, or API data.
-export const CATALOG_VERSION = "synthetic-demo-1";
+// The bounded static builder replaces this slot with an already allowlisted
+// JSON snapshot. Direct module use retains the authored default below.
+const BUILD_CATALOG_SNAPSHOT = null;
 export const METHOD_VERSION = "feature-overlap-2";
 export const BRIDGE_STATE_VERSION = "bridge-ui-experiment-1";
 export const DEMO_MODES = ["intersection", "blend", "arithmetic"];
-export const PLATFORMS = ["any", "windows", "linux", "mac"];
 export const FEATURE_GROUPS = [{ key: "mechanics", weight: 0.7 }, { key: "themes", weight: 0.3 }];
 const profile = (id, name, description, mechanics, themes, platforms, coop) =>
   ({ id: `demo:${id}`, name, description, mechanics, themes, platforms, coop });
-export const CATALOG = [
+const AUTHORED_CATALOG = [
   profile("ember", "Ember Circuit", "A fictional action adventure built around exploration and demanding combat.", ["action", "exploration", "combat"], ["fantasy", "mystery"], ["windows", "linux"], false),
   profile("harvest", "Cloud Harvest", "A fictional farming journey about crafting and exploring a gentle world.", ["farming", "crafting", "exploration"], ["cozy", "nature"], ["windows", "mac"], true),
   profile("tide", "Tidebound", "Explore islands, craft equipment, and fight through a fictional wilderness.", ["exploration", "crafting", "combat"], ["fantasy", "nature"], ["windows", "linux"], true),
@@ -25,24 +25,24 @@ export const CATALOG = [
   profile("lantern", "Lantern Trail", "A deliberately sparse fictional profile: only its themes are known.", null, ["fantasy", "nature"], ["windows"], null),
   profile("silent", "Silent Archive", "A deliberately incomplete fictional profile with no comparable features.", null, null, null, null),
 ];
-// The same catalog used by the player is checked before rendering/building.
-export const DEMO_SNAPSHOT = validateCatalogSnapshot({
-  schemaVersion: 1, snapshotId: CATALOG_VERSION, kind: "synthetic",
+// Both the default and selected snapshot take the same publication-validation
+// path. Only the immutable allowlisted projection is consumed by the player.
+export const DEMO_SNAPSHOT = validateCatalogSnapshot(BUILD_CATALOG_SNAPSHOT ?? {
+  schemaVersion: 1, snapshotId: "synthetic-demo-1", kind: "synthetic",
   sources: [{ id: "authored-demo", kind: "synthetic", attribution: "Playmancer authored fictional profiles",
     rights: { status: "synthetic", reference: "README.md#catalog-contract",
       fields: ["id", "kind", "name", "description", "aliases", "externalIds", "sourceId", "parentId", "mechanics", "themes", "platforms", "coop"] } }],
-  games: CATALOG.map(game => ({ ...game, kind: "game", aliases: [], externalIds: [], sourceId: "authored-demo", parentId: null })),
+  games: AUTHORED_CATALOG.map(game => ({ ...game, kind: "game", aliases: [], externalIds: [], sourceId: "authored-demo", parentId: null })),
 }, { requirePublishable: true });
-for (const game of CATALOG) {
-  for (const key of ["mechanics", "themes", "platforms"]) if (game[key]) Object.freeze(game[key]);
-  Object.freeze(game);
-}
-Object.freeze(CATALOG);
+export const CATALOG = DEMO_SNAPSHOT.games;
+export const CATALOG_VERSION = DEMO_SNAPSHOT.snapshotId;
+export const PLATFORMS = ["any", "windows", "linux", "mac", ...[...new Set(CATALOG.flatMap(game => game.platforms ?? []))]
+  .filter(platform => !["any", "windows", "linux", "mac"].includes(platform)).sort()];
 export const BY_ID = new Map(CATALOG.map((game) => [game.id, game]));
 
 export function initialState() {
   return { v: 1, catalog: CATALOG_VERSION, method: METHOD_VERSION, mode: "intersection",
-    seeds: [{ id: "demo:ember", weight: 1 }, { id: "demo:harvest", weight: 1 }],
+    seeds: CATALOG.slice(0, 2).map(game => ({ id: game.id, weight: 1 })),
     platform: "any", coopOnly: false, lambda: 0.3, excluded: [] };
 }
 
@@ -96,9 +96,25 @@ export function validateState(value) {
 export function encodeState(state) {
   return `#basket=${encodeURIComponent(JSON.stringify(validateState(state)))}`;
 }
+// Bound incoming links by the validated snapshot's possible ID payload rather
+// than a fixed 6000 characters: a legitimate 250-profile exclusion list can
+// exceed that limit. Keep a bounded pre-parse rejection for hostile links.
+const MAX_BASKET_LINK_LENGTH = (() => {
+  const encodedIds = CATALOG.map((game) => encodeURIComponent(JSON.stringify(game.id)).length);
+  const longestId = Math.max(0, ...encodedIds);
+  const longestPlatform = Math.max(0, ...PLATFORMS.map((item) => encodeURIComponent(JSON.stringify(item)).length));
+  const versionBytes = [CATALOG_VERSION, METHOD_VERSION, BRIDGE_STATE_VERSION, BRIDGE_ROUTE_METHOD_VERSION]
+    .reduce((size, value) => size + encodeURIComponent(JSON.stringify(value)).length, 0);
+  // Any subset of excluded IDs, up to five weighted seeds, and two repeated
+  // Bridge endpoint IDs. The constant allowance covers field names,
+  // punctuation, settings, and other fixed-size encoded state fields.
+  const excludedBytes = encodedIds.reduce((size, length) => size + length + 3, 0);
+  return Math.max(6000, 2048 + excludedBytes + 7 * longestId + longestPlatform + versionBytes);
+})();
+
 export function decodeState(hash) {
   if (!hash) return initialState();
-  if (!hash.startsWith("#basket=") || hash.length > 6000) throw new Error("Unrecognized or oversized basket link.");
+  if (!hash.startsWith("#basket=") || hash.length > MAX_BASKET_LINK_LENGTH) throw new Error("Unrecognized or oversized basket link.");
   let parsed;
   try { parsed = JSON.parse(decodeURIComponent(hash.slice(8))); }
   catch { throw new Error("The basket link is malformed. No replacement basket was loaded."); }
