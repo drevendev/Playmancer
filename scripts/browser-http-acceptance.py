@@ -1,0 +1,192 @@
+"""Cross-engine player acceptance over real loopback HTTP; never a Pages/live claim.
+
+Install playwright==1.55.0 and its Chromium, Firefox and WebKit browser binaries.
+Run from the Playmancer repository root. The default builds the exact source checkout;
+PLAYMANCER_HTTP_SITE is only a local artifact override for diagnostic runs.
+"""
+import json
+import os
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+import re
+import subprocess
+from threading import Thread
+from urllib.parse import quote, unquote, urlsplit
+
+from playwright.sync_api import sync_playwright
+
+ROOT = Path(__file__).resolve().parents[1]
+ARTIFACTS = ROOT / ".test-artifacts"
+ARTIFACTS.mkdir(exist_ok=True)
+OVERRIDE = os.environ.get("PLAYMANCER_HTTP_SITE")
+SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
+if not OVERRIDE:
+    subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
+    subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
+if not (SITE / "index.html").is_file():
+    raise FileNotFoundError(f"No built site at {SITE}")
+
+
+class QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *_args):
+        pass
+
+
+CHECKS = []
+
+
+def check(case, title, condition):
+    result = {"case": case, "assertion": title, "passed": bool(condition)}
+    CHECKS.append(result)
+    if not result["passed"]:
+        raise AssertionError(f"{case}: {title}")
+
+
+def exercise(browser, base_url, engine, label, width, height):
+    case = f"{engine}/{label}"
+    context = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
+    errors, external_requests = [], []
+    context.on("page", lambda pg: pg.on("pageerror", lambda error: errors.append(str(error))))
+    context.on("request", lambda request: external_requests.append(request.url)
+               if not request.url.startswith(base_url) else None)
+    try:
+        page = context.new_page()
+        response = page.goto(base_url + "/", wait_until="load")
+        check(case, "served via real HTTP 200", response is not None and response.status == 200
+              and page.evaluate("location.protocol") == "http:")
+        page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
+        check(case, "working first-screen sample and fictional label",
+              page.locator("#seeds > li").count() >= 2 and "fictional" in page.locator(".badge").inner_text().lower()
+              and page.locator("#intro-sample").is_visible())
+        check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
+            "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
+        check(case, "list-first results and explanatory evidence",
+              page.locator("#results > li").count() > 0
+              and "Evidence coverage" in page.locator("#results > li").first.inner_text())
+
+        page.locator("#mode").select_option("blend")
+        weight = page.locator('#seeds input[type="range"]').first
+        before = int(weight.input_value())
+        weight.focus()
+        weight.press("ArrowRight")
+        after = int(weight.input_value())
+        check(case, "keyboard edits seed weight", after == before + 1)
+        page.locator("#platform").select_option("windows")
+        page.locator("#coop").check()
+        check(case, "hard-filter controls remain explicit",
+              page.locator("#platform").input_value() == "windows"
+              and page.locator("#coop").is_checked())
+        page.locator("#coop").uncheck()
+        page.locator("#platform").select_option("any")
+        page.locator("#results > li .explanation summary").first.click()
+        check(case, "native explanation opens and describes per-seed evidence",
+              page.locator("#results > li .explanation").first.evaluate("el => el.open")
+              and "shared:" in page.locator("#results > li .explanation").first.inner_text())
+
+        page.locator("#intro-bridge").focus()
+        page.locator("#intro-bridge").press("Enter")
+        check(case, "keyboard Bridge jump preserves focus", page.evaluate("document.activeElement.id") == "bridge-title")
+        ids = page.locator("#bridge-start option").evaluate_all(
+            "nodes => nodes.map(el => el.value).filter(Boolean)")
+        check(case, "Bridge exposes explicit basket endpoints", len(ids) >= 2)
+        page.locator("#bridge-start").select_option(ids[0])
+        page.locator("#bridge-end").select_option(ids[1])
+        page.locator("#bridge-threshold").select_option("0.05")
+        check(case, "sample Bridge exposes supported steps and evidence",
+              page.locator("#bridge-steps li").count() > 0
+              and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
+
+        hidden_id = page.locator("#results > li").first.get_attribute("data-game-id")
+        page.locator("#results > li").first.get_by_role("button", name=re.compile("^Hide ")).click()
+        check(case, "explicit exclusion removes result without relaxing filters",
+              page.locator(f'[data-game-id="{hidden_id}"]').count() == 0
+              and page.locator("#restore").is_visible())
+        page.locator("#share").click()
+        link = page.locator("#share-link").input_value()
+        hash_fragment = "#" + urlsplit(link).fragment
+        check(case, "real Share produces versioned basket URL",
+              link.startswith(base_url + "/#basket=")
+              and hash_fragment.startswith("#basket="))
+        saved = json.loads(unquote(hash_fragment[len("#basket="):]))
+        check(case, "share preserves ordered favorites, weights and hard filters",
+              len(saved["seeds"]) >= 2 and saved["seeds"][0]["weight"] == after
+              and saved["mode"] == "blend" and saved["platform"] == "any"
+              and saved["coopOnly"] is False and hidden_id in saved["excluded"]
+              and bool(saved["catalog"]) and bool(saved["method"]))
+        check(case, "share preserves explicit Bridge endpoints and policy",
+              saved["bridge"]["startId"] == ids[0]
+              and saved["bridge"]["endId"] == ids[1]
+              and saved["bridge"]["minSimilarity"] == 0.05)
+
+        restored = context.new_page()
+        replay = restored.goto(base_url + "/" + hash_fragment, wait_until="load")
+        restored.wait_for_function("document.querySelector('#bridge-start').value !== ''")
+        check(case, "fresh HTTP navigation restores complete player state",
+              replay.status == 200 and restored.locator("#error").is_hidden()
+              and restored.locator("#mode").input_value() == "blend"
+              and restored.locator('#seeds input[type="range"]').first.input_value() == str(after)
+              and restored.locator("#bridge-end").input_value() == ids[1]
+              and restored.locator("#restore").is_visible()
+              and restored.locator(f'[data-game-id="{hidden_id}"]').count() == 0)
+        restored.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}.png"), full_page=True, animations="disabled")
+        check(case, "narrow layout does not overflow",
+              restored.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
+
+        stale = {**saved, "catalog": "unavailable-snapshot"}
+        invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
+        bad_page = context.new_page()
+        bad_page.goto(base_url + "/" + invalid_hash, wait_until="load")
+        bad_page.wait_for_function("document.querySelector('#error').hidden === false")
+        check(case, "incompatible link fails visibly without substitute basket",
+              "unavailable catalog" in bad_page.locator("#error").inner_text().lower()
+              and bad_page.locator("#seeds > li").count() == 0)
+        bad_page.locator("#intro-sample").click()
+        check(case, "explicit recovery works after invalid navigation",
+              bad_page.locator("#error").is_hidden()
+              and bad_page.locator("#seeds > li").count() >= 2)
+        check(case, "no external requests or JavaScript exceptions",
+              not errors and not external_requests)
+    finally:
+        context.close()
+
+
+server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(SITE)))
+thread = Thread(target=server.serve_forever, daemon=True)
+thread.start()
+failed = None
+try:
+    base_url = f"http://127.0.0.1:{server.server_port}"
+    with sync_playwright() as p:
+        # CI installs all three engine binaries. A partial local run is diagnostic only.
+        requested = os.environ.get("PLAYMANCER_BROWSERS", "chromium,firefox,webkit").split(",")
+        for engine in requested:
+            if engine not in ("chromium", "firefox", "webkit"):
+                raise ValueError(f"Unsupported Playwright engine: {engine}")
+            launch = {"headless": True}
+            if engine == "chromium" and os.environ.get("PLAYWRIGHT_CHROMIUM_EXECUTABLE"):
+                launch["executable_path"] = os.environ["PLAYWRIGHT_CHROMIUM_EXECUTABLE"]
+            browser = getattr(p, engine).launch(**launch)
+            try:
+                for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
+                    exercise(browser, base_url, engine, label, width, height)
+            finally:
+                browser.close()
+except Exception as error:
+    failed = f"{type(error).__name__}: {error}"
+finally:
+    server.shutdown()
+    server.server_close()
+    thread.join(timeout=5)
+    report = {
+        "scope": "local HTTP over loopback, real browser engines; not public Pages or assistive-technology certification",
+        "revision": os.environ.get("GITHUB_SHA", os.environ.get("PLAYMANCER_REVISION", "unpublished")),
+        "site": "build artifact; local override" if OVERRIDE else "exact-checkout build",
+        "engines": os.environ.get("PLAYMANCER_BROWSERS", "chromium,firefox,webkit").split(","),
+        "checks": CHECKS,
+        "error": failed,
+    }
+    (ARTIFACTS / "http-cross-browser.json").write_text(json.dumps(report, indent=2) + "\n")
+    print(json.dumps({"passed": sum(x["passed"] for x in CHECKS), "checks": len(CHECKS), "error": failed}))
+if failed:
+    raise SystemExit(1)
