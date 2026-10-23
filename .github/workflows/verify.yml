@@ -99,3 +99,31 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  bridge_perf:
+    name: Synthetic Bridge browser responsiveness
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Measure 12/50/250 dense, sparse and disconnected synthetic Bridge routes at 1x/4x CPU
+        run: python scripts/browser-bridge-performance.py
+      - name: Retain exact-head latency samples and Chromium screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridge-performance-${{ github.sha }}
+          path: |
+            .test-artifacts/bridge-performance.json
+            .test-artifacts/bridge-perf-*.png
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
