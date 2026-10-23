@@ -70,3 +70,31 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+
+  cross_browser_http:
+    name: Local HTTP multi-engine player journey
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - run: python -m playwright install --with-deps chromium firefox webkit
+      - name: Exercise basket, Bridge and share via actual local HTTP navigation
+        run: python scripts/browser-http-acceptance.py
+      - name: Retain HTTP screenshots and per-engine results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-browser-http-${{ github.sha }}
+          path: |
+            .test-artifacts/http-*.png
+            .test-artifacts/http-cross-browser.json
+          if-no-files-found: error
+          retention-days: 14
