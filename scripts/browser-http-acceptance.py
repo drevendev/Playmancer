@@ -125,7 +125,10 @@ def exercise(browser, base_url, engine, label, width, height):
         replay = restored.goto(base_url + "/" + hash_fragment, wait_until="load")
         restored.wait_for_function("document.querySelector('#bridge-start').value !== ''")
         observed = {
-            "http200": replay.status == 200,
+            # A fresh Firefox tab may reuse a validated cached response (HTTP 304).
+            # The first page must still load via 200 and every restored field is asserted.
+            "response_status": None if replay is None else replay.status,
+            "http_usable": replay is not None and replay.status in (200, 304),
             "error_hidden": restored.locator("#error").is_hidden(),
             "mode": restored.locator("#mode").input_value(),
             "weight": restored.locator('#seeds input[type="range"]').first.input_value(),
@@ -135,7 +138,7 @@ def exercise(browser, base_url, engine, label, width, height):
         }
         restored.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}.png"), full_page=True, animations="disabled")
         check(case, "fresh HTTP navigation restores complete player state",
-              observed["http200"] and observed["error_hidden"]
+              observed["http_usable"] and observed["error_hidden"]
               and observed["mode"] == "blend"
               and observed["weight"] == str(after)
               and observed["bridge_end"] == ids[1]
