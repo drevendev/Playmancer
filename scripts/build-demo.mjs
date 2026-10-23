@@ -65,7 +65,19 @@ for (const [index, path] of modules.entries()) {
   }
   parts.push(`// ${path}\n${source}`);
 }
-const script = parts.join("\n\n");
+// Embed exactly the same approved, dependency-free Bridge implementation inside a
+// Blob-backed worker. No duplicated algorithm, CDN, runtime API or extra public asset.
+const workerScript = [parts[2], parts[3], `
+self.onmessage = ({ data }) => {
+  try {
+    self.postMessage({ route: buildBridgePreview(data.input) });
+  } catch (error) {
+    self.postMessage({ error: error instanceof Error ? error.message : "Unknown route error" });
+  }
+};
+`].join("\n\n");
+new Script(workerScript, { filename: "playmancer-bridge-worker.js" });
+const script = `const BRIDGE_WORKER_SOURCE = ${inlineJSON(workerScript)};\n` + parts.join("\n\n");
 // Compile, never execute, the merged browser code before replacing an artifact.
 // Individual modules can parse while conflicting declarations break their bundle.
 new Script(script, { filename: "playmancer-browser-bundle.js" });
