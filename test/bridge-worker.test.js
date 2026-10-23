@@ -12,14 +12,8 @@ test("built off-thread route uses the exact canonical algorithm and error contra
   const output = mkdtempSync(join(tmpdir(), "playmancer-worker-"));
   try {
     execFileSync(process.execPath, ["scripts/build-demo.mjs", output], { stdio: "pipe" });
-    const html = readFileSync(join(output, "index.html"), "utf8");
-    const marker = "const BRIDGE_WORKER_SOURCE = ";
-    const start = html.indexOf(marker);
-    assert.ok(start >= 0, "build must embed canonical route source");
-    const tail = html.slice(start + marker.length);
-    const end = tail.indexOf(";\n");
-    assert.ok(end > 0);
-    const script = JSON.parse(tail.slice(0, end));
+    const script = readFileSync(join(output, "bridge-worker.js"), "utf8");
+    assert.match(script, /self\.onmessage =/);
     const messages = [];
     const self = { postMessage: (message) => messages.push(message) };
     runInNewContext(script, { self }, { filename: "built-bridge-worker.js" });
