@@ -40,12 +40,13 @@ test('alternative build publishes only allowlisted metadata and remains determin
   }
   const html = readFileSync(join(a, 'index.html'), 'utf8');
   assert.equal(html, readFileSync(join(b, 'index.html'), 'utf8'));
+  assert.deepEqual(readFileSync(join(a, 'bridge-worker.js')), readFileSync(join(b, 'bridge-worker.js')));
   assert.deepEqual(projected(html), validateCatalogSnapshot(fixture, { requirePublishable: true }));
   for (const marker of ['PRIVATE_SNAPSHOT_SENTINEL', 'PRIVATE_SOURCE_SENTINEL', 'PRIVATE_GAME_SENTINEL', 'not-publishable.png']) {
     assert.ok(!html.includes(marker), marker + ' must not enter public output');
   }
   assert.match(html, /name="playmancer-catalog" content="synthetic-pilot-1"/);
-  assert.deepEqual(readdirSync(a).sort(), ['.nojekyll', 'index.html']);
+  assert.deepEqual(readdirSync(a).sort(), ['.nojekyll', 'bridge-worker.js', 'index.html']);
 }));
 
 test('inline JSON preserves script-like text, replacement tokens and Unicode separators literally', () => temporary(dir => {
@@ -72,6 +73,7 @@ test('invalid refreshes and missing snapshots never replace last-valid output', 
   writeFileSync(path, JSON.stringify(fixture));
   assert.equal(run(site, '--catalog', path).status, 0);
   const before = readFileSync(join(site, 'index.html'));
+  const workerBefore = readFileSync(join(site, 'bridge-worker.js'));
   const mutations = [
     x => { x.sources[0].rights.status = 'denied'; },
     x => { x.sources[0].rights.fields = ['id', 'kind', 'name', 'sourceId']; },
@@ -87,15 +89,18 @@ test('invalid refreshes and missing snapshots never replace last-valid output', 
     const result = run(site, '--catalog', path);
     assert.notEqual(result.status, 0);
     assert.deepEqual(readFileSync(join(site, 'index.html')), before);
+    assert.deepEqual(readFileSync(join(site, 'bridge-worker.js')), workerBefore);
   }
   for (const text of ['not JSON', ' '.repeat(1048577)]) {
     writeFileSync(path, text);
     assert.notEqual(run(site, '--catalog', path).status, 0);
     assert.deepEqual(readFileSync(join(site, 'index.html')), before);
+    assert.deepEqual(readFileSync(join(site, 'bridge-worker.js')), workerBefore);
   }
   for (const args of [['--catalog'], ['--catalog', join(dir, 'missing.json')], ['--unknown']]) {
     assert.notEqual(run(site, ...args).status, 0);
     assert.deepEqual(readFileSync(join(site, 'index.html')), before);
+    assert.deepEqual(readFileSync(join(site, 'bridge-worker.js')), workerBefore);
   }
 }));
 
