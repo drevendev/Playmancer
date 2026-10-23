@@ -10,9 +10,10 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import subprocess
+from time import perf_counter
 import tempfile
 from threading import Thread
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -92,10 +93,21 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                       (() => {
                         const NativeWorker = window.Worker;
                         window.__workerEvents = { started: 0, terminated: 0 };
+                        // Test-only delay of actual Worker replies, not a CPU benchmark.
+                        // It holds the real asynchronous computation in the busy state
+                        // long enough to exercise actual keyboard/Share interactions.
+                        window.__workerReplyDelayMs = 0;
                         window.Worker = class TrackedWorker extends NativeWorker {
                           constructor(...args) {
                             super(...args);
                             window.__workerEvents.started++;
+                          }
+                          set onmessage(callback) {
+                            super.onmessage = event => {
+                              const delay = window.__workerReplyDelayMs;
+                              if (delay > 0) setTimeout(() => callback(event), delay);
+                              else callback(event);
+                            };
                           }
                           terminate() {
                             window.__workerEvents.terminated++;
@@ -171,6 +183,54 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                           and page.locator("#bridge-steps").get_attribute("aria-busy") is None
                           and "connection(s)" in page.locator("#bridge-status").inner_text(),
                           cached_switch)
+                    # Exercise real keyboard and Share actions while the HTTP Worker
+                    # is pending. Artificially delay only its reply callback: this
+                    # creates a deterministic pending window without blocking the UI
+                    # thread or pretending to measure real-device keyboard latency.
+                    page.evaluate("window.__workerReplyDelayMs = 5000")
+                    page.locator("#bridge-threshold").select_option("0.31")
+                    page.wait_for_function(
+                        "document.querySelector('#bridge-steps').getAttribute('aria-busy') === 'true'")
+                    page.locator("#search").focus()
+                    typing_start = perf_counter()
+                    page.keyboard.type("profile 173")
+                    typing_wall_ms = round((perf_counter() - typing_start) * 1000, 3)
+                    check("keyboard typing filters during a pending worker",
+                          page.locator("#search").input_value() == "profile 173"
+                          and page.locator("#search-results li").count() == 1
+                          and page.locator("#bridge-steps").get_attribute("aria-busy") == "true",
+                          {"typing_wall_ms": typing_wall_ms})
+                    weight = page.locator('#seeds input[type="range"]').first
+                    previous_weight = int(weight.input_value())
+                    delta = 1 if previous_weight < 10 else -1
+                    weight.focus()
+                    weight.press("ArrowRight" if delta == 1 else "ArrowLeft")
+                    new_weight = int(weight.input_value())
+                    check("keyboard weight change preserves pending route",
+                          new_weight == previous_weight + delta
+                          and page.locator("#bridge-steps").get_attribute("aria-busy") == "true",
+                          {"previous": previous_weight, "updated": new_weight})
+                    page.locator("#share").click()
+                    pending_share = page.locator("#share-link").input_value()
+                    pending_payload = json.loads(unquote(urlsplit(pending_share).fragment[len("basket="):]))
+                    check("Share responds before pending worker finishes",
+                          urlsplit(pending_share).fragment.startswith("basket=")
+                          and pending_payload["seeds"][0]["weight"] == new_weight
+                          and pending_payload["bridge"]["minSimilarity"] == 0.31
+                          and page.locator("#bridge-steps").get_attribute("aria-busy") == "true")
+                    page.wait_for_function(
+                        "document.querySelector('#bridge-steps').getAttribute('aria-busy') === null "
+                        "&& document.querySelectorAll('#bridge-steps > li').length > 0",
+                        timeout=30000)
+                    check("pending worker completes without losing keyboard state",
+                          page.locator("#search").input_value() == "profile 173"
+                          and int(weight.input_value()) == new_weight
+                          and page.locator("#bridge-threshold").input_value() == "0.31")
+                    page.evaluate("window.__workerReplyDelayMs = 0")
+                    page.locator("#search").fill("")
+                    page.locator("#bridge-threshold").select_option("0.05")
+                    page.wait_for_function(
+                        "document.querySelectorAll('#bridge-steps > li').length > 0", timeout=30000)
                     page.locator("#share").click()
                     share = page.locator("#share-link").input_value()
                     check("share remains usable during worker lifecycle",
@@ -191,7 +251,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                         path=str(ARTIFACTS / "bridge-worker-mobile-250.png"),
                         full_page=True, animations="disabled")
                     report.update({"rapid_change_handler_ms": round(duration, 3),
-                                   "workers": counters, "chromium_version": browser.version})
+                                   "workers": counters, "keyboard_typing_wall_ms": typing_wall_ms,
+                                   "chromium_version": browser.version})
                     context.close()
                 finally:
                     browser.close()

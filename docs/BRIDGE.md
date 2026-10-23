@@ -102,3 +102,27 @@ coverage, **not** a Web Worker or claimed speedup. If 250-profile dense
 measurements remain materially blocking, choose the smallest cancellation-aware
 latest-input-wins UI execution strategy without changing exact rational
 route ordering, evidence, constraints or share versions.
+
+## Local-HTTP input continuity and supported size bound (#15)
+
+The maintained Chromium HTTP worker acceptance now exercises **real keyboard**
+search entry, Arrow-key seed weight changes and versioned Share *while a route
+calculation is pending* on the authored 250-profile fixture. The test holds the
+real Worker's reply callback for five seconds solely to make that pending window
+deterministic. It asserts visible busy state, immediate search-result updates,
+weight changes, a complete share payload and eventual route completion without
+dropping current input. The recorded Playwright typing wall time includes
+automation overhead; it is **not** physical key-to-paint latency or a speed SLA.
+The existing browser acceptance continues to verify cancellation, cached-route
+recovery, route correctness and fresh-link restoration without this artificial delay.
+
+The **supported engineering snapshot bound is 1–250 profiles**, enforced by
+the build-time catalog validator (1 MiB JSON input maximum). On local HTTP(S)
+and browsers with Worker support, catalogs of 50–250 profiles offload Bridge
+route construction to the same-origin static Worker. Smaller catalogs, file:
+URLs and environments without Worker use the synchronous parity path. The bound
+is a **build/functional coverage limit**, not evidence that every phone,
+browser/assistive-technology combination remains responsive at 250 profiles.
+Actual mobile-device input-latency and screen-reader acceptance remain
+unverified. Synthetic stress measurements are engineering regression evidence,
+not real game recommendations, public Pages navigation or user-quality data.
