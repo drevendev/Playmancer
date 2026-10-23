@@ -37,6 +37,7 @@ jobs:
           node scripts/build-demo.mjs /tmp/playmancer-build-a
           node scripts/build-demo.mjs /tmp/playmancer-build-b
           cmp /tmp/playmancer-build-a/index.html /tmp/playmancer-build-b/index.html
+          cmp /tmp/playmancer-build-a/bridge-worker.js /tmp/playmancer-build-b/bridge-worker.js
           cmp /tmp/playmancer-build-a/.nojekyll /tmp/playmancer-build-b/.nojekyll
 
   browser:
