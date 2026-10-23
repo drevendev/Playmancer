@@ -96,9 +96,25 @@ export function validateState(value) {
 export function encodeState(state) {
   return `#basket=${encodeURIComponent(JSON.stringify(validateState(state)))}`;
 }
+// Bound incoming links by the validated snapshot's possible ID payload rather
+// than a fixed 6000 characters: a legitimate 250-profile exclusion list can
+// exceed that limit. Keep a bounded pre-parse rejection for hostile links.
+const MAX_BASKET_LINK_LENGTH = (() => {
+  const encodedIds = CATALOG.map((game) => encodeURIComponent(JSON.stringify(game.id)).length);
+  const longestId = Math.max(0, ...encodedIds);
+  const longestPlatform = Math.max(0, ...PLATFORMS.map((item) => encodeURIComponent(JSON.stringify(item)).length));
+  const versionBytes = [CATALOG_VERSION, METHOD_VERSION, BRIDGE_STATE_VERSION, BRIDGE_ROUTE_METHOD_VERSION]
+    .reduce((size, value) => size + encodeURIComponent(JSON.stringify(value)).length, 0);
+  // Any subset of excluded IDs, up to five weighted seeds, and two repeated
+  // Bridge endpoint IDs. The constant allowance covers field names,
+  // punctuation, settings, and other fixed-size encoded state fields.
+  const excludedBytes = encodedIds.reduce((size, length) => size + length + 3, 0);
+  return Math.max(6000, 2048 + excludedBytes + 7 * longestId + longestPlatform + versionBytes);
+})();
+
 export function decodeState(hash) {
   if (!hash) return initialState();
-  if (!hash.startsWith("#basket=") || hash.length > 6000) throw new Error("Unrecognized or oversized basket link.");
+  if (!hash.startsWith("#basket=") || hash.length > MAX_BASKET_LINK_LENGTH) throw new Error("Unrecognized or oversized basket link.");
   let parsed;
   try { parsed = JSON.parse(decodeURIComponent(hash.slice(8))); }
   catch { throw new Error("The basket link is malformed. No replacement basket was loaded."); }
