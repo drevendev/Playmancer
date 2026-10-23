@@ -96,5 +96,6 @@ jobs:
           path: |
             .test-artifacts/http-*.png
             .test-artifacts/http-cross-browser.json
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
