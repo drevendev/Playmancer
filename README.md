@@ -105,6 +105,8 @@ python3 scripts/browser-catalog-acceptance.py
 # Separate required CI job: genuine loopback HTTP navigation in three engines.
 python3 -m playwright install --with-deps chromium firefox webkit
 python3 scripts/browser-http-acceptance.py
+# Separate optional 1x/4x synthetic Chromium responsiveness evidence (also runs in CI).
+python3 scripts/browser-bridge-performance.py
 ```
 
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an installed Chromium. The harnesses test
@@ -122,6 +124,12 @@ invalid-link recovery; it saves six screenshots and per-engine JSON. CI failures
 failures (no skipped or substituted browser engines). Local HTTP is **not** public Pages
 navigation, and automated DOM checks are **not** screen-reader/assistive-technology
 certification. Issue #14 retains those unverified gates.
+
+Bridge issue #15 has a separate synthetic latency job: deterministic 12/50/250-profile
+dense/sparse/disconnected snapshots, seven non-cached route recomputations per case,
+Chromium at 1x/4x emulated CPU, and retained per-case handler/timer-delay median/p95
+plus 250-profile screenshots. Measurements are main-thread blocking proxies, not a
+mobile SLA or user-input latency; no product speedup is claimed. See [Bridge evidence](docs/BRIDGE.md#synthetic-browser-responsiveness-evidence-issue-15-v1).
 
 ## Publication and contribution
 
