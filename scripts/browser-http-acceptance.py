@@ -36,11 +36,13 @@ class QuietHandler(SimpleHTTPRequestHandler):
 CHECKS = []
 
 
-def check(case, title, condition):
+def check(case, title, condition, details=None):
     result = {"case": case, "assertion": title, "passed": bool(condition)}
+    if details is not None:
+        result["observed"] = details
     CHECKS.append(result)
     if not result["passed"]:
-        raise AssertionError(f"{case}: {title}")
+        raise AssertionError(f"{case}: {title}; observed={details!r}")
 
 
 def exercise(browser, base_url, engine, label, width, height):
@@ -122,14 +124,23 @@ def exercise(browser, base_url, engine, label, width, height):
         restored = context.new_page()
         replay = restored.goto(base_url + "/" + hash_fragment, wait_until="load")
         restored.wait_for_function("document.querySelector('#bridge-start').value !== ''")
-        check(case, "fresh HTTP navigation restores complete player state",
-              replay.status == 200 and restored.locator("#error").is_hidden()
-              and restored.locator("#mode").input_value() == "blend"
-              and restored.locator('#seeds input[type="range"]').first.input_value() == str(after)
-              and restored.locator("#bridge-end").input_value() == ids[1]
-              and restored.locator("#restore").is_visible()
-              and restored.locator(f'[data-game-id="{hidden_id}"]').count() == 0)
+        observed = {
+            "http200": replay.status == 200,
+            "error_hidden": restored.locator("#error").is_hidden(),
+            "mode": restored.locator("#mode").input_value(),
+            "weight": restored.locator('#seeds input[type="range"]').first.input_value(),
+            "bridge_end": restored.locator("#bridge-end").input_value(),
+            "restore_visible": restored.locator("#restore").is_visible(),
+            "hidden_card_count": restored.locator(f'[data-game-id="{hidden_id}"]').count(),
+        }
         restored.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}.png"), full_page=True, animations="disabled")
+        check(case, "fresh HTTP navigation restores complete player state",
+              observed["http200"] and observed["error_hidden"]
+              and observed["mode"] == "blend"
+              and observed["weight"] == str(after)
+              and observed["bridge_end"] == ids[1]
+              and observed["restore_visible"]
+              and observed["hidden_card_count"] == 0, details=observed)
         check(case, "narrow layout does not overflow",
               restored.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
