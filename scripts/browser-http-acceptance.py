@@ -67,6 +67,30 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#results > li").count() > 0
               and "Evidence coverage" in page.locator("#results > li").first.inner_text())
 
+        # Search suggestions change while focus stays in the input. Give assistive
+        # technology a real polite status target; aria-describedby alone is not
+        # a live announcement when the user types.
+        hint = page.locator("#search-hint")
+        check(case, "search suggestions expose an atomic polite live status",
+              hint.get_attribute("role") == "status"
+              and hint.get_attribute("aria-live") == "polite"
+              and hint.get_attribute("aria-atomic") == "true"
+              and page.locator("#search").get_attribute("aria-describedby") == "search-hint")
+        page.locator("#search").fill("zzzz-no-such-profile-zzzz")
+        check(case, "unmatched search is announced without losing typing focus",
+              "No profiles match" in hint.inner_text()
+              and page.locator("#search-results li").count() == 0
+              and page.evaluate("document.activeElement.id") == "search")
+        page.locator("#search").fill("Ember")
+        check(case, "matching search count updates while retaining keyboard access",
+              "matching fictional profiles" in hint.inner_text()
+              and page.locator("#search-results button").count() > 0
+              and page.evaluate("document.activeElement.id") == "search")
+        page.locator("#search").fill("")
+        check(case, "clearing search restores the discoverable instruction",
+              "Type a game name" in hint.inner_text()
+              and page.locator("#search-results li").count() == 0)
+
         page.locator("#mode").select_option("blend")
         weight = page.locator('#seeds input[type="range"]').first
         before = int(weight.input_value())
