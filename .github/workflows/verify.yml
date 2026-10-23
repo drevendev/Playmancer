@@ -124,5 +124,6 @@ jobs:
           path: |
             .test-artifacts/bridge-performance.json
             .test-artifacts/bridge-perf-*.png
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
