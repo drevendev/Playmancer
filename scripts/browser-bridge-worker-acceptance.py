@@ -145,6 +145,32 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                         "document.querySelectorAll('#bridge-steps > li').length > 0", timeout=30000)
                     check("route recovers without stale result",
                           "connection(s)" in page.locator("#bridge-status").inner_text())
+                    # A completed .05 route is cached. Start a different .54
+                    # worker and return to .05 before its message can be delivered.
+                    # The cached result must cancel the superseded job, rather
+                    # than allow a late result to overwrite the current controls.
+                    cached_switch = page.evaluate("""() => {
+                      const input = document.querySelector('#bridge-threshold');
+                      const events = window.__workerEvents;
+                      const before = { ...events };
+                      const change = value => {
+                        input.value = value;
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                      };
+                      change('0.54');
+                      const pending = { ...events };
+                      change('0.05');
+                      return { before, pending, after: { ...events } };
+                    }""")
+                    check("cached route cancels superseded worker",
+                          cached_switch["pending"]["started"] ==
+                            cached_switch["before"]["started"] + 1
+                          and cached_switch["after"]["terminated"] ==
+                            cached_switch["pending"]["terminated"] + 1
+                          and page.locator("#bridge-threshold").input_value() == "0.05"
+                          and page.locator("#bridge-steps").get_attribute("aria-busy") is None
+                          and "connection(s)" in page.locator("#bridge-status").inner_text(),
+                          cached_switch)
                     page.locator("#share").click()
                     share = page.locator("#share-link").input_value()
                     check("share remains usable during worker lifecycle",
