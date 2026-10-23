@@ -45,13 +45,11 @@ function cancelPendingBridge() {
   bridgeGeneration++;
   if (bridgeJob) {
     bridgeJob.worker.terminate();
-    URL.revokeObjectURL(bridgeJob.url);
     bridgeJob = null;
   }
 }
 function canUseBridgeWorker() {
   return CATALOG.length >= 50 && typeof Worker === "function" &&
-    typeof BRIDGE_WORKER_SOURCE === "string" &&
     (location.protocol === "https:" || location.protocol === "http:");
 }
 function calculateBridgeInWorker(input, form, status, steps) {
@@ -70,17 +68,16 @@ function calculateBridgeInWorker(input, form, status, steps) {
   const generation = bridgeGeneration;
   status.textContent = "Calculating an explained route… You can keep using the basket.";
   steps.setAttribute("aria-busy", "true");
-  let url, worker;
+  let worker;
   try {
-    url = URL.createObjectURL(new Blob([BRIDGE_WORKER_SOURCE], { type: "text/javascript" }));
-    worker = new Worker(url);
+    // A same-origin, versioned static build asset works under a Pages subpath.
+    worker = new Worker(new URL("./bridge-worker.js", document.baseURI));
   } catch {
-    if (url) URL.revokeObjectURL(url);
     steps.removeAttribute("aria-busy");
     status.textContent = "Bridge calculation is unavailable in this browser. Reload to retry.";
     return;
   }
-  bridgeJob = { key, worker, url };
+  bridgeJob = { key, worker };
   const finish = () => {
     if (bridgeJob?.worker !== worker || generation !== bridgeGeneration) return false;
     cancelPendingBridge();
