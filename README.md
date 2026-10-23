@@ -96,6 +96,17 @@ Benchmark report versioning is separate from player shares.
 
 ## Browser acceptance and CI
 
+For validated snapshots of **50–250 profiles served over HTTP(S)**, Bridge
+calculates routes inside an in-memory Blob Web Worker using the **same bundled
+exact-rational implementation** as the small preview. Changing an endpoint,
+filter, exclusion or threshold cancels the previous worker; only the newest
+result can update the visible explanation. The panel announces its busy state,
+and calculation failures are visible instead of substituting a guessed route.
+Small catalogs and non-HTTP/offline harnesses retain the synchronous route path;
+browsers without Worker support also fall back to that path. This is a
+responsiveness implementation, **not** a physical-device latency guarantee.
+No new CDN, backend, external catalog request or tracking is introduced.
+
 ```sh
 python3 -m pip install playwright==1.55.0
 python3 -m playwright install chromium
@@ -107,7 +118,15 @@ python3 -m playwright install --with-deps chromium firefox webkit
 python3 scripts/browser-http-acceptance.py
 # Separate optional 1x/4x synthetic Chromium responsiveness evidence (also runs in CI).
 python3 scripts/browser-bridge-performance.py
+# Separate required CI check: real HTTP worker cancellation, routes and share replay.
+python3 scripts/browser-bridge-worker-acceptance.py
 ```
+
+The 1x/4x synthetic benchmark mounts HTML offline and therefore remains a
+**synchronous route-algorithm baseline**, not a measurement of worker-enabled
+HTTP input responsiveness. The separate local-HTTP Chromium test exercises a
+real worker on 250 fictional profiles, rapid cancellation, recovery and a fresh
+share-link navigation. Its saved handler duration is diagnostic, not an SLA.
 
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an installed Chromium. The harnesses test
 actual built documents offline: basket actions, keyboard controls, filters, sharing,
