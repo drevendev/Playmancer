@@ -102,6 +102,9 @@ python3 -m playwright install chromium
 python3 scripts/browser-smoke.py
 python3 scripts/browser-bridge-acceptance.py
 python3 scripts/browser-catalog-acceptance.py
+# Separate required CI job: genuine loopback HTTP navigation in three engines.
+python3 -m playwright install --with-deps chromium firefox webkit
+python3 scripts/browser-http-acceptance.py
 ```
 
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` can select an installed Chromium. The harnesses test
@@ -110,9 +113,15 @@ Bridge routes/discovery, alternative snapshot identities, recovery, narrow reflo
 and increased text size. PNG/JSON evidence is retained in `.test-artifacts/` and CI.
 The alternative synthetic HTML is retained for inspection, not automatically deployed.
 
-Full Node tests, catalog validation, deterministic benchmark/build, payload preflight
-and Chromium checks are required by Verify. Offline acceptance is not hosted navigation,
-Firefox/WebKit coverage, a screen-reader test or complete accessibility certification.
+Full Node tests, catalog validation, deterministic benchmark/build, payload preflight,
+existing offline Chromium checks and a separate loopback-HTTP Chromium/Firefox/WebKit
+journey are required by Verify. The HTTP job serves the built static artifact through
+a real local web server and checks desktop/mobile basket, keyboard weight edits, filters,
+explanations, Bridge, exclusions, versioned sharing, fresh-page restoration and visible
+invalid-link recovery; it saves six screenshots and per-engine JSON. CI failures remain
+failures (no skipped or substituted browser engines). Local HTTP is **not** public Pages
+navigation, and automated DOM checks are **not** screen-reader/assistive-technology
+certification. Issue #14 retains those unverified gates.
 
 ## Publication and contribution
 
