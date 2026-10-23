@@ -1,36 +1,34 @@
 # EXECUTION_ORDER — Playmancer
 
-## Closing-first gate — reconciled 2026-10-22
+## Closing-first gate — reconciled 2026-10-23
 
-1. Read native open/recent PRs, issues and master first. PRs #2/#3/#4/#5/#11 are
-   complete; #6 is DONE. A stale file must not recreate their finished claims.
-2. PR #12 is the first acceptance target: inspect exact head/base, full diff,
-   findings/discussions, complete Node/catalog/benchmark/build/preflight checks,
-   Chromium evidence and actual provider rules. Repair the existing branch when
-   necessary. Never merge semantic work in the turn that produced or changed it.
-3. After #12 merges, verify master and intended files. Immediately retarget dependent
-   PR #20 from `feat/p08-bridge-routing-v0` to master, synchronize safely without
-   force-pushing shared history, refresh head/checks and continue independent acceptance.
-   Do not strand the dependent PR on a merged/deleted branch.
-4. Review the focused #17 documentation reconciliation using fresh native facts;
-   it changes navigation, not player semantics. Do not use it to bypass product checks.
-5. Complete #7 only after authorized Pages provisioning. Verify actual master
-   deployment, HTTP response, served revision and hosted desktop/mobile player flow.
-   A green build or an offline screenshot is not a published URL.
-6. If a scoped external gate is unchanged, choose the strongest independent ready
-   product transaction from `docs/ROADMAP.md`. Do not repeatedly audit rights,
-   permissions or graph oracles while repair/acceptance work exists.
-7. Preserve useful stale branches through focused adoption; delete completed refs
-   only through supported actions after proving unique work and dependencies are safe.
+1. Read current native PRs/issues, reviews, rules, exact heads and master before any
+   action. PRs #2/#3/#4/#5/#11/#12/#20 are merged; issues #6/#9/#13/#18/#19/#21/#23
+   are closed. Historical review claims must not resurrect them.
+2. The only open PR at reconciliation is #22, a focused #17 control update on
+   `docs/reconcile-delivery-controls`. Its refreshed code/doc head is newly authored
+   in this transaction: wait for new exact-head CI and a **later independent** review
+   before an expected-head merge. Never merge this same semantic change now.
+3. After #22 is merged, verify the master SHA and updated control files and confirm
+   issue #17 closed. Do not create another reconciliation PR or stale queue.
+4. Issue #7 GitHub Pages remains unprovisioned: the reviewed `master` verify
+   workflow succeeds, but publishing fails on Pages configuration. Actual enabling
+   requires administrator capability; offline artifact/build success is NOT live.
+5. While #7 or real-data rights #8 are externally gated, take the strongest
+   independent functional weakness: #14 cross-browser/assistive-tech acceptance,
+   #15 Bridge responsiveness, or #16 focused regression adoption. Evaluate #10
+   only when its catalog/hosted-player prerequisites exist. See `docs/ROADMAP.md`.
+6. Preserve existing shared branches until all unique work and dependencies are
+   proved safe; never force-push shared history or bypass protected master.
 
-Current green checks are evidence for their exact heads, never future PASS results.
-No invented reviewer or formal self-approval is needed when actual rules require zero
-approvals; real requirements still apply. A new safety denial stops only the affected
-operation, without unchanged retries or endpoint/account/protection bypass.
+No stale #12 → #20 retarget is necessary: both merged and #20 synchronized before
+its merge. Native GitHub facts supersede these dated examples. Current CI is never
+a PASS for a future head. No fabricated reviewer or self-approval is required when
+real rules need zero approvals; all actual checks and rules remain mandatory.
 
 ## Operating-model boundary
 
-Issue #1 remains the product/evidence epic. Control format remains 2; full ownership,
-external receipt replay, independent liveness and finite total bounds are unclaimed.
-Use the pinned EndlessZen reference read-only. No new project, Drive queue, wake ledger,
-parallel worker or scheduler change is authorized by this reconciliation.
+Issue #1 remains the product/evidence epic. Control format remains 2; complete
+ownership/exclusion controls, external receipt replay, independent liveness and
+finite total bounds are not claimed. EndlessZen is read-only. No Drive queue, wake
+ledger, parallel worker, new automation or scheduler mutation is authorized.

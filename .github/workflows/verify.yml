@@ -53,6 +53,10 @@ jobs:
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/browser-smoke.py
+      - name: Verify Bridge discovery and share restoration
+        run: python scripts/browser-bridge-acceptance.py
+      - name: Verify alternative catalog player journey
+        run: python scripts/browser-catalog-acceptance.py
       - name: Retain actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -61,6 +65,8 @@ jobs:
           path: |
             .test-artifacts/*.png
             .test-artifacts/*.json
+            .test-artifacts/catalog-site/index.html
+            .test-artifacts/catalog-site/.nojekyll
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14

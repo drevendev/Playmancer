@@ -24,6 +24,26 @@
 .jump-results{overflow-wrap:anywhere;white-space:normal}
 .intro-actions{margin-top:20px}.intro-actions button{min-height:48px}
 @media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+/* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
+#bridge-lab{margin-top:28px}
+/* Keep the Bridge heading focus outline clear of the synthetic-data label. */
+#bridge-lab .eyebrow{margin-bottom:14px}
+/* 400% root-text scaling must wrap long Bridge status words on narrow screens. */
+#bridge-lab .bridge-status{overflow-wrap:anywhere}
+#bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
+#bridge-lab .bridge-controls label{margin:0}
+#bridge-lab .bridge-controls select{margin-top:7px;width:100%}
+#bridge-lab .bridge-warning{border-left:3px solid var(--warn);padding:8px 12px;margin-top:12px;color:var(--muted);font-size:13px}
+#bridge-lab .bridge-status{margin-top:16px}
+#bridge-lab .bridge-steps{list-style:decimal;margin:14px 0 0;padding-left:22px;display:grid;gap:12px}
+#bridge-lab .bridge-steps>li{padding-left:6px}
+#bridge-lab .bridge-step{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0;overflow-wrap:anywhere}
+#bridge-lab .bridge-step h3{font-size:16px}
+#bridge-lab .bridge-step p{font-size:13px}
+#bridge-lab .bridge-key{font-size:12px;color:var(--accent)}
+@media(max-width:600px){#bridge-lab .bridge-controls{grid-template-columns:minmax(0,1fr)}#bridge-lab .bridge-steps{padding-left:24px}}
+
 </style>
 </head>
 <body>
@@ -42,7 +62,7 @@
 <p id="search-hint" class="hint">Choose a result below. No account or network needed.</p><ul id="search-results" aria-label="Available games"></ul>
 <div class="section"><label for="mode">Recommendation mode</label><select id="mode"><option value="intersection">Intersection — across the basket</option><option value="blend">Blend — keep different strands</option><option value="arithmetic">Weighted average — baseline</option></select><p id="mode-note" class="hint mode-note"></p>
 <div id="blend-control" hidden><label for="lambda">Blend relevance weight: <output id="lambda-value">0.3</output></label><input id="lambda" type="range" min="0" max="1" step="0.1" value="0.3"><p class="hint">0 favors uncovered strands; 1 favors average fit.</p></div>
-<p class="hint">Bridge is a separate route experiment, not a renamed score. It is not included in this demo.</p></div>
+<p class="hint">Bridge is a separate, explicitly experimental route panel below the ranking list; it is not another ranking score.</p></div>
 <div class="section"><label for="platform">Required platform</label><select id="platform"><option value="any">Any platform</option><option value="windows">Windows</option><option value="linux">Linux</option><option value="mac">macOS</option></select><label class="check" for="coop"><input id="coop" type="checkbox"><span>Require co-op</span></label><p class="hint">Unknown support never passes a required filter.</p></div>
 <div class="actions"><button id="share" class="primary" type="button">Copy basket link</button><button id="clear" type="button">Start empty basket</button><button id="reset" type="button">Reset to sample basket</button></div>
 <div id="share-box" hidden><label for="share-link" class="hint">Basket URL — copy manually if needed</label><input id="share-link" type="text" readonly></div><p id="share-status" class="hint" role="status"></p>
@@ -57,6 +77,22 @@
 <p class="footer-note">Every similarity comes from the authored mechanics and themes below. Evidence coverage is the smallest comparable feature-weight fraction across your seeds. No map coordinates enter ranking.</p>
 </section>
 </main>
+
+<section id="bridge-lab" class="panel" aria-labelledby="bridge-title">
+<div class="eyebrow">Synthetic research · separate route experiment</div>
+<h2 id="bridge-title">Bridge two favorites</h2>
+<p class="hint">Choose two distinct games in your basket. See a feature-based path and its trade-offs. This is not a tested recommendation mode and does not use map distance.</p>
+<div class="bridge-controls">
+<label for="bridge-start">From favorite <select id="bridge-start"><option value="">Choose start…</option></select></label>
+<label for="bridge-end">To favorite <select id="bridge-end"><option value="">Choose destination…</option></select></label>
+<label for="bridge-hops">Maximum steps <select id="bridge-hops"><option value="1">1 edge</option><option value="2">2 edges</option><option value="3">3 edges</option><option value="4">4 edges</option></select></label>
+<label for="bridge-threshold">Minimum similarity for a connection <select id="bridge-threshold"><option value="0.05">0.05 — permissive</option><option value="0.31">0.31 — moderate (exploratory)</option><option value="0.54">0.54 — strict</option></select></label>
+</div>
+<p class="bridge-warning">Scores are not quality or confidence percentages. A direct edge may bypass meaningful intermediate games; higher thresholds can remove routes entirely. Required filters and hidden results are never relaxed. Bridge policy and method version are saved in your basket link.</p>
+<p id="bridge-status" class="bridge-status" role="status" aria-live="polite"></p>
+<ol id="bridge-steps" class="bridge-steps" aria-label="Explained route steps"></ol>
+</section>
+
 <footer class="foot"><strong>Prototype, not a catalog release.</strong> No APIs, tracking, images, paid inference, or external assets. Synthetic metadata is authored for this demonstration and validated against the versioned catalog contract.<br><span id="versions"></span></footer>
 </div>
 <noscript><p class="notice">JavaScript is required to run this local ranking prototype.</p></noscript>

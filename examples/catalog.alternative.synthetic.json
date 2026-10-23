@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "synthetic-pilot-1",
+  "kind": "synthetic",
+  "internalOnly": "PRIVATE_SNAPSHOT_SENTINEL",
+  "sources": [{
+    "id": "authored-pilot",
+    "kind": "synthetic",
+    "attribution": "Playmancer authored fictional integration fixture",
+    "internalOnly": "PRIVATE_SOURCE_SENTINEL",
+    "rights": {
+      "status": "synthetic",
+      "reference": "docs/CATALOG_ADAPTER.md#synthetic-fixture",
+      "fields": ["id", "kind", "name", "description", "aliases", "externalIds", "sourceId", "parentId", "mechanics", "themes", "platforms", "coop"]
+    }
+  }],
+  "games": [
+    {"id":"pilot:aurora","kind":"game","name":"Aurora Survey","description":"An authored fictional exploration and puzzle journey.","aliases":["Northern Light"],"externalIds":[],"sourceId":"authored-pilot","parentId":null,"mechanics":["exploration","puzzle"],"themes":["space","mystery"],"platforms":["windows","steamdeck"],"coop":false},
+    {"id":"pilot:cove","kind":"game","name":"Quiet Cove","description":"An authored fictional crafting and exploration journey.","aliases":["Quiet Bay"],"externalIds":[],"sourceId":"authored-pilot","parentId":null,"mechanics":["exploration","crafting"],"themes":["nature","mystery"],"platforms":["windows","linux"],"coop":true},
+    {"id":"pilot:relay","kind":"game","name":"Moss Relay","description":null,"aliases":["Green Signal"],"externalIds":[],"sourceId":"authored-pilot","parentId":null,"mechanics":["exploration","crafting","puzzle"],"themes":["space","nature","mystery"],"platforms":["windows","linux","steamdeck"],"coop":true,"internalOnly":"PRIVATE_GAME_SENTINEL","artworkUrl":"https://example.invalid/not-publishable.png"},
+    {"id":"pilot:aurora-deluxe","kind":"edition","name":"Aurora Survey Deluxe","description":"A distinct fictional edition, not an alias for the base game.","aliases":["Northern Deluxe"],"externalIds":[],"sourceId":"authored-pilot","parentId":"pilot:aurora","mechanics":["exploration","puzzle"],"themes":["space","mystery"],"platforms":["windows"],"coop":false},
+    {"id":"pilot:cove-dlc","kind":"dlc","name":"Quiet Cove: Estuary","description":null,"aliases":["Bay Add-on"],"externalIds":[],"sourceId":"authored-pilot","parentId":"pilot:cove","mechanics":["exploration","crafting"],"themes":["nature","mystery"],"platforms":["windows"],"coop":true},
+    {"id":"pilot:unknown","kind":"game","name":"Uncharted Hollow","description":null,"aliases":["Unknown Shores"],"externalIds":[],"sourceId":"authored-pilot","parentId":null,"mechanics":null,"themes":null,"platforms":null,"coop":null}
+  ]
+}

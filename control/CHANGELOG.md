@@ -38,3 +38,11 @@ Append-only semantic/navigation history for repository-canonical project control
                       counter 12 previously exceeded indexed/changelog revision 6;
                       missing revisions 7–12 are not invented or retroactively asserted
                       no runtime code, protected-master write or scheduler mutation
+2026-10-23 | rev 14 | reconciled: PLAY-CONTROL-001
+                      recorded merged #12 (Bridge) and #20 (catalog/share)
+                      marked PLAY-BRIDGE-001 and PLAY-CATALOG-001 DONE
+                      verified exact master e065a02bb988
+                      kept #17/PR #22 in REVIEW for later separate acceptance
+                      recorded successful master CI and blocked Pages provisioning
+                      updated navigation, registry and roadmap without runtime changes
+                      preserved format 2 and owner-controlled scheduler lifecycle

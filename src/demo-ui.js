@@ -1,4 +1,5 @@
-import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";
+import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";
+import { bindBridgeControls, renderBridge } from "./bridge-ui.js";
 const $ = (id) => document.getElementById(id);
 const element = (tag, text, className) => {
   const node = document.createElement(tag);
@@ -13,6 +14,32 @@ const notes = {
 };
 const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails a required filter",
   "hard-constraint-unknown": "required filter evidence is unknown", "missing-seed-affinity": "insufficient comparable feature evidence" };
+const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
+function showCatalogIdentity() {
+  document.querySelector(".badge").textContent = `Preview 0.3 · ${syntheticCatalog ? "fictional games" : "catalog snapshot"}`;
+  document.querySelector(".intro p").replaceChildren(
+    "Build a basket, adjust what matters, and see why each result appears. This snapshot contains ",
+    element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "catalog profiles"}`),
+    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : " with recorded provenance. Recommendation quality and field coverage are not guaranteed."
+  );
+  $("search").placeholder = `Search ${CATALOG.length} profiles or aliases…`;
+  document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a catalog game";
+  const labels = { any: "Any platform", mac: "macOS" };
+  $("platform").replaceChildren(...PLATFORMS.map(value => {
+    const option = element("option", labels[value] ?? value);
+    option.value = value;
+    return option;
+  }));
+  const versions = $("versions");
+  document.querySelector(".foot").replaceChildren(
+    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." : "Versioned catalog preview."),
+    " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
+    "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
+    element("br"), versions
+  );
+  document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
+    ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
+}
 let state;
 function clearShareFeedback() {
   $("share-box").hidden = true;
@@ -31,6 +58,7 @@ function readLocation() {
   render(true);
 }
 function commit(rebuildSeeds = false) {
+  if (state.bridge && [state.bridge.startId, state.bridge.endId].some((id) => id && !state.seeds.some((seed) => seed.id === id))) state.bridge = null;
   state = validateState(state);
   $("error").hidden = true;
   clearShareFeedback();
@@ -51,7 +79,7 @@ function drawSeeds() {
     title.append(remove);
     const label = element("label", `Weight for ${BY_ID.get(seed.id).name}: `, "weight-label");
     const input = element("input");
-    input.id = `weight-${seed.id.slice(5)}`;
+    input.id = `weight-${seed.id.startsWith("demo:") ? seed.id.slice(5) : encodeURIComponent(seed.id)}`;
     input.type = "range"; input.min = "1"; input.max = "10"; input.step = "1"; input.value = String(seed.weight);
     label.htmlFor = input.id;
     const output = element("output", String(seed.weight));
@@ -67,17 +95,19 @@ function drawSeeds() {
   }
 }
 function drawSearch() {
-  const query = $("search").value.trim().toLowerCase();
+  const query = $("search").value.trim().normalize("NFC").toLowerCase();
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
   const matches = query
-    ? CATALOG.filter((game) => !chosen.has(game.id) && game.name.toLowerCase().includes(query))
+    ? CATALOG.filter((game) => !chosen.has(game.id) && [game.name, game.id, ...game.aliases]
+      .some(value => value.normalize("NFC").toLowerCase().includes(query)))
     : [];
   for (const game of matches) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
     button.setAttribute("aria-label", `Add ${game.name}`);
+    if (game.kind !== "game") button.append(element("span", ` · ${game.kind} (${game.id})`, "hint"));
     button.disabled = state.seeds.length >= 5;
     button.addEventListener("click", () => {
       if (state.seeds.length >= 5 || state.seeds.some((seed) => seed.id === game.id)) return;
@@ -87,9 +117,10 @@ function drawSearch() {
     });
     row.append(button); $("search-results").append(row);
   }
+  const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
-    : !query ? "Type a game name to see matching fictional profiles."
-    : matches.length ? `${matches.length} matching fictional profiles.` : "No profiles match. Try another name.";
+    : !query ? `Type a game name or declared alias to see matching ${noun}.`
+    : matches.length ? `${matches.length} matching ${noun}.` : "No profiles match. Try another name.";
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -150,14 +181,14 @@ function drawResults() {
     const card = element("li", undefined, "card"); card.dataset.gameId = item.id;
     const top = element("div", undefined, "card-top");
     const title = element("div", undefined, "card-title");
-    title.append(element("h3", game.name), element("p", game.description, "hint"));
+    title.append(element("h3", game.name), element("p", game.description ?? "Description unavailable for this profile.", "hint"));
     const fit = element("div", undefined, "fit");
     const blendSelection = state.mode === "blend" && item.blend;
     const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
     const scoreLabel = blendSelection ? "selection objective / 1" : state.mode === "blend" ? "average fit / 1" : "fit / 1";
     fit.append(element("strong", score.toFixed(3)), element("small", scoreLabel));
     top.append(element("span", String(index + 1).padStart(2, "0"), "rank"), title, fit);
-    card.append(top, element("p", `Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
+    card.append(top, element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
     const affinities = element("div", undefined, "affinities");
     item.evidence.forEach((pair) => {
       const row = element("div", undefined, "affinity");
@@ -199,7 +230,7 @@ function render(rebuildSeeds) {
   $("mode-note").textContent = notes[state.mode];
   $("restore").hidden = state.excluded.length === 0;
   if (rebuildSeeds) drawSeeds();
-  drawSearch(); drawResults();
+  drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", drawSearch);
 $("mode").addEventListener("change", (event) => { state.mode = event.target.value; commit(); });
@@ -215,10 +246,12 @@ $("share").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(url.href); $("share-status").textContent = "Basket link copied. It includes weights, filters, exclusions, and both versions."; }
   catch { $("share-status").textContent = "Copy the selected URL manually. Your basket is fully encoded in it."; $("share-link").focus(); $("share-link").select(); }
 });
-$("versions").textContent = `Catalog: ${CATALOG_VERSION} · Method: ${METHOD_VERSION} · Ranking: P03 harmonic / uncovered-strand baselines.`;
+showCatalogIdentity();
+$("versions").textContent = `Catalog: ${CATALOG_VERSION} (${DEMO_SNAPSHOT.kind}) · Method: ${METHOD_VERSION} · Ranking: P03 harmonic / uncovered-strand baselines.`;
 document.querySelector(".skip").addEventListener("click", (event) => { event.preventDefault(); $("recommendations").focus(); });
 window.addEventListener("hashchange", readLocation);
 readLocation();
+bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(false); });
 
 // First-screen actions reuse the authoritative reset/clear paths, not a second state store.
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
