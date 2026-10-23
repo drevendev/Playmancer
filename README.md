@@ -97,8 +97,9 @@ Benchmark report versioning is separate from player shares.
 ## Browser acceptance and CI
 
 For validated snapshots of **50–250 profiles served over HTTP(S)**, Bridge
-calculates routes inside an in-memory Blob Web Worker using the **same bundled
-exact-rational implementation** as the small preview. Changing an endpoint,
+calculates routes inside a **same-origin static Web Worker** built from the
+same exact-rational source modules as the small preview. The publishable artifact
+contains exactly `index.html`, `bridge-worker.js`, and an empty `.nojekyll`. Changing an endpoint,
 filter, exclusion or threshold cancels the previous worker; only the newest
 result can update the visible explanation. The panel announces its busy state,
 and calculation failures are visible instead of substituting a guessed route.
