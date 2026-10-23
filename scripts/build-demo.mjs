@@ -65,6 +65,18 @@ for (const [index, path] of modules.entries()) {
   }
   parts.push(`// ${path}\n${source}`);
 }
+// Build one same-origin static worker asset from the exact same reviewed route
+// source modules. There is no duplicated routing algorithm or runtime API.
+const workerScript = [parts[2], parts[3], `
+self.onmessage = ({ data }) => {
+  try {
+    self.postMessage({ route: buildBridgePreview(data.input) });
+  } catch (error) {
+    self.postMessage({ error: error instanceof Error ? error.message : "Unknown route error" });
+  }
+};
+`].join("\n\n");
+new Script(workerScript, { filename: "playmancer-bridge-worker.js" });
 const script = parts.join("\n\n");
 // Compile, never execute, the merged browser code before replacing an artifact.
 // Individual modules can parse while conflicting declarations break their bundle.
@@ -80,11 +92,16 @@ const html = template.replace(entry, () => `<script type="module">\n${script}\n<
   .replace("</head>", () => `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
 await mkdir(output, { recursive: true });
 const temporary = join(output, `.index.html.${process.pid}.tmp`);
+const temporaryWorker = join(output, `.bridge-worker.js.${process.pid}.tmp`);
 try {
   await writeFile(temporary, html);
+  await writeFile(temporaryWorker, workerScript);
   await writeFile(join(output, ".nojekyll"), "");
+  // Publish the worker first so every newly published index can load its route code.
+  await rename(temporaryWorker, join(output, "bridge-worker.js"));
   await rename(temporary, join(output, "index.html"));
 } finally {
   await rm(temporary, { force: true });
+  await rm(temporaryWorker, { force: true });
 }
-console.log(`Built ${Buffer.byteLength(html)} bytes into ${output}`);
+console.log(`Built ${Buffer.byteLength(html)} HTML bytes and ${Buffer.byteLength(workerScript)} worker bytes into ${output}`);

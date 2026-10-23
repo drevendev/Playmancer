@@ -33,6 +33,85 @@ export function createBridgeRouteCache(compute = buildBridgePreview) {
 }
 const cachedBridgePreview = createBridgeRouteCache();
 
+// A one-entry result cache and a cancellable off-thread job for large snapshots.
+// A new input terminates the old worker: slow responses can never replace newer
+// controls, and ordinary keyboard/search/share handlers remain on the UI thread.
+// The small preview and offline file harness deliberately retain synchronous parity.
+let bridgeJob = null;
+let bridgeGeneration = 0;
+let completedBridgeKey = null;
+let completedBridgeRoute = null;
+function cancelPendingBridge() {
+  bridgeGeneration++;
+  if (bridgeJob) {
+    bridgeJob.worker.terminate();
+    bridgeJob = null;
+  }
+}
+function canUseBridgeWorker() {
+  return CATALOG.length >= 50 && typeof Worker === "function" &&
+    (location.protocol === "https:" || location.protocol === "http:");
+}
+function calculateBridgeInWorker(input, form, status, steps) {
+  const key = JSON.stringify(input);
+  if (completedBridgeKey === key && completedBridgeRoute !== null) {
+    // Returning to a cached route must still cancel a different in-flight job.
+    // Otherwise its late onmessage can overwrite these newer route controls.
+    cancelPendingBridge();
+    steps.removeAttribute("aria-busy");
+    showBridgeRoute(completedBridgeRoute, form, status, steps);
+    return;
+  }
+  if (bridgeJob?.key === key) {
+    status.textContent = "Calculating an explained route… You can keep using the basket.";
+    steps.setAttribute("aria-busy", "true");
+    return;
+  }
+  cancelPendingBridge();
+  const generation = bridgeGeneration;
+  status.textContent = "Calculating an explained route… You can keep using the basket.";
+  steps.setAttribute("aria-busy", "true");
+  let worker;
+  try {
+    // A same-origin, versioned static build asset works under a Pages subpath.
+    worker = new Worker(new URL("./bridge-worker.js", document.baseURI));
+  } catch {
+    steps.removeAttribute("aria-busy");
+    status.textContent = "Bridge calculation is unavailable in this browser. Reload to retry.";
+    return;
+  }
+  bridgeJob = { key, worker };
+  const finish = () => {
+    if (bridgeJob?.worker !== worker || generation !== bridgeGeneration) return false;
+    cancelPendingBridge();
+    steps.removeAttribute("aria-busy");
+    return true;
+  };
+  worker.onmessage = ({ data }) => {
+    if (!finish()) return;
+    if (!data?.route || data.error) {
+      status.textContent = "Bridge calculation failed: " +
+        (typeof data?.error === "string" ? data.error : "unknown error") + ".";
+      return;
+    }
+    completedBridgeKey = key;
+    completedBridgeRoute = data.route;
+    showBridgeRoute(data.route, form, status, steps);
+  };
+  worker.onerror = (event) => {
+    event.preventDefault();
+    if (finish()) status.textContent = "Bridge calculation failed. Change a route control to retry.";
+  };
+  worker.onmessageerror = () => {
+    if (finish()) status.textContent = "Bridge response could not be read. Change a route control to retry.";
+  };
+  try {
+    worker.postMessage({ input });
+  } catch {
+    if (finish()) status.textContent = "Bridge input could not be sent. Change a route control to retry.";
+  }
+}
+
 export function renderBridge(state) {
   const form = bridgeSettings(state);
   const selected = new Set(state.seeds.map((item) => item.id));
@@ -53,20 +132,33 @@ export function renderBridge(state) {
   const status = bridgeEl("bridge-status"), steps = bridgeEl("bridge-steps");
   steps.replaceChildren();
   if (state.seeds.length < 2) {
+    cancelPendingBridge();
+    steps.removeAttribute("aria-busy");
     status.textContent = "Add at least two distinct favorites to your basket.";
     return;
   }
   if (!form.startId || !form.endId) {
+    cancelPendingBridge();
+    steps.removeAttribute("aria-busy");
     status.textContent = "Select both favorites to calculate a route.";
     return;
   }
-  const route = cachedBridgePreview({
+  const input = {
     catalog: CATALOG, snapshotId: CATALOG_VERSION,
     startId: form.startId, endId: form.endId,
     platform: state.platform, coopOnly: state.coopOnly,
     excluded: state.excluded, maxHops: form.maxHops,
     minSimilarity: form.minSimilarity
-  });
+  };
+  if (canUseBridgeWorker()) {
+    calculateBridgeInWorker(input, form, status, steps);
+    return;
+  }
+  cancelPendingBridge();
+  steps.removeAttribute("aria-busy");
+  showBridgeRoute(cachedBridgePreview(input), form, status, steps);
+}
+function showBridgeRoute(route, form, status, steps) {
   if (route.status === "unavailable-endpoint") {
     status.textContent = "Route unavailable: " + BY_ID.get(route.affected_id).name +
       " is " + route.reason + " under your current filters. No filter was relaxed.";
