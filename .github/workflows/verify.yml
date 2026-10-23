@@ -116,6 +116,8 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - name: Measure 12/50/250 dense, sparse and disconnected synthetic Bridge routes at 1x/4x CPU
         run: python scripts/browser-bridge-performance.py
+      - name: Verify cancellable Bridge worker on 250 fictional profiles over HTTP
+        run: python scripts/browser-bridge-worker-acceptance.py
       - name: Retain exact-head latency samples and Chromium screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -124,6 +126,8 @@ jobs:
           path: |
             .test-artifacts/bridge-performance.json
             .test-artifacts/bridge-perf-*.png
+            .test-artifacts/bridge-worker-http.json
+            .test-artifacts/bridge-worker-*.png
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
