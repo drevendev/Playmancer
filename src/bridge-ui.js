@@ -55,6 +55,9 @@ function canUseBridgeWorker() {
 function calculateBridgeInWorker(input, form, status, steps) {
   const key = JSON.stringify(input);
   if (completedBridgeKey === key && completedBridgeRoute !== null) {
+    // Returning to a cached route must still cancel a different in-flight job.
+    // Otherwise its late onmessage can overwrite these newer route controls.
+    cancelPendingBridge();
     steps.removeAttribute("aria-busy");
     showBridgeRoute(completedBridgeRoute, form, status, steps);
     return;
