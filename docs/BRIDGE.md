@@ -71,3 +71,34 @@ version and its valid catalog-input semantics.
 Saved v1 and v2 Bridge links fail visibly instead of silently restoring a
 different path. Existing basket links without Bridge remain compatible.
 The catalog is fictional, and neither Pages nor human usefulness is verified.
+
+
+## Synthetic browser responsiveness evidence (issue #15, v1)
+
+Run `python3 scripts/browser-bridge-performance.py` with Playwright 1.55.0 and
+Chromium installed. The script builds nine deterministic, independently authored
+**fictional** publication-validated snapshots, crossing 12, 50 and 250 profiles
+with dense, sparse and disconnected feature graphs. First/second favorites
+are intentionally in the same component for dense/sparse and opposite
+components for disconnected. It exercises the real Bridge UI change listener in
+a 390×844 headless Chromium viewport at both ordinary and emulated 4× CPU rate.
+
+Seven repetitions per case alternate two valid thresholds (`0.05`/`0.31`)
+after temporarily clearing the destination. This invalidates the one-entry
+route cache without changing the known graph reachability. JSON output at
+`.test-artifacts/bridge-performance.json` contains exact Git SHA (in CI),
+Chromium version, synthetic fixture version, all raw durations, nearest-rank
+p95 and median for the synchronous change handler and a queued timer. Six
+screenshots capture the 250-profile cases. The standalone CI performance
+job retains the evidence; any invalid route/absent route or runtime error
+fails the job rather than silently becoming a latency sample.
+
+**Interpretation:** these are single-thread blocking *proxies*, not physical
+keyboard latency, a mobile-device SLA, game quality, or hosted navigation.
+CPU throttling does not reproduce thermal/network/assistive-technology
+behavior. Avoid universal latency thresholds on shared CI runners; preserve
+negative results. This version adds measurement and deterministic regression
+coverage, **not** a Web Worker or claimed speedup. If 250-profile dense
+measurements remain materially blocking, choose the smallest cancellation-aware
+latest-input-wins UI execution strategy without changing exact rational
+route ordering, evidence, constraints or share versions.
