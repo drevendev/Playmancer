@@ -1,32 +1,34 @@
 # EXECUTION_ORDER — Playmancer
 
-## Closing-first gate — 2026-10-18
+## Closing-first gate — reconciled 2026-10-23
 
-1. PRs #2, #3, #4 and #5 are merged. Their old review/recovery claims are complete.
-   GitHub owns current native facts; never reopen a stale claim because a cached
-   control file refers to an old head.
-2. Inspect the current PR for #6 (`feat/preview-02-delivery`): exact head/base, full
-   diff, original+new tests, catalog gate, deterministic benchmark/build, payload
-   validation, Chromium evidence, discussions and actual branch rules. Repair this
-   same branch or accept/merge in a later stateless run. Never merge semantic code
-   in the turn that produced it; never invent an extra reviewer or weaken protection.
-3. After merge, verify master and intended files. Finish #7 only when authorized
-   administration has provisioned Pages. Verify actual deployment and served revision,
-   then hosted player behavior; offline screenshots are not a live URL.
-4. If provisioning/rights are blocked, advance independently executable #9 Bridge
-   oracle/interaction work or #8 synthetic identity/source-receipt work. The detailed
-   next acceptance gates are in `docs/ROADMAP.md`; #10 measures usefulness, not test count.
-5. Preserve unique stale research branches; adopt focused evidence without importing
-   obsolete control files. Delete refs only using supported actions after preservation
-   and dependency checks. No replacement or parallel scheduler/workstream.
+1. Read current native PRs/issues, reviews, rules, exact heads and master before any
+   action. PRs #2/#3/#4/#5/#11/#12/#20 are merged; issues #6/#9/#13/#18/#19/#21/#23
+   are closed. Historical review claims must not resurrect them.
+2. The only open PR at reconciliation is #22, a focused #17 control update on
+   `docs/reconcile-delivery-controls`. Its refreshed code/doc head is newly authored
+   in this transaction: wait for new exact-head CI and a **later independent** review
+   before an expected-head merge. Never merge this same semantic change now.
+3. After #22 is merged, verify the master SHA and updated control files and confirm
+   issue #17 closed. Do not create another reconciliation PR or stale queue.
+4. Issue #7 GitHub Pages remains unprovisioned: the reviewed `master` verify
+   workflow succeeds, but publishing fails on Pages configuration. Actual enabling
+   requires administrator capability; offline artifact/build success is NOT live.
+5. While #7 or real-data rights #8 are externally gated, take the strongest
+   independent functional weakness: #14 cross-browser/assistive-tech acceptance,
+   #15 Bridge responsiveness, or #16 focused regression adoption. Evaluate #10
+   only when its catalog/hosted-player prerequisites exist. See `docs/ROADMAP.md`.
+6. Preserve existing shared branches until all unique work and dependencies are
+   proved safe; never force-push shared history or bypass protected master.
 
-A safety denial blocks only its affected operation. Do not repeat unchanged denied
-mutations or switch endpoints to evade them. Interactive expected-head merge worked
-on 2026-10-18; historic failures are not permanent global permission evidence.
+No stale #12 → #20 retarget is necessary: both merged and #20 synchronized before
+its merge. Native GitHub facts supersede these dated examples. Current CI is never
+a PASS for a future head. No fabricated reviewer or self-approval is required when
+real rules need zero approvals; all actual checks and rules remain mandatory.
 
 ## Operating-model boundary
 
-Issue #1 is the product epic/evidence anchor, not a reason to wait for a second owner.
-Control format remains 2. Full ownership, external selection receipt replay, liveness
-observation and finite total bounds are not claimed. Owner-authorized safe product
-work remains executable; this worker never changes the perpetual schedule lifecycle.
+Issue #1 remains the product/evidence epic. Control format remains 2; complete
+ownership/exclusion controls, external receipt replay, independent liveness and
+finite total bounds are not claimed. EndlessZen is read-only. No Drive queue, wake
+ledger, parallel worker, new automation or scheduler mutation is authorized.

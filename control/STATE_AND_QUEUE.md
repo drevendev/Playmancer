@@ -1,57 +1,61 @@
 # STATE_AND_QUEUE — Playmancer
 
-Updated: 2026-10-18. Re-read GitHub for current PR/check/ref facts.
+Reconciled: 2026-10-23. These are dated navigation facts, not live PR/check authority.
+Read GitHub for current claims, exact heads, CI, reviews, merges and publication.
 
 ```text
 PROJECT_STATUS:          ACTIVE
 CONTROL_FORMAT_VERSION:  2
 CURRENT_PHASE:           PRODUCT_DELIVERY
 CURRENT_MODE:            OWNER_DIRECTED
-STATE_REVISION:          12
-LAST_INDEXED_REVISION:   6
-CURRENT_UNIT:            PLAY-RECOVERY-002
-CURRENT_SCOPE:           issue #6 — preview 0.2 catalog/evaluation delivery
+STATE_REVISION:          14
+LAST_INDEXED_REVISION:   14
+CURRENT_UNIT:            PLAY-CONTROL-001
+CURRENT_SCOPE:           issue #17 — reconcile Bridge and Preview 0.3 delivery controls
 CURRENT_UNIT_STATUS:     REVIEW
-WORKING_BRANCH:          feat/preview-02-delivery
-LAST_VERIFIED_MASTER:    3839c79eff9f8f5ae174eee0abf181c5a1cf8181
+WORKING_BRANCH:          docs/reconcile-delivery-controls
+LAST_VERIFIED_MASTER:    e065a02bb988e6a6fc31cb36475fdeeca1629f22
 WORKER_SCHEDULE_MUTATION: none
 ```
 
-## Reconciled delivery facts
+## Delivered and explicitly not delivered
 
-Bootstrap PR #2 and product PR #3 are merged. Preview-hardening PR #4 merged on
-2026-10-10 as `fb84bc1217a04039dfeebb6439c167c02e33bc48`; its old REVIEW claim is
-complete. Benchmark PR #5 merged on 2026-10-18 as
-`3839c79eff9f8f5ae174eee0abf181c5a1cf8181`. Do not reopen their obsolete claims.
+PRs #2/#3/#4/#5/#11 were merged before this reconciliation; #6 is DONE.
+PR #12 (explained Bridge, precision and first-screen accessibility) was independently
+accepted and merged as `e6d585084fc1edee412003cae04b96c8d555d0de`,
+closing issues #9/#18/#19. Its delivered runtime changes reached master, not Pages.
+PR #20 (validated snapshot adapter, safe build and repaired large-basket share
+restoration) was independently accepted and merged as
+`e065a02bb988e6a6fc31cb36475fdeeca1629f22`, closing #13/#21/#23. A 250-game fixture remains **fictional**;
+rights-cleared real-game data have not been published.
 
-The #6 implementation branch carries the next semantic candidate. Its presence here
-is not acceptance or publication. Use its native PR as the claim, independently review
-the exact head in a later run and merge only with applicable checks/provider rules.
-No formal self-approval or invented second developer is required by current zero-
-approval protection; real future requirements still take precedence.
+Verify run 39931904927 on the exact new master completed SUCCESS. Pages publish
+run 39931904881 failed at the Pages-configuration step; publishing was skipped.
+Repository metadata still reports `has_pages=false`. This is BUILT and MERGED
+source, **not DEPLOYED or LIVE_VERIFIED**.
 
-## Compact queue
+## Closing-first queue
 
-[docs/ROADMAP.md](../docs/ROADMAP.md) contains the ordered #6–#10 delivery gates.
-Close/repair the current #6 PR before new work. Then finish #7 Pages when authorized
-provisioning is available; otherwise advance the independent #9 Bridge slice or #8
-rights/identity sample. Keep epic #1 open for real catalog, hosted delivery and human
-usefulness. Do not repeatedly repackage local candidates or re-run unchanged audits.
+1. Finish this existing #17 documentation PR #22: its refreshed branch must undergo
+   a later independent exact-head review, applicable CI and provider-rule check before
+   merge; then verify master and issue #17. Do not self-merge this new revision.
+2. For #7 Pages, require authorized administration to enable GitHub Actions Pages.
+   Until enabled, prepare/test a static artifact but do not claim an actual live URL.
+3. Advance independently executable #14 cross-browser/accessibility or #15 measured
+   Bridge responsiveness while Pages administration and #8 real-data rights are gated.
+   #16 is selective, nonduplicate adoption of useful archived basket/benchmark tests.
+4. Keep #10 usefulness evaluation behind suitable catalog and hosted experience.
+   Preserve issue #1 as the broader product/evidence anchor.
 
-## Scoped capabilities and remaining gates
+## Scope and operating boundaries
 
-Interactive 2026-10-18: authenticated `andy-zen-dev`, push/triage/pull true,
-admin/maintain false. The native expected-head PR #5 merge succeeded. Prior scheduled
-safety denials are historical, not proof that this context cannot write. A new explicit
-denial stops the affected action without endpoint/account/protection bypass.
+Interactive GitHub identity `andy-zen-dev` was verified for this reconciliation;
+repository permissions include push/triage/pull and exclude admin/maintain.
+Permissions and checks can change; re-read before future mutations. An actual denial
+blocks its operation, not independent product work. No alternative endpoints, bypass,
+new branches, parallel projects, Drive queue or extra scheduler.
 
-Clone DNS failure has a working alternative: reconstruct executable sources/original
-tests from verified Git blobs and the exact root tree. A clone is not a prerequisite.
-Pages remained unprovisioned at inspection (`has_pages=false`); #7's reopening trigger
-is authorized GitHub Actions Pages configuration. No public URL is live-verified.
-
-Format 2 remains unchanged. Ownership/exclusion migration, external selection receipt
-replay, independent liveness observation and finite total maintenance bounds remain
-unproven; do not claim full EndlessZen unattended conformance. They do not block
-owner-authorized product work. Scheduler lifecycle stays outside worker authority.
-No Drive queue, second worker or per-wake ledger.
+Control format 2 remains unchanged. Ownership/exclusion migration, external receipt
+replay, independent liveness and finite operating/maintenance bounds remain unproven;
+no full EndlessZen unattended-compliance claim is made. The existing owner-controlled
+hourly job remains unchanged.
