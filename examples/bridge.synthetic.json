@@ -1,0 +1,11 @@
+{
+  "catalog": [
+    {"id":"demo:ember", "mechanics":["action","exploration"], "themes":["fantasy","mystery"], "platforms":["windows","linux"], "coop":false},
+    {"id":"demo:tide", "mechanics":["exploration","crafting"], "themes":["fantasy","nature"], "platforms":["windows","linux"], "coop":true},
+    {"id":"demo:harvest", "mechanics":["farming","exploration"], "themes":["cozy","nature"], "platforms":["windows","mac"], "coop":true},
+    {"id":"demo:unknown", "mechanics":["puzzle"], "themes":["nature"], "platforms":null, "coop":null}
+  ],
+  "snapshotId":"synthetic-bridge-cli-1",
+  "startId":"demo:ember", "endId":"demo:harvest", "platform":"any", "coopOnly":false,
+  "excluded":[], "maxHops":3, "minSimilarity":0.31
+}

@@ -1,4 +1,5 @@
 import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";
+import { bindBridgeControls, renderBridge } from "./bridge-ui.js";
 const $ = (id) => document.getElementById(id);
 const element = (tag, text, className) => {
   const node = document.createElement(tag);
@@ -31,6 +32,7 @@ function readLocation() {
   render(true);
 }
 function commit(rebuildSeeds = false) {
+  if (state.bridge && [state.bridge.startId, state.bridge.endId].some((id) => id && !state.seeds.some((seed) => seed.id === id))) state.bridge = null;
   state = validateState(state);
   $("error").hidden = true;
   clearShareFeedback();
@@ -199,7 +201,7 @@ function render(rebuildSeeds) {
   $("mode-note").textContent = notes[state.mode];
   $("restore").hidden = state.excluded.length === 0;
   if (rebuildSeeds) drawSeeds();
-  drawSearch(); drawResults();
+  drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", drawSearch);
 $("mode").addEventListener("change", (event) => { state.mode = event.target.value; commit(); });
@@ -219,6 +221,7 @@ $("versions").textContent = `Catalog: ${CATALOG_VERSION} · Method: ${METHOD_VER
 document.querySelector(".skip").addEventListener("click", (event) => { event.preventDefault(); $("recommendations").focus(); });
 window.addEventListener("hashchange", readLocation);
 readLocation();
+bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(false); });
 
 // First-screen actions reuse the authoritative reset/clear paths, not a second state store.
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });

@@ -144,6 +144,61 @@ with sync_playwright() as p:
     check('old method link is rejected visibly without silently upgrading',page.locator('#seeds > li').count()==0 and 'not silently upgraded' in page.locator('#error').inner_text())
     page.locator('#intro-sample').click()
     check('explicit first-screen sample recovers an incompatible link',page.locator('#error').is_hidden() and page.locator('#results > li').count()>0)
+    # Bridge is a distinct route experiment. Exercise the built JavaScript, not a mock.
+    check('Bridge is visible but not a ranking mode',
+          page.locator('#bridge-title').inner_text() == 'Bridge two favorites'
+          and 'bridge' not in page.locator('#mode option').evaluate_all('(nodes)=>nodes.map(n=>n.value)'))
+    page.locator('#bridge-start').select_option('demo:ember')
+    page.locator('#bridge-end').select_option('demo:harvest')
+    page.locator('#bridge-threshold').select_option('0.05')
+    check('Bridge reports actual feature-based route evidence',
+          'connection' in page.locator('#bridge-status').inner_text().lower()
+          and page.locator('#bridge-steps li').count() > 0
+          and 'shared' in page.locator('#bridge-steps').inner_text())
+    page.locator('#bridge-hops').select_option('1')
+    check('Bridge respects one-edge hop bound', page.locator('#bridge-steps li').count() <= 1)
+    page.locator('#bridge-hops').select_option('3')
+    page.locator('#share').click()
+    link=page.locator('#share-link').input_value()
+    bridge_link=json.loads(__import__('urllib.parse',fromlist=['unquote']).unquote(link.split('#basket=',1)[1]))
+    check('Bridge link retains explicit endpoints and algorithm version',
+          bridge_link['bridge']['startId']=='demo:ember'
+          and bridge_link['bridge']['endId']=='demo:harvest'
+          and bridge_link['bridge']['method']=='bridge-features-preview-3'
+          and bridge_link['bridge']['maxHops']==3)
+    page.locator('#platform').select_option('linux')
+    page.locator('#bridge-end').select_option('demo:harvest')
+    check('required platform cannot silently pass a Bridge endpoint',
+          'unavailable' in page.locator('#bridge-status').inner_text().lower()
+          and page.locator('#bridge-steps li').count()==0)
+    page.locator('#platform').select_option('any')
+    page.get_by_role('button', name='Remove Cloud Harvest').click()
+    check('removing a focal game clears stale Bridge endpoints',
+          page.locator('#seeds > li').count()==1
+          and page.locator('#bridge-start').input_value()==''
+          and page.locator('#bridge-end').input_value()==''
+          and page.locator('#bridge-start').is_disabled()
+          and page.locator('#bridge-end').is_disabled()
+          and page.locator('#bridge-steps li').count()==0
+          and 'Add at least two distinct favorites' in page.locator('#bridge-status').inner_text())
+    page.locator('#reset').click()
+    check('reset restores original two-seed basket without forced Bridge mode',
+          page.locator('#seeds > li').count()==2 and page.locator('#bridge-start').input_value()=='')
+    # The old route algorithm must never be upgraded silently during URL restoration.
+    stale_bridge_link = json.loads(json.dumps(bridge_link))
+    stale_bridge_link['bridge']['method'] = 'bridge-features-preview-2'
+    page.evaluate('(hash) => { location.hash = hash; }',
+                  '#basket='+__import__('urllib.parse',fromlist=['quote']).quote(json.dumps(stale_bridge_link)))
+    page.wait_for_function("!document.getElementById('error').hidden")
+    check('stale Bridge link fails closed without substituting another route',
+          'incompatible route version' in page.locator('#error').inner_text()
+          and page.locator('#seeds > li').count()==0
+          and page.locator('#bridge-steps li').count()==0)
+    page.locator('#intro-sample').click()
+    check('explicit sample action recovers after stale Bridge URL',
+          page.locator('#error').is_hidden()
+          and page.locator('#seeds > li').count()==2
+          and page.locator('#results > li').count()>0)
     check('no JavaScript exceptions',not errors)
     context.close()
     # Capture the same built sample in fresh, foreground contexts. Reusing the
