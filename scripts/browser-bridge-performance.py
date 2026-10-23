@@ -121,6 +121,7 @@ def exercise(page, topology, size, throttle):
 
 results = []
 error = None
+browser_version = 'not-run'
 try:
     with tempfile.TemporaryDirectory(prefix="playmancer-bridge-perf-") as temporary:
         temporary = Path(temporary)
@@ -137,6 +138,7 @@ try:
                 sites[(size, topology)] = site
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(headless=True)
+            browser_version = browser.version
             try:
                 for throttle in (1, 4):
                     for size in SIZES:
@@ -149,11 +151,11 @@ try:
                                 page = context.new_page()
                                 cdp = context.new_cdp_session(page)
                                 cdp.send("Emulation.setCPUThrottlingRate", {"rate": throttle})
+                                errors = []
+                                page.on("pageerror", lambda e: errors.append(str(e)))
                                 page.set_content((sites[(size, topology)] / "index.html").read_text(),
                                                  wait_until="load")
                                 page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
-                                errors = []
-                                page.on("pageerror", lambda e: errors.append(str(e)))
                                 result = exercise(page, topology, size, throttle)
                                 assert not errors, errors
                                 results.append(result)
@@ -170,7 +172,7 @@ finally:
     REPORT.write_text(json.dumps({
         "schema_version": 1, "revision": REVISION,
         "fixture_version": "synthetic-bridge-perf-v1", "engine": "Playwright Chromium",
-        "browser_version": "Installed Playwright Chromium; see CI runner logs",
+        "browser_version": browser_version,
         "viewport": {"width": 390, "height": 844},
         "repetitions_per_case": REPETITIONS,
         "scope": "Synthetic, local built HTML under headless Chromium; 4x CPU throttling is emulated, not a real mobile device",
