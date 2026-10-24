@@ -33,7 +33,9 @@ export function normalizeSeeds(seeds) {
       throw new TypeError("each seed must be an object");
     }
     const id = assertCanonicalId(seed.id, "seed id");
-    const weight = seed.weight ?? 1;
+    // An omitted weight defaults to one; an explicit null/undefined weight is invalid.
+    // Do not accept inherited preferences from a caller-supplied prototype.
+    const weight = Object.hasOwn(seed, "weight") ? seed.weight : 1;
     if (typeof weight !== "number" || !Number.isFinite(weight) || weight < 0) {
       throw new RangeError(`weight for ${id} must be a finite non-negative number`);
     }
