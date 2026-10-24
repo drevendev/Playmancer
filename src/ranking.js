@@ -51,9 +51,14 @@ export function normalizeSeeds(seeds) {
   }
   const total = [...weights.values()].reduce((sum, weight) => sum + weight, 0);
 
+  // A positive raw weight can round to zero when scaled against a much
+  // larger seed, or during the final normalization. Such a seed must not
+  // demand missing evidence or veto Intersection with a zero affinity.
+  // Filter *after* division, while preserving representable positive weights.
   return [...weights.entries()]
     .sort(([a], [b]) => compareCanonicalIds(a, b))
-    .map(([id, weight]) => ({ id, weight: weight / total }));
+    .map(([id, weight]) => ({ id, weight: weight / total }))
+    .filter(({ weight }) => weight > 0);
 }
 
 function hardConstraintState(candidate) {

@@ -67,6 +67,49 @@ test("zero affinity to any positively weighted seed makes harmonic intersection 
   assert.equal(result.scores.intersection, 0);
 });
 
+test("machine-zero normalized seeds do not require evidence or veto Intersection", () => {
+  const seeds = [
+    { id: "igdb:large", weight: 1e308 },
+    { id: "igdb:tiny", weight: 1e-308 },
+  ];
+  // The second positive raw weight is below representable relative precision.
+  assert.deepEqual(normalizeSeeds(seeds), [{ id: "igdb:large", weight: 1 }]);
+
+  const missing = rankCandidates([
+    candidate("game:ok", { "igdb:large": 0.7 }),
+  ], seeds, { mode: "intersection" });
+  assert.deepEqual(missing.ranked.map((item) => item.id), ["game:ok"]);
+  assert.equal(missing.uncertain.length, 0);
+
+  const zero = rankCandidates([
+    candidate("game:ok", { "igdb:large": 0.7, "igdb:tiny": 0 }),
+  ], seeds, { mode: "intersection" });
+  close(zero.ranked[0].scores.intersection, 0.7);
+});
+
+test("post-normalization underflow is removed without dropping representable tiny seeds", () => {
+  const rounded = normalizeSeeds([
+    { id: "igdb:large", weight: 1 },
+    { id: "igdb:other", weight: 1 },
+    { id: "igdb:tiny", weight: Number.MIN_VALUE },
+  ]);
+  assert.deepEqual(rounded, [
+    { id: "igdb:large", weight: 0.5 },
+    { id: "igdb:other", weight: 0.5 },
+  ]);
+
+  const small = [
+    { id: "igdb:large", weight: 1000 },
+    { id: "igdb:tiny", weight: 1 },
+  ];
+  assert.ok(normalizeSeeds(small)[1].weight > 0);
+  const missing = rankCandidates([
+    candidate("game:ok", { "igdb:large": 0.7 }),
+  ], small, { mode: "intersection" });
+  assert.deepEqual(missing.uncertain[0].missingSeedIds, ["igdb:tiny"]);
+  assert.equal(missing.ranked.length, 0);
+});
+
 test("hard-constraint fail and unknown are separated and never silently relaxed", () => {
   const candidates = [
     candidate("fail", { "igdb:1": 1 }, 1, "fail"),
