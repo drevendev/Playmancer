@@ -47,15 +47,21 @@ function clearShareFeedback() {
   $("share-status").textContent = "";
 }
 function readLocation() {
+  let invalidLink = false;
   try { state = decodeState(location.hash); $("error").hidden = true; }
   catch (error) {
+    // Do not silently substitute sample favorites for an incompatible link.
     state = { ...initialState(), seeds: [] };
-    $("error").textContent = error.message + " Use ‘Reset to sample basket’ to recover explicitly.";
+    $("error-message").textContent = error.message + " This basket was not restored.";
     $("error").hidden = false;
+    invalidLink = true;
   }
   $("search").value = "";
   clearShareFeedback();
   render(true);
+  // A newly opened or navigated invalid link should announce the error and
+  // leave keyboard users one Tab away from the explicit recovery action.
+  if (invalidLink) $("error").focus();
 }
 function commit(rebuildSeeds = false) {
   if (state.bridge && [state.bridge.startId, state.bridge.endId].some((id) => id && !state.seeds.some((seed) => seed.id === id))) state.bridge = null;
@@ -250,6 +256,7 @@ $("lambda").addEventListener("input", (event) => { state.lambda = Number(event.t
 $("restore").addEventListener("click", () => { state.excluded = []; commit(); $("recommendations").focus(); });
 $("clear").addEventListener("click", () => { state = { ...state, seeds: [], excluded: [] }; $("search").value = ""; commit(true); $("search").focus(); });
 $("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); });
+$("error-recover").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
 $("share").addEventListener("click", async () => {
   const url = new URL(location.href); url.hash = encodeState(state);
   $("share-link").value = url.href; $("share-box").hidden = false;
