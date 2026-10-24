@@ -207,8 +207,24 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "incompatible link fails visibly without substitute basket",
               "unavailable catalog" in bad_page.locator("#error").inner_text().lower()
               and bad_page.locator("#seeds > li").count() == 0)
+        check(case, "invalid link focuses an announced, keyboard-accessible recovery",
+              bad_page.locator("#error").get_attribute("role") == "alert"
+              and bad_page.locator("#error").get_attribute("tabindex") == "-1"
+              and bad_page.evaluate("document.activeElement.id") == "error"
+              and bad_page.locator("#error-recover").is_visible())
+        bad_page.keyboard.press("Tab")
+        check(case, "recovery action is next in keyboard order",
+              bad_page.evaluate("document.activeElement.id") == "error-recover")
+        bad_page.keyboard.press("Enter")
+        check(case, "keyboard recovery explicitly restores sample and results focus",
+              bad_page.locator("#error").is_hidden()
+              and bad_page.locator("#seeds > li").count() >= 2
+              and bad_page.evaluate("document.activeElement.id") == "recommendations")
+        # The original first-screen sample recovery remains a separate path.
+        bad_page.goto(base_url + "/" + invalid_hash, wait_until="load")
+        bad_page.wait_for_function("document.querySelector('#error').hidden === false")
         bad_page.locator("#intro-sample").click()
-        check(case, "explicit recovery works after invalid navigation",
+        check(case, "first-screen sample recovery also works after invalid navigation",
               bad_page.locator("#error").is_hidden()
               and bad_page.locator("#seeds > li").count() >= 2)
         check(case, "no external requests or JavaScript exceptions",
