@@ -81,7 +81,9 @@ def exercise(browser, base_url, engine, label, width, height):
               "No profiles match" in hint.inner_text()
               and page.locator("#search-results li").count() == 0
               and page.evaluate("document.activeElement.id") == "search")
-        page.locator("#search").fill("Ember")
+        # Ember Circuit is already in the initial basket and deliberately
+        # excluded from suggestions; exercise a different catalog game.
+        page.locator("#search").fill("Grove")
         check(case, "matching search count updates while retaining keyboard access",
               "matching fictional profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
