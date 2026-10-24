@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CATALOG, BY_ID, initialState, validateState, encodeState, decodeState, constraintState, pairEvidence, recommend } from "../src/demo.js";
+import { CATALOG, BY_ID, BRIDGE_STATE_VERSION, initialState, validateState, encodeState, decodeState, constraintState, pairEvidence, recommend } from "../src/demo.js";
+import { BRIDGE_ROUTE_METHOD_VERSION } from "../src/bridge-preview.js";
 const ids = (result) => result.ranked.map((item) => item.id);
 
 test("fixture has twelve unique fictional canonical profiles and no remote assets", () => {
@@ -113,6 +114,35 @@ test("new basket constraints are rejected instead of silently stripped from shar
   assert.throws(() => decodeState(hash), /Unrecognized basket fields/);
   assert.deepEqual(decodeState(encodeState(initialState())), initialState(),
     "supported legacy baskets must still replay unchanged");
+});
+
+test("prototype-backed basket and seed preferences cannot be silently materialized in a link", () => {
+  const valid = initialState();
+  const inheritedRoot = Object.create(valid);
+  assert.throws(() => validateState(inheritedRoot), /Invalid basket state/);
+  assert.throws(() => encodeState(inheritedRoot), /Invalid basket state/);
+
+  const inheritedSeed = Object.create({ id: valid.seeds[0].id, weight: 9 });
+  const altered = { ...valid, seeds: [inheritedSeed] };
+  assert.throws(() => validateState(altered), /Missing or inherited basket seed fields/);
+  assert.throws(() => encodeState(altered), /Missing or inherited basket seed fields/);
+
+  // An explicit own-field dictionary is valid even without Object.prototype.
+  assert.deepEqual(validateState(Object.assign(Object.create(null), valid)), valid);
+  assert.deepEqual(decodeState(encodeState(valid)), valid);
+});
+
+test("Bridge routes reject inherited settings while ordinary share replay remains stable", () => {
+  const valid = initialState();
+  const bridge = { version: BRIDGE_STATE_VERSION, method: BRIDGE_ROUTE_METHOD_VERSION,
+    startId: valid.seeds[0].id, endId: valid.seeds[1].id, maxHops: 2, minSimilarity: 0.31 };
+  const explicit = { ...valid, bridge };
+  assert.deepEqual(decodeState(encodeState(explicit)), explicit);
+  assert.throws(() => validateState({ ...valid, bridge: Object.create(bridge) }), /Invalid Bridge link state/);
+  assert.throws(() => encodeState({ ...valid, bridge: Object.create(bridge) }), /Invalid Bridge link state/);
+  const missing = { ...bridge };
+  delete missing.maxHops;
+  assert.throws(() => validateState({ ...valid, bridge: missing }), /Missing or inherited Bridge link fields/);
 });
 
 test("unknown seed-level preference attributes cannot disappear on replay", () => {

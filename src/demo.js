@@ -46,11 +46,19 @@ export function initialState() {
     platform: "any", coopOnly: false, lambda: 0.3, excluded: [] };
 }
 
+// Share states are JSON records, not prototype-backed runtime objects. Inherited
+// preferences or future constraints must never be materialized or silently lost.
+function isShareRecord(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value) &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+
 export function validateBridgeSettings(value, seedIds) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Invalid Bridge link state.");
+  if (!isShareRecord(value)) throw new TypeError("Invalid Bridge link state.");
   if (value.version !== BRIDGE_STATE_VERSION || value.method !== BRIDGE_ROUTE_METHOD_VERSION)
     throw new Error("The Bridge link uses an incompatible route version; no route was substituted.");
   const expected = ["version", "method", "startId", "endId", "maxHops", "minSimilarity"];
+  if (expected.some((key) => !Object.hasOwn(value, key))) throw new Error("Missing or inherited Bridge link fields.");
   if (Object.keys(value).some((key) => !expected.includes(key))) throw new Error("Unrecognized Bridge link fields.");
   const startId = value.startId, endId = value.endId;
   for (const id of [startId, endId]) {
@@ -67,7 +75,9 @@ export function validateBridgeSettings(value, seedIds) {
 }
 
 export function validateState(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("Invalid basket state.");
+  if (!isShareRecord(value)) throw new TypeError("Invalid basket state.");
+  const required = ["v", "catalog", "method", "mode", "seeds", "platform", "coopOnly", "lambda", "excluded"];
+  if (required.some((key) => !Object.hasOwn(value, key))) throw new Error("Missing or inherited basket fields.");
   if (value.v !== 1 || value.catalog !== CATALOG_VERSION || value.method !== METHOD_VERSION) {
     throw new Error("This link uses an unavailable catalog or method version. It was not silently upgraded.");
   }
@@ -83,8 +93,10 @@ export function validateState(value) {
   if (!Array.isArray(value.seeds) || value.seeds.length > 5) throw new Error("A basket supports up to five games.");
   const seen = new Set();
   const seeds = value.seeds.map((seed) => {
-    if (seed && typeof seed === "object" && !Array.isArray(seed) &&
-        Object.keys(seed).some((key) => key !== "id" && key !== "weight")) {
+    if (!isShareRecord(seed) || !Object.hasOwn(seed, "id") || !Object.hasOwn(seed, "weight")) {
+      throw new Error("Missing or inherited basket seed fields.");
+    }
+    if (Object.keys(seed).some((key) => key !== "id" && key !== "weight")) {
       throw new Error("Unrecognized basket seed fields. This link was not silently downgraded.");
     }
     if (!seed || !BY_ID.has(seed.id) || seen.has(seed.id)) throw new Error("Unknown or duplicate seed ID.");
@@ -102,6 +114,7 @@ export function validateState(value) {
     throw new Error("A basket game cannot also be excluded.");
   }
   const excluded = [...value.excluded];
+  if (!Object.hasOwn(value, "bridge") && value.bridge != null) throw new Error("Inherited Bridge settings are not allowed.");
   const bridge = value.bridge == null ? null : validateBridgeSettings(value.bridge, seedIds);
   return { v: 1, catalog: CATALOG_VERSION, method: METHOD_VERSION, mode: value.mode, seeds,
     platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded,
