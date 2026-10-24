@@ -96,7 +96,12 @@ export function validateState(value) {
     throw new Error("Invalid excluded game IDs.");
   }
   const seedIds = new Set(seeds.map((seed) => seed.id));
-  const excluded = value.excluded.filter((id) => !seedIds.has(id));
+  // A conflicting exclusion must not disappear from a versioned share link.
+  // Player actions remove a game from exclusions before adding it to the basket.
+  if (value.excluded.some((id) => seedIds.has(id))) {
+    throw new Error("A basket game cannot also be excluded.");
+  }
+  const excluded = [...value.excluded];
   const bridge = value.bridge == null ? null : validateBridgeSettings(value.bridge, seedIds);
   return { v: 1, catalog: CATALOG_VERSION, method: METHOD_VERSION, mode: value.mode, seeds,
     platform: value.platform, coopOnly: value.coopOnly, lambda: value.lambda, excluded,
