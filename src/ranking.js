@@ -64,7 +64,11 @@ export function normalizeSeeds(seeds) {
 }
 
 function hardConstraintState(candidate) {
-  const state = candidate.hardConstraintState ?? "pass";
+  // Only absence means the legacy unconstrained default. Explicitly missing
+  // evidence must not be promoted into a passing hard constraint, and inherited
+  // properties cannot dictate eligibility for a catalog candidate.
+  const state = Object.hasOwn(candidate, "hardConstraintState")
+    ? candidate.hardConstraintState : "pass";
   if (!new Set(["pass", "fail", "unknown"]).has(state)) {
     throw new TypeError(`invalid hardConstraintState for ${candidate.id}`);
   }

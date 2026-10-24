@@ -138,6 +138,32 @@ test("hard-constraint fail and unknown are separated and never silently relaxed"
   assert.deepEqual(result.excluded.map((item) => [item.id, item.reason]), [["fail", "hard-constraint-fail"]]);
 });
 
+test("explicitly missing hard-constraint state cannot become a silent pass", () => {
+  const seeds = [{ id: "igdb:1", weight: 1 }];
+  for (const invalid of [null, undefined]) {
+    const input = candidate("game:invalid", { "igdb:1": 0.8 });
+    input.hardConstraintState = invalid;
+    assert.throws(() => scoreCandidate(input, seeds), /invalid hardConstraintState/);
+    assert.throws(() => rankCandidates([input], seeds), /invalid hardConstraintState/);
+    assert.throws(() => blendCandidates([input], seeds), /invalid hardConstraintState/);
+  }
+  // Missing field keeps the legacy pass default. Explicit unknown must abstain.
+  const withoutState = candidate("game:default", { "igdb:1": 0.8 });
+  delete withoutState.hardConstraintState;
+  assert.deepEqual(rankCandidates([withoutState], seeds).ranked.map(item => item.id), ["game:default"]);
+  assert.equal(scoreCandidate(candidate("game:unknown", { "igdb:1": 0.8 }, 1, "unknown"), seeds).status, "uncertain");
+});
+
+test("inherited hard-constraint flags do not alter candidate eligibility", () => {
+  const seeds = [{ id: "igdb:1", weight: 1 }];
+  const inherited = Object.assign(Object.create({ hardConstraintState: "fail" }), {
+    id: "game:eligible", affinities: { "igdb:1": 0.8 }, evidenceCoverage: 1,
+  });
+  assert.equal(scoreCandidate(inherited, seeds).status, "rankable");
+  assert.deepEqual(rankCandidates([inherited], seeds).ranked.map(item => item.id), ["game:eligible"]);
+  assert.deepEqual(blendCandidates([inherited], seeds).ranked.map(item => item.id), ["game:eligible"]);
+});
+
 test("missing per-seed affinity stays uncertain rather than becoming zero", () => {
   const result = rankCandidates([
     candidate("sparse", { "igdb:1": 0.9 }, 0.5),
