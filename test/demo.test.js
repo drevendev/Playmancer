@@ -21,10 +21,13 @@ test("share round trip preserves ordered seeds, raw weights, constraints, exclus
   assert.deepEqual(decodeState(encodeState(state)), state);
   assert.deepEqual(recommend(decodeState(encodeState(state))), recommend(state));
 });
-test("selected seeds are canonicalized out of explicit exclusions", () => {
-  const state = validateState({ ...initialState(), seeds: [{ id: "demo:grove", weight: 2 }], excluded: ["demo:grove", "demo:tide"] });
-  assert.deepEqual(state.excluded, ["demo:tide"]);
-  assert.deepEqual(decodeState(encodeState(state)), state);
+test("conflicting seed exclusions fail closed instead of disappearing from shared links", () => {
+  const conflicting = { ...initialState(), seeds: [{ id: "demo:grove", weight: 2 }], excluded: ["demo:grove", "demo:tide"] };
+  assert.throws(() => validateState(conflicting), /cannot also be excluded/);
+  assert.throws(() => encodeState(conflicting), /cannot also be excluded/);
+  assert.throws(() => decodeState("#basket=" + encodeURIComponent(JSON.stringify(conflicting))), /cannot also be excluded/);
+  const valid = { ...conflicting, excluded: ["demo:tide"] };
+  assert.deepEqual(decodeState(encodeState(valid)), valid);
 });
 test("empty basket gives empty results, not a default fallback", () => {
   assert.deepEqual(recommend({ ...initialState(), seeds: [] }).ranked, []);
@@ -49,10 +52,12 @@ test("hard-constraint unknown never enters ranked results", () => {
 test("known failure dominates missing evidence in combined constraints", () => {
   assert.equal(constraintState({ platforms: null, coop: false }, { ...initialState(), platform: "linux", coopOnly: true }), "fail");
 });
-test("exclude every candidate yields empty results without relaxing filters", () => {
-  const state = { ...initialState(), excluded: CATALOG.map((game) => game.id) };
+test("excluding every non-seed candidate yields empty results without relaxing filters", () => {
+  const state = initialState();
+  const seeds = new Set(state.seeds.map((seed) => seed.id));
+  state.excluded = CATALOG.filter((game) => !seeds.has(game.id)).map((game) => game.id);
   assert.deepEqual(ids(recommend(state)), []);
-  assert.equal(recommend(state).excluded.length, 12);
+  assert.equal(recommend(state).excluded.length, CATALOG.length);
 });
 test("missing mechanics is uncertainty, not zero similarity or high-confidence theme-only fit", () => {
   const pair = pairEvidence(BY_ID.get("demo:lantern"), BY_ID.get("demo:ember"));
