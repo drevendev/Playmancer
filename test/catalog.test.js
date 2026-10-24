@@ -179,3 +179,31 @@ test('explicit approval permits partial known-empty metadata without licensing a
   assert.equal(validated.games[0].description, null);
   assert.deepEqual(catalogCoverage(validated).mechanics, { known: 1, total: 1 });
 });
+
+
+test('publication rejects inherited source rights, records and game identities', () => {
+  const inheritedRights = fixture();
+  inheritedRights.sources[0].rights = Object.create(inheritedRights.sources[0].rights);
+  assert.throws(() => validateCatalogSnapshot(inheritedRights, { requirePublishable: true }), /plain JSON object/);
+
+  const inheritedSource = fixture();
+  inheritedSource.sources[0] = Object.create(inheritedSource.sources[0]);
+  assert.throws(() => validateCatalogSnapshot(inheritedSource, { requirePublishable: true }), /plain JSON object/);
+
+  const inheritedGame = fixture();
+  inheritedGame.games[0] = Object.create(inheritedGame.games[0]);
+  assert.throws(() => validateCatalogSnapshot(inheritedGame, { requirePublishable: true }), /plain JSON object/);
+
+  const missingApproval = fixture();
+  delete missingApproval.sources[0].rights.status;
+  assert.throws(() => validateCatalogSnapshot(missingApproval, { requirePublishable: true }),
+    /missing or inherited required fields/);
+});
+
+test('explicit null-prototype source rights and game records retain publication semantics', () => {
+  const input = fixture();
+  const expected = validateCatalogSnapshot(input, { requirePublishable: true });
+  input.sources[0].rights = Object.assign(Object.create(null), input.sources[0].rights);
+  input.games[0] = Object.assign(Object.create(null), input.games[0]);
+  assert.deepEqual(validateCatalogSnapshot(input, { requirePublishable: true }), expected);
+});
