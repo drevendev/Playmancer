@@ -3,10 +3,16 @@
 const CATALOG_FIELDS = ["id", "kind", "name", "description", "aliases", "externalIds",
   "sourceId", "parentId", "mechanics", "themes", "platforms", "coop"];
 const METADATA_FIELDS = ["mechanics", "themes", "platforms", "coop"];
-function catalogObject(value, label) {
+function catalogObject(value, label, required = []) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`${label} must be an object`);
+  // Publication rights, identities and features may not come from prototypes.
+  // JSON.parse creates plain records; null-prototype dictionaries are also safe.
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) throw new TypeError(`${label} must be a plain JSON object`);
+  if (required.some(key => !Object.hasOwn(value, key))) throw new TypeError(`${label} has missing or inherited required fields`);
   return value;
 }
+const own = (record, key) => Object.hasOwn(record, key) ? record[key] : undefined;
 function catalogText(value, label) {
   if (typeof value !== "string" || !value.trim() || value !== value.trim()) throw new TypeError(`${label} must be a non-empty trimmed string`);
   return value;
@@ -26,7 +32,7 @@ function catalogFreeze(value) {
   return value;
 }
 export function validateCatalogSnapshot(input, { requirePublishable = false } = {}) {
-  catalogObject(input, "catalog snapshot");
+  catalogObject(input, "catalog snapshot", ["schemaVersion", "snapshotId", "kind", "sources", "games"]);
   if (input.schemaVersion !== 1) throw new Error("Unsupported catalog schemaVersion");
   const snapshotId = catalogText(input.snapshotId, "snapshotId");
   if (!["synthetic", "real"].includes(input.kind)) throw new Error("Invalid catalog kind");
@@ -34,13 +40,13 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
   if (!Array.isArray(input.games) || !input.games.length) throw new Error("Catalog games are required");
   const sources = new Map();
   for (const item of input.sources) {
-    catalogObject(item, "source");
+    catalogObject(item, "source", ["id", "kind", "attribution", "rights"]);
     const id = catalogText(item.id, "source id");
     if (sources.has(id)) throw new Error(`Duplicate source ID: ${id}`);
     if (!["synthetic", "licensed"].includes(item.kind)) throw new Error(`Invalid source kind: ${id}`);
     if (input.kind === "real" && item.kind === "synthetic") throw new Error("Real catalogs cannot claim synthetic source rights");
     if (input.kind === "synthetic" && item.kind !== "synthetic") throw new Error("Synthetic catalogs cannot conceal real-source records");
-    const rights = catalogObject(item.rights, `rights for ${id}`);
+    const rights = catalogObject(item.rights, `rights for ${id}`, ["status", "reference", "fields"]);
     if (!["synthetic", "approved", "unreviewed", "denied"].includes(rights.status)) throw new Error(`Invalid rights status: ${id}`);
     const fields = catalogList(rights.fields, `publishable fields for ${id}`);
     if (fields.some(field => !CATALOG_FIELDS.includes(field))) throw new Error(`Unsupported publishable field: ${id}`);
@@ -52,7 +58,7 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
   }
   const ids = new Set(), externals = new Set();
   const games = input.games.map(item => {
-    catalogObject(item, "game");
+    catalogObject(item, "game", ["id", "kind", "name", "sourceId"]);
     const id = catalogText(item.id, "game id");
     if (!/^[a-z0-9]+:[a-z0-9][a-z0-9._-]*$/.test(id)) throw new Error(`Noncanonical game ID: ${id}`);
     if (ids.has(id)) throw new Error(`Duplicate game ID: ${id}`);
@@ -61,19 +67,19 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
     if (!sources.has(item.sourceId)) throw new Error(`Unknown source: ${id}`);
     // Explicit allowlist: arbitrary input fields never become public assets.
     const game = { id, kind: item.kind, name: catalogText(item.name, `name for ${id}`),
-      description: item.description == null ? null : catalogText(item.description, `description for ${id}`),
-      aliases: catalogList(item.aliases ?? [], `aliases for ${id}`), externalIds: [], sourceId: item.sourceId,
-      parentId: item.parentId ?? null };
+      description: own(item, "description") == null ? null : catalogText(item.description, `description for ${id}`),
+      aliases: catalogList(own(item, "aliases") ?? [], `aliases for ${id}`), externalIds: [], sourceId: item.sourceId,
+      parentId: own(item, "parentId") ?? null };
     if (item.kind === "game" && game.parentId !== null) throw new Error(`Base game cannot have parentId: ${id}`);
     if (item.kind !== "game") catalogText(game.parentId, `parentId for ${id}`);
     for (const key of ["mechanics", "themes", "platforms"]) {
-      game[key] = item[key] == null ? null : catalogList(item[key], `${key} for ${id}`);
+      game[key] = own(item, key) == null ? null : catalogList(item[key], `${key} for ${id}`);
     }
-    if (item.coop != null && typeof item.coop !== "boolean") throw new Error(`Invalid co-op metadata: ${id}`);
-    game.coop = item.coop ?? null;
-    if (!Array.isArray(item.externalIds ?? [])) throw new Error(`Invalid externalIds: ${id}`);
-    for (const external of item.externalIds ?? []) {
-      catalogObject(external, "external ID");
+    if (own(item, "coop") != null && typeof item.coop !== "boolean") throw new Error(`Invalid co-op metadata: ${id}`);
+    game.coop = own(item, "coop") ?? null;
+    if (!Array.isArray(own(item, "externalIds") ?? [])) throw new Error(`Invalid externalIds: ${id}`);
+    for (const external of own(item, "externalIds") ?? []) {
+      catalogObject(external, "external ID", ["provider", "id"]);
       const provider = catalogText(external.provider, "external provider");
       if (!/^[a-z0-9][a-z0-9._-]*$/.test(provider)) throw new Error("Noncanonical external provider");
       const externalId = catalogText(external.id, "external id");
