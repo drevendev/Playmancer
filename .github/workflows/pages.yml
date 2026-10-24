@@ -70,9 +70,47 @@ jobs:
       # Requires Pages to have been provisioned with GitHub Actions as source.
       # Intentionally does NOT attempt to bypass missing repository admin rights.
       - name: Verify Pages configuration
+        id: pages_config
         uses: actions/configure-pages@v5
         with:
           enablement: false
+      - name: Explain missing Pages setup without hiding the failure
+        if: ${{ failure() && steps.pages_config.outcome == 'failure' }}
+        run: |
+          {
+            echo "### Playmancer Pages configuration failed"
+            echo ""
+            echo "The verified static artifact was built and uploaded successfully, but GitHub Pages could not be configured."
+            echo "If the error is HTTP 404, a repository admin or maintainer must open"
+            echo "[Settings → Pages](https://github.com/drevendev/Playmancer/settings/pages)"
+            echo "and select **GitHub Actions** under **Build and deployment → Source**."
+            echo 'Then rerun **Publish Playmancer Pages** on `master`.'
+            echo "Do not claim a live URL until the publish and public HTTP checks pass."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error title=Pages configuration required::Inspect the configure-pages error; for HTTP 404 enable GitHub Actions in repository Settings > Pages, then rerun."
       - name: Publish reviewed static artifact
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify public Pages revision and same-origin Bridge worker
+        env:
+          DEPLOY_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOY_URL" != https://* ]]; then
+            echo "::error title=Missing Pages URL::deploy-pages returned no HTTPS page_url"
+            exit 1
+          fi
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --location --max-time 15 "$DEPLOY_URL" -o /tmp/playmancer-live-index.html \
+              && grep -Fq "name=\"playmancer-revision\" content=\"$EXPECTED_SHA\"" /tmp/playmancer-live-index.html \
+              && curl --fail --silent --show-error --location --max-time 15 "${DEPLOY_URL%/}/bridge-worker.js" -o /tmp/playmancer-live-worker.js \
+              && grep -Fq "self.onmessage =" /tmp/playmancer-live-worker.js; then
+              printf '### Live Pages verified\n\n- URL: %s\n- Revision: `%s`\n- Same-origin worker: HTTP 200 and expected entry point\n' "$DEPLOY_URL" "$EXPECTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+              echo "Live Pages index and worker verified at $EXPECTED_SHA"
+              exit 0
+            fi
+            if [[ "$attempt" -lt 12 ]]; then sleep 10; fi
+          done
+          echo "::error title=Pages live check failed::Expected revision or same-origin bridge-worker.js was not served after deploy"
+          exit 1

@@ -7,6 +7,24 @@ recommendations fit each preference or require a compromise. Start with a sample
 an empty basket; no account, paid inference, tracking, remote assets or runtime API
 requests are needed.
 
+## Play in your browser — GitHub Pages
+
+**[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
+[Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+
+> **Publication pending as of 2026-10-24:** this is the intended GitHub Pages
+> address, **not a live-verified link**. The static player builds and passes CI,
+> but GitHub Pages is not yet enabled for this repository. The link may return 404.
+
+**One-time activation (repository admin/maintainer):** open
+[Settings → Pages](https://github.com/drevendev/Playmancer/settings/pages),
+set **Build and deployment → Source → GitHub Actions**, then
+[run the existing Pages workflow on `master`](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml).
+No additional workflow, hosting provider, credentials, or separate branch is needed.
+After deployment the workflow checks that the public HTML serves the exact merged
+commit revision and that the same-origin `bridge-worker.js` is reachable.
+The experience uses **fictional games only** until real-data rights are established.
+
 ## Playable preview 0.3
 
 The default remains an explicitly **fictional twelve-profile preview**, not a real
@@ -157,10 +175,15 @@ The build emits self-contained `index.html` and `.nojekyll`, including publicati
 revision and selected catalog metadata. Invalid catalog or bundle inputs fail before
 replacing the last valid HTML. Build success is not deployment evidence.
 
-The Pages workflow deploys **reviewed master only**. Authorized administration must
-provision Pages with GitHub Actions as the source; no workflow auto-enables Pages or
-weakens protection. As of 2026-10-22 Pages is unprovisioned and no URL is live-verified.
-[#7](https://github.com/drevendev/Playmancer/issues/7) tracks deployment and hosted checks.
+The Pages workflow deploys **reviewed master only** and fails explicitly if Pages
+has not been enabled. An authorized admin/maintainer must first configure GitHub
+Actions as the Pages source; the workflow does not self-enable Pages or weaken
+protection. On successful deployment, CI probes the public index for its exact
+`playmancer-revision` commit SHA and checks the same-origin Bridge worker.
+Only successful public checks can establish LIVE_VERIFIED for these resources;
+they do not replace hosted mobile/desktop interaction or screen-reader acceptance.
+[#7](https://github.com/drevendev/Playmancer/issues/7) tracks the outstanding
+deployment and hosted-browser checks.
 
 Use focused PRs, preserve all regression tests and independently review a later exact
 head before merge. The repository has no adopted code license; public visibility is
