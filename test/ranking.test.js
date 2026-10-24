@@ -33,6 +33,22 @@ test("duplicate seeds collapse and normalize deterministically", () => {
   );
 });
 
+test("explicit null, undefined and inherited seed weights cannot invent preferences", () => {
+  for (const invalid of [null, undefined]) {
+    const seeds = [{ id: "igdb:1", weight: invalid }, { id: "igdb:2", weight: 2 }];
+    assert.throws(() => normalizeSeeds(seeds), /weight for igdb:1/);
+    assert.throws(() => rankCandidates([
+      candidate("igdb:9", { "igdb:1": 0.1, "igdb:2": 0.9 }),
+    ], seeds), /weight for igdb:1/);
+  }
+
+  // Keep the documented implicit weight=1 for truly omitted properties.
+  const expected = [{ id: "igdb:1", weight: 1 / 3 }, { id: "igdb:2", weight: 2 / 3 }];
+  assert.deepEqual(normalizeSeeds([{ id: "igdb:1" }, { id: "igdb:2", weight: 2 }]), expected);
+  const inherited = Object.assign(Object.create({ weight: 10 }), { id: "igdb:1" });
+  assert.deepEqual(normalizeSeeds([inherited, { id: "igdb:2", weight: 2 }]), expected);
+});
+
 test("one-seed scalar modes are equivalent", () => {
   const result = scoreCandidate(candidate("igdb:9", { "igdb:1": 0.73 }), [{ id: "igdb:1", weight: 5 }]);
   assert.equal(result.status, "rankable");
