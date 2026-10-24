@@ -98,6 +98,29 @@ test("unequal weights can change real fixture ordering", () => {
 test("unavailable versions and unsupported Bridge fail closed", () => {
   for (const patch of [{ v: 2 }, { catalog: "old" }, { method: "unknown" }, { mode: "bridge" }]) assert.throws(() => validateState({ ...initialState(), ...patch }));
 });
+test("new basket constraints are rejected instead of silently stripped from shared links", () => {
+  // A later player may add a mandatory filter; old clients must not recommend
+  // as though that filter never existed.
+  const future = { ...initialState(), minimumPlayerCount: 4 };
+  assert.throws(() => validateState(future), /Unrecognized basket fields/);
+  assert.throws(() => encodeState(future), /Unrecognized basket fields/);
+  const hash = "#basket=" + encodeURIComponent(JSON.stringify(future));
+  assert.throws(() => decodeState(hash), /Unrecognized basket fields/);
+  assert.deepEqual(decodeState(encodeState(initialState())), initialState(),
+    "supported legacy baskets must still replay unchanged");
+});
+
+test("unknown seed-level preference attributes cannot disappear on replay", () => {
+  const future = {
+    ...initialState(),
+    seeds: [{ ...initialState().seeds[0], preferenceStrength: 7 }],
+  };
+  assert.throws(() => validateState(future), /Unrecognized basket seed fields/);
+  assert.throws(() => encodeState(future), /Unrecognized basket seed fields/);
+  const hash = "#basket=" + encodeURIComponent(JSON.stringify(future));
+  assert.throws(() => decodeState(hash), /Unrecognized basket seed fields/);
+});
+
 test("unknown IDs, duplicate IDs, and more than five seeds are rejected", () => {
   assert.throws(() => validateState({ ...initialState(), seeds: [{ id: "<script>", weight: 1 }] }));
   assert.throws(() => validateState({ ...initialState(), seeds: [initialState().seeds[0], initialState().seeds[0]] }));

@@ -71,12 +71,22 @@ export function validateState(value) {
   if (value.v !== 1 || value.catalog !== CATALOG_VERSION || value.method !== METHOD_VERSION) {
     throw new Error("This link uses an unavailable catalog or method version. It was not silently upgraded.");
   }
+  // Share-link replay must not discard hard constraints introduced by a newer
+  // client: unknown fields require an explicit compatible player version.
+  const basketFields = ["v", "catalog", "method", "mode", "seeds", "platform", "coopOnly", "lambda", "excluded", "bridge"];
+  if (Object.keys(value).some((key) => !basketFields.includes(key))) {
+    throw new Error("Unrecognized basket fields. This link was not silently downgraded.");
+  }
   if (!DEMO_MODES.includes(value.mode)) throw new Error("Unsupported recommendation mode.");
   if (!PLATFORMS.includes(value.platform) || typeof value.coopOnly !== "boolean") throw new Error("Invalid hard constraints.");
   if (typeof value.lambda !== "number" || !Number.isFinite(value.lambda) || value.lambda < 0 || value.lambda > 1) throw new Error("Blend balance must be between 0 and 1.");
   if (!Array.isArray(value.seeds) || value.seeds.length > 5) throw new Error("A basket supports up to five games.");
   const seen = new Set();
   const seeds = value.seeds.map((seed) => {
+    if (seed && typeof seed === "object" && !Array.isArray(seed) &&
+        Object.keys(seed).some((key) => key !== "id" && key !== "weight")) {
+      throw new Error("Unrecognized basket seed fields. This link was not silently downgraded.");
+    }
     if (!seed || !BY_ID.has(seed.id) || seen.has(seed.id)) throw new Error("Unknown or duplicate seed ID.");
     if (!Number.isInteger(seed.weight) || seed.weight < 1 || seed.weight > 10) throw new Error("Seed weights must be integers from 1 to 10.");
     seen.add(seed.id);
