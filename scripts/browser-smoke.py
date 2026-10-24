@@ -59,6 +59,9 @@ with sync_playwright() as p:
     page.bring_to_front()
     while page.locator('#results > li').count():
         page.locator('#results button').first.click()
+    check('last hidden result returns focus to recommendations with a status update',
+          page.evaluate('document.activeElement.id')=='recommendations'
+          and 'hidden.' in page.locator('#status').inner_text())
     check('explicit exclusions produce empty results without fallback',page.locator('#empty').is_visible() and 'not been relaxed' in page.locator('#empty').inner_text())
     page.locator('#restore').click()
     check('restore hidden results is explicit and deterministic',page.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')==expected)

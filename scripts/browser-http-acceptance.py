@@ -66,6 +66,14 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "list-first results and explanatory evidence",
               page.locator("#results > li").count() > 0
               and "Evidence coverage" in page.locator("#results > li").first.inner_text())
+        labels = page.locator("#results > li").evaluate_all(
+            "nodes => nodes.map(card => ({game: card.querySelector('h3')?.textContent, "
+            "summary: card.querySelector('summary')?.textContent}))")
+        check(case, "each match explanation identifies its own game",
+              len(labels) > 1
+              and len({item["summary"] for item in labels}) == len(labels)
+              and all(item["game"] and item["summary"] and item["game"] in item["summary"]
+                      for item in labels))
 
         # Search suggestions change while focus stays in the input. Give assistive
         # technology a real polite status target; aria-describedby alone is not
@@ -107,9 +115,12 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#coop").is_checked())
         page.locator("#coop").uncheck()
         page.locator("#platform").select_option("any")
-        page.locator("#results > li .explanation summary").first.click()
-        check(case, "native explanation opens and describes per-seed evidence",
+        summary = page.locator("#results > li .explanation summary").first
+        summary.focus()
+        summary.press("Enter")
+        check(case, "keyboard opens named explanation and retains focus",
               page.locator("#results > li .explanation").first.evaluate("el => el.open")
+              and page.evaluate("document.activeElement.tagName") == "SUMMARY"
               and "shared:" in page.locator("#results > li .explanation").first.inner_text())
 
         page.locator("#intro-bridge").focus()
@@ -126,10 +137,25 @@ def exercise(browser, base_url, engine, label, width, height):
               and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
 
         hidden_id = page.locator("#results > li").first.get_attribute("data-game-id")
-        page.locator("#results > li").first.get_by_role("button", name=re.compile("^Hide ")).click()
+        hidden_name = page.locator("#results > li").first.locator("h3").inner_text()
+        hide_button = page.locator("#results > li").first.get_by_role("button", name=re.compile("^Hide "))
+        hide_button.focus()
+        hide_button.press("Enter")
         check(case, "explicit exclusion removes result without relaxing filters",
               page.locator(f'[data-game-id="{hidden_id}"]').count() == 0
               and page.locator("#restore").is_visible())
+        # Blend re-optimizes selection when a candidate is excluded. Focus must
+        # follow the refreshed list position, not the former rank-two identity.
+        first_remaining_id = page.locator("#results > li").first.get_attribute("data-game-id")
+        focused_game_id = page.evaluate(
+            "document.activeElement.closest('[data-game-id]')?.dataset.gameId")
+        announcement = page.locator("#status").inner_text()
+        check(case, "keyboard hide announces game and focuses refreshed first result",
+              first_remaining_id is not None and first_remaining_id != hidden_id
+              and focused_game_id == first_remaining_id
+              and f"{hidden_name} hidden." in announcement,
+              details={"first_remaining": first_remaining_id, "focused": focused_game_id,
+                       "status": announcement})
         page.locator("#share").click()
         link = page.locator("#share-link").input_value()
         hash_fragment = "#" + urlsplit(link).fragment

@@ -197,7 +197,7 @@ function drawResults() {
     });
     card.append(affinities);
     const why = element("details", undefined, "explanation");
-    why.append(element("summary", "Why this match?"));
+    why.append(element("summary", `Why ${game.name} matches your basket`));
     for (const pair of item.evidence) {
       why.append(element("p", `${BY_ID.get(pair.id).name} — shared: ${pair.shared.join(", ") || "none"}. Seed tags not shared: ${pair.notShared.join(", ") || "none"}.`));
     }
@@ -209,7 +209,17 @@ function drawResults() {
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
     const hide = element("button", "Hide result"); hide.type = "button";
     hide.setAttribute("aria-label", `Hide ${game.name}`);
-    hide.addEventListener("click", () => { state.excluded.push(item.id); commit(false); $("recommendations").focus(); });
+    hide.addEventListener("click", () => {
+      state.excluded.push(item.id);
+      commit(false);
+      // Keep keyboard users in the results at the same position after the
+      // clicked card is replaced; use the results heading when none remain.
+      const status = $("status");
+      status.textContent = `${game.name} hidden. ${status.textContent}`;
+      const buttons = $("results").querySelectorAll(".card-footer button");
+      if (buttons.length) buttons[Math.min(index, buttons.length - 1)].focus();
+      else $("recommendations").focus();
+    });
     footer.append(hide); card.append(footer); $("results").append(card);
   });
   drawEmptyRecovery(result);
