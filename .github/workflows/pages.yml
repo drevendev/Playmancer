@@ -84,7 +84,7 @@ jobs:
             echo "If the error is HTTP 404, a repository admin or maintainer must open"
             echo "[Settings → Pages](https://github.com/drevendev/Playmancer/settings/pages)"
             echo "and select **GitHub Actions** under **Build and deployment → Source**."
-            echo "Then rerun **Publish Playmancer Pages** on `master`."
+            echo 'Then rerun **Publish Playmancer Pages** on `master`.'
             echo "Do not claim a live URL until the publish and public HTTP checks pass."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::error title=Pages configuration required::Inspect the configure-pages error; for HTTP 404 enable GitHub Actions in repository Settings > Pages, then rerun."
