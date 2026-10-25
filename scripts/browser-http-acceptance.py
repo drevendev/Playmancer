@@ -246,6 +246,64 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "narrow layout does not overflow",
               restored.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
 
+
+        # Test text-only enlargement separately from browser zoom and screen readers.
+        # These checks use the restored journey after its baseline screenshot.
+        motion = restored.evaluate("""() => {
+            const button = getComputedStyle(document.querySelector('#intro-sample'));
+            return {
+                requested: matchMedia('(prefers-reduced-motion: reduce)').matches,
+                animation: button.animationName,
+                transition: button.transitionDuration,
+                scroll: getComputedStyle(document.documentElement).scrollBehavior
+            };
+        }""")
+        check(case, "reduced-motion preference removes animated transitions and scrolling",
+              motion["requested"] and motion["animation"] == "none"
+              and all(float(value.strip().removesuffix("s")) == 0
+                      for value in motion["transition"].split(","))
+              and motion["scroll"] == "auto", details=motion)
+        original_copy = restored.locator(".intro p").evaluate(
+            "node => parseFloat(getComputedStyle(node).fontSize)")
+        original_button = restored.locator("#intro-sample").evaluate(
+            "node => parseFloat(getComputedStyle(node).fontSize)")
+        for text_size in (200, 400):
+            restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
+                              text_size)
+            enlarged = restored.evaluate("""() => {
+                const doc = document.documentElement;
+                return {
+                    root: parseFloat(getComputedStyle(doc).fontSize),
+                    copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
+                    button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
+                    scrollWidth: doc.scrollWidth,
+                    viewport: window.innerWidth,
+                    actions: Array.from(document.querySelectorAll('.intro-actions button')).map(node => {
+                        const box = node.getBoundingClientRect();
+                        return {left: box.left, right: box.right,
+                                inner: node.scrollWidth, width: node.clientWidth};
+                    })
+                };
+            }""")
+            factor = text_size / 100
+            check(case, f"{text_size}% root text enlarges introduction and primary action",
+                  enlarged["root"] >= 16 * factor - 1
+                  and enlarged["copy"] >= original_copy * factor - 1
+                  and enlarged["button"] >= original_button * factor - 1,
+                  details=enlarged)
+            check(case, f"{text_size}% root text reflows without horizontal action clipping",
+                  enlarged["scrollWidth"] <= enlarged["viewport"] + 1
+                  and len(enlarged["actions"]) == 2
+                  and all(action["left"] >= -1
+                          and action["right"] <= enlarged["viewport"] + 1
+                          and action["inner"] <= action["width"] + 1
+                          for action in enlarged["actions"]),
+                  details=enlarged)
+            if text_size == 400:
+                restored.screenshot(
+                    path=str(ARTIFACTS / f"http-{engine}-{label}-text400.png"),
+                    full_page=False, animations="disabled")
+
         stale = {**saved, "catalog": "unavailable-snapshot"}
         invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
         bad_page = context.new_page()

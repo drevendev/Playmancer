@@ -148,6 +148,7 @@ jobs:
             .test-artifacts/http-cross-browser.json
             .test-artifacts/http-*-desktop.png
             .test-artifacts/http-*-mobile.png
+            .test-artifacts/http-*-text400.png
           include-hidden-files: true
           if-no-files-found: warn
           retention-days: 14

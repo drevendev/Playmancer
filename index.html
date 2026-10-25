@@ -23,6 +23,11 @@
 .empty-reasons{padding-left:20px}.empty-actions button{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
 .jump-results{overflow-wrap:anywhere;white-space:normal}
 .intro-actions{margin-top:20px}.intro-actions button{min-height:48px}
+/* Text-only enlargement: readable labels and reflowing native actions. */
+label,.seed-name{font-size:.875rem}
+.hint,#search-results button{font-size:.8125rem}
+.intro-actions button,.actions button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.check label{min-width:0;overflow-wrap:anywhere}
 @media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr)}}
 
 /* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
