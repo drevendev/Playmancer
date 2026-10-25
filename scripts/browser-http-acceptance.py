@@ -17,6 +17,7 @@ from threading import Thread
 from urllib.parse import quote, unquote, urlsplit
 
 from playwright.sync_api import sync_playwright
+from hosted_validation import validate_hosted_identity, verified_same_origin_worker
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
@@ -28,15 +29,7 @@ EXPECTED_SHA = os.environ.get("PLAYMANCER_EXPECTED_SHA")
 if EXPECTED_SHA and not HOSTED_URL:
     raise ValueError("Hosted acceptance expected a deployment URL but got none")
 if HOSTED_URL:
-    parsed = urlsplit(HOSTED_URL)
-    if (parsed.scheme, parsed.hostname, parsed.path.rstrip("/"), parsed.query, parsed.fragment) != (
-        "https", "drevendev.github.io", "/Playmancer", "", ""
-    ):
-        raise ValueError("Hosted acceptance requires the canonical HTTPS Playmancer Pages URL")
-    if not EXPECTED_SHA or not re.fullmatch(r"[0-9a-f]{40}", EXPECTED_SHA):
-        raise ValueError("Hosted acceptance requires the exact deployed master SHA")
-    if OVERRIDE:
-        raise ValueError("Hosted acceptance cannot use a local artifact override")
+    validate_hosted_identity(HOSTED_URL, EXPECTED_SHA, OVERRIDE)
     SITE = None
 else:
     SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
@@ -83,9 +76,8 @@ def exercise(browser, base_url, engine, label, width, height):
             served_sha = page.locator('meta[name="playmancer-revision"]').get_attribute("content")
             check(case, "hosted HTML matches the exact deployed master SHA",
                   served_sha == EXPECTED_SHA, details=served_sha)
-            worker = context.request.get(base_url + "/bridge-worker.js", timeout=15000)
             check(case, "same-origin hosted Bridge worker is served over HTTPS",
-                  worker.status == 200 and "self.onmessage =" in worker.text())
+                  verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         check(case, "working first-screen sample and fictional label",
               page.locator("#seeds > li").count() >= 2 and "fictional" in page.locator(".badge").inner_text().lower()
