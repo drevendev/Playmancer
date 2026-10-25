@@ -12,24 +12,30 @@ requests are needed.
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Published — first live-revision proof, 2026-10-24 23:24 UTC.**
-> [Publish Playmancer Pages #40142462093](https://github.com/drevendev/Playmancer/actions/runs/40142462093)
+> **Published and hosted-browser verified — 2026-10-25.**
+> [Publish Playmancer Pages #40226036493](https://github.com/drevendev/Playmancer/actions/runs/40226036493)
 > successfully deployed reviewed `master` commit
-> `c9eff3980b02ce4ed62b7be889a0549ce0c2bb67`. The GitHub Actions deployment
-> job fetched the public HTTPS page, matched its `playmancer-revision` marker to
-> that exact commit and fetched the same-origin `bridge-worker.js` successfully.
-> This is **live HTTP verification at that revision**, not proof that every later
-> deployment remains live. The [latest publish runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-> record subsequent revisions.
+> `59003d016e57e2edd68ee62842c7e19f6887276c`. The deployment job fetched
+> the public HTTPS page, matched its `playmancer-revision` marker to that exact
+> commit and loaded the same-origin `bridge-worker.js`. Its hosted Chromium,
+> Firefox and WebKit desktop/mobile acceptance reported **276/276 assertions PASS**
+> with **18 real screenshots inspected**. See the [exact-head evidence in issue
+> #14](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426).
+> This proves the named deployment and tested flows, **not future live revisions**
+> or full accessibility. [Latest publish runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> remain the current deployment authority.
 
 The current preview uses **fictional games only**; it is not a real catalog or
-a validated recommendation-quality claim. [Exact-master CI](https://github.com/drevendev/Playmancer/actions/runs/40142462100)
-also passed Node/build and local Chromium, Firefox and WebKit journeys. The hosted
-player has **not yet undergone an independent desktop/mobile browser inspection**:
-real hosted navigation, screenshots and final live UX acceptance are still tracked
-in [release issue #7](https://github.com/drevendev/Playmancer/issues/7).
-If the page does not load, inspect the [publish workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml);
-an old green job is not evidence of current availability.
+a validated recommendation-quality claim. [Exact-master CI](https://github.com/drevendev/Playmancer/actions/runs/40226036470)
+passed all four jobs (Node/build, Chromium flow, multi-engine local HTTP, and
+synthetic Bridge responsiveness). Hosted desktop/mobile acceptance covered
+basket, keyboard interactions, hard filters, explanations, Bridge, share/restore,
+reduced motion and simulated 200%/400% root-font enlargement. **Real browser
+zoom and spoken output from a real screen-reader/browser pair remain NOT_RUN**;
+[issue #14](https://github.com/drevendev/Playmancer/issues/14) stays open.
+Large text can require extensive vertical scrolling on mobile. If the site
+does not load, inspect the [publish workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml);
+a past green run does not prove current availability.
 
 ## Playable preview 0.3
 
@@ -164,7 +170,7 @@ existing offline Chromium checks and a separate loopback-HTTP Chromium/Firefox/W
 journey are required by Verify. The HTTP job serves the built static artifact through
 a real local web server and checks desktop/mobile basket, keyboard weight edits, filters,
 explanations, Bridge, exclusions, versioned sharing, fresh-page restoration and visible
-invalid-link recovery; it saves six screenshots and per-engine JSON. CI failures remain
+invalid-link recovery; it retains baseline, 400%-root-font first-screen and Bridge screenshots (18 across all six engine/viewports) plus per-engine JSON. CI failures remain
 failures (no skipped or substituted browser engines). Local HTTP is **not** public Pages
 navigation, and automated DOM checks are **not** screen-reader/assistive-technology
 certification. Issue #14 retains those unverified gates.
@@ -186,10 +192,12 @@ has not been enabled. An authorized admin/maintainer must first configure GitHub
 Actions as the Pages source; the workflow does not self-enable Pages or weaken
 protection. On successful deployment, CI probes the public index for its exact
 `playmancer-revision` commit SHA and checks the same-origin Bridge worker.
-Only successful public checks can establish LIVE_VERIFIED for these resources;
-they do not replace hosted mobile/desktop interaction or screen-reader acceptance.
-[#7](https://github.com/drevendev/Playmancer/issues/7) tracks the outstanding
-deployment and hosted-browser checks.
+Only successful public checks can establish LIVE_VERIFIED for a specific
+revision. Hosted desktop/mobile interaction was separately exercised at
+`59003d0` ([acceptance evidence](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426)).
+This does **not** establish real browser-zoom or audible screen-reader acceptance;
+those remain tracked by [issue #14](https://github.com/drevendev/Playmancer/issues/14).
+[#7](https://github.com/drevendev/Playmancer/issues/7) is the closed deployment milestone.
 
 Use focused PRs, preserve all regression tests and independently review a later exact
 head before merge. The repository has no adopted code license; public visibility is
