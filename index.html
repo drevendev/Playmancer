@@ -30,8 +30,9 @@ label,.seed-name{font-size:.875rem}
 .check label{min-width:0;overflow-wrap:anywhere}
 /* Long dynamic explanations must also wrap when the root font is enlarged. */
 body{overflow-wrap:anywhere}
-/* WebKit native select text must not escape its box at large root fonts. */
-select{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+/* WebKit native selects cannot wrap a long selected option. Bound their
+   type at 200% while explanatory labels and the rest of the page reflow to 400%. */
+select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hidden;text-overflow:ellipsis}
 @media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr)}}
 
 /* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
