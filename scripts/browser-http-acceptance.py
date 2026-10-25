@@ -285,6 +285,14 @@ def exercise(browser, base_url, engine, label, width, height):
             "node => parseFloat(getComputedStyle(node).fontSize)")
         original_button = restored.locator("#intro-sample").evaluate(
             "node => parseFloat(getComputedStyle(node).fontSize)")
+        bridge_type_baseline = restored.locator("#bridge-lab").evaluate("""panel => {
+            const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
+            return {
+                heading: size("#bridge-title"),
+                eyebrow: size(".eyebrow"),
+                warning: size(".bridge-warning")
+            };
+        }""")
         for text_size in (200, 400):
             restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
                               text_size)
@@ -297,6 +305,15 @@ def exercise(browser, base_url, engine, label, width, height):
                     root: parseFloat(getComputedStyle(doc).fontSize),
                     copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
+                    bridgeType: (() => {
+                        const panel = document.querySelector("#bridge-lab");
+                        const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
+                        return {
+                            heading: size("#bridge-title"),
+                            eyebrow: size(".eyebrow"),
+                            warning: size(".bridge-warning")
+                        };
+                    })(),
                     scrollWidth: doc.scrollWidth,
                     bodyScrollWidth: document.body.scrollWidth,
                     rootClientWidth: doc.clientWidth,
@@ -333,6 +350,10 @@ def exercise(browser, base_url, engine, label, width, height):
                   and enlarged["copy"] >= original_copy * factor - 1
                   and enlarged["button"] >= original_button * factor - 1,
                   details=enlarged)
+            check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
+                  all(enlarged["bridgeType"][name] >= original * factor - 1
+                      for name, original in bridge_type_baseline.items()),
+                  details={"baseline": bridge_type_baseline, "enlarged": enlarged["bridgeType"]})
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
                   and len(enlarged["actions"]) == 3
@@ -345,6 +366,35 @@ def exercise(browser, base_url, engine, label, width, height):
                 restored.screenshot(
                     path=str(ARTIFACTS / f"http-{engine}-{label}-text400.png"),
                     full_page=False, animations="disabled")
+                # First-screen shots do not show the below-the-fold Bridge controls.
+                # Verify actual native select geometry, not page scrollWidth alone.
+                bridge_geometry = restored.locator("#bridge-lab").evaluate("""panel => {
+                    const section = panel.getBoundingClientRect();
+                    return Array.from(panel.querySelectorAll(".bridge-controls select"), control => {
+                        const bounds = control.getBoundingClientRect();
+                        const label = control.closest("label").getBoundingClientRect();
+                        return {
+                            id: control.id, left: bounds.left, right: bounds.right,
+                            labelLeft: label.left, labelRight: label.right,
+                            sectionLeft: section.left, sectionRight: section.right,
+                            height: bounds.height,
+                            interiorOverflow: control.scrollWidth - control.clientWidth
+                        };
+                    });
+                }""")
+                check(case, "400% root text keeps Bridge native controls readable and touch-sized",
+                      len(bridge_geometry) == 4
+                      and all(item["left"] >= item["labelLeft"] - 1
+                              and item["right"] <= item["labelRight"] + 1
+                              and item["left"] >= item["sectionLeft"] - 1
+                              and item["right"] <= item["sectionRight"] + 1
+                              and item["height"] >= 44
+                              and item["interiorOverflow"] <= 8
+                              for item in bridge_geometry),
+                      details=bridge_geometry)
+                restored.locator("#bridge-lab").screenshot(
+                    path=str(ARTIFACTS / f"http-{engine}-{label}-bridge-text400.png"),
+                    animations="disabled")
 
         stale = {**saved, "catalog": "unavailable-snapshot"}
         invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
