@@ -285,6 +285,14 @@ def exercise(browser, base_url, engine, label, width, height):
             "node => parseFloat(getComputedStyle(node).fontSize)")
         original_button = restored.locator("#intro-sample").evaluate(
             "node => parseFloat(getComputedStyle(node).fontSize)")
+        bridge_type_baseline = restored.locator("#bridge-lab").evaluate("""panel => {
+            const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
+            return {
+                heading: size("#bridge-title"),
+                eyebrow: size(".eyebrow"),
+                warning: size(".bridge-warning")
+            };
+        }""")
         for text_size in (200, 400):
             restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
                               text_size)
@@ -297,6 +305,15 @@ def exercise(browser, base_url, engine, label, width, height):
                     root: parseFloat(getComputedStyle(doc).fontSize),
                     copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
+                    bridgeType: (() => {
+                        const panel = document.querySelector("#bridge-lab");
+                        const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
+                        return {
+                            heading: size("#bridge-title"),
+                            eyebrow: size(".eyebrow"),
+                            warning: size(".bridge-warning")
+                        };
+                    })(),
                     scrollWidth: doc.scrollWidth,
                     bodyScrollWidth: document.body.scrollWidth,
                     rootClientWidth: doc.clientWidth,
@@ -333,6 +350,10 @@ def exercise(browser, base_url, engine, label, width, height):
                   and enlarged["copy"] >= original_copy * factor - 1
                   and enlarged["button"] >= original_button * factor - 1,
                   details=enlarged)
+            check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
+                  all(enlarged["bridgeType"][name] >= original * factor - 1
+                      for name, original in bridge_type_baseline.items()),
+                  details={"baseline": bridge_type_baseline, "enlarged": enlarged["bridgeType"]})
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
                   and len(enlarged["actions"]) == 3
