@@ -171,13 +171,14 @@ function drawEmptyRecovery(result) {
   empty.append(list);
 
   const actions = element("div", undefined, "actions empty-actions");
-  const addAction = (label, mutate) => {
+  const addAction = (label, mutate, removedName = null) => {
     const button = element("button", label);
     button.type = "button";
     button.addEventListener("click", () => {
       mutate();
       commit(true);
       $("recommendations").focus();
+      if (removedName) announceBasketAction("Removed", removedName);
     });
     actions.append(button);
   };
@@ -186,7 +187,7 @@ function drawEmptyRecovery(result) {
   if (failed.length && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
   for (const seed of sparseSeeds) {
     const name = BY_ID.get(seed.id).name;
-    addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); });
+    addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); }, name);
   }
   if (actions.children.length) empty.append(actions);
 }
