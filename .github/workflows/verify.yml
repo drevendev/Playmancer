@@ -23,6 +23,8 @@ jobs:
         with:
           node-version: 22
       - run: npm test
+      - name: Reject noncanonical hosted URLs and redirected workers
+        run: python3 -m unittest discover -s test -p 'test_hosted_validation.py' -v
       - run: npm run validate:catalog
       - name: Verify reproducible five-method benchmark
         run: |
