@@ -283,6 +283,16 @@ def exercise(browser, base_url, engine, label, width, height):
                     bodyScrollWidth: document.body.scrollWidth,
                     rootClientWidth: doc.clientWidth,
                     viewport: window.innerWidth,
+                    innerOverflow: Array.from(document.querySelectorAll('body *'))
+                        .map(node => {
+                            const box = node.getBoundingClientRect();
+                            return {tag: node.tagName.toLowerCase(), id: node.id || '',
+                                    className: typeof node.className === 'string' ? node.className : '',
+                                    over: node.scrollWidth - node.clientWidth,
+                                    overflowX: getComputedStyle(node).overflowX,
+                                    right: Math.round(box.right)};
+                        }).filter(node => node.over > 8)
+                          .sort((a, b) => b.over - a.over).slice(0, 12),
                     overflowNodes: Array.from(document.querySelectorAll('body *'))
                         .map(node => {
                             const box = node.getBoundingClientRect();
