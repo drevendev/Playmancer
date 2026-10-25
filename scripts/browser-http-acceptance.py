@@ -345,6 +345,35 @@ def exercise(browser, base_url, engine, label, width, height):
                 restored.screenshot(
                     path=str(ARTIFACTS / f"http-{engine}-{label}-text400.png"),
                     full_page=False, animations="disabled")
+                # First-screen shots do not show the below-the-fold Bridge controls.
+                # Verify actual native select geometry, not page scrollWidth alone.
+                bridge_geometry = restored.locator("#bridge-lab").evaluate("""panel => {
+                    const section = panel.getBoundingClientRect();
+                    return Array.from(panel.querySelectorAll(".bridge-controls select"), control => {
+                        const bounds = control.getBoundingClientRect();
+                        const label = control.closest("label").getBoundingClientRect();
+                        return {
+                            id: control.id, left: bounds.left, right: bounds.right,
+                            labelLeft: label.left, labelRight: label.right,
+                            sectionLeft: section.left, sectionRight: section.right,
+                            height: bounds.height,
+                            interiorOverflow: control.scrollWidth - control.clientWidth
+                        };
+                    });
+                }""")
+                check(case, "400% root text keeps Bridge native controls readable and touch-sized",
+                      len(bridge_geometry) == 4
+                      and all(item["left"] >= item["labelLeft"] - 1
+                              and item["right"] <= item["labelRight"] + 1
+                              and item["left"] >= item["sectionLeft"] - 1
+                              and item["right"] <= item["sectionRight"] + 1
+                              and item["height"] >= 44
+                              and item["interiorOverflow"] <= 8
+                              for item in bridge_geometry),
+                      details=bridge_geometry)
+                restored.locator("#bridge-lab").screenshot(
+                    path=str(ARTIFACTS / f"http-{engine}-{label}-bridge-text400.png"),
+                    animations="disabled")
 
         stale = {**saved, "catalog": "unavailable-snapshot"}
         invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
