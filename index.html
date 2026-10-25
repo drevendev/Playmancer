@@ -28,6 +28,8 @@ label,.seed-name{font-size:.875rem}
 .hint,#search-results button{font-size:.8125rem}
 .intro-actions button,.actions button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
 .check label{min-width:0;overflow-wrap:anywhere}
+/* Long dynamic explanations must also wrap when the root font is enlarged. */
+body{overflow-wrap:anywhere}
 @media(max-width:800px){.layout{grid-template-columns:minmax(0,1fr)}}
 
 /* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
