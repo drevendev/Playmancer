@@ -270,6 +270,9 @@ def exercise(browser, base_url, engine, label, width, height):
         for text_size in (200, 400):
             restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
                               text_size)
+            # WebKit may publish scroll geometry a frame after changing root text.
+            # Inspect the settled layout, not the intermediate font-update frame.
+            restored.evaluate("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
             enlarged = restored.evaluate("""() => {
                 const doc = document.documentElement;
                 return {
@@ -277,6 +280,8 @@ def exercise(browser, base_url, engine, label, width, height):
                     copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
                     scrollWidth: doc.scrollWidth,
+                    bodyScrollWidth: document.body.scrollWidth,
+                    rootClientWidth: doc.clientWidth,
                     viewport: window.innerWidth,
                     overflowNodes: Array.from(document.querySelectorAll('body *'))
                         .map(node => {
