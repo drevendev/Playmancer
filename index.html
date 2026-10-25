@@ -55,10 +55,11 @@
 <div id="error" class="notice" role="alert" tabindex="-1" hidden><p id="error-message"></p><button id="error-recover" type="button">Restore sample basket</button></div>
 <main class="layout">
 <aside class="panel" aria-labelledby="basket-title">
-<div class="title-line"><h2 id="basket-title">Your basket</h2><span id="seed-count" class="count" aria-live="polite"></span></div>
+<div class="title-line"><h2 id="basket-title">Your basket</h2><span id="seed-count" class="count"></span></div>
 <p class="hint">Try 2–5 profiles. A single profile also works.</p>
 <button id="jump-results" class="primary jump-results" type="button">View recommendations</button>
 <ul id="seeds" aria-label="Selected games"></ul>
+<p id="basket-feedback" class="hint" role="status" aria-live="polite" aria-atomic="true">Add or remove games to update your recommendations.</p>
 <label for="search">Add a fictional game</label><input id="search" type="search" placeholder="Search 12 profiles…" autocomplete="off" aria-describedby="search-hint">
 <p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><ul id="search-results" aria-label="Available games"></ul>
 <div class="section"><label for="mode">Recommendation mode</label><select id="mode"><option value="intersection">Intersection — across the basket</option><option value="blend">Blend — keep different strands</option><option value="arithmetic">Weighted average — baseline</option></select><p id="mode-note" class="hint mode-note"></p>
