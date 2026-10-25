@@ -12,18 +12,24 @@ requests are needed.
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Publication pending as of 2026-10-24:** this is the intended GitHub Pages
-> address, **not a live-verified link**. The static player builds and passes CI,
-> but GitHub Pages is not yet enabled for this repository. The link may return 404.
+> **Published — first live-revision proof, 2026-10-24 23:24 UTC.**
+> [Publish Playmancer Pages #40142462093](https://github.com/drevendev/Playmancer/actions/runs/40142462093)
+> successfully deployed reviewed `master` commit
+> `c9eff3980b02ce4ed62b7be889a0549ce0c2bb67`. The GitHub Actions deployment
+> job fetched the public HTTPS page, matched its `playmancer-revision` marker to
+> that exact commit and fetched the same-origin `bridge-worker.js` successfully.
+> This is **live HTTP verification at that revision**, not proof that every later
+> deployment remains live. The [latest publish runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> record subsequent revisions.
 
-**One-time activation (repository admin/maintainer):** open
-[Settings → Pages](https://github.com/drevendev/Playmancer/settings/pages),
-set **Build and deployment → Source → GitHub Actions**, then
-[run the existing Pages workflow on `master`](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml).
-No additional workflow, hosting provider, credentials, or separate branch is needed.
-After deployment the workflow checks that the public HTML serves the exact merged
-commit revision and that the same-origin `bridge-worker.js` is reachable.
-The experience uses **fictional games only** until real-data rights are established.
+The current preview uses **fictional games only**; it is not a real catalog or
+a validated recommendation-quality claim. [Exact-master CI](https://github.com/drevendev/Playmancer/actions/runs/40142462100)
+also passed Node/build and local Chromium, Firefox and WebKit journeys. The hosted
+player has **not yet undergone an independent desktop/mobile browser inspection**:
+real hosted navigation, screenshots and final live UX acceptance are still tracked
+in [release issue #7](https://github.com/drevendev/Playmancer/issues/7).
+If the page does not load, inspect the [publish workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml);
+an old green job is not evidence of current availability.
 
 ## Playable preview 0.3
 
