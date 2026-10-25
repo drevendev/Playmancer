@@ -293,7 +293,7 @@ def exercise(browser, base_url, engine, label, width, height):
                   details=enlarged)
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
-                  and len(enlarged["actions"]) == 2
+                  and len(enlarged["actions"]) == 3
                   and all(action["left"] >= -1
                           and action["right"] <= enlarged["viewport"] + 1
                           and action["inner"] <= action["width"] + 1
