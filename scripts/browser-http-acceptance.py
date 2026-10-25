@@ -1,8 +1,10 @@
-"""Cross-engine player acceptance over real loopback HTTP; never a Pages/live claim.
+"""Cross-engine player acceptance over local HTTP or explicitly configured Pages HTTPS.
 
-Install playwright==1.55.0 and its Chromium, Firefox and WebKit browser binaries.
-Run from the Playmancer repository root. The default builds the exact source checkout;
-PLAYMANCER_HTTP_SITE is only a local artifact override for diagnostic runs.
+Default mode tests a real local server and is NOT live verification. Hosted mode
+requires PLAYMANCER_HOSTED_URL (canonical Pages URL) and PLAYMANCER_EXPECTED_SHA;
+it visits the public deployment with Chromium, Firefox and WebKit and saves actual
+desktop/mobile screenshots and complete share/recovery assertion results.
+Install playwright==1.55.0 plus all three browsers before running.
 """
 import json
 import os
@@ -20,12 +22,26 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
 ARTIFACTS.mkdir(exist_ok=True)
 OVERRIDE = os.environ.get("PLAYMANCER_HTTP_SITE")
-SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
-if not OVERRIDE:
-    subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
-    subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
-if not (SITE / "index.html").is_file():
-    raise FileNotFoundError(f"No built site at {SITE}")
+HOSTED_URL = os.environ.get("PLAYMANCER_HOSTED_URL")
+EXPECTED_SHA = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+if HOSTED_URL:
+    parsed = urlsplit(HOSTED_URL)
+    if (parsed.scheme, parsed.hostname, parsed.path.rstrip("/"), parsed.query, parsed.fragment) != (
+        "https", "drevendev.github.io", "/Playmancer", "", ""
+    ):
+        raise ValueError("Hosted acceptance requires the canonical HTTPS Playmancer Pages URL")
+    if not EXPECTED_SHA or not re.fullmatch(r"[0-9a-f]{40}", EXPECTED_SHA):
+        raise ValueError("Hosted acceptance requires the exact deployed master SHA")
+    if OVERRIDE:
+        raise ValueError("Hosted acceptance cannot use a local artifact override")
+    SITE = None
+else:
+    SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
+    if not OVERRIDE:
+        subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
+    if not (SITE / "index.html").is_file():
+        raise FileNotFoundError(f"No built site at {SITE}")
 
 
 class QuietHandler(SimpleHTTPRequestHandler):
@@ -55,8 +71,17 @@ def exercise(browser, base_url, engine, label, width, height):
     try:
         page = context.new_page()
         response = page.goto(base_url + "/", wait_until="load")
-        check(case, "served via real HTTP 200", response is not None and response.status == 200
-              and page.evaluate("location.protocol") == "http:")
+        expected_scheme = "https:" if HOSTED_URL else "http:"
+        check(case, "real navigation serves HTTP 200 over the required protocol",
+              response is not None and response.status == 200
+              and page.evaluate("location.protocol") == expected_scheme)
+        if HOSTED_URL:
+            served_sha = page.locator('meta[name="playmancer-revision"]').get_attribute("content")
+            check(case, "hosted HTML matches the exact deployed master SHA",
+                  served_sha == EXPECTED_SHA, details=served_sha)
+            worker = context.request.get(base_url + "/bridge-worker.js", timeout=15000)
+            check(case, "same-origin hosted Bridge worker is served over HTTPS",
+                  worker.status == 200 and "self.onmessage =" in worker.text())
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         check(case, "working first-screen sample and fictional label",
               page.locator("#seeds > li").count() >= 2 and "fictional" in page.locator(".badge").inner_text().lower()
@@ -233,12 +258,17 @@ def exercise(browser, base_url, engine, label, width, height):
         context.close()
 
 
-server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(SITE)))
-thread = Thread(target=server.serve_forever, daemon=True)
-thread.start()
+server = None
+thread = None
+if HOSTED_URL:
+    base_url = HOSTED_URL.rstrip("/")
+else:
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(SITE)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base_url = f"http://127.0.0.1:{server.server_port}"
 failed = None
 try:
-    base_url = f"http://127.0.0.1:{server.server_port}"
     with sync_playwright() as p:
         # CI installs all three engine binaries. A partial local run is diagnostic only.
         requested = os.environ.get("PLAYMANCER_BROWSERS", "chromium,firefox,webkit").split(",")
@@ -257,13 +287,17 @@ try:
 except Exception as error:
     failed = f"{type(error).__name__}: {error}"
 finally:
-    server.shutdown()
-    server.server_close()
-    thread.join(timeout=5)
+    if server is not None:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
     report = {
-        "scope": "local HTTP over loopback, real browser engines; not public Pages or assistive-technology certification",
-        "revision": os.environ.get("GITHUB_SHA", os.environ.get("PLAYMANCER_REVISION", "unpublished")),
-        "site": "build artifact; local override" if OVERRIDE else "exact-checkout build",
+        "scope": ("public Pages HTTPS browser journey; not assistive-technology certification"
+                  if HOSTED_URL else
+                  "local HTTP over loopback, real browser engines; not public Pages or assistive-technology certification"),
+        "revision": EXPECTED_SHA if HOSTED_URL else os.environ.get("GITHUB_SHA", os.environ.get("PLAYMANCER_REVISION", "unpublished")),
+        "site": base_url if HOSTED_URL else ("build artifact; local override" if OVERRIDE else "exact-checkout build"),
+        "hosted": bool(HOSTED_URL),
         "engines": os.environ.get("PLAYMANCER_BROWSERS", "chromium,firefox,webkit").split(","),
         "checks": CHECKS,
         "error": failed,
