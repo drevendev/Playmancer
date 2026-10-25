@@ -24,6 +24,9 @@ ARTIFACTS.mkdir(exist_ok=True)
 OVERRIDE = os.environ.get("PLAYMANCER_HTTP_SITE")
 HOSTED_URL = os.environ.get("PLAYMANCER_HOSTED_URL")
 EXPECTED_SHA = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+# A missing deployment URL must fail, not silently execute the loopback test.
+if EXPECTED_SHA and not HOSTED_URL:
+    raise ValueError("Hosted acceptance expected a deployment URL but got none")
 if HOSTED_URL:
     parsed = urlsplit(HOSTED_URL)
     if (parsed.scheme, parsed.hostname, parsed.path.rstrip("/"), parsed.query, parsed.fragment) != (
@@ -66,8 +69,9 @@ def exercise(browser, base_url, engine, label, width, height):
     context = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
     errors, external_requests = [], []
     context.on("page", lambda pg: pg.on("pageerror", lambda error: errors.append(str(error))))
+    origin = (urlsplit(base_url).scheme, urlsplit(base_url).netloc)
     context.on("request", lambda request: external_requests.append(request.url)
-               if not request.url.startswith(base_url) else None)
+               if (urlsplit(request.url).scheme, urlsplit(request.url).netloc) != origin else None)
     try:
         page = context.new_page()
         response = page.goto(base_url + "/", wait_until="load")
