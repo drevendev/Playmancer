@@ -278,6 +278,15 @@ def exercise(browser, base_url, engine, label, width, height):
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
                     scrollWidth: doc.scrollWidth,
                     viewport: window.innerWidth,
+                    overflowNodes: Array.from(document.querySelectorAll('body *'))
+                        .map(node => {
+                            const box = node.getBoundingClientRect();
+                            return {tag: node.tagName.toLowerCase(), id: node.id || '',
+                                    className: typeof node.className === 'string' ? node.className : '',
+                                    right: Math.round(box.right), left: Math.round(box.left),
+                                    scroll: node.scrollWidth, width: node.clientWidth};
+                        }).filter(node => node.right > innerWidth + 1 || node.left < -1)
+                          .slice(0, 12),
                     actions: Array.from(document.querySelectorAll('.intro-actions button')).map(node => {
                         const box = node.getBoundingClientRect();
                         return {left: box.left, right: box.right,
