@@ -183,8 +183,8 @@ def exercise(browser, base_url, engine, label, width, height):
         # The route is distinct from basket ranking. A polite announcement must
         # name the *current pair* so it makes sense without reading both selects.
         bridge_names = (
-            page.locator("#bridge-start option:checked").inner_text(),
-            page.locator("#bridge-end option:checked").inner_text(),
+            page.locator("#bridge-start option:checked").text_content(),
+            page.locator("#bridge-end option:checked").text_content(),
         )
         bridge_feedback = page.locator("#bridge-status")
         named_pair = f"Bridge from {bridge_names[0]} to {bridge_names[1]}:"
