@@ -37,21 +37,23 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 
 /* Experimental, list-first Bridge panel. Native controls stay keyboard/touch accessible. */
 #bridge-lab{margin-top:28px}
+/* Bridge caveats and route evidence must grow with user text settings. */
+#bridge-lab h2{font-size:1.375rem}#bridge-lab .hint{font-size:.8125rem}
 /* Keep the Bridge heading focus outline clear of the synthetic-data label. */
-#bridge-lab .eyebrow{margin-bottom:14px}
+#bridge-lab .eyebrow{margin-bottom:14px;font-size:.75rem}
 /* 400% root-text scaling must wrap long Bridge status words on narrow screens. */
 #bridge-lab .bridge-status{overflow-wrap:anywhere}
 #bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
 #bridge-lab .bridge-controls label{margin:0;min-width:0}
 #bridge-lab .bridge-controls select{margin-top:7px;width:100%}
-#bridge-lab .bridge-warning{border-left:3px solid var(--warn);padding:8px 12px;margin-top:12px;color:var(--muted);font-size:13px}
+#bridge-lab .bridge-warning{border-left:3px solid var(--warn);padding:8px 12px;margin-top:12px;color:var(--muted);font-size:.8125rem}
 #bridge-lab .bridge-status{margin-top:16px}
 #bridge-lab .bridge-steps{list-style:decimal;margin:14px 0 0;padding-left:22px;display:grid;gap:12px}
 #bridge-lab .bridge-steps>li{padding-left:6px}
 #bridge-lab .bridge-step{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0;overflow-wrap:anywhere}
-#bridge-lab .bridge-step h3{font-size:16px}
-#bridge-lab .bridge-step p{font-size:13px}
-#bridge-lab .bridge-key{font-size:12px;color:var(--accent)}
+#bridge-lab .bridge-step h3{font-size:1rem}
+#bridge-lab .bridge-step p{font-size:.8125rem}
+#bridge-lab .bridge-key{font-size:.75rem;color:var(--accent)}
 @media(max-width:600px){#bridge-lab .bridge-controls{grid-template-columns:minmax(0,1fr)}#bridge-lab .bridge-steps{padding-left:24px}}
 
 #error:focus{outline:3px solid var(--accent);outline-offset:3px}
