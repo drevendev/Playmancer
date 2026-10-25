@@ -180,6 +180,24 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#bridge-steps li").count() > 0
               and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
 
+        # The route is distinct from basket ranking. A polite announcement must
+        # name the *current pair* so it makes sense without reading both selects.
+        bridge_names = (
+            page.locator("#bridge-start option:checked").inner_text(),
+            page.locator("#bridge-end option:checked").inner_text(),
+        )
+        bridge_feedback = page.locator("#bridge-status")
+        named_pair = f"Bridge from {bridge_names[0]} to {bridge_names[1]}:"
+        check(case, "Bridge route live status identifies both selected favorites",
+              bridge_feedback.get_attribute("role") == "status"
+              and bridge_feedback.get_attribute("aria-live") == "polite"
+              and bridge_feedback.inner_text().startswith(named_pair),
+              details={"pair": bridge_names, "status": bridge_feedback.inner_text()})
+        page.locator("#bridge-hops").select_option("1")
+        check(case, "changed Bridge route still names its endpoints even if no route exists",
+              bridge_feedback.inner_text().startswith(named_pair),
+              details=bridge_feedback.inner_text())
+        page.locator("#bridge-hops").select_option("3")
         hidden_id = page.locator("#results > li").first.get_attribute("data-game-id")
         hidden_name = page.locator("#results > li").first.locator("h3").inner_text()
         hide_button = page.locator("#results > li").first.get_by_role("button", name=re.compile("^Hide "))
