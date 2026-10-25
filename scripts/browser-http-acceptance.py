@@ -274,6 +274,30 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "first-screen sample recovery also works after invalid navigation",
               bad_page.locator("#error").is_hidden()
               and bad_page.locator("#seeds > li").count() >= 2)
+        # Sparse evidence can remove a seed from the empty-results recovery panel,
+        # not only from the usual basket row. Its keyboard path must announce the
+        # named removal and new count while preserving the results-focus contract.
+        sparse = context.new_page()
+        sparse.goto(base_url + "/", wait_until="load")
+        sparse.locator("#clear").click()
+        sparse.locator("#search").fill("Silent Archive")
+        sparse_add = sparse.get_by_role("button", name="Add Silent Archive")
+        sparse_add.focus()
+        sparse_add.press("Enter")
+        recovery = sparse.get_by_role("button", name="Remove Silent Archive from basket")
+        check(case, "sparse profile exposes keyboard-accessible empty-results recovery",
+              sparse.locator("#seeds > li").count() == 1
+              and sparse.locator("#empty").is_visible()
+              and recovery.is_visible()
+              and sparse.locator("#basket-feedback").inner_text().startswith(
+                  "Added Silent Archive. 1 of 5 game selected."))
+        recovery.focus()
+        recovery.press("Enter")
+        check(case, "keyboard sparse-seed recovery announces named removal and focuses results",
+              sparse.locator("#seeds > li").count() == 0
+              and sparse.locator("#basket-feedback").inner_text().startswith(
+                  "Removed Silent Archive. 0 of 5 games selected.")
+              and sparse.evaluate("document.activeElement.id") == "recommendations")
         check(case, "no external requests or JavaScript exceptions",
               not errors and not external_requests)
     finally:
