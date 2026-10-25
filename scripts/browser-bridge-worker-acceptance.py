@@ -141,9 +141,24 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                       }
                       return performance.now() - start;
                     }""")
-                    page.wait_for_function(
-                        "document.querySelector('#bridge-status').textContent.startsWith('No supported route')",
-                        timeout=30000)
+                    # A no-route Worker result is now prefixed by the selected pair.
+                    # Wait for the *current* endpoints and the no-route outcome;
+                    # do not mistake an earlier route or a pending status for success.
+                    page.wait_for_function("""
+                        () => {
+                          const status = document.querySelector('#bridge-status').textContent;
+                          const start = document.querySelector('#bridge-start').selectedOptions[0]?.textContent;
+                          const end = document.querySelector('#bridge-end').selectedOptions[0]?.textContent;
+                          return status.startsWith(`Bridge from ${start} to ${end}: No supported route`);
+                        }
+                    """, timeout=30000)
+                    no_route_status = page.locator("#bridge-status").inner_text()
+                    start_name = page.locator("#bridge-start option:checked").text_content()
+                    end_name = page.locator("#bridge-end option:checked").text_content()
+                    check("no-route worker result names current endpoints",
+                          no_route_status.startswith(
+                              f"Bridge from {start_name} to {end_name}: No supported route"),
+                          no_route_status)
                     counters = page.evaluate("window.__workerEvents")
                     check("latest input wins after rapid cancellation",
                           page.locator("#bridge-threshold").input_value() == "0.54"

@@ -52,8 +52,13 @@ function canUseBridgeWorker() {
   return CATALOG.length >= 50 && typeof Worker === "function" &&
     (location.protocol === "https:" || location.protocol === "http:");
 }
+function bridgeRouteLabel(form) {
+  // The live region must identify which pair a result or worker error describes.
+  return `Bridge from ${BY_ID.get(form.startId)?.name ?? "unknown favorite"} to ${BY_ID.get(form.endId)?.name ?? "unknown favorite"}:`;
+}
 function calculateBridgeInWorker(input, form, status, steps) {
   const key = JSON.stringify(input);
+  const routeLabel = bridgeRouteLabel(form);
   if (completedBridgeKey === key && completedBridgeRoute !== null) {
     // Returning to a cached route must still cancel a different in-flight job.
     // Otherwise its late onmessage can overwrite these newer route controls.
@@ -63,13 +68,13 @@ function calculateBridgeInWorker(input, form, status, steps) {
     return;
   }
   if (bridgeJob?.key === key) {
-    status.textContent = "Calculating an explained route… You can keep using the basket.";
+    status.textContent = routeLabel + " Calculating an explained route… You can keep using the basket.";
     steps.setAttribute("aria-busy", "true");
     return;
   }
   cancelPendingBridge();
   const generation = bridgeGeneration;
-  status.textContent = "Calculating an explained route… You can keep using the basket.";
+  status.textContent = routeLabel + " Calculating an explained route… You can keep using the basket.";
   steps.setAttribute("aria-busy", "true");
   let worker;
   try {
@@ -77,7 +82,7 @@ function calculateBridgeInWorker(input, form, status, steps) {
     worker = new Worker(new URL("./bridge-worker.js", document.baseURI));
   } catch {
     steps.removeAttribute("aria-busy");
-    status.textContent = "Bridge calculation is unavailable in this browser. Reload to retry.";
+    status.textContent = routeLabel + " Bridge calculation is unavailable in this browser. Reload to retry.";
     return;
   }
   bridgeJob = { key, worker };
@@ -90,7 +95,7 @@ function calculateBridgeInWorker(input, form, status, steps) {
   worker.onmessage = ({ data }) => {
     if (!finish()) return;
     if (!data?.route || data.error) {
-      status.textContent = "Bridge calculation failed: " +
+      status.textContent = routeLabel + " Bridge calculation failed: " +
         (typeof data?.error === "string" ? data.error : "unknown error") + ".";
       return;
     }
@@ -100,15 +105,15 @@ function calculateBridgeInWorker(input, form, status, steps) {
   };
   worker.onerror = (event) => {
     event.preventDefault();
-    if (finish()) status.textContent = "Bridge calculation failed. Change a route control to retry.";
+    if (finish()) status.textContent = routeLabel + " Bridge calculation failed. Change a route control to retry.";
   };
   worker.onmessageerror = () => {
-    if (finish()) status.textContent = "Bridge response could not be read. Change a route control to retry.";
+    if (finish()) status.textContent = routeLabel + " Bridge response could not be read. Change a route control to retry.";
   };
   try {
     worker.postMessage({ input });
   } catch {
-    if (finish()) status.textContent = "Bridge input could not be sent. Change a route control to retry.";
+    if (finish()) status.textContent = routeLabel + " Bridge input could not be sent. Change a route control to retry.";
   }
 }
 
@@ -159,13 +164,14 @@ export function renderBridge(state) {
   showBridgeRoute(cachedBridgePreview(input), form, status, steps);
 }
 function showBridgeRoute(route, form, status, steps) {
+  const routeLabel = bridgeRouteLabel(form);
   if (route.status === "unavailable-endpoint") {
-    status.textContent = "Route unavailable: " + BY_ID.get(route.affected_id).name +
+    status.textContent = routeLabel + " Route unavailable: " + BY_ID.get(route.affected_id).name +
       " is " + route.reason + " under your current filters. No filter was relaxed.";
     return;
   }
   if (route.status === "no-route") {
-    status.textContent = "No supported route within " + form.maxHops +
+    status.textContent = routeLabel + " No supported route within " + form.maxHops +
       " edge(s) at the chosen threshold. " + route.eligibility.unknown +
       " game(s) have unknown required filter metadata; " + route.eligibility.fail +
       " fail filters; " + route.eligibility.excluded +
@@ -176,7 +182,7 @@ function showBridgeRoute(route, form, status, steps) {
       "No filter was relaxed. Adjust route controls explicitly if desired.";
     return;
   }
-  status.textContent = String(route.hops) + " connection(s), " +
+  status.textContent = routeLabel + " " + String(route.hops) + " connection(s), " +
     String(Math.max(0, route.hops - 1)) + " intermediate game(s), " +
     String(route.eligible_count) + " eligible profiles. Total graph cost " +
     route.total_cost.toFixed(3) + "; not a quality or confidence estimate.";
