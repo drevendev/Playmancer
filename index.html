@@ -42,7 +42,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 /* 400% root-text scaling must wrap long Bridge status words on narrow screens. */
 #bridge-lab .bridge-status{overflow-wrap:anywhere}
 #bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
-#bridge-lab .bridge-controls label{margin:0}
+#bridge-lab .bridge-controls label{margin:0;min-width:0}
 #bridge-lab .bridge-controls select{margin-top:7px;width:100%}
 #bridge-lab .bridge-warning{border-left:3px solid var(--warn);padding:8px 12px;margin-top:12px;color:var(--muted);font-size:13px}
 #bridge-lab .bridge-status{margin-top:16px}
@@ -98,7 +98,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <label for="bridge-start">From favorite <select id="bridge-start"><option value="">Choose start…</option></select></label>
 <label for="bridge-end">To favorite <select id="bridge-end"><option value="">Choose destination…</option></select></label>
 <label for="bridge-hops">Maximum steps <select id="bridge-hops"><option value="1">1 edge</option><option value="2">2 edges</option><option value="3">3 edges</option><option value="4">4 edges</option></select></label>
-<label for="bridge-threshold">Minimum similarity for a connection <select id="bridge-threshold"><option value="0.05">0.05 — permissive</option><option value="0.31">0.31 — moderate (exploratory)</option><option value="0.54">0.54 — strict</option></select></label>
+<label for="bridge-threshold">Minimum similarity for a connection <select id="bridge-threshold"><option value="0.05">0.05 — loose</option><option value="0.31">0.31 — moderate</option><option value="0.54">0.54 — strict</option></select></label>
 </div>
 <p class="bridge-warning">Scores are not quality or confidence percentages. A direct edge may bypass meaningful intermediate games; higher thresholds can remove routes entirely. Required filters and hidden results are never relaxed. Bridge policy and method version are saved in your basket link.</p>
 <p id="bridge-status" class="bridge-status" role="status" aria-live="polite"></p>
