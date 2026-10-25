@@ -117,6 +117,29 @@ def exercise(browser, base_url, engine, label, width, height):
               "matching fictional profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
+        # A keyboard-selected result and its removal must announce the actual
+        # game name as well as the count, not just silently change the basket.
+        feedback = page.locator("#basket-feedback")
+        check(case, "basket changes use one atomic polite announcement",
+              feedback.get_attribute("role") == "status"
+              and feedback.get_attribute("aria-live") == "polite"
+              and feedback.get_attribute("aria-atomic") == "true"
+              and page.locator("#seed-count").get_attribute("aria-live") is None)
+        add = page.locator("#search-results button").first
+        added_name = add.get_attribute("aria-label")[len("Add "):]
+        add.focus()
+        add.press("Enter")
+        check(case, "keyboard add announces the named favorite and preserves search focus",
+              page.locator("#seeds > li").count() == 3
+              and feedback.inner_text().startswith(f"Added {added_name}. 3 of 5 games selected.")
+              and page.evaluate("document.activeElement.id") == "search")
+        remove = page.get_by_role("button", name=f"Remove {added_name}")
+        remove.focus()
+        remove.press("Enter")
+        check(case, "keyboard remove announces the named favorite and preserves search focus",
+              page.locator("#seeds > li").count() == 2
+              and feedback.inner_text().startswith(f"Removed {added_name}. 2 of 5 games selected.")
+              and page.evaluate("document.activeElement.id") == "search")
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
               "Type a game name" in hint.inner_text()
@@ -197,6 +220,9 @@ def exercise(browser, base_url, engine, label, width, height):
         restored = context.new_page()
         replay = restored.goto(base_url + "/" + hash_fragment, wait_until="load")
         restored.wait_for_function("document.querySelector('#bridge-start').value !== ''")
+        check(case, "fresh shared link announces restored basket count",
+              restored.locator("#basket-feedback").inner_text().startswith(
+                  "Shared basket restored. 2 of 5 games selected."))
         observed = {
             # A fresh Firefox tab may reuse a validated cached response (HTTP 304).
             # The first page must still load via 200 and every restored field is asserted.
@@ -248,6 +274,30 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "first-screen sample recovery also works after invalid navigation",
               bad_page.locator("#error").is_hidden()
               and bad_page.locator("#seeds > li").count() >= 2)
+        # Sparse evidence can remove a seed from the empty-results recovery panel,
+        # not only from the usual basket row. Its keyboard path must announce the
+        # named removal and new count while preserving the results-focus contract.
+        sparse = context.new_page()
+        sparse.goto(base_url + "/", wait_until="load")
+        sparse.locator("#clear").click()
+        sparse.locator("#search").fill("Silent Archive")
+        sparse_add = sparse.get_by_role("button", name="Add Silent Archive")
+        sparse_add.focus()
+        sparse_add.press("Enter")
+        recovery = sparse.get_by_role("button", name="Remove Silent Archive from basket")
+        check(case, "sparse profile exposes keyboard-accessible empty-results recovery",
+              sparse.locator("#seeds > li").count() == 1
+              and sparse.locator("#empty").is_visible()
+              and recovery.is_visible()
+              and sparse.locator("#basket-feedback").inner_text().startswith(
+                  "Added Silent Archive. 1 of 5 game selected."))
+        recovery.focus()
+        recovery.press("Enter")
+        check(case, "keyboard sparse-seed recovery announces named removal and focuses results",
+              sparse.locator("#seeds > li").count() == 0
+              and sparse.locator("#basket-feedback").inner_text().startswith(
+                  "Removed Silent Archive. 0 of 5 games selected.")
+              and sparse.evaluate("document.activeElement.id") == "recommendations")
         check(case, "no external requests or JavaScript exceptions",
               not errors and not external_requests)
     finally:

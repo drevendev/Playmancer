@@ -41,6 +41,11 @@ function showCatalogIdentity() {
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
 let state;
+function announceBasketAction(action, name) {
+  const count = state.seeds.length;
+  const summary = `${count} of 5 ${count === 1 ? "game" : "games"} selected.`;
+  $("basket-feedback").textContent = `${action}${name ? ` ${name}` : ""}. ${summary}`;
+}
 function clearShareFeedback() {
   $("share-box").hidden = true;
   $("share-link").value = "";
@@ -62,6 +67,7 @@ function readLocation() {
   // A newly opened or navigated invalid link should announce the error and
   // leave keyboard users one Tab away from the explicit recovery action.
   if (invalidLink) $("error").focus();
+  else announceBasketAction(location.hash.startsWith("#basket=") ? "Shared basket restored" : "Sample basket ready");
 }
 function commit(rebuildSeeds = false) {
   if (state.bridge && [state.bridge.startId, state.bridge.endId].some((id) => id && !state.seeds.some((seed) => seed.id === id))) state.bridge = null;
@@ -81,7 +87,12 @@ function drawSeeds() {
     const remove = element("button", "Remove", "remove");
     remove.type = "button";
     remove.setAttribute("aria-label", `Remove ${BY_ID.get(seed.id).name}`);
-    remove.addEventListener("click", () => { state.seeds = state.seeds.filter((s) => s.id !== seed.id); commit(true); $("search").focus(); });
+    remove.addEventListener("click", () => {
+      state.seeds = state.seeds.filter((s) => s.id !== seed.id);
+      commit(true);
+      $("search").focus();
+      announceBasketAction("Removed", BY_ID.get(seed.id).name);
+    });
     title.append(remove);
     const label = element("label", `Weight for ${BY_ID.get(seed.id).name}: `, "weight-label");
     const input = element("input");
@@ -120,6 +131,7 @@ function drawSearch() {
       state.seeds.push({ id: game.id, weight: 1 });
       state.excluded = state.excluded.filter((id) => id !== game.id);
       $("search").value = ""; commit(true); $("search").focus();
+      announceBasketAction("Added", game.name);
     });
     row.append(button); $("search-results").append(row);
   }
@@ -159,13 +171,14 @@ function drawEmptyRecovery(result) {
   empty.append(list);
 
   const actions = element("div", undefined, "actions empty-actions");
-  const addAction = (label, mutate) => {
+  const addAction = (label, mutate, removedName = null) => {
     const button = element("button", label);
     button.type = "button";
     button.addEventListener("click", () => {
       mutate();
       commit(true);
       $("recommendations").focus();
+      if (removedName) announceBasketAction("Removed", removedName);
     });
     actions.append(button);
   };
@@ -174,7 +187,7 @@ function drawEmptyRecovery(result) {
   if (failed.length && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
   for (const seed of sparseSeeds) {
     const name = BY_ID.get(seed.id).name;
-    addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); });
+    addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); }, name);
   }
   if (actions.children.length) empty.append(actions);
 }
@@ -254,8 +267,8 @@ $("platform").addEventListener("change", (event) => { state.platform = event.tar
 $("coop").addEventListener("change", (event) => { state.coopOnly = event.target.checked; commit(); });
 $("lambda").addEventListener("input", (event) => { state.lambda = Number(event.target.value); commit(); });
 $("restore").addEventListener("click", () => { state.excluded = []; commit(); $("recommendations").focus(); });
-$("clear").addEventListener("click", () => { state = { ...state, seeds: [], excluded: [] }; $("search").value = ""; commit(true); $("search").focus(); });
-$("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); });
+$("clear").addEventListener("click", () => { state = { ...state, seeds: [], excluded: [] }; $("search").value = ""; commit(true); $("search").focus(); announceBasketAction("Basket cleared"); });
+$("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); announceBasketAction("Sample basket restored"); });
 $("error-recover").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
 $("share").addEventListener("click", async () => {
   const url = new URL(location.href); url.hash = encodeState(state);
