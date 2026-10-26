@@ -159,6 +159,18 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                           no_route_status.startswith(
                               f"Bridge from {start_name} to {end_name}: No supported route"),
                           no_route_status)
+                    check("no-route live region is concise and points to accessible details",
+                          page.locator("#bridge-status").get_attribute("aria-atomic") == "true"
+                          and len(no_route_status) < 230
+                          and "Why no route?" in no_route_status
+                          and page.locator("#bridge-diagnostics").is_visible())
+                    page.locator("#bridge-diagnostics summary").click()
+                    detail = page.locator("#bridge-diagnostics-text").inner_text()
+                    check("no-route reasons remain available outside the live region",
+                          "lack enough comparable feature data" in detail
+                          and "below your similarity threshold" in detail
+                          and "Hard filters and exclusions were not relaxed" in detail,
+                          detail)
                     counters = page.evaluate("window.__workerEvents")
                     check("latest input wins after rapid cancellation",
                           page.locator("#bridge-threshold").input_value() == "0.54"
@@ -172,6 +184,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                         "document.querySelectorAll('#bridge-steps > li').length > 0", timeout=30000)
                     check("route recovers without stale result",
                           "connection(s)" in page.locator("#bridge-status").inner_text())
+                    check("successful route hides stale no-route details",
+                          page.locator("#bridge-diagnostics").is_hidden())
                     # A completed .05 route is cached. Start a different .54
                     # worker and return to .05 before its message can be delivered.
                     # The cached result must cancel the superseded job, rather

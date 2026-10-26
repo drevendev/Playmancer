@@ -103,7 +103,8 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <label for="bridge-threshold">Minimum similarity for a connection <select id="bridge-threshold"><option value="0.05">0.05 — loose</option><option value="0.31">0.31 — moderate</option><option value="0.54">0.54 — strict</option></select></label>
 </div>
 <p class="bridge-warning">Scores are not quality or confidence percentages. A direct edge may bypass meaningful intermediate games; higher thresholds can remove routes entirely. Required filters and hidden results are never relaxed. Bridge policy and method version are saved in your basket link.</p>
-<p id="bridge-status" class="bridge-status" role="status" aria-live="polite"></p>
+<p id="bridge-status" class="bridge-status" role="status" aria-live="polite" aria-atomic="true"></p>
+<details id="bridge-diagnostics" hidden><summary>Why no route?</summary><p id="bridge-diagnostics-text" class="hint"></p></details>
 <ol id="bridge-steps" class="bridge-steps" aria-label="Explained route steps"></ol>
 </section>
 
