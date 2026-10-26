@@ -135,6 +135,12 @@ export function renderBridge(state) {
   bridgeEl("bridge-hops").value = String(form.maxHops);
   bridgeEl("bridge-threshold").value = String(form.minSimilarity);
   const status = bridgeEl("bridge-status"), steps = bridgeEl("bridge-steps");
+  // Disclose detailed counts on demand rather than announcing a long paragraph
+  // through the polite live region after every route-control change.
+  const diagnostics = bridgeEl("bridge-diagnostics");
+  diagnostics.hidden = true;
+  diagnostics.open = false;
+  bridgeEl("bridge-diagnostics-text").textContent = "";
   steps.replaceChildren();
   if (state.seeds.length < 2) {
     cancelPendingBridge();
@@ -172,14 +178,16 @@ function showBridgeRoute(route, form, status, steps) {
   }
   if (route.status === "no-route") {
     status.textContent = routeLabel + " No supported route within " + form.maxHops +
-      " edge(s) at the chosen threshold. " + route.eligibility.unknown +
-      " game(s) have unknown required filter metadata; " + route.eligibility.fail +
-      " fail filters; " + route.eligibility.excluded +
+      " edge(s) at the chosen threshold. No filter was relaxed. Open Why no route? for evidence.";
+    bridgeEl("bridge-diagnostics-text").textContent =
+      route.eligibility.unknown + " game(s) have unknown required filter metadata; " +
+      route.eligibility.fail + " fail filters; " + route.eligibility.excluded +
       " are hidden. Among eligible game pairs, " + route.pair_evidence.insufficient +
       " lack enough comparable feature data; " + route.pair_evidence.zero_support +
       " have no shared evidence; " + route.pair_evidence.below_threshold +
       " are below your similarity threshold. These are separate reasons, not confidence scores. " +
-      "No filter was relaxed. Adjust route controls explicitly if desired.";
+      "Hard filters and exclusions were not relaxed. Adjust route controls explicitly if desired.";
+    bridgeEl("bridge-diagnostics").hidden = false;
     return;
   }
   status.textContent = routeLabel + " " + String(route.hops) + " connection(s), " +
