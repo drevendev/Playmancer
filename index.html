@@ -54,6 +54,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 #bridge-lab .bridge-step h3{font-size:1rem}
 #bridge-lab .bridge-step p{font-size:.8125rem}
 #bridge-lab .bridge-key{font-size:.75rem;color:var(--accent)}
+#bridge-back-to-basket{margin-top:16px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:600px){#bridge-lab .bridge-controls{grid-template-columns:minmax(0,1fr)}#bridge-lab .bridge-steps{padding-left:24px}}
 
 #error:focus{outline:3px solid var(--accent);outline-offset:3px}
@@ -67,7 +68,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <div id="error" class="notice" role="alert" tabindex="-1" hidden><p id="error-message"></p><button id="error-recover" type="button">Restore sample basket</button></div>
 <main class="layout">
 <aside class="panel" aria-labelledby="basket-title">
-<div class="title-line"><h2 id="basket-title">Your basket</h2><span id="seed-count" class="count"></span></div>
+<div class="title-line"><h2 id="basket-title" tabindex="-1">Your basket</h2><span id="seed-count" class="count"></span></div>
 <p class="hint">Try 2–5 profiles. A single profile also works.</p>
 <button id="jump-results" class="primary jump-results" type="button">View recommendations</button>
 <ul id="seeds" aria-label="Selected games"></ul>
@@ -106,6 +107,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <p id="bridge-status" class="bridge-status" role="status" aria-live="polite" aria-atomic="true"></p>
 <details id="bridge-diagnostics" hidden><summary>Why no route?</summary><p id="bridge-diagnostics-text" class="hint"></p></details>
 <ol id="bridge-steps" class="bridge-steps" aria-label="Explained route steps"></ol>
+<button id="bridge-back-to-basket" type="button">Back to your basket</button>
 </section>
 
 <footer class="foot"><strong>Prototype, not a catalog release.</strong> No APIs, tracking, images, paid inference, or external assets. Synthetic metadata is authored for this demonstration and validated against the versioned catalog contract.<br><span id="versions"></span></footer>
@@ -116,6 +118,11 @@ document.getElementById("jump-results").addEventListener("click", () => {
   const recommendations = document.getElementById("recommendations");
   recommendations.scrollIntoView({ block: "start" });
   recommendations.focus();
+});
+document.getElementById("bridge-back-to-basket").addEventListener("click", () => {
+  const title = document.getElementById("basket-title");
+  title.scrollIntoView({ block: "start", behavior: "auto" });
+  title.focus({ preventScroll: true });
 });
 </script>
 <script type="module" src="./src/demo-ui.js"></script>
