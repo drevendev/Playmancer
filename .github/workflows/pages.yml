@@ -121,8 +121,13 @@ jobs:
     if: github.ref == 'refs/heads/master'
     name: Exercise public Pages in desktop and mobile browsers
     needs: publish
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
+    # The pinned image already contains Chromium, Firefox, WebKit and OS libraries.
+    # Installing browser system dependencies through the runner's apt mirror
+    # previously exceeded the job timeout before player acceptance could begin.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     permissions:
       contents: read
     steps:
@@ -130,12 +135,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install three real browser engines
-        run: |
-          python -m pip install --disable-pip-version-check playwright==1.55.0
-          python -m playwright install --with-deps chromium firefox webkit
+      - name: Install matching Playwright Python client
+        run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - name: Navigate deployed Pages and verify the exact revision and player journey
         env:
+          # Firefox requires an owned HOME inside this root-run container.
+          HOME: /root
           PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
           PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
         run: python scripts/browser-http-acceptance.py

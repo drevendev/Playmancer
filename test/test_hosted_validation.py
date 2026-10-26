@@ -84,5 +84,17 @@ class HostedIdentityTests(unittest.TestCase):
                 self.assertFalse(verified_same_origin_worker(Request(response), BASE))
 
 
+class PagesHostedRuntimeTests(unittest.TestCase):
+    def test_hosted_browser_job_reuses_pinned_preinstalled_engines(self):
+        workflow = (Path(__file__).resolve().parents[1] / '.github' / 'workflows' / 'pages.yml').read_text()
+        _, separator, hosted = workflow.partition('\n  hosted-player-acceptance:\n')
+        self.assertTrue(separator, 'the hosted Pages browser job must exist')
+        self.assertIn('needs: publish', hosted)
+        self.assertIn('image: mcr.microsoft.com/playwright/python:v1.55.0-noble', hosted)
+        self.assertIn('playwright==1.55.0', hosted)
+        self.assertNotIn('playwright install --with-deps', hosted)
+        self.assertIn('HOME: /root', hosted)
+
+
 if __name__ == '__main__':
     unittest.main()
