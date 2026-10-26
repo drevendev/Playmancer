@@ -170,6 +170,18 @@ def exercise(browser, base_url, engine, label, width, height):
         page.locator("#intro-bridge").focus()
         page.locator("#intro-bridge").press("Enter")
         check(case, "keyboard Bridge jump preserves focus", page.evaluate("document.activeElement.id") == "bridge-title")
+        # Native reverse navigation must work without scrolling for thousands
+        # of pixels or replacing the versioned #basket= share fragment.
+        before_back_hash = page.evaluate("location.hash")
+        back_to_basket = page.locator("#bridge-back-to-basket")
+        back_to_basket.focus()
+        back_to_basket.press("Enter")
+        check(case, "keyboard Bridge return focuses basket without mutating shared state",
+              page.evaluate("document.activeElement.id") == "basket-title"
+              and page.evaluate("location.hash") == before_back_hash
+              and back_to_basket.evaluate("node => node.getBoundingClientRect().height") >= 44)
+        page.locator("#intro-bridge").focus()
+        page.locator("#intro-bridge").press("Enter")
         ids = page.locator("#bridge-start option").evaluate_all(
             "nodes => nodes.map(el => el.value).filter(Boolean)")
         check(case, "Bridge exposes explicit basket endpoints", len(ids) >= 2)
@@ -392,6 +404,21 @@ def exercise(browser, base_url, engine, label, width, height):
                               and item["interiorOverflow"] <= 8
                               for item in bridge_geometry),
                       details=bridge_geometry)
+                return_geometry = restored.locator("#bridge-back-to-basket").evaluate("""button => {
+                    const bounds = button.getBoundingClientRect();
+                    const panel = button.closest("#bridge-lab").getBoundingClientRect();
+                    return {
+                        left: bounds.left, right: bounds.right, height: bounds.height,
+                        panelLeft: panel.left, panelRight: panel.right,
+                        innerOverflow: button.scrollWidth - button.clientWidth
+                    };
+                }""")
+                check(case, "400% text leaves an unclipped touch-sized return to basket",
+                      return_geometry["left"] >= return_geometry["panelLeft"] - 1
+                      and return_geometry["right"] <= return_geometry["panelRight"] + 1
+                      and return_geometry["height"] >= 44
+                      and return_geometry["innerOverflow"] <= 8,
+                      details=return_geometry)
                 restored.locator("#bridge-lab").screenshot(
                     path=str(ARTIFACTS / f"http-{engine}-{label}-bridge-text400.png"),
                     animations="disabled")
