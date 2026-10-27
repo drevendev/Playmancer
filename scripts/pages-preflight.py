@@ -60,9 +60,15 @@ def main() -> int:
     assert not parser.assets, f"Unbundled or network assets: {parser.assets}"
     catalog_match = re.search(r'<meta name="playmancer-catalog" content="([^"]+)">', text)
     assert catalog_match, "Catalog version marker missing"
-    if catalog_match.group(1).startswith("wikidata-genre-pilot-"):
+    if catalog_match.group(1).startswith(("wikidata-genre-pilot-", "multi-store-genre-pilot-")):
         assert '"kind":"real"' in text, "Real player snapshot not embedded"
-        assert "Wikidata CC0 genre pilot" in text, "Real pilot provenance missing"
+        assert ("Wikidata CC0 genre pilot" in text or "Wikidata + Dreven Games" in text), "Real pilot provenance missing"
+        if catalog_match.group(1).startswith("multi-store-genre-pilot-"):
+            for name in ("Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid"):
+                assert name in text, "Missing Dreven Games game: " + name
+            assert "https://store.steampowered.com/app/413150" in text, "Steam store URL missing"
+            assert "https://drevengames.itch.io/idle-fantasy-shop" in text, "itch.io URL missing"
+            assert "https://play.google.com/store/apps/details?id=com.drevengames.circlanoid" in text, "Google Play URL missing"
         assert "Stardew Valley" in text and "Terraria" in text, "Real pilot records missing"
         assert "Ember Circuit" not in text, "Synthetic authored profiles leaked into the real public payload"
     else:
