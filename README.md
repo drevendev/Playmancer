@@ -13,44 +13,29 @@ requests are needed.
 [Real pilot provenance](docs/REAL_PILOT.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Published and hosted-browser verified — 2026-10-25.**
-> [Publish Playmancer Pages #40226036493](https://github.com/drevendev/Playmancer/actions/runs/40226036493)
-> successfully deployed reviewed `master` commit
-> `59003d016e57e2edd68ee62842c7e19f6887276c`. The deployment job fetched
-> the public HTTPS page, matched its `playmancer-revision` marker to that exact
-> commit and loaded the same-origin `bridge-worker.js`. Its hosted Chromium,
-> Firefox and WebKit desktop/mobile acceptance reported **276/276 assertions PASS**
-> with **18 real screenshots inspected**. See the [exact-head evidence in issue
-> #14](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426).
-> This proves the named deployment and tested flows, **not future live revisions**
-> or full accessibility. [Latest publish runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-> remain the current deployment authority.
+> **Latest verified public publication as of this update:** `master@74b78b0d9d2500d9b1f777f8c506c3bbc623f2ba`
+> serves the **12-game Wikidata pilot**. [Pages workflow #40495160730](https://github.com/drevendev/Playmancer/actions/runs/40495160730)
+> confirmed the public revision/worker over HTTPS; hosted desktop/mobile
+> acceptance was blocked by test-environment setup and is **NOT VERIFIED**.
+> Check [live workflow runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> for the current deployed SHA.
 
-**Release state (PR #52, not yet merged or live):** This candidate changes the
-production build and Pages publisher to select **12 identifiable real games**
-from a versioned Wikidata CC0 pilot. Only 30% of the full feature model has
-comparable genre evidence, and recommendation usefulness is unmeasured.
-See [pilot sources and limitations](docs/REAL_PILOT.md). The published
-2026-10-25 revision above remains a **fictional preview** until an accepted
-real-catalog PR is merged, published and separately live-verified.
-[Exact-master CI for that earlier fictional release](https://github.com/drevendev/Playmancer/actions/runs/40226036470)
-passed all four jobs (Node/build, Chromium flow, multi-engine local HTTP, and
-synthetic Bridge responsiveness). Hosted desktop/mobile acceptance covered
-basket, keyboard interactions, hard filters, explanations, Bridge, share/restore,
-reduced motion and simulated 200%/400% root-font enlargement. **Real browser
-zoom and spoken output from a real screen-reader/browser pair remain NOT_RUN**;
-[issue #14](https://github.com/drevendev/Playmancer/issues/14) stays open.
-Large text can require extensive vertical scrolling on mobile. If the site
-does not load, inspect the [publish workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml);
-a past green run does not prove current availability.
+**Proposed next version — NOT DEPLOYED until merged:** 17 real games, comprising
+12 existing Wikidata entities and all **five verified Dreven Games** entries,
+with direct Steam (11), itch.io (4) and Google Play (2) store pages. An owner
+association is disclosed in the UI and **never changes ranking**. Storefront
+link IDs and available owner-published genre/platform facts are curated into a
+new, immutable static snapshot; there is **no runtime store API, copying of
+other publishers' descriptions/media, paid data feed or tracking**.
+See [storefront sources and constraints](docs/STOREFRONTS.md).
 
 ## Playable preview 0.3
 
-**In this PR branch**, the production Pages build uses a **12-game real catalog**
-with source-linked genre evidence; the live Pages revision verified above remains
-fictional until a successful post-merge deployment. The original fictional
-twelve-profile preview is still built by plain `node scripts/build-demo.mjs`
-for tests. Preview 0.3 connects a validated build-time snapshot to the whole
+**In this PR branch**, the production Pages build uses **17 real games** and
+safe outbound storefront references, including the five Dreven Games titles.
+The published master still serves the earlier 12-game version until a separate
+review/merge/deployment. The fictional twelve-profile fixture is still built by
+plain `node scripts/build-demo.mjs` for isolated tests. Preview 0.3 connects a validated build-time snapshot to the whole
 player journey. A separate six-profile synthetic fixture exercises aliases,
 editions/DLC and unknown metadata. Existing synthetic-only share links must
 pass the catalog-version gate; they are not silently upgraded to the real catalog.
@@ -82,26 +67,26 @@ facts have [item-level source receipts](docs/REAL_PILOT.md); the structured
 Wikidata source is **CC0**. No third-party descriptions or artwork are bundled.
 
 ```sh
-node scripts/build-demo.mjs _site-real --catalog examples/catalog.wikidata.real.json
+node scripts/build-demo.mjs _site-real --catalog examples/catalog.multistore.real.json
 python3 scripts/pages-preflight.py _site-real
 python3 -m http.server 8080 --directory _site-real
 # After installing Playwright and Chromium:
 python3 scripts/browser-real-catalog-acceptance.py
 ```
 
-This pilot deliberately uses only source-stated Wikidata **genre (P136)**
-overlap. Genres are carried through the current schema's `themes` field;
+The multistore pilot uses source-stated Wikidata **P136 genres** plus conservatively
+normalized **publisher-authored Dreven Games genre tags**. These are carried
+through the current schema's `themes` field;
 gameplay mechanics and co-op metadata remain **unknown**. The real-pilot-only
 evidence gate admits a **30%** comparable-feature signal rather than inventing
 the remaining 70%. Bridge and basket modes use the same restricted signal;
 hard constraints are never loosened. A result is *not* proof of measured
 player usefulness. Catalog coverage is still tiny.
 
-**The last independently verified public Pages revision remains fictional.**
-This PR already changes the production build and publication/browser pipeline
-to select real games. It still requires later independent exact-head acceptance,
-merge, a successful Pages deployment and hosted desktop/mobile verification
-before anyone can call the real catalog live. Existing synthetic links remain
+The previously published Pages release already uses 12 real games. This
+17-game multistore candidate still requires a later independent exact-head
+acceptance, merge, a successful Pages deployment and hosted desktop/mobile
+verification before the *new* snapshot is live. Existing synthetic links remain
 bound to `synthetic-demo-1`; the new catalog rejects incompatible links visibly.
 
 ## Run and verify
@@ -119,7 +104,7 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-On this PR branch, `npm run build` selects the real Wikidata pilot. To build
+On this PR branch, `npm run build` selects the 17-game multistore pilot. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. **After a successful real-catalog deployment**,
 old synthetic basket links must fail visibly with a version mismatch rather
@@ -156,9 +141,10 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The proposed public catalog consists of 12 manually curated Wikidata items under its
-[CC0 structured-data policy](https://www.wikidata.org/wiki/Wikidata:Licensing),
-with [per-item source links and known limitations](docs/REAL_PILOT.md).
+The proposed public catalog combines 12 original Wikidata CC0 items with five
+Dreven Games entries sourced from the owner's public game listings.
+[Storefront receipts and limits](docs/STOREFRONTS.md) and the
+[original Wikidata evidence](docs/REAL_PILOT.md) remain separate.
 Descriptions, mechanics, co-op and artwork are **not inferred or copied**
 from missing or unlicensed records. Field coverage and recommendation quality
 remain limited; [#8](https://github.com/drevendev/Playmancer/issues/8) stays open
