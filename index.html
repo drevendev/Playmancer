@@ -64,6 +64,20 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 
 #error:focus{outline:3px solid var(--accent);outline-offset:3px}
 .storefront-links{display:inline-flex;flex-wrap:wrap;gap:8px;margin:8px 0;font-size:.85rem}.storefront-links a{display:inline-block;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#202c40;color:var(--accent);text-decoration:none}.storefront-links a:hover{text-decoration:underline}.storefront-links a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}#dreven-browse{margin:5px 0 10px}
+
+/* Result evidence is essential player information: scale it with browser text
+   preferences, not just the headings. Allow long labels to reflow at 400%. */
+.rank{font-size:.8125rem}
+.fit{min-width:0;max-width:100%;flex-shrink:1;overflow-wrap:anywhere}
+.fit strong{font-size:1.375rem}
+.fit small{font-size:.6875rem}
+.metadata{font-size:.75rem}
+.affinity{grid-template-columns:minmax(0,1fr) minmax(60px,max-content);font-size:.8125rem}
+.explanation summary{font-size:.875rem}
+.explanation p,.explanation ul{font-size:.8125rem}
+.card-footer{flex-wrap:wrap}
+.card-footer .hint{min-width:0;overflow-wrap:anywhere}
+.card-footer button{font-size:.75rem}
 </style>
 </head>
 <body>
