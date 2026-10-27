@@ -60,6 +60,8 @@ jobs:
         run: python scripts/browser-bridge-acceptance.py
       - name: Verify alternative catalog player journey
         run: python scripts/browser-catalog-acceptance.py
+      - name: Verify opt-in Wikidata CC0 real catalog basket and Bridge
+        run: python scripts/browser-real-catalog-acceptance.py
       - name: Retain actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
