@@ -112,7 +112,7 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   const edges=[];
   // An explicitly versioned real pilot can use the 30%-coverage genre signal
   // without asserting absent mechanics. The usual 70%-coverage gate remains.
-  const requiredCoverageUnits = snapshotId.startsWith('wikidata-genre-pilot-') &&
+  const requiredCoverageUnits = (snapshotId.startsWith('wikidata-genre-pilot-') || snapshotId.startsWith('multi-store-genre-pilot-')) &&
     eligible.every(game => game.mechanics === null) ? 3 : 7;
   // Disjoint counts over unordered eligible pairs: unknown evidence is not zero fit.
   const pairEvidence={insufficient:0,zero_support:0,below_threshold:0,connected:0};

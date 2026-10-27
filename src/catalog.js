@@ -1,7 +1,7 @@
 // Versioned metadata contract. This validates recorded rights, not the legal
 // truth of a receipt. Callers supply ordinary parsed JSON; no code is evaluated.
 const CATALOG_FIELDS = ["id", "kind", "name", "description", "aliases", "externalIds",
-  "sourceId", "parentId", "mechanics", "themes", "platforms", "coop"];
+  "sourceId", "parentId", "mechanics", "themes", "platforms", "coop", "storeLinks"];
 const METADATA_FIELDS = ["mechanics", "themes", "platforms", "coop"];
 function catalogObject(value, label, required = []) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError(`${label} must be an object`);
@@ -22,6 +22,39 @@ function catalogList(value, label) {
   const result = value.map(item => catalogText(item, label));
   if (new Set(result).size !== result.length) throw new TypeError(`duplicate ${label}`);
   return result;
+}
+// Outbound store references are not a license to copy store media or descriptions.
+function validatedStoreLink(value, gameId) {
+  catalogObject(value, "storefront link", ["store", "url"]);
+  if (Object.keys(value).some(key => key !== "store" && key !== "url"))
+    throw new Error("Unsupported storefront link field: " + gameId);
+  const store = catalogText(value.store, "storefront");
+  const href = catalogText(value.url, "storefront URL");
+  let parsed;
+  try { parsed = new URL(href); }
+  catch { throw new Error("Invalid storefront URL: " + gameId); }
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password ||
+      parsed.port || parsed.hash || parsed.href !== href)
+    throw new Error("Unsafe storefront URL: " + gameId);
+  let externalId;
+  if (store === "steam") {
+    if (parsed.hostname !== "store.steampowered.com" || parsed.search ||
+        !/^\/app\/[1-9][0-9]*$/.test(parsed.pathname))
+      throw new Error("Invalid Steam game link: " + gameId);
+    externalId = parsed.pathname.slice(5);
+  } else if (store === "itch") {
+    if (!/^[a-z0-9-]+\.itch\.io$/.test(parsed.hostname) || parsed.search ||
+        !/^\/[a-z0-9][a-z0-9-]*$/.test(parsed.pathname))
+      throw new Error("Invalid itch.io game link: " + gameId);
+    externalId = parsed.pathname.slice(1);
+  } else if (store === "googleplay") {
+    if (parsed.hostname !== "play.google.com" || parsed.pathname !== "/store/apps/details" ||
+        [...parsed.searchParams.keys()].length !== 1 || !parsed.searchParams.has("id") ||
+        !/^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/.test(parsed.searchParams.get("id")))
+      throw new Error("Invalid Google Play game link: " + gameId);
+    externalId = parsed.searchParams.get("id");
+  } else throw new Error("Unsupported storefront: " + store);
+  return { store, url: href, externalId };
 }
 const aliasKey = value => value.normalize("NFC").toLowerCase();
 function catalogFreeze(value) {
@@ -56,7 +89,7 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
     sources.set(id, { id, kind: item.kind, attribution: catalogText(item.attribution, `attribution for ${id}`),
       rights: { status: rights.status, reference, fields } });
   }
-  const ids = new Set(), externals = new Set();
+  const ids = new Set(), externals = new Set(), seenStoreUrls = new Set();
   const games = input.games.map(item => {
     catalogObject(item, "game", ["id", "kind", "name", "sourceId"]);
     const id = catalogText(item.id, "game id");
@@ -87,6 +120,20 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
       if (externals.has(key)) throw new Error(`External ID collision: ${provider}/${externalId}`);
       externals.add(key); game.externalIds.push({ provider, id: externalId });
     }
+    const rawLinks = own(item, "storeLinks") ?? [];
+    if (!Array.isArray(rawLinks)) throw new Error("Invalid storeLinks: " + id);
+    const seenStores = new Set();
+    game.storeLinks = rawLinks.map(link => {
+      const checked = validatedStoreLink(link, id);
+      if (seenStores.has(checked.store) || seenStoreUrls.has(checked.url))
+        throw new Error("Duplicate storefront link: " + id);
+      if (!game.externalIds.some(external =>
+          external.provider === checked.store && external.id === checked.externalId))
+        throw new Error("Storefront link external ID mismatch: " + id + "/" + checked.store);
+      seenStores.add(checked.store);
+      seenStoreUrls.add(checked.url);
+      return { store: checked.store, url: checked.url };
+    });
     if (requirePublishable) {
       const permitted = new Set(sources.get(item.sourceId).rights.fields);
       for (const [key, value] of Object.entries(game)) {

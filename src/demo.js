@@ -178,7 +178,7 @@ export function pairEvidence(a, b) {
     shared.push(...overlap);
     notShared.push(...[...second].filter((tag) => !first.has(tag)));
   }
-  const requiredCoverage = DEMO_SNAPSHOT.kind === "real" && CATALOG_VERSION.startsWith("wikidata-genre-pilot-") ? 0.3 : 0.7;
+  const requiredCoverage = DEMO_SNAPSHOT.kind === "real" && (CATALOG_VERSION.startsWith("wikidata-genre-pilot-") || CATALOG_VERSION.startsWith("multi-store-genre-pilot-")) ? 0.3 : 0.7;
   // Explicit CC0 pilot genre-only lane: 30% observed data, never invented mechanics.
   // Keep synthetic/full-feature semantics unchanged and report actual coverage.
   return { affinity: coverage >= requiredCoverage ? weightedSimilarity / coverage : null,
