@@ -110,7 +110,11 @@ class PagesHostedRuntimeTests(unittest.TestCase):
         self.assertIn('needs: publish', hosted)
         self.assertIn('image: mcr.microsoft.com/playwright/python:v1.55.0-noble', hosted)
         self.assertIn('playwright==1.55.0', hosted)
-        self.assertNotIn('playwright install --with-deps', hosted)
+        hosted_executable = '\n'.join(line for line in hosted.splitlines() if not line.lstrip().startswith('#'))
+        self.assertNotIn('playwright install --with-deps', hosted_executable)
+        self.assertNotIn('actions/setup-python@', hosted_executable)
+        self.assertIn('python scripts/browser-http-acceptance.py', hosted)
+        self.assertIn('actions/upload-artifact@v4', hosted)
         self.assertIn('HOME: /root', hosted)
 
 
