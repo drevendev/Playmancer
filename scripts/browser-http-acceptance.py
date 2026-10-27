@@ -367,6 +367,11 @@ def exercise(browser, base_url, engine, label, width, height):
                     root: parseFloat(getComputedStyle(doc).fontSize),
                     copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
+                    heroLines: (() => {
+                        const title = document.querySelector('.intro h1');
+                        const line = parseFloat(getComputedStyle(title).lineHeight);
+                        return Math.round(title.getBoundingClientRect().height / line);
+                    })(),
                     headingType: {
                         hero: parseFloat(getComputedStyle(document.querySelector('.intro h1')).fontSize),
                         basket: parseFloat(getComputedStyle(document.querySelector('#basket-title')).fontSize),
@@ -428,14 +433,30 @@ def exercise(browser, base_url, engine, label, width, height):
                   and enlarged["copy"] >= original_copy * factor - 1
                   and enlarged["button"] >= original_button * factor - 1,
                   details=enlarged)
+            # Except the mobile hero, headings continue to scale linearly. The
+            # hero is bounded by the viewport at 400% to avoid splitting single
+            # words into letter fragments, but must remain at least body-sized.
+            hero_floor = (min(heading_type_baseline["hero"] * factor,
+                              enlarged["viewport"] * 0.165)
+                          if enlarged["viewport"] <= 640
+                          else heading_type_baseline["hero"] * factor)
             check(case, f"{text_size}% root text retains player heading hierarchy",
                   all(enlarged["headingType"][name] >= baseline * factor - 1
-                      for name, baseline in heading_type_baseline.items())
+                      for name, baseline in heading_type_baseline.items()
+                      if name != "hero")
+                  and enlarged["headingType"]["hero"] >= hero_floor - 1
                   and enlarged["headingType"]["hero"] >= enlarged["copy"]
                   and enlarged["headingType"]["basket"] >= enlarged["copy"]
                   and enlarged["headingType"]["results"] >= enlarged["copy"]
                   and enlarged["headingType"]["card"] >= enlarged["copy"],
-                  details={"baseline": heading_type_baseline, "enlarged": enlarged["headingType"]})
+                  details={"baseline": heading_type_baseline, "enlarged": enlarged["headingType"],
+                           "hero_floor": hero_floor})
+            if text_size == 400 and enlarged["viewport"] <= 640:
+                check(case, "400% mobile hero reflows into at most five readable lines",
+                      enlarged["heroLines"] <= 5,
+                      details={"heroLines": enlarged["heroLines"],
+                               "fontSize": enlarged["headingType"]["hero"],
+                               "viewport": enlarged["viewport"]})
             check(case, f"{text_size}% root text enlarges recommendation score and evidence text",
                   all(enlarged["resultType"][name] >= original * factor - 1
                       for name, original in result_type_baseline.items()),
