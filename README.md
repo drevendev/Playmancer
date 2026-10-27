@@ -10,6 +10,7 @@ requests are needed.
 ## Play in your browser — GitHub Pages
 
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
+[Real pilot provenance](docs/REAL_PILOT.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
 > **Published and hosted-browser verified — 2026-10-25.**
@@ -25,8 +26,14 @@ requests are needed.
 > or full accessibility. [Latest publish runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 > remain the current deployment authority.
 
-The current preview uses **fictional games only**; it is not a real catalog or
-a validated recommendation-quality claim. [Exact-master CI](https://github.com/drevendev/Playmancer/actions/runs/40226036470)
+**Release state (PR #52, not yet merged or live):** This candidate changes the
+production build and Pages publisher to select **12 identifiable real games**
+from a versioned Wikidata CC0 pilot. Only 30% of the full feature model has
+comparable genre evidence, and recommendation usefulness is unmeasured.
+See [pilot sources and limitations](docs/REAL_PILOT.md). The published
+2026-10-25 revision above remains a **fictional preview** until an accepted
+real-catalog PR is merged, published and separately live-verified.
+[Exact-master CI for that earlier fictional release](https://github.com/drevendev/Playmancer/actions/runs/40226036470)
 passed all four jobs (Node/build, Chromium flow, multi-engine local HTTP, and
 synthetic Bridge responsiveness). Hosted desktop/mobile acceptance covered
 basket, keyboard interactions, hard filters, explanations, Bridge, share/restore,
@@ -39,11 +46,14 @@ a past green run does not prove current availability.
 
 ## Playable preview 0.3
 
-The default remains an explicitly **fictional twelve-profile preview**, not a real
-game catalog or a claim of measured recommendation quality. Preview 0.3 connects a
-validated build-time snapshot to the complete player journey. A second independent
-six-profile synthetic fixture exercises aliases, editions/DLC and unknown metadata.
-Existing default rankings and compatible share links keep their semantics.
+**In this PR branch**, the production Pages build uses a **12-game real catalog**
+with source-linked genre evidence; the live Pages revision verified above remains
+fictional until a successful post-merge deployment. The original fictional
+twelve-profile preview is still built by plain `node scripts/build-demo.mjs`
+for tests. Preview 0.3 connects a validated build-time snapshot to the whole
+player journey. A separate six-profile synthetic fixture exercises aliases,
+editions/DLC and unknown metadata. Existing synthetic-only share links must
+pass the catalog-version gate; they are not silently upgraded to the real catalog.
 
 - Search names, canonical IDs and declared aliases; add/remove up to five profiles.
 - Edit explicit integer weights with keyboard controls.
@@ -63,6 +73,37 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
+## Real-game Wikidata pilot (Pages release candidate; not yet deployed)
+
+A **12-title real-game pilot** is available as a separate, versioned build. Choose
+**Stardew Valley, Terraria, Hades, Slay the Spire, Hollow Knight, Portal 2** and
+other identifiable titles from Wikidata. Real titles and selected genre/platform
+facts have [item-level source receipts](docs/REAL_PILOT.md); the structured
+Wikidata source is **CC0**. No third-party descriptions or artwork are bundled.
+
+```sh
+node scripts/build-demo.mjs _site-real --catalog examples/catalog.wikidata.real.json
+python3 scripts/pages-preflight.py _site-real
+python3 -m http.server 8080 --directory _site-real
+# After installing Playwright and Chromium:
+python3 scripts/browser-real-catalog-acceptance.py
+```
+
+This pilot deliberately uses only source-stated Wikidata **genre (P136)**
+overlap. Genres are carried through the current schema's `themes` field;
+gameplay mechanics and co-op metadata remain **unknown**. The real-pilot-only
+evidence gate admits a **30%** comparable-feature signal rather than inventing
+the remaining 70%. Bridge and basket modes use the same restricted signal;
+hard constraints are never loosened. A result is *not* proof of measured
+player usefulness. Catalog coverage is still tiny.
+
+**The last independently verified public Pages revision remains fictional.**
+This PR already changes the production build and publication/browser pipeline
+to select real games. It still requires later independent exact-head acceptance,
+merge, a successful Pages deployment and hosted desktop/mobile verification
+before anyone can call the real catalog live. Existing synthetic links remain
+bound to `synthetic-demo-1`; the new catalog rejects incompatible links visibly.
+
 ## Run and verify
 
 Use Node.js 22. There are no npm dependencies or API keys.
@@ -77,6 +118,12 @@ python3 scripts/pages-preflight.py _site
 # Optional local hosting; this is not public deployment.
 python3 -m http.server 8080 --directory _site
 ```
+
+On this PR branch, `npm run build` selects the real Wikidata pilot. To build
+the fictional sample independently, invoke `node scripts/build-demo.mjs`
+without a catalog argument. **After a successful real-catalog deployment**,
+old synthetic basket links must fail visibly with a version mismatch rather
+than silently mixing catalogs.
 
 Build the alternative synthetic snapshot:
 
@@ -109,10 +156,13 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The authored fixtures pass the synthetic publication gate. **This is not legal
-verification of an external source.** No real source receipt, description/artwork
-license, real-catalog coverage or recommendation-quality result is claimed.
-Real-source adoption remains tracked by [#8](https://github.com/drevendev/Playmancer/issues/8).
+The proposed public catalog consists of 12 manually curated Wikidata items under its
+[CC0 structured-data policy](https://www.wikidata.org/wiki/Wikidata:Licensing),
+with [per-item source links and known limitations](docs/REAL_PILOT.md).
+Descriptions, mechanics, co-op and artwork are **not inferred or copied**
+from missing or unlicensed records. Field coverage and recommendation quality
+remain limited; [#8](https://github.com/drevendev/Playmancer/issues/8) stays open
+for source expansion and better evidence even after a verified real-catalog release.
 
 `synthetic-demo-1` uses weighted Jaccard overlap on mechanics (70%) and themes (30%).
 Less than 70% comparable evidence means uncertainty, not zero fit. Evidence coverage

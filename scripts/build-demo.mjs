@@ -48,7 +48,15 @@ for (const [index, path] of modules.entries()) {
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
     if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
-    if (selectedSnapshot !== null) source = source.replace(slot, () => `const BUILD_CATALOG_SNAPSHOT = ${inlineJSON(selectedSnapshot)};`);
+    if (selectedSnapshot !== null) {
+      source = source.replace(slot, () => `const BUILD_CATALOG_SNAPSHOT = ${inlineJSON(selectedSnapshot)};`);
+      // Selected publication snapshots must not also ship the fictional authoring
+      // fixture in a dead JavaScript branch. Keep it in the repository for tests.
+      const start = source.indexOf("const profile = (id, name, description, mechanics, themes, platforms, coop) =>");
+      const end = source.indexOf("// Both the default and selected snapshot take the same publication-validation", start);
+      if (start < 0 || end <= start) throw new Error("Unexpected authored-fixture boundary");
+      source = source.slice(0, start) + "const AUTHORED_CATALOG = [];\n" + source.slice(end);
+    }
   }
   if (expectedImports[index]) {
     if (source.split(expectedImports[index]).length !== 2) throw new Error(`Unexpected import in ${path}`);

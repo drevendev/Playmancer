@@ -45,21 +45,26 @@ jobs:
   browser:
     name: Chromium product flow
     runs-on: ubuntu-latest
+    # Official Playwright image retains a browser-supported Noble runtime when
+    # GitHub's ubuntu-latest host advances beyond Playwright 1.55 support.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # Use the Python build supplied by the Playwright image. setup-python's
+      # host toolcache executable lacks the ssl extension inside this container.
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
-      - run: python -m playwright install --with-deps chromium
+      # Chromium is bundled in the pinned container; no unsupported host apt install.
       - run: python scripts/browser-smoke.py
       - name: Verify Bridge discovery and share restoration
         run: python scripts/browser-bridge-acceptance.py
       - name: Verify alternative catalog player journey
         run: python scripts/browser-catalog-acceptance.py
+      - name: Verify opt-in Wikidata CC0 real catalog basket and Bridge
+        run: python scripts/browser-real-catalog-acceptance.py
       - name: Retain actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,9 +94,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # Use the Python build supplied by the Playwright image. setup-python's
+      # host toolcache executable lacks the ssl extension inside this container.
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - name: Exercise basket, Bridge and share via actual local HTTP navigation
         # The official Playwright image runs this step as root, but Actions mounts
@@ -115,16 +119,17 @@ jobs:
     name: Synthetic Bridge browser responsiveness
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # Use the Python build supplied by the Playwright image. setup-python's
+      # host toolcache executable lacks the ssl extension inside this container.
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
-      - run: python -m playwright install --with-deps chromium
+      # Chromium is bundled in the pinned container; no unsupported host apt install.
       - name: Measure 12/50/250 dense, sparse and disconnected synthetic Bridge routes at 1x/4x CPU
         run: python scripts/browser-bridge-performance.py
       - name: Verify cancellable Bridge worker on 250 fictional profiles over HTTP

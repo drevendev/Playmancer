@@ -22,8 +22,7 @@ One optional output directory and one `--catalog` path are accepted. Missing fil
 malformed JSON, duplicate options and unknown flags fail; they never substitute
 the default catalog. Input JSON is limited to 1 MiB and 250 profiles, matching the
 existing Bridge engineering bound. This is not a latency guarantee; #15 tracks
-remaining main-thread responsiveness. The default publication workflow is unchanged
-and still builds reviewed master with the authored default until a source is adopted.
+remaining main-thread responsiveness. The GitHub Pages publication now selects the versioned real Wikidata pilot through `npm run build`; plain `node scripts/build-demo.mjs` intentionally retains the authored synthetic fixture for isolated regression tests.
 
 ## Data path and publication safety
 

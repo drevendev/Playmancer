@@ -18,7 +18,8 @@ jobs:
     if: github.ref == 'refs/heads/master'
     name: Verify and package exact master
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Playwright 1.55 does not support ubuntu26.04; keep packaging browser tests on Noble.
     permissions:
       contents: read
     steps:
@@ -34,8 +35,8 @@ jobs:
         run: python3 scripts/pages-preflight.py _site
       - name: Compare two independently built payloads
         run: |
-          node scripts/build-demo.mjs /tmp/playmancer-pages-a
-          node scripts/build-demo.mjs /tmp/playmancer-pages-b
+          node scripts/build-demo.mjs /tmp/playmancer-pages-a --catalog examples/catalog.wikidata.real.json
+          node scripts/build-demo.mjs /tmp/playmancer-pages-b --catalog examples/catalog.wikidata.real.json
           cmp _site/index.html /tmp/playmancer-pages-a/index.html
           cmp _site/index.html /tmp/playmancer-pages-b/index.html
           cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll
@@ -49,6 +50,12 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Run offline Chromium player flow
         run: python scripts/browser-smoke.py
+      # The legacy smoke harness intentionally rebuilds _site with synthetic fixtures.
+      # Restore the independently checked real catalog before artifact upload.
+      - name: Restore and verify the real-game Pages payload after synthetic smoke
+        run: |
+          npm run build
+          python3 scripts/pages-preflight.py _site
       - name: Upload verified Pages payload
         uses: actions/upload-pages-artifact@v4
         with:

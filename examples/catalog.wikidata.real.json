@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "wikidata-genre-pilot-2026-10-27",
+  "kind": "real",
+  "sources": [
+    {
+      "id": "wikidata-cc0",
+      "kind": "licensed",
+      "attribution": "Wikidata contributors (CC0); per-item QIDs and field receipts in docs/REAL_PILOT.md",
+      "rights": {
+        "status": "approved",
+        "reference": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+        "fields": [
+          "id",
+          "kind",
+          "name",
+          "sourceId",
+          "themes",
+          "platforms",
+          "externalIds"
+        ]
+      }
+    }
+  ],
+  "games": [
+    {
+      "id": "wikidata:q23013817",
+      "kind": "game",
+      "name": "Stardew Valley",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q23013817"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "simulation video game",
+        "role-playing video game",
+        "life simulation game",
+        "farming simulation game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q332697",
+      "kind": "game",
+      "name": "Terraria",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q332697"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "sandbox game",
+        "role-playing video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q96991833",
+      "kind": "game",
+      "name": "Mortal Shell",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q96991833"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action role-playing game",
+        "action game",
+        "role-playing video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q59756366",
+      "kind": "game",
+      "name": "Hades",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q59756366"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action role-playing game",
+        "roguelite",
+        "roguelike"
+      ],
+      "platforms": [
+        "windows",
+        "mac"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q48078440",
+      "kind": "game",
+      "name": "Slay the Spire",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q48078440"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "roguelite",
+        "roguelike deck-building game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q80533334",
+      "kind": "game",
+      "name": "Spiritfarer",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q80533334"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "construction and management simulation",
+        "platformer"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q29300592",
+      "kind": "game",
+      "name": "Hollow Knight",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q29300592"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "Metroidvania",
+        "2D platform game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q28451532",
+      "kind": "game",
+      "name": "Celeste",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q28451532"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "platformer"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q279446",
+      "kind": "game",
+      "name": "Portal 2",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q279446"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "puzzle video game",
+        "first-person shooter",
+        "science fiction video game",
+        "post-apocalyptic video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q24300",
+      "kind": "game",
+      "name": "Infamous 2",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q24300"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "science fiction video game"
+      ],
+      "platforms": null,
+      "coop": null
+    },
+    {
+      "id": "wikidata:q75493248",
+      "kind": "game",
+      "name": "Tell Me Why",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q75493248"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "adventure video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null
+    },
+    {
+      "id": "wikidata:q112430705",
+      "kind": "game",
+      "name": "Minecraft Legends",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q112430705"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "strategy video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null
+    }
+  ]
+}

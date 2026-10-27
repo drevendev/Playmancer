@@ -1,4 +1,4 @@
-// Bounded feature-based Bridge experiment for the synthetic browser and JSON CLI.
+// Bounded feature-based Bridge experiment for versioned static catalogs.
 // A route is evidence of metadata connections, not measured player usefulness.
 import { findBridgeRoute } from './bridge.js';
 
@@ -26,7 +26,7 @@ function assertFeatureList(value, name) {
   if (new Set(value).size !== value.length) throw new TypeError(`duplicate ${name}`);
   return [...value];
 }
-function featureEvidence(a,b, includeGroups = true, leftCache = null, rightCache = null) {
+function featureEvidence(a,b, includeGroups = true, leftCache = null, rightCache = null, requiredCoverageUnits = 7) {
   let coverage=0;
   let numerator=0n, denominator=1n, coverageUnits=0;
   const groups=[];
@@ -54,7 +54,7 @@ function featureEvidence(a,b, includeGroups = true, leftCache = null, rightCache
   }
   // Jaccard is a rational number of feature counts. Convert it to Number once
   // for display, but keep the exact fraction for thresholds and route ordering.
-  const exactSimilarity = coverageUnits >= 7
+  const exactSimilarity = coverageUnits >= requiredCoverageUnits
     ? { numerator, denominator: denominator * BigInt(coverageUnits) } : null;
   return { affinity: exactSimilarity === null ? null
     : Number(exactSimilarity.numerator) / Number(exactSimilarity.denominator),
@@ -74,7 +74,7 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   requireId(startId,'startId');requireId(endId,'endId');
   if(startId===endId) throw new RangeError('Bridge needs two distinct explicit favorites');
   if(typeof snapshotId!=='string' || !snapshotId.trim()) throw new TypeError('snapshotId is required');
-  if(!Array.isArray(catalog) || !catalog.length || catalog.length>250) throw new RangeError('Expected 1–250 synthetic records');
+  if(!Array.isArray(catalog) || !catalog.length || catalog.length>250) throw new RangeError('Expected 1–250 catalog records');
   if(!Array.isArray(excluded) || excluded.some(id => typeof id!=='string') || new Set(excluded).size!==excluded.length) throw new TypeError('Invalid exclusions');
   if(typeof platform!=='string' || !platform.trim() || typeof coopOnly!=='boolean') throw new TypeError('Invalid hard constraints');
   if(!Number.isInteger(maxHops)||maxHops<1||maxHops>8) throw new RangeError('maxHops must be 1–8');
@@ -110,12 +110,16 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
     themes: game.themes === null ? null : new Set(game.themes)
   }]));
   const edges=[];
+  // An explicitly versioned real pilot can use the 30%-coverage genre signal
+  // without asserting absent mechanics. The usual 70%-coverage gate remains.
+  const requiredCoverageUnits = snapshotId.startsWith('wikidata-genre-pilot-') &&
+    eligible.every(game => game.mechanics === null) ? 3 : 7;
   // Disjoint counts over unordered eligible pairs: unknown evidence is not zero fit.
   const pairEvidence={insufficient:0,zero_support:0,below_threshold:0,connected:0};
   const thresholdRatio = decimalRatio(minSimilarity);
   for(let i=0;i<eligible.length;i++)for(let j=i+1;j<eligible.length;j++){
     const e=featureEvidence(eligible[i],eligible[j], false,
-      featuresById.get(eligible[i].id), featuresById.get(eligible[j].id));
+      featuresById.get(eligible[i].id), featuresById.get(eligible[j].id), requiredCoverageUnits);
     if(e.affinity===null) pairEvidence.insufficient++;
     else if(e.affinity<=0) pairEvidence.zero_support++;
     else if(e.exactSimilarity.numerator * thresholdRatio.denominator <
@@ -133,7 +137,7 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   const steps=[];
   for(let i=1;i<route.nodes.length;i++){
     const from=route.nodes[i-1],to=route.nodes[i];
-    const evidence=featureEvidence(ids.get(from),ids.get(to));
+    const evidence=featureEvidence(ids.get(from),ids.get(to), true, null, null, requiredCoverageUnits);
     steps.push({from,to,affinity:evidence.affinity,evidence_coverage:evidence.coverage,
       groups:evidence.groups});
   }

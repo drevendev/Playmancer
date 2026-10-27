@@ -34,7 +34,7 @@ if HOSTED_URL:
 else:
     SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
     if not OVERRIDE:
-        subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
+        subprocess.run(["npm", "run", "build"], cwd=ROOT, check=True)
         subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
     if not (SITE / "index.html").is_file():
         raise FileNotFoundError(f"No built site at {SITE}")
@@ -79,8 +79,13 @@ def exercise(browser, base_url, engine, label, width, height):
             check(case, "same-origin hosted Bridge worker is served over HTTPS",
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
-        check(case, "working first-screen sample and fictional label",
-              page.locator("#seeds > li").count() >= 2 and "fictional" in page.locator(".badge").inner_text().lower()
+        catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
+        is_real_pilot = catalog_id == "wikidata-genre-pilot-2026-10-27"
+        check(case, "real catalog sample and honest data provenance",
+              is_real_pilot and page.locator("#seeds > li").count() >= 2
+              and "real games" in page.locator(".badge").inner_text().lower()
+              and "Stardew Valley" in page.locator("#seeds").inner_text()
+              and "Terraria" in page.locator("#seeds").inner_text()
               and page.locator("#intro-sample").is_visible())
         check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
             "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
@@ -110,11 +115,10 @@ def exercise(browser, base_url, engine, label, width, height):
               "No profiles match" in hint.inner_text()
               and page.locator("#search-results li").count() == 0
               and page.evaluate("document.activeElement.id") == "search")
-        # Ember Circuit is already in the initial basket and deliberately
-        # excluded from suggestions; exercise a different catalog game.
-        page.locator("#search").fill("Grove")
+        # Search for a real game outside the default Stardew/Terraria basket.
+        page.locator("#search").fill("Hades")
         check(case, "matching search count updates while retaining keyboard access",
-              "matching fictional profiles" in hint.inner_text()
+              "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
         # Search suggestions remain native buttons: Tab still works, while
@@ -143,7 +147,7 @@ def exercise(browser, base_url, engine, label, width, height):
               page.evaluate("document.activeElement.id") == "search"
               and page.locator("#search").input_value() == "e"
               and page.locator("#seeds > li").count() == 2)
-        page.locator("#search").fill("Grove")
+        page.locator("#search").fill("Hades")
 
         # A keyboard-selected result and its removal must announce the actual
         # game name as well as the count, not just silently change the basket.
@@ -501,29 +505,30 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "first-screen sample recovery also works after invalid navigation",
               bad_page.locator("#error").is_hidden()
               and bad_page.locator("#seeds > li").count() >= 2)
-        # Sparse evidence can remove a seed from the empty-results recovery panel,
-        # not only from the usual basket row. Its keyboard path must announce the
-        # named removal and new count while preserving the results-focus contract.
+        # Real pilot has no verified co-op values. Exercising its unknown-only
+        # empty state is more representative than asking for a fictional sparse ID;
+        # synthetic sparse-seed removal stays covered by browser-smoke.py.
         sparse = context.new_page()
         sparse.goto(base_url + "/", wait_until="load")
         sparse.locator("#clear").click()
-        sparse.locator("#search").fill("Silent Archive")
-        sparse_add = sparse.get_by_role("button", name="Add Silent Archive")
+        sparse.locator("#search").fill("Hades")
+        sparse_add = sparse.get_by_role("button", name="Add Hades")
         sparse_add.focus()
         sparse_add.press("Enter")
-        recovery = sparse.get_by_role("button", name="Remove Silent Archive from basket")
-        check(case, "sparse profile exposes keyboard-accessible empty-results recovery",
+        sparse.locator("#coop").check()
+        recovery = sparse.get_by_role("button", name="Remove co-op requirement")
+        check(case, "unknown co-op source evidence exposes explicit accessible recovery",
               sparse.locator("#seeds > li").count() == 1
               and sparse.locator("#empty").is_visible()
+              and sparse.locator("#results > li").count() == 0
               and recovery.is_visible()
-              and sparse.locator("#basket-feedback").inner_text().startswith(
-                  "Added Silent Archive. 1 of 5 game selected."))
+              and sparse.locator("#coop").is_checked())
         recovery.focus()
         recovery.press("Enter")
-        check(case, "keyboard sparse-seed recovery announces named removal and focuses results",
-              sparse.locator("#seeds > li").count() == 0
-              and sparse.locator("#basket-feedback").inner_text().startswith(
-                  "Removed Silent Archive. 0 of 5 games selected.")
+        check(case, "keyboard recovery removes only the chosen requirement and restores results focus",
+              sparse.locator("#seeds > li").count() == 1
+              and not sparse.locator("#coop").is_checked()
+              and sparse.locator("#results > li").count() > 0
               and sparse.evaluate("document.activeElement.id") == "recommendations")
         check(case, "no external requests or JavaScript exceptions",
               not errors and not external_requests)
