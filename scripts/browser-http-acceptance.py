@@ -117,6 +117,34 @@ def exercise(browser, base_url, engine, label, width, height):
               "matching fictional profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
+        # Search suggestions remain native buttons: Tab still works, while
+        # Arrow Down/Up/Escape provide a keyboard-only fast path without
+        # fabricating combobox or active-descendant semantics.
+        page.locator("#search").fill("e")
+        choices = page.locator("#search-results button:not([disabled])")
+        check(case, "search exposes multiple keyboard-navigable suggestions",
+              choices.count() >= 2)
+        page.locator("#search").press("ArrowDown")
+        check(case, "Arrow Down moves from search to first available suggestion",
+              choices.first.evaluate("node => document.activeElement === node"))
+        choices.first.press("ArrowDown")
+        check(case, "Arrow Down advances to the next native suggestion",
+              choices.nth(1).evaluate("node => document.activeElement === node"))
+        choices.nth(1).press("ArrowUp")
+        check(case, "Arrow Up returns to the previous suggestion",
+              choices.first.evaluate("node => document.activeElement === node"))
+        choices.first.press("ArrowUp")
+        check(case, "Arrow Up from first suggestion restores search and its query",
+              page.evaluate("document.activeElement.id") == "search"
+              and page.locator("#search").input_value() == "e")
+        page.locator("#search").press("ArrowDown")
+        choices.first.press("Escape")
+        check(case, "Escape restores search without adding a profile or deleting query",
+              page.evaluate("document.activeElement.id") == "search"
+              and page.locator("#search").input_value() == "e"
+              and page.locator("#seeds > li").count() == 2)
+        page.locator("#search").fill("Grove")
+
         # A keyboard-selected result and its removal must announce the actual
         # game name as well as the count, not just silently change the basket.
         feedback = page.locator("#basket-feedback")
