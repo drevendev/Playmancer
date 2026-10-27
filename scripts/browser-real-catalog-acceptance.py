@@ -1,4 +1,4 @@
-"""Real Chromium acceptance for an opt-in CC0 Wikidata pilot, never a Pages claim."""
+"""Real Chromium acceptance for multistore and legacy Wikidata snapshots, not Pages."""
 from pathlib import Path
 import json
 import os
@@ -163,12 +163,35 @@ try:
                   page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                   and not requests and not errors)
             ctx.close()
+        # Historical Wikidata-only snapshots must not advertise creator games or a
+        # browse action that cannot find any games in the selected catalog.
+        legacy_site = ARTIFACTS / "wikidata-only-site"
+        subprocess.run(["node", "scripts/build-demo.mjs", str(legacy_site), "--catalog",
+                        "examples/catalog.wikidata.real.json"], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/pages-preflight.py", str(legacy_site)], cwd=ROOT, check=True)
+        legacy_ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+        legacy_page = legacy_ctx.new_page()
+        legacy_errors = []
+        legacy_page.on("pageerror", lambda err: legacy_errors.append(str(err)))
+        legacy_page.set_content((legacy_site / "index.html").read_text(), wait_until="load")
+        legacy_page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+        check("legacy Wikidata-only pilot reports the selected 12-game provenance",
+              "12 real games" in legacy_page.locator(".intro").inner_text()
+              and "wikidata cc0 genre pilot" in legacy_page.locator(".badge").inner_text().lower()
+              and "dreven games" not in legacy_page.locator(".footer-note").inner_text().lower()
+              and not legacy_errors)
+        check("legacy Wikidata-only pilot does not expose nonfunctional creator browse or store links",
+              legacy_page.locator("#dreven-browse").is_hidden()
+              and legacy_page.locator("#results .storefront-links a").count() == 0
+              and legacy_page.locator("#seeds .storefront-links a").count() == 0)
+        legacy_page.screenshot(path=str(ARTIFACTS / "wikidata-only-mobile.png"), full_page=True)
+        legacy_ctx.close()
         browser.close()
 finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "multistore real HTML / Chromium; NOT Pages or measured usefulness",
+        "scope": "multistore and legacy real HTML / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))
