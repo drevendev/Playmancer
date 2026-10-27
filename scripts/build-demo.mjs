@@ -63,6 +63,9 @@ for (const [index, path] of modules.entries()) {
     source = source.replace(expectedImports[index], "");
   }
   source = source.replace(/^export /gm, "");
+  // A static bundle does not need source-only whole-line comments.
+  // Real JavaScript, inline comments and string literals remain unchanged.
+  source = source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, "");
   if (path === "src/bridge.js") {
     for (const name of ["assertCanonicalId", "assertUnitInterval", "comparePath", "compareState"]) {
       source = source.replace(new RegExp("\\b" + name + "\\b", "g"), "bridge" + name[0].toUpperCase() + name.slice(1));

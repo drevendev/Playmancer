@@ -87,6 +87,7 @@ try:
                   owner_page.locator("#search-results button").count() == 5
                   and all(name in owner_page.locator("#search-results").inner_text()
                           for name in ("Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid")))
+            owner_page.locator("#clear").click()
             owner_page.locator("#search").fill("Shadow Runner")
             owner_page.get_by_role("button", name="Add Shadow Runner").click()
             check(label + ": owner Shadow Runner links to itch.io and Google Play",
