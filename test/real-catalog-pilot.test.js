@@ -14,7 +14,7 @@ test("real pilot passes exact publishable identity and CC0 field gates", () => {
   assert.equal(catalog.sources[0].kind, "licensed");
   assert.equal(catalog.sources[0].rights.status, "approved");
   assert.equal(catalog.sources[0].rights.reference, "https://www.wikidata.org/wiki/Wikidata:Licensing");
-  assert.deepEqual(catalog.sources[0].rights.fields.sort?.() ?? [...catalog.sources[0].rights.fields].sort(),
+  assert.deepEqual([...catalog.sources[0].rights.fields].sort(),
     ["id", "kind", "name", "sourceId", "themes", "platforms", "externalIds"].sort());
 });
 
