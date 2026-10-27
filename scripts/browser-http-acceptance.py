@@ -80,7 +80,7 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        is_real_pilot = catalog_id == "wikidata-genre-pilot-2026-10-27"
+        is_real_pilot = catalog_id == "multi-store-genre-pilot-2026-10-27"
         check(case, "real catalog sample and honest data provenance",
               is_real_pilot and page.locator("#seeds > li").count() >= 2
               and "real games" in page.locator(".badge").inner_text().lower()
