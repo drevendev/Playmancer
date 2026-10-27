@@ -126,6 +126,18 @@ function drawSearch() {
     button.setAttribute("aria-label", `Add ${game.name}`);
     if (game.kind !== "game") button.append(element("span", ` · ${game.kind} (${game.id})`, "hint"));
     button.disabled = state.seeds.length >= 5;
+    // Native buttons remain tabbable; arrow keys are an optional shortcut
+    // through the visible choices, without misrepresenting this as a combobox.
+    button.addEventListener("keydown", (event) => {
+      if (!["ArrowDown", "ArrowUp", "Escape"].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === "Escape") { $("search").focus(); return; }
+      const choices = [...$("search-results").querySelectorAll("button:not(:disabled)")];
+      const index = choices.indexOf(button);
+      if (index < 0) return;
+      if (event.key === "ArrowUp" && index === 0) $("search").focus();
+      else choices[(index + (event.key === "ArrowDown" ? 1 : -1) + choices.length) % choices.length].focus();
+    });
     button.addEventListener("click", () => {
       if (state.seeds.length >= 5 || state.seeds.some((seed) => seed.id === game.id)) return;
       state.seeds.push({ id: game.id, weight: 1 });
@@ -138,7 +150,7 @@ function drawSearch() {
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : !query ? `Type a game name or declared alias to see matching ${noun}.`
-    : matches.length ? `${matches.length} matching ${noun}.` : "No profiles match. Try another name.";
+    : matches.length ? `${matches.length} matching ${noun}. Use Arrow Down to browse; Enter adds a focused result.` : "No profiles match. Try another name.";
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -262,6 +274,13 @@ function render(rebuildSeeds) {
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", drawSearch);
+$("search").addEventListener("keydown", (event) => {
+  if (event.key !== "ArrowDown") return;
+  const first = $("search-results").querySelector("button:not(:disabled)");
+  if (!first) return;
+  event.preventDefault();
+  first.focus();
+});
 $("mode").addEventListener("change", (event) => { state.mode = event.target.value; commit(); });
 $("platform").addEventListener("change", (event) => { state.platform = event.target.value; commit(); });
 $("coop").addEventListener("change", (event) => { state.coopOnly = event.target.checked; commit(); });
