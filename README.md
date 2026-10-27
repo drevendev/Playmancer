@@ -13,15 +13,16 @@ requests are needed.
 [Real pilot provenance](docs/REAL_PILOT.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Release evidence (2026-10-27):** The 17-game catalog reached `master` at
-> [`97f4bf1d`](https://github.com/drevendev/Playmancer/commit/97f4bf1d74bdfdc48b54740bed672f241d160c23).
-> An [automatic Pages deployment](https://github.com/drevendev/Playmancer/actions/runs/40511861195)
-> succeeded for that SHA, but the independent
-> [Publish and hosted-browser workflow](https://github.com/drevendev/Playmancer/actions/runs/40511862427)
-> was cancelled during OS dependency installation. **The 17-game public HTML revision,
-> worker, and hosted desktop/mobile player remain NOT LIVE_VERIFIED in that run.**
-> Check the [latest publisher runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-> for a successful exact-revision HTTP check **and** hosted browser acceptance.
+> **Verified public release (2026-10-27):** The 17-game catalog is published at
+> [`dfb5f668`](https://github.com/drevendev/Playmancer/commit/dfb5f668303ae26df3a0077b54e226f6933bfe31).
+> [Publish Playmancer Pages #40540951449](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
+> completed successfully: exact-master build, deployment, public HTTPS revision check,
+> same-origin Bridge worker, and hosted desktop/mobile player checks in Chromium,
+> Firefox and WebKit. **Status for this exact SHA: LIVE_VERIFIED.**
+> This is not a claim that later commits are live; inspect the
+> [latest Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> before attributing that status to another revision. Native browser zoom and
+> spoken screen-reader acceptance remain open in [#14](https://github.com/drevendev/Playmancer/issues/14).
 
 **Merged real-catalog pilot:** 17 real games, comprising
 12 existing Wikidata entities and all **five verified Dreven Games** entries,
@@ -34,10 +35,10 @@ See [storefront sources and constraints](docs/STOREFRONTS.md).
 
 ## Playable preview 0.3
 
-The production Pages build on `master` selects **17 real games** with safe
-outbound storefront references, including five Dreven Games titles. Live
-revision/browser verification is tracked separately above; merged source alone
-does not prove a served version. The fictional twelve-profile fixture remains
+The verified Pages release at `dfb5f668` selects **17 real games** with safe
+outbound storefront references, including five Dreven Games titles. Its hosted
+revision and player checks are documented above; future builds must earn
+their own live verification. The fictional twelve-profile fixture remains
 available via plain `node scripts/build-demo.mjs` for isolated tests. Preview
 0.3 connects a validated build-time snapshot to the whole
 player journey. A separate six-profile synthetic fixture exercises aliases,
@@ -62,7 +63,7 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
-## Real-game multistore pilot (17 titles; hosted verification pending)
+## Real-game multistore pilot (17 titles; hosted release verified)
 
 The production snapshot combines **12 Wikidata games and five Dreven Games**.
 A separate versioned 12-title Wikidata-only pilot remains available as a test fixture. Choose
@@ -88,10 +89,11 @@ the remaining 70%. Bridge and basket modes use the same restricted signal;
 hard constraints are never loosened. A result is *not* proof of measured
 player usefulness. Catalog coverage is still tiny.
 
-The 17-game snapshot is already merged to `master`; the independent hosted
-exact-revision and desktop/mobile verification must pass before claiming that
-the *new* snapshot is live and usable. Existing synthetic links remain bound to
-`synthetic-demo-1`; incompatible catalog versions fail visibly.
+The 17-game snapshot is live-verified at `dfb5f668` by the linked exact-revision
+public HTTP and desktop/mobile browser workflow. This is a small, sparse pilot,
+not a full game catalog or evidence of recommendation usefulness. Existing
+synthetic links remain bound to `synthetic-demo-1`; incompatible catalog
+versions fail visibly.
 
 ## Run and verify
 
@@ -233,10 +235,13 @@ Actions as the Pages source; the workflow does not self-enable Pages or weaken
 protection. On successful deployment, CI probes the public index for its exact
 `playmancer-revision` commit SHA and checks the same-origin Bridge worker.
 Only successful public checks can establish LIVE_VERIFIED for a specific
-revision. Hosted desktop/mobile interaction was separately exercised at
-`59003d0` ([acceptance evidence](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426)).
-This does **not** establish real browser-zoom or audible screen-reader acceptance;
-those remain tracked by [issue #14](https://github.com/drevendev/Playmancer/issues/14).
+revision. On 2026-10-27, the 17-game `dfb5f668` release passed the
+[public Pages checks and hosted desktop/mobile navigation](https://github.com/drevendev/Playmancer/actions/runs/40540951449).
+An earlier hosted run at `59003d0` is documented
+[separately](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426).
+Automated root-font reflow checks are **not** real browser-zoom or audible
+screen-reader acceptance; those remain tracked by
+[issue #14](https://github.com/drevendev/Playmancer/issues/14).
 [#7](https://github.com/drevendev/Playmancer/issues/7) is the closed deployment milestone.
 
 Use focused PRs, preserve all regression tests and independently review a later exact
