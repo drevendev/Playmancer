@@ -345,6 +345,16 @@ def exercise(browser, base_url, engine, label, width, height):
             results: parseFloat(getComputedStyle(document.querySelector('#results-title')).fontSize),
             card: parseFloat(getComputedStyle(document.querySelector('#results h3')).fontSize)
         })""")
+        result_type_baseline = restored.evaluate("""() => {
+            const size = selector => parseFloat(getComputedStyle(document.querySelector(selector)).fontSize);
+            return {
+                score: size("#results > li .fit strong"),
+                scoreLabel: size("#results > li .fit small"),
+                affinity: size("#results > li .affinity"),
+                metadata: size("#results > li .metadata"),
+                explanation: size("#results > li .explanation p")
+            };
+        }""")
         for text_size in (200, 400):
             restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
                               text_size)
@@ -363,6 +373,16 @@ def exercise(browser, base_url, engine, label, width, height):
                         results: parseFloat(getComputedStyle(document.querySelector('#results-title')).fontSize),
                         card: parseFloat(getComputedStyle(document.querySelector('#results h3')).fontSize)
                     },
+                    resultType: (() => {
+                        const size = selector => parseFloat(getComputedStyle(document.querySelector(selector)).fontSize);
+                        return {
+                            score: size("#results > li .fit strong"),
+                            scoreLabel: size("#results > li .fit small"),
+                            affinity: size("#results > li .affinity"),
+                            metadata: size("#results > li .metadata"),
+                            explanation: size("#results > li .explanation p")
+                        };
+                    })(),
                     bridgeType: (() => {
                         const panel = document.querySelector("#bridge-lab");
                         const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
@@ -416,6 +436,10 @@ def exercise(browser, base_url, engine, label, width, height):
                   and enlarged["headingType"]["results"] >= enlarged["copy"]
                   and enlarged["headingType"]["card"] >= enlarged["copy"],
                   details={"baseline": heading_type_baseline, "enlarged": enlarged["headingType"]})
+            check(case, f"{text_size}% root text enlarges recommendation score and evidence text",
+                  all(enlarged["resultType"][name] >= original * factor - 1
+                      for name, original in result_type_baseline.items()),
+                  details={"baseline": result_type_baseline, "enlarged": enlarged["resultType"]})
             check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
                   all(enlarged["bridgeType"][name] >= original * factor - 1
                       for name, original in bridge_type_baseline.items()),
