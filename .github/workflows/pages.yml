@@ -141,9 +141,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+      # The pinned container ships working Python SSL and compatible browsers.
+      # Avoid replacing it with setup-python's runner toolcache interpreter.
       - name: Install matching Playwright Python client
         run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - name: Navigate deployed Pages and verify the exact revision and player journey
