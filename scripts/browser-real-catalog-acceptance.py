@@ -51,6 +51,9 @@ try:
                   and "wikidata cc0" in observed["badge"].lower()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # Native <details> content is correctly hidden until the player opens
+            # the explanation. Expand it before assessing the visible evidence.
+            page.locator("#results .explanation summary").first.click()
             evidence = {
                 "ranked_ids": page.locator("#results > li").evaluate_all(
                     "cards => cards.map(card => card.dataset.gameId)"),
@@ -66,7 +69,8 @@ try:
                   len(evidence["ranked_ids"]) > 0
                   and evidence["mortal_shell_visible"] > 0
                   and "30%" in evidence["footer_note"]
-                  and "30% of the full model" in evidence["first_explanation"])
+                  and "30% of the full model" in evidence["first_explanation"]
+                  and float(evidence["first_score"]) > 0)
             check(label + ": per-result source links and no artwork",
                   page.locator('#results a[href^="https://www.wikidata.org/wiki/Q"]').count() > 0
                   and page.locator("img").count() == 0)
