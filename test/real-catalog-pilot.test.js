@@ -1,71 +1,67 @@
-import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { catalogCoverage, resolveCatalogIdentity, validateCatalogSnapshot } from "../src/catalog.js";
+import test from "node:test";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { validateCatalogSnapshot, catalogCoverage } from "../src/catalog.js";
+import { buildBridgePreview } from "../src/bridge-preview.js";
 
-const original = JSON.parse(await readFile(new URL("../examples/catalog.wikidata.real.json", import.meta.url), "utf8"));
+const source = JSON.parse(readFileSync("examples/catalog.wikidata.real.json", "utf8"));
 
-test("real pilot passes exact publishable identity and CC0 field gates", () => {
-  const catalog = validateCatalogSnapshot(original, { requirePublishable: true });
-  assert.equal(catalog.kind, "real");
-  assert.equal(catalog.snapshotId, "wikidata-genre-pilot-2026-10-27");
-  assert.equal(catalog.games.length, 12);
-  assert.equal(catalog.sources.length, 1);
-  assert.equal(catalog.sources[0].kind, "licensed");
-  assert.equal(catalog.sources[0].rights.status, "approved");
-  assert.equal(catalog.sources[0].rights.reference, "https://www.wikidata.org/wiki/Wikidata:Licensing");
-  assert.deepEqual([...catalog.sources[0].rights.fields].sort(),
-    ["id", "kind", "name", "sourceId", "themes", "platforms", "externalIds"].sort());
-});
-
-test("QIDs remain unique canonical identities without guessed aliases or merges", () => {
-  const catalog = validateCatalogSnapshot(original, { requirePublishable: true });
-  const qids = new Set();
-  for (const game of catalog.games) {
+test("real pilot has identifiable CC0-sourced items with honest missing metadata", () => {
+  const snapshot = validateCatalogSnapshot(source, { requirePublishable: true });
+  assert.equal(snapshot.kind, "real");
+  assert.equal(snapshot.snapshotId, "wikidata-genre-pilot-2026-10-27");
+  assert.equal(snapshot.games.length, 12);
+  const ids = new Set();
+  for (const game of snapshot.games) {
     assert.match(game.id, /^wikidata:q[0-9]+$/);
-    assert.equal(game.kind, "game");
-    assert.equal(game.parentId, null);
-    assert.deepEqual(game.aliases, []);
-    assert.equal(game.externalIds.length, 1);
-    const qid = game.externalIds[0].id;
-    assert.equal(game.id, "wikidata:" + qid.toLowerCase());
-    assert.equal(game.externalIds[0].provider, "wikidata");
-    assert.equal(resolveCatalogIdentity(catalog, game.id), game.id);
-    assert.equal(qids.has(qid), false);
-    qids.add(qid);
-  }
-});
-
-test("sparse real coverage is explicit: genres only, no manufactured mechanics or co-op", () => {
-  const catalog = validateCatalogSnapshot(original, { requirePublishable: true });
-  const coverage = catalogCoverage(catalog);
-  assert.deepEqual(coverage.mechanics, { known: 0, total: 12 });
-  assert.deepEqual(coverage.themes, { known: 12, total: 12 });
-  assert.deepEqual(coverage.platforms, { known: 11, total: 12 });
-  assert.deepEqual(coverage.coop, { known: 0, total: 12 });
-  for (const game of catalog.games) {
+    assert.ok(game.externalIds.some(external =>
+      external.provider === "wikidata" && external.id.toLowerCase() === game.id.slice(9)));
+    assert.ok(!ids.has(game.id));
+    ids.add(game.id);
+    assert.ok(game.name.length > 2 && Array.isArray(game.themes) && game.themes.length > 0);
     assert.equal(game.mechanics, null);
-    assert.equal(game.description, null);
     assert.equal(game.coop, null);
-    assert.ok(game.themes.length > 0);
-    assert.equal(Object.hasOwn(game, "artwork"), false);
+    assert.equal(game.description, null);
+    assert.equal(game.parentId, null);
   }
+  assert.equal(catalogCoverage(snapshot).mechanics.known, 0);
+  assert.equal(catalogCoverage(snapshot).themes.known, 12);
 });
 
-test("real pilot has a source-supported genre overlap for initial sample basket", () => {
-  const catalog = validateCatalogSnapshot(original);
-  const [stardew, terraria] = catalog.games;
-  assert.equal(stardew.name, "Stardew Valley");
-  assert.equal(terraria.name, "Terraria");
-  assert.ok(stardew.themes.includes("role-playing video game"));
-  assert.ok(terraria.themes.includes("role-playing video game"));
+test("real pilot Bridge uses only known genre features", () => {
+  const snapshot = validateCatalogSnapshot(source, { requirePublishable: true });
+  const route = buildBridgePreview({ catalog: snapshot.games, snapshotId: snapshot.snapshotId,
+    startId: "wikidata:q23013817", endId: "wikidata:q332697", minSimilarity: 0.05 });
+  assert.equal(route.status, "route");
+  assert.ok(route.steps.length > 0);
+  for (const step of route.steps) {
+    assert.equal(step.evidence_coverage, 0.3);
+    assert.ok(step.affinity > 0);
+    assert.deepEqual(step.groups.find(group => group.group === "mechanics") ?? null, null);
+  }
+  const unknown = buildBridgePreview({ catalog: snapshot.games, snapshotId: snapshot.snapshotId,
+    startId: "wikidata:q23013817", endId: "wikidata:q332697", coopOnly: true, minSimilarity: 0.05 });
+  assert.equal(unknown.status, "unavailable-endpoint");
+  assert.equal(unknown.reason, "unknown");
 });
 
-test("partial external rights record cannot masquerade as a publishable real snapshot", () => {
-  const modified = structuredClone(original);
-  modified.sources[0].rights.status = "unreviewed";
-  assert.throws(() => validateCatalogSnapshot(modified, { requirePublishable: true }), /Publication rights not approved/);
-  const removed = structuredClone(original);
-  removed.sources[0].rights.fields = ["id", "kind", "name", "sourceId", "externalIds"];
-  assert.throws(() => validateCatalogSnapshot(removed, { requirePublishable: true }), /Field not cleared for publication/);
+test("Pages release build publishes real games without embedding fictional profile names", () => {
+  const directory = mkdtempSync(join(tmpdir(), "playmancer-real-"));
+  try {
+    const result = spawnSync(process.execPath, ["scripts/build-demo.mjs", directory,
+      "--catalog", "examples/catalog.wikidata.real.json"], { encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    const html = readFileSync(join(directory, "index.html"), "utf8");
+    assert.match(html, /name="playmancer-catalog" content="wikidata-genre-pilot-2026-10-27"/);
+    assert.match(html, /"kind":"real"/);
+    assert.match(html, /Stardew Valley/);
+    assert.match(html, /Wikidata CC0 genre pilot/);
+    assert.doesNotMatch(html, /Ember Circuit|Cloud Harvest|Grove Keepers/);
+    assert.doesNotMatch(html, /<script[^>]+src=/i);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });

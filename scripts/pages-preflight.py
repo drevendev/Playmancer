@@ -58,7 +58,15 @@ def main() -> int:
     assert parser.has_title and parser.has_viewport, "Missing title or responsive viewport"
     assert parser.script_count >= 1 and parser.script_modules == 1, "Expected exactly one inline module"
     assert not parser.assets, f"Unbundled or network assets: {parser.assets}"
-    assert re.search(r"synthetic|fictional", text, re.I), "Demo provenance label missing"
+    catalog_match = re.search(r'<meta name="playmancer-catalog" content="([^"]+)">', text)
+    assert catalog_match, "Catalog version marker missing"
+    if catalog_match.group(1).startswith("wikidata-genre-pilot-"):
+        assert '"kind":"real"' in text, "Real player snapshot not embedded"
+        assert "Wikidata CC0 genre pilot" in text, "Real pilot provenance missing"
+        assert "Stardew Valley" in text and "Terraria" in text, "Real pilot records missing"
+        assert "Ember Circuit" not in text, "Synthetic authored profiles leaked into the real public payload"
+    else:
+        assert re.search(r"synthetic|fictional", text, re.I), "Demo provenance label missing"
     assert not re.search(r"\bfetch\s*\(|XMLHttpRequest\s*\(|sendBeacon\s*\(", text + worker_text), "Unexpected network API use"
     assert not re.search(r"\bimportScripts\s*\(|\bnew\s+WebSocket\s*\(", worker_text), "Unexpected worker network or dynamic imports"
     assert "self.onmessage =" in worker_text and "buildBridgePreview(data.input)" in worker_text, "Worker entry is incomplete"

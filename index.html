@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="A synthetic Playmancer prototype: combine fictional games, adjust weights, and inspect explainable basket rankings.">
+<meta name="description" content="Find your next game: combine real favorites and explore explainable genre-based recommendations from a sourced Wikidata CC0 pilot.">
 <title>Playmancer — Mix your favorites</title>
 <style>
 :root{color-scheme:dark;--bg:#0e1421;--panel:#161f30;--line:#334258;--ink:#edf4fd;--muted:#bbc8da;--accent:#9af4d0;--accent-ink:#122b24;--warn:#ffd894;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
@@ -68,8 +68,8 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <body>
 <a class="skip" href="#recommendations">Skip to recommendations</a>
 <div class="wrap">
-<header class="top"><div class="logo">Play<span>mancer</span></div><span class="badge">Preview 0.2 · fictional games</span></header>
-<div class="intro"><div class="eyebrow">Your taste is more than one game</div><h1>Mix your favorites.<br>See the trade-offs.</h1><p class="muted">Build a basket, adjust what matters, and see why each result appears. This working prototype uses <strong>12 invented profiles</strong> — not a real game catalog or measured recommendation quality.</p><div class="actions intro-actions"><button id="intro-sample" class="primary" type="button">Try the sample basket</button><button id="intro-empty" type="button">Build your own basket</button></div></div>
+<header class="top"><div class="logo">Play<span>mancer</span></div><span class="badge">Real games · Wikidata CC0 genre pilot</span></header>
+<div class="intro"><div class="eyebrow">Your taste is more than one game</div><h1>Mix your favorites.<br>See the trade-offs.</h1><p class="muted">Build a basket, adjust what matters, and see why each result appears. This early real-game pilot uses <strong>12 sourced games</strong> from Wikidata. Genres are incomplete evidence; recommendation usefulness has not been measured.</p><div class="actions intro-actions"><button id="intro-sample" class="primary" type="button">Try the sample basket</button><button id="intro-empty" type="button">Build your own basket</button></div></div>
 <div id="error" class="notice" role="alert" tabindex="-1" hidden><p id="error-message"></p><button id="error-recover" type="button">Restore sample basket</button></div>
 <main class="layout">
 <aside class="panel" aria-labelledby="basket-title">
@@ -78,7 +78,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <button id="jump-results" class="primary jump-results" type="button">View recommendations</button>
 <ul id="seeds" aria-label="Selected games"></ul>
 <p id="basket-feedback" class="hint" role="status" aria-live="polite" aria-atomic="true">Add or remove games to update your recommendations.</p>
-<label for="search">Add a fictional game</label><input id="search" type="search" placeholder="Search 12 profiles…" autocomplete="off" aria-describedby="search-hint">
+<label for="search">Add a real game</label><input id="search" type="search" placeholder="Search 12 real games…" autocomplete="off" aria-describedby="search-hint">
 <p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><ul id="search-results" aria-label="Available games"></ul>
 <div class="section"><label for="mode">Recommendation mode</label><select id="mode"><option value="intersection">Intersection</option><option value="blend">Blend</option><option value="arithmetic">Weighted average</option></select><p id="mode-note" class="hint mode-note"></p>
 <div id="blend-control" hidden><label for="lambda">Blend relevance weight: <output id="lambda-value">0.3</output></label><input id="lambda" type="range" min="0" max="1" step="0.1" value="0.3"><p class="hint">0 favors uncovered strands; 1 favors average fit.</p></div>
@@ -115,7 +115,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <button id="bridge-back-to-basket" type="button">Back to your basket</button>
 </section>
 
-<footer class="foot"><strong>Prototype, not a catalog release.</strong> No APIs, tracking, images, paid inference, or external assets. Synthetic metadata is authored for this demonstration and validated against the versioned catalog contract.<br><span id="versions"></span></footer>
+<footer class="foot"><strong>Real-game pilot · limited metadata.</strong> No live APIs, tracking, artwork, paid inference or external assets. Wikidata CC0 genres are sparse; missing mechanics and co-op evidence stay unknown.<br><span id="versions"></span></footer>
 </div>
 <noscript><p class="notice">JavaScript is required to run this local ranking prototype.</p></noscript>
 <script>

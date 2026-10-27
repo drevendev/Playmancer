@@ -34,7 +34,7 @@ if HOSTED_URL:
 else:
     SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
     if not OVERRIDE:
-        subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
+        subprocess.run(["npm", "run", "build"], cwd=ROOT, check=True)
         subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
     if not (SITE / "index.html").is_file():
         raise FileNotFoundError(f"No built site at {SITE}")
@@ -79,8 +79,13 @@ def exercise(browser, base_url, engine, label, width, height):
             check(case, "same-origin hosted Bridge worker is served over HTTPS",
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
-        check(case, "working first-screen sample and fictional label",
-              page.locator("#seeds > li").count() >= 2 and "fictional" in page.locator(".badge").inner_text().lower()
+        catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
+        is_real_pilot = catalog_id == "wikidata-genre-pilot-2026-10-27"
+        check(case, "real catalog sample and honest data provenance",
+              is_real_pilot and page.locator("#seeds > li").count() >= 2
+              and "real games" in page.locator(".badge").inner_text().lower()
+              and "Stardew Valley" in page.locator("#seeds").inner_text()
+              and "Terraria" in page.locator("#seeds").inner_text()
               and page.locator("#intro-sample").is_visible())
         check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
             "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
@@ -110,11 +115,10 @@ def exercise(browser, base_url, engine, label, width, height):
               "No profiles match" in hint.inner_text()
               and page.locator("#search-results li").count() == 0
               and page.evaluate("document.activeElement.id") == "search")
-        # Ember Circuit is already in the initial basket and deliberately
-        # excluded from suggestions; exercise a different catalog game.
-        page.locator("#search").fill("Grove")
+        # Search for a real game outside the default Stardew/Terraria basket.
+        page.locator("#search").fill("Hades")
         check(case, "matching search count updates while retaining keyboard access",
-              "matching fictional profiles" in hint.inner_text()
+              "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
         # Search suggestions remain native buttons: Tab still works, while
@@ -143,7 +147,7 @@ def exercise(browser, base_url, engine, label, width, height):
               page.evaluate("document.activeElement.id") == "search"
               and page.locator("#search").input_value() == "e"
               and page.locator("#seeds > li").count() == 2)
-        page.locator("#search").fill("Grove")
+        page.locator("#search").fill("Hades")
 
         # A keyboard-selected result and its removal must announce the actual
         # game name as well as the count, not just silently change the basket.
