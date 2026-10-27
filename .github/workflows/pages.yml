@@ -18,8 +18,12 @@ jobs:
     if: github.ref == 'refs/heads/master'
     name: Verify and package exact master
     timeout-minutes: 10
-    runs-on: ubuntu-24.04
-    # Playwright 1.55 does not support ubuntu26.04; keep packaging browser tests on Noble.
+    runs-on: ubuntu-latest
+    # The default runner's apt mirror stalled this job for 11+ minutes on
+    # 2026-10-27 before browser navigation; use the known-good pinned image
+    # with Chromium and OS libraries already installed (as in Verify).
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     permissions:
       contents: read
     steps:
@@ -41,13 +45,11 @@ jobs:
           cmp _site/index.html /tmp/playmancer-pages-b/index.html
           cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll
           cmp _site/.nojekyll /tmp/playmancer-pages-b/.nojekyll
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install browser test runtime
-        run: |
-          python -m pip install --disable-pip-version-check playwright==1.55.0
-          python -m playwright install --with-deps chromium
+      # The container's Python has working SSL and its Chromium binary is
+      # preinstalled; setup-python and `playwright install --with-deps` are
+      # unnecessary (and the latter can hang on a slow Ubuntu apt mirror).
+      - name: Install matching Playwright Python client
+        run: python -m pip install --disable-pip-version-check playwright==1.55.0
       - name: Run offline Chromium player flow
         run: python scripts/browser-smoke.py
       # The legacy smoke harness intentionally rebuilds _site with synthetic fixtures.
