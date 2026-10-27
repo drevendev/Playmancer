@@ -333,6 +333,14 @@ def exercise(browser, base_url, engine, label, width, height):
                 warning: size(".bridge-warning")
             };
         }""")
+        # The primary heading and result hierarchy must scale too; fixed-pixel
+        # titles otherwise become smaller than enlarged body copy at 400%.
+        heading_type_baseline = restored.evaluate("""() => ({
+            hero: parseFloat(getComputedStyle(document.querySelector('.intro h1')).fontSize),
+            basket: parseFloat(getComputedStyle(document.querySelector('#basket-title')).fontSize),
+            results: parseFloat(getComputedStyle(document.querySelector('#results-title')).fontSize),
+            card: parseFloat(getComputedStyle(document.querySelector('#results h3')).fontSize)
+        })""")
         for text_size in (200, 400):
             restored.evaluate("(size) => { document.documentElement.style.fontSize = size + '%'; }",
                               text_size)
@@ -345,6 +353,12 @@ def exercise(browser, base_url, engine, label, width, height):
                     root: parseFloat(getComputedStyle(doc).fontSize),
                     copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
+                    headingType: {
+                        hero: parseFloat(getComputedStyle(document.querySelector('.intro h1')).fontSize),
+                        basket: parseFloat(getComputedStyle(document.querySelector('#basket-title')).fontSize),
+                        results: parseFloat(getComputedStyle(document.querySelector('#results-title')).fontSize),
+                        card: parseFloat(getComputedStyle(document.querySelector('#results h3')).fontSize)
+                    },
                     bridgeType: (() => {
                         const panel = document.querySelector("#bridge-lab");
                         const size = selector => parseFloat(getComputedStyle(panel.querySelector(selector)).fontSize);
@@ -390,6 +404,14 @@ def exercise(browser, base_url, engine, label, width, height):
                   and enlarged["copy"] >= original_copy * factor - 1
                   and enlarged["button"] >= original_button * factor - 1,
                   details=enlarged)
+            check(case, f"{text_size}% root text retains player heading hierarchy",
+                  all(enlarged["headingType"][name] >= baseline * factor - 1
+                      for name, baseline in heading_type_baseline.items())
+                  and enlarged["headingType"]["hero"] >= enlarged["copy"]
+                  and enlarged["headingType"]["basket"] >= enlarged["copy"]
+                  and enlarged["headingType"]["results"] >= enlarged["copy"]
+                  and enlarged["headingType"]["card"] >= enlarged["copy"],
+                  details={"baseline": heading_type_baseline, "enlarged": enlarged["headingType"]})
             check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
                   all(enlarged["bridgeType"][name] >= original * factor - 1
                       for name, original in bridge_type_baseline.items()),
