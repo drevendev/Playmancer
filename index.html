@@ -27,7 +27,9 @@
    fixed-pixel titles otherwise stay tiny beside 200%/400% enlarged body text. */
 @media(max-width:960px){h1{font-size:2.75rem}}
 @media(max-width:800px){h1{font-size:2.25rem}}
-@media(max-width:640px){h1{font-size:2rem}}
+/* At extreme mobile text enlargement, preserve body-sized title text while
+   preventing long words from fragmenting into oversized letter stacks. */
+@media(max-width:640px){h1{font-size:clamp(1rem,16.5vw,2rem)}}
 /* Text-only enlargement: readable labels and reflowing native actions. */
 label,.seed-name{font-size:.875rem}
 .hint,#search-results button{font-size:.8125rem}
