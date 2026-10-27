@@ -16,14 +16,14 @@ const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails
   "hard-constraint-unknown": "required filter evidence is unknown", "missing-seed-affinity": "insufficient comparable feature evidence" };
 const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
 function showCatalogIdentity() {
-  document.querySelector(".badge").textContent = `Preview 0.3 · ${syntheticCatalog ? "fictional games" : "catalog snapshot"}`;
+  document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" : "Real games · Wikidata CC0 genre pilot";
   document.querySelector(".intro p").replaceChildren(
-    "Build a basket, adjust what matters, and see why each result appears. This snapshot contains ",
-    element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "catalog profiles"}`),
-    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : " with recorded provenance. Recommendation quality and field coverage are not guaranteed."
+    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " : "Explore actual games with transparent genre overlap and honest gaps. This Wikidata CC0 pilot contains ",
+    element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
+    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : ". No descriptions or artwork are copied. Only observed Wikidata genres (30% of the full feature model) can support similarities; usefulness is unmeasured."
   );
-  $("search").placeholder = `Search ${CATALOG.length} profiles or aliases…`;
-  document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a catalog game";
+  $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
+  document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";
   const labels = { any: "Any platform", mac: "macOS" };
   $("platform").replaceChildren(...PLATFORMS.map(value => {
     const option = element("option", labels[value] ?? value);
@@ -32,11 +32,13 @@ function showCatalogIdentity() {
   }));
   const versions = $("versions");
   document.querySelector(".foot").replaceChildren(
-    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." : "Versioned catalog preview."),
+    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." : "Real Wikidata CC0 pilot · limited genre-only evidence."),
     " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
     "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
     element("br"), versions
   );
+  if (!syntheticCatalog) document.querySelector(".footer-note").textContent =
+    "Matches use only Wikidata P136 genre statements. Mechanics are unknown: evidence coverage is 30% of the full model, not a confidence percentage or proof of quality. Platform and co-op restrictions remain strict. No map coordinates enter ranking.";
   document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
@@ -168,7 +170,7 @@ function drawEmptyRecovery(result) {
   const failed = result.excluded.filter((item) => item.reason === "hard-constraint-fail" && !state.excluded.includes(item.id));
   const unknown = result.uncertain.filter((item) => item.reason === "hard-constraint-unknown");
   const missing = result.uncertain.filter((item) => item.reason === "missing-seed-affinity");
-  const sparseSeeds = state.seeds.filter((seed) => BY_ID.get(seed.id)?.mechanics == null);
+  const sparseSeeds = state.seeds.filter((seed) => syntheticCatalog ? BY_ID.get(seed.id)?.mechanics == null : BY_ID.get(seed.id)?.themes == null);
   const explain = (count, singular, plural) => {
     if (count) list.append(element("li", `${count} ${count === 1 ? singular : plural}.`));
   };
@@ -177,7 +179,7 @@ function drawEmptyRecovery(result) {
   explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
   explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
   if (sparseSeeds.length) {
-    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no mechanics metadata. Comparisons to these basket games cannot meet the 70% evidence threshold.`));
+    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "Wikidata genre evidence for the pilot"}. Comparisons must abstain.`));
   }
   if (!list.children.length) list.append(element("li", "No catalog profiles remain outside your basket."));
   empty.append(list);
@@ -212,7 +214,14 @@ function drawResults() {
     const card = element("li", undefined, "card"); card.dataset.gameId = item.id;
     const top = element("div", undefined, "card-top");
     const title = element("div", undefined, "card-title");
-    title.append(element("h3", game.name), element("p", game.description ?? "Description unavailable for this profile.", "hint"));
+    title.append(element("h3", game.name), element("p", game.description ?? (syntheticCatalog ? "Description unavailable for this profile." : `Recorded genre labels: ${game.themes?.join(", ") || "unknown"}. No sourced description or artwork.`), "hint"));
+    if (!syntheticCatalog && /^wikidata:q[0-9]+$/.test(game.id)) {
+      const itemLink = element("a", "View Wikidata source");
+      itemLink.href = `https://www.wikidata.org/wiki/${game.id.split(":")[1].toUpperCase()}`;
+      itemLink.target = "_blank";
+      itemLink.rel = "noopener noreferrer";
+      title.append(itemLink);
+    }
     const fit = element("div", undefined, "fit");
     const blendSelection = state.mode === "blend" && item.blend;
     const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
@@ -234,7 +243,9 @@ function drawResults() {
     }
     if (item.blend) why.append(element("p", `Blend selection objective: ${item.blend.objective.toFixed(3)}; average fit: ${item.scores.arithmetic.toFixed(3)}; uncovered-strand gain: ${item.blend.gain.toFixed(3)}; relevance weight λ: ${state.lambda}.`));
     if (state.mode === "intersection" && score === 0) why.append(element("p", "No overlap with at least one seed: this is not a strong whole-basket match."));
-    why.append(element("p", `Comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}%. Mechanics use 70% and themes 30%; popularity is not used.`));
+    why.append(element("p", syntheticCatalog
+      ? `Comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}%. Mechanics use 70% and themes 30%; popularity is not used.`
+      : `Observed comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}% of the full model (genre labels only, internally held in the themes field). Mechanics are unknown; similarities are exploratory and popularity is not used.`));
     card.append(why);
     const footer = element("div", undefined, "card-footer");
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
