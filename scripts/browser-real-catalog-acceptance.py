@@ -38,12 +38,19 @@ try:
             page.on("request", lambda request: requests.append(request.url))
             page.set_content(HTML, wait_until="load")
             page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+            observed = {
+                "version": page.locator("#versions").inner_text(),
+                "intro": page.locator(".intro").inner_text(),
+                "badge": page.locator(".badge").inner_text(),
+                "seeds": page.locator("#seeds").inner_text(),
+            }
+            print("REAL_PILOT_INITIAL_STATE " + json.dumps(observed), flush=True)
             check(label + ": real catalog provenance, two real basket games",
-                  SNAPSHOT in page.locator("#versions").inner_text()
-                  and "12 real games" in page.locator(".intro").inner_text()
-                  and "Wikidata CC0" in page.locator(".badge").inner_text()
-                  and "Stardew Valley" in page.locator("#seeds").inner_text()
-                  and "Terraria" in page.locator("#seeds").inner_text())
+                  SNAPSHOT in observed["version"]
+                  and "12 real games" in observed["intro"]
+                  and "Wikidata CC0" in observed["badge"]
+                  and "Stardew Valley" in observed["seeds"]
+                  and "Terraria" in observed["seeds"])
             check(label + ": genre-only nonzero ranking with truthful coverage",
                   page.locator("#results > li").count() > 0
                   and page.locator('[data-game-id="wikidata:q96991833"]').count() > 0

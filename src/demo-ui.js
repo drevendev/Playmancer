@@ -197,8 +197,10 @@ function drawEmptyRecovery(result) {
     actions.append(button);
   };
   if (hidden.length) addAction(`Restore ${hidden.length} hidden ${hidden.length === 1 ? "profile" : "profiles"}`, () => { state.excluded = []; });
-  if (failed.length && state.platform !== "any") addAction("Allow any platform", () => { state.platform = "any"; });
-  if (failed.length && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
+  // Unknown source metadata can leave zero eligible results without any explicit
+  // failures. Offer a deliberate recovery choice; never relax constraints silently.
+  if ((failed.length || unknown.length) && state.platform !== "any") addAction("Allow any platform", () => { state.platform = "any"; });
+  if ((failed.length || unknown.length) && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
   for (const seed of sparseSeeds) {
     const name = BY_ID.get(seed.id).name;
     addAction(`Remove ${name} from basket`, () => { state.seeds = state.seeds.filter((item) => item.id !== seed.id); }, name);
