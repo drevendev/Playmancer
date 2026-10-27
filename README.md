@@ -63,6 +63,36 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
+## Real-game Wikidata pilot (opt-in, not yet on Pages)
+
+A **12-title real-game pilot** is available as a separate, versioned build. Choose
+**Stardew Valley, Terraria, Hades, Slay the Spire, Hollow Knight, Portal 2** and
+other identifiable titles from Wikidata. Real titles and selected genre/platform
+facts have [item-level source receipts](docs/REAL_PILOT.md); the structured
+Wikidata source is **CC0**. No third-party descriptions or artwork are bundled.
+
+```sh
+node scripts/build-demo.mjs _site-real --catalog examples/catalog.wikidata.real.json
+python3 scripts/pages-preflight.py _site-real
+python3 -m http.server 8080 --directory _site-real
+# After installing Playwright and Chromium:
+python3 scripts/browser-real-catalog-acceptance.py
+```
+
+This pilot deliberately uses only source-stated Wikidata **genre (P136)**
+overlap. Genres are carried through the current schema's `themes` field;
+gameplay mechanics and co-op metadata remain **unknown**. The real-pilot-only
+evidence gate admits a **30%** comparable-feature signal rather than inventing
+the remaining 70%. Bridge and basket modes use the same restricted signal;
+hard constraints are never loosened. A result is *not* proof of measured
+player usefulness. Catalog coverage is still tiny.
+
+**The public Pages default is still the 12-profile fictional preview.**
+This PR is a separately tested, reviewable real-data integration; promoting it
+to the public default needs a later accepted, exact-head change to the
+publication/browser acceptance pipeline. Keep existing synthetic links bound to
+their original `synthetic-demo-1` snapshot; incompatible links fail visibly.
+
 ## Run and verify
 
 Use Node.js 22. There are no npm dependencies or API keys.
