@@ -45,6 +45,10 @@ jobs:
   browser:
     name: Chromium product flow
     runs-on: ubuntu-latest
+    # Official Playwright image retains a browser-supported Noble runtime when
+    # GitHub's ubuntu-latest host advances beyond Playwright 1.55 support.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,7 +58,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
-      - run: python -m playwright install --with-deps chromium
+      # Chromium is bundled in the pinned container; no unsupported host apt install.
       - run: python scripts/browser-smoke.py
       - name: Verify Bridge discovery and share restoration
         run: python scripts/browser-bridge-acceptance.py
@@ -117,6 +121,8 @@ jobs:
     name: Synthetic Bridge browser responsiveness
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -126,7 +132,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --disable-pip-version-check playwright==1.55.0
-      - run: python -m playwright install --with-deps chromium
+      # Chromium is bundled in the pinned container; no unsupported host apt install.
       - name: Measure 12/50/250 dense, sparse and disconnected synthetic Bridge routes at 1x/4x CPU
         run: python scripts/browser-bridge-performance.py
       - name: Verify cancellable Bridge worker on 250 fictional profiles over HTTP
