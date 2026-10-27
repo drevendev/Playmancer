@@ -85,6 +85,24 @@ class HostedIdentityTests(unittest.TestCase):
 
 
 class PagesHostedRuntimeTests(unittest.TestCase):
+    def test_pages_packaging_browser_uses_preinstalled_pinned_chromium(self):
+        """Packaging must never depend on slow Ubuntu apt browser installs."""
+        workflow = (Path(__file__).resolve().parents[1] / '.github' / 'workflows' / 'pages.yml').read_text()
+        _, separator, rest = workflow.partition('\n  verify-and-package:\n')
+        self.assertTrue(separator, 'the exact-master package job must exist')
+        package, separator, _ = rest.partition('\n  publish:\n')
+        self.assertTrue(separator, 'the publish job must remain separate')
+        self.assertIn('image: mcr.microsoft.com/playwright/python:v1.55.0-noble', package)
+        self.assertIn('playwright==1.55.0', package)
+        executable = '\n'.join(line for line in package.splitlines() if not line.lstrip().startswith('#'))
+        self.assertNotIn('playwright install --with-deps', executable)
+        self.assertNotIn('actions/setup-python@', package)
+        self.assertIn('python scripts/browser-smoke.py', package)
+        self.assertIn('npm test', package)
+        self.assertIn('npm run build', package)
+        self.assertIn('python3 scripts/pages-preflight.py _site', package)
+        self.assertIn('actions/upload-pages-artifact@v4', package)
+
     def test_hosted_browser_job_reuses_pinned_preinstalled_engines(self):
         workflow = (Path(__file__).resolve().parents[1] / '.github' / 'workflows' / 'pages.yml').read_text()
         _, separator, hosted = workflow.partition('\n  hosted-player-acceptance:\n')
@@ -92,7 +110,11 @@ class PagesHostedRuntimeTests(unittest.TestCase):
         self.assertIn('needs: publish', hosted)
         self.assertIn('image: mcr.microsoft.com/playwright/python:v1.55.0-noble', hosted)
         self.assertIn('playwright==1.55.0', hosted)
-        self.assertNotIn('playwright install --with-deps', hosted)
+        hosted_executable = '\n'.join(line for line in hosted.splitlines() if not line.lstrip().startswith('#'))
+        self.assertNotIn('playwright install --with-deps', hosted_executable)
+        self.assertNotIn('actions/setup-python@', hosted_executable)
+        self.assertIn('python scripts/browser-http-acceptance.py', hosted)
+        self.assertIn('actions/upload-artifact@v4', hosted)
         self.assertIn('HOME: /root', hosted)
 
 

@@ -13,14 +13,17 @@ requests are needed.
 [Real pilot provenance](docs/REAL_PILOT.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Latest verified public publication as of this update:** `master@74b78b0d9d2500d9b1f777f8c506c3bbc623f2ba`
-> serves the **12-game Wikidata pilot**. [Pages workflow #40495160730](https://github.com/drevendev/Playmancer/actions/runs/40495160730)
-> confirmed the public revision/worker over HTTPS; hosted desktop/mobile
-> acceptance was blocked by test-environment setup and is **NOT VERIFIED**.
-> Check [live workflow runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-> for the current deployed SHA.
+> **Release evidence (2026-10-27):** The 17-game catalog reached `master` at
+> [`97f4bf1d`](https://github.com/drevendev/Playmancer/commit/97f4bf1d74bdfdc48b54740bed672f241d160c23).
+> An [automatic Pages deployment](https://github.com/drevendev/Playmancer/actions/runs/40511861195)
+> succeeded for that SHA, but the independent
+> [Publish and hosted-browser workflow](https://github.com/drevendev/Playmancer/actions/runs/40511862427)
+> was cancelled during OS dependency installation. **The 17-game public HTML revision,
+> worker, and hosted desktop/mobile player remain NOT LIVE_VERIFIED in that run.**
+> Check the [latest publisher runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> for a successful exact-revision HTTP check **and** hosted browser acceptance.
 
-**Proposed next version — NOT DEPLOYED until merged:** 17 real games, comprising
+**Merged real-catalog pilot:** 17 real games, comprising
 12 existing Wikidata entities and all **five verified Dreven Games** entries,
 with direct Steam (11), itch.io (4) and Google Play (2) store pages. An owner
 association is disclosed in the UI and **never changes ranking**. Storefront
@@ -31,11 +34,12 @@ See [storefront sources and constraints](docs/STOREFRONTS.md).
 
 ## Playable preview 0.3
 
-**In this PR branch**, the production Pages build uses **17 real games** and
-safe outbound storefront references, including the five Dreven Games titles.
-The published master still serves the earlier 12-game version until a separate
-review/merge/deployment. The fictional twelve-profile fixture is still built by
-plain `node scripts/build-demo.mjs` for isolated tests. Preview 0.3 connects a validated build-time snapshot to the whole
+The production Pages build on `master` selects **17 real games** with safe
+outbound storefront references, including five Dreven Games titles. Live
+revision/browser verification is tracked separately above; merged source alone
+does not prove a served version. The fictional twelve-profile fixture remains
+available via plain `node scripts/build-demo.mjs` for isolated tests. Preview
+0.3 connects a validated build-time snapshot to the whole
 player journey. A separate six-profile synthetic fixture exercises aliases,
 editions/DLC and unknown metadata. Existing synthetic-only share links must
 pass the catalog-version gate; they are not silently upgraded to the real catalog.
@@ -58,9 +62,10 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
-## Real-game Wikidata pilot (Pages release candidate; not yet deployed)
+## Real-game multistore pilot (17 titles; hosted verification pending)
 
-A **12-title real-game pilot** is available as a separate, versioned build. Choose
+The production snapshot combines **12 Wikidata games and five Dreven Games**.
+A separate versioned 12-title Wikidata-only pilot remains available as a test fixture. Choose
 **Stardew Valley, Terraria, Hades, Slay the Spire, Hollow Knight, Portal 2** and
 other identifiable titles from Wikidata. Real titles and selected genre/platform
 facts have [item-level source receipts](docs/REAL_PILOT.md); the structured
@@ -83,11 +88,10 @@ the remaining 70%. Bridge and basket modes use the same restricted signal;
 hard constraints are never loosened. A result is *not* proof of measured
 player usefulness. Catalog coverage is still tiny.
 
-The previously published Pages release already uses 12 real games. This
-17-game multistore candidate still requires a later independent exact-head
-acceptance, merge, a successful Pages deployment and hosted desktop/mobile
-verification before the *new* snapshot is live. Existing synthetic links remain
-bound to `synthetic-demo-1`; the new catalog rejects incompatible links visibly.
+The 17-game snapshot is already merged to `master`; the independent hosted
+exact-revision and desktop/mobile verification must pass before claiming that
+the *new* snapshot is live and usable. Existing synthetic links remain bound to
+`synthetic-demo-1`; incompatible catalog versions fail visibly.
 
 ## Run and verify
 
@@ -104,11 +108,11 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-On this PR branch, `npm run build` selects the 17-game multistore pilot. To build
+On `master`, `npm run build` selects the 17-game multistore pilot. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
-without a catalog argument. **After a successful real-catalog deployment**,
-old synthetic basket links must fail visibly with a version mismatch rather
-than silently mixing catalogs.
+without a catalog argument. Older synthetic basket links are intentionally
+rejected by the real snapshot's visible version check instead of silently
+mixing catalogs.
 
 Build the alternative synthetic snapshot:
 
@@ -141,7 +145,7 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The proposed public catalog combines 12 original Wikidata CC0 items with five
+The merged public-build input combines 12 original Wikidata CC0 items with five
 Dreven Games entries sourced from the owner's public game listings.
 [Storefront receipts and limits](docs/STOREFRONTS.md) and the
 [original Wikidata evidence](docs/REAL_PILOT.md) remain separate.
