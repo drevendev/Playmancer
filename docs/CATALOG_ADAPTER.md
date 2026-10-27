@@ -87,3 +87,13 @@ edition/DLC selection, weights, strict constraints, exclusions, Bridge, exact sh
 restoration, incompatible snapshots and stale IDs. It retains PNG/JSON evidence
 and the synthetic static artifact in CI. Offline browser tests are not public HTTP
 navigation, screen-reader certification, real-device latency or player usefulness.
+
+## Multi-store pilot (owner-authorized catalog extension)
+
+The release candidate switches `npm run build` to
+[`examples/catalog.multistore.real.json`](../examples/catalog.multistore.real.json), with **17 actual games**:
+12 original CC0 Wikidata entities and five publisher-authored Dreven Games
+titles. Canonical store links are validated at build time and exposed only as
+user-activated outbound anchors. Genres are a limited 30% evidence signal,
+never a quality percentage. The old snapshot remains separately reproducible.
+See [storefront provenance](STOREFRONTS.md) for data rights and API limits.

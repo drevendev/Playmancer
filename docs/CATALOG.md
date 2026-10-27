@@ -89,3 +89,19 @@ An approved marker is an attestation, not independent legal evidence. [#8](https
 requires actual source receipts, retrieval dates/digests, terms review, stratified
 real-game examples and separate description/artwork decisions before any real release.
 The current implementation does not fetch an API or claim real-catalog readiness.
+
+## Curated storefront links
+
+Optional `storeLinks` is an array of `{"store": "steam"|"itch"|"googleplay",
+"url": "https://..."}` values, separately covered by each source's publication
+field allowlist. Each link requires a matching external ID, with no duplicate
+store names or URLs. Strict validation only permits official HTTPS storefront
+hostnames and canonical paths, with no embedded credentials, fragments,
+unknown query arguments or executable URL schemes. Unknown input properties
+do not become public fields.
+
+Store links are **outbound references**, not permission to reuse vendor images,
+descriptions, user data, prices or ratings. The game source metadata and
+store-link verification are distinguished in [STOREFRONTS.md](STOREFRONTS.md).
+This field is never a ranking feature and is not persisted in a basket share
+link; versioned canonical game IDs remain the only selection identity.

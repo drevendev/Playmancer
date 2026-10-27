@@ -1,3 +1,9 @@
+> Historical 12-game Wikidata-only snapshot and evidence. The next
+> multistore pilot is a separate immutable catalog:
+> [Storefront sources and five Dreven Games entries](STOREFRONTS.md).
+> The 12-game receipt remains here for provenance; it must not be
+> mistaken for the 17-game candidate release.
+
 # Real-game Wikidata pilot — frozen 2026-10-27
 
 ## What this release actually supports

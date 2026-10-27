@@ -1,4 +1,4 @@
-"""Real Chromium acceptance for an opt-in CC0 Wikidata pilot, never a Pages claim."""
+"""Real Chromium acceptance for multistore and legacy Wikidata snapshots, not Pages."""
 from pathlib import Path
 import json
 import os
@@ -11,10 +11,10 @@ ARTIFACTS = ROOT / ".test-artifacts"
 SITE = ARTIFACTS / "real-catalog-site"
 ARTIFACTS.mkdir(exist_ok=True)
 subprocess.run(["node", "scripts/build-demo.mjs", str(SITE), "--catalog",
-                "examples/catalog.wikidata.real.json"], cwd=ROOT, check=True)
+                "examples/catalog.multistore.real.json"], cwd=ROOT, check=True)
 subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
 HTML = (SITE / "index.html").read_text()
-SNAPSHOT = "wikidata-genre-pilot-2026-10-27"
+SNAPSHOT = "multi-store-genre-pilot-2026-10-27"
 results = []
 
 
@@ -47,8 +47,8 @@ try:
             print("REAL_PILOT_INITIAL_STATE " + json.dumps(observed), flush=True)
             check(label + ": real catalog provenance, two real basket games",
                   SNAPSHOT in observed["version"]
-                  and "12 real games" in observed["intro"]
-                  and "wikidata cc0" in observed["badge"].lower()
+                  and "17 real games" in observed["intro"]
+                  and "wikidata + dreven games" in observed["badge"].lower()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
             # Native <details> content is correctly hidden until the player opens
@@ -74,6 +74,46 @@ try:
             check(label + ": per-result source links and no artwork",
                   page.locator('#results a[href^="https://www.wikidata.org/wiki/Q"]').count() > 0
                   and page.locator("img").count() == 0)
+            check(label + ": real results link to Steam without making external requests",
+                  page.locator('#results a[href^="https://store.steampowered.com/app/"]').count() > 0
+                  and not requests)
+            owner_page = ctx.new_page()
+            owner_requests, owner_errors = [], []
+            owner_page.on("request", lambda request: owner_requests.append(request.url))
+            owner_page.on("pageerror", lambda error: owner_errors.append(str(error)))
+            owner_page.set_content(HTML, wait_until="load")
+            owner_page.locator("#dreven-browse").click()
+            check(label + ": all five Dreven Games titles are discoverable without ranking promotion",
+                  owner_page.locator("#search-results button").count() == 5
+                  and all(name in owner_page.locator("#search-results").inner_text()
+                          for name in ("Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid")))
+            owner_page.locator("#clear").click()
+            owner_page.locator("#search").fill("Shadow Runner")
+            owner_page.get_by_role("button", name="Add Shadow Runner").click()
+            check(label + ": owner Shadow Runner links to itch.io and Google Play",
+                  owner_page.locator('#seeds a[href="https://drevengames.itch.io/shadow-runner"]').count() == 1
+                  and owner_page.locator('#seeds a[href="https://play.google.com/store/apps/details?id=com.TrilobytesStudio.ShadowRunner"]').count() == 1
+                  and owner_page.locator('#seeds a[href^="https://drevengames.itch.io/"]').first.get_attribute("rel") == "noopener noreferrer")
+            owner_page.locator("#search").fill("Circlanoid")
+            owner_page.get_by_role("button", name="Add Circlanoid").click()
+            owner_page.locator("#platform").select_option("android")
+            owner_page.locator("#share").click()
+            owner_state = json.loads(unquote(owner_page.locator("#share-link").input_value().split("#basket=", 1)[1]))
+            check(label + ": Android game and two owner IDs restore with catalog version",
+                  "Circlanoid" in owner_page.locator("#seeds").inner_text()
+                  and owner_state["catalog"] == SNAPSHOT and owner_state["platform"] == "android"
+                  and [x["id"] for x in owner_state["seeds"]] == ["dreven:shadow-runner", "dreven:circlanoid"]
+                  and "promotion" not in owner_state)
+            owner_page.screenshot(path=str(ARTIFACTS / f"real-storefronts-{label}.png"), full_page=True)
+            owner_page.locator("#clear").click()
+            owner_page.locator("#search").fill("DevMatch")
+            owner_page.get_by_role("button", name="Add DevMatch").click()
+            check(label + ": missing DevMatch genre abstains rather than becoming a false match",
+                  owner_page.locator("#seeds > li").count() == 1
+                  and owner_page.locator("#results > li").count() == 0
+                  and owner_page.locator("#empty").is_visible()
+                  and not owner_requests and not owner_errors)
+            owner_page.close()
             page.screenshot(path=str(ARTIFACTS / f"real-catalog-{label}.png"), full_page=True)
             page.locator("#search").fill("Hades")
             page.get_by_role("button", name="Add Hades").click()
@@ -123,12 +163,35 @@ try:
                   page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                   and not requests and not errors)
             ctx.close()
+        # Historical Wikidata-only snapshots must not advertise creator games or a
+        # browse action that cannot find any games in the selected catalog.
+        legacy_site = ARTIFACTS / "wikidata-only-site"
+        subprocess.run(["node", "scripts/build-demo.mjs", str(legacy_site), "--catalog",
+                        "examples/catalog.wikidata.real.json"], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/pages-preflight.py", str(legacy_site)], cwd=ROOT, check=True)
+        legacy_ctx = browser.new_context(viewport={"width": 390, "height": 844}, reduced_motion="reduce")
+        legacy_page = legacy_ctx.new_page()
+        legacy_errors = []
+        legacy_page.on("pageerror", lambda err: legacy_errors.append(str(err)))
+        legacy_page.set_content((legacy_site / "index.html").read_text(), wait_until="load")
+        legacy_page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+        check("legacy Wikidata-only pilot reports the selected 12-game provenance",
+              "12 real games" in legacy_page.locator(".intro").inner_text()
+              and "wikidata cc0 genre pilot" in legacy_page.locator(".badge").inner_text().lower()
+              and "dreven games" not in legacy_page.locator(".footer-note").inner_text().lower()
+              and not legacy_errors)
+        check("legacy Wikidata-only pilot does not expose nonfunctional creator browse or store links",
+              legacy_page.locator("#dreven-browse").is_hidden()
+              and legacy_page.locator("#results .storefront-links a").count() == 0
+              and legacy_page.locator("#seeds .storefront-links a").count() == 0)
+        legacy_page.screenshot(path=str(ARTIFACTS / "wikidata-only-mobile.png"), full_page=True)
+        legacy_ctx.close()
         browser.close()
 finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "opt-in offline built HTML / Chromium; NOT Pages or measured usefulness",
+        "scope": "multistore and legacy real HTML / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))

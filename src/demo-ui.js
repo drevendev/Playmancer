@@ -15,30 +15,51 @@ const notes = {
 const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails a required filter",
   "hard-constraint-unknown": "required filter evidence is unknown", "missing-seed-affinity": "insufficient comparable feature evidence" };
 const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
+const hasDreven = DEMO_SNAPSHOT.sources.some(source => source.id === "dreven-owned");
+const storeNames = { steam: "Steam", itch: "itch.io", googleplay: "Google Play" };
+function renderStoreLinks(game) {
+  if (!game.storeLinks?.length) return null;
+  const row = element("span", undefined, "storefront-links");
+  for (const link of game.storeLinks) {
+    const anchor = element("a", storeNames[link.store]);
+    anchor.href = link.url;
+    anchor.target = "_blank";
+    anchor.rel = "noopener noreferrer";
+    anchor.setAttribute("aria-label", "View " + game.name + " on " + storeNames[link.store]);
+    row.append(anchor);
+  }
+  return row;
+}
 function showCatalogIdentity() {
-  document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" : "Real games · Wikidata CC0 genre pilot";
+  document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
+    hasDreven ? "Real games · Wikidata + Dreven Games" : "Real games · Wikidata CC0 genre pilot";
   document.querySelector(".intro p").replaceChildren(
-    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " : "Explore actual games with transparent genre overlap and honest gaps. This Wikidata CC0 pilot contains ",
+    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " :
+      hasDreven ? "Combine real favorites, see sourced genre overlap and visit official game stores. This multistore pilot contains " :
+      "Explore real favorites with transparent genre overlap. This Wikidata CC0 pilot contains ",
     element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
-    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : ". No descriptions or artwork are copied. Only observed Wikidata genres (30% of the full feature model) can support similarities; usefulness is unmeasured."
+    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : ". No third-party descriptions or artwork are copied. Genre comparisons cover 30% of the full feature model; usefulness is unmeasured."
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
   document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";
-  const labels = { any: "Any platform", mac: "macOS" };
+  const labels = { any: "Any platform", mac: "macOS", android: "Android", browser: "Browser (HTML5)" };
   $("platform").replaceChildren(...PLATFORMS.map(value => {
     const option = element("option", labels[value] ?? value);
     option.value = value;
     return option;
   }));
+  $("dreven-browse").hidden = !hasDreven;
   const versions = $("versions");
   document.querySelector(".foot").replaceChildren(
-    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." : "Real Wikidata CC0 pilot · limited genre-only evidence."),
+    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." :
+      hasDreven ? "Real multistore pilot · limited genre evidence." : "Real Wikidata CC0 pilot · limited genre evidence."),
     " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
     "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
     element("br"), versions
   );
-  if (!syntheticCatalog) document.querySelector(".footer-note").textContent =
-    "Matches use only Wikidata P136 genre statements. Mechanics are unknown: evidence coverage is 30% of the full model, not a confidence percentage or proof of quality. Platform and co-op restrictions remain strict. No map coordinates enter ranking.";
+  if (!syntheticCatalog) document.querySelector(".footer-note").textContent = hasDreven ?
+    "Only Wikidata CC0 genres and carefully normalized Dreven Games publisher tags affect fit (30% coverage). Storefront URLs and owner association never affect ranking. Mechanics and co-op remain unknown; platform constraints stay strict." :
+    "Only Wikidata CC0 genres affect fit (30% coverage). Mechanics and co-op remain unknown; platform constraints stay strict.";
   document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
@@ -96,6 +117,8 @@ function drawSeeds() {
       announceBasketAction("Removed", BY_ID.get(seed.id).name);
     });
     title.append(remove);
+    const stores = renderStoreLinks(BY_ID.get(seed.id));
+    if (stores) title.append(stores);
     const label = element("label", `Weight for ${BY_ID.get(seed.id).name}: `, "weight-label");
     const input = element("input");
     input.id = `weight-${seed.id.startsWith("demo:") ? seed.id.slice(5) : encodeURIComponent(seed.id)}`;
@@ -118,7 +141,7 @@ function drawSearch() {
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
   const matches = query
-    ? CATALOG.filter((game) => !chosen.has(game.id) && [game.name, game.id, ...game.aliases]
+    ? CATALOG.filter((game) => !chosen.has(game.id) && [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
       .some(value => value.normalize("NFC").toLowerCase().includes(query)))
     : [];
   for (const game of matches) {
@@ -224,6 +247,10 @@ function drawResults() {
       itemLink.rel = "noopener noreferrer";
       title.append(itemLink);
     }
+    if (game.sourceId === "dreven-owned")
+      title.append(element("p", "Dreven Games · creator-associated; no ranking boost.", "hint"));
+    const stores = renderStoreLinks(game);
+    if (stores) title.append(stores);
     const fit = element("div", undefined, "fit");
     const blendSelection = state.mode === "blend" && item.blend;
     const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
@@ -315,6 +342,13 @@ window.addEventListener("hashchange", readLocation);
 readLocation();
 bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(false); });
 
+// A clearly disclosed editorial shortcut changes search only, never ranking.
+$("dreven-browse").addEventListener("click", () => {
+  $("search").value = "Dreven Games";
+  drawSearch();
+  $("search").focus();
+  announceBasketAction("Browsing Dreven Games");
+});
 // First-screen actions reuse the authoritative reset/clear paths, not a second state store.
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
 $("intro-empty").addEventListener("click", () => { $("clear").click(); $("search").focus(); });
