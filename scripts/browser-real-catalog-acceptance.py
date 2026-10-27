@@ -51,11 +51,22 @@ try:
                   and "wikidata cc0" in observed["badge"].lower()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            evidence = {
+                "ranked_ids": page.locator("#results > li").evaluate_all(
+                    "cards => cards.map(card => card.dataset.gameId)"),
+                "mortal_shell_visible": page.locator('[data-game-id="wikidata:q96991833"]').count(),
+                "footer_note": page.locator(".footer-note").inner_text(),
+                "first_explanation": page.locator("#results .explanation").first.inner_text()
+                if page.locator("#results .explanation").count() else "",
+                "first_score": page.locator("#results .fit strong").first.inner_text()
+                if page.locator("#results .fit strong").count() else "",
+            }
+            print("REAL_PILOT_RANKING " + json.dumps(evidence), flush=True)
             check(label + ": genre-only nonzero ranking with truthful coverage",
-                  page.locator("#results > li").count() > 0
-                  and page.locator('[data-game-id="wikidata:q96991833"]').count() > 0
-                  and "30%" in page.locator(".footer-note").inner_text()
-                  and "30% of the full model" in page.locator("#results .explanation").first.inner_text())
+                  len(evidence["ranked_ids"]) > 0
+                  and evidence["mortal_shell_visible"] > 0
+                  and "30%" in evidence["footer_note"]
+                  and "30% of the full model" in evidence["first_explanation"])
             check(label + ": per-result source links and no artwork",
                   page.locator('#results a[href^="https://www.wikidata.org/wiki/Q"]').count() > 0
                   and page.locator("img").count() == 0)
