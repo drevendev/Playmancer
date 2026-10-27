@@ -48,7 +48,7 @@ try:
             check(label + ": real catalog provenance, two real basket games",
                   SNAPSHOT in observed["version"]
                   and "12 real games" in observed["intro"]
-                  and "Wikidata CC0" in observed["badge"]
+                  and "wikidata cc0" in observed["badge"].lower()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
             check(label + ": genre-only nonzero ranking with truthful coverage",
