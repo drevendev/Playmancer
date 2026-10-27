@@ -15,6 +15,7 @@ const notes = {
 const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails a required filter",
   "hard-constraint-unknown": "required filter evidence is unknown", "missing-seed-affinity": "insufficient comparable feature evidence" };
 const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
+const hasDreven = DEMO_SNAPSHOT.sources.some(source => source.id === "dreven-owned");
 const storeNames = { steam: "Steam", itch: "itch.io", googleplay: "Google Play" };
 function renderStoreLinks(game) {
   if (!game.storeLinks?.length) return null;
@@ -30,9 +31,12 @@ function renderStoreLinks(game) {
   return row;
 }
 function showCatalogIdentity() {
-  document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" : "Real games · Wikidata + Dreven Games";
+  document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
+    hasDreven ? "Real games · Wikidata + Dreven Games" : "Real games · Wikidata CC0 genre pilot";
   document.querySelector(".intro p").replaceChildren(
-    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " : "Combine real favorites, see sourced genre overlap and visit official game stores. This multistore pilot contains ",
+    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " :
+      hasDreven ? "Combine real favorites, see sourced genre overlap and visit official game stores. This multistore pilot contains " :
+      "Explore real favorites with transparent genre overlap. This Wikidata CC0 pilot contains ",
     element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
     syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : ". No third-party descriptions or artwork are copied. Genre comparisons cover 30% of the full feature model; usefulness is unmeasured."
   );
@@ -44,16 +48,18 @@ function showCatalogIdentity() {
     option.value = value;
     return option;
   }));
-  $("dreven-browse").hidden = syntheticCatalog;
+  $("dreven-browse").hidden = !hasDreven;
   const versions = $("versions");
   document.querySelector(".foot").replaceChildren(
-    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." : "Real multistore pilot · limited genre evidence."),
+    element("strong", syntheticCatalog ? "Prototype, not a real catalog release." :
+      hasDreven ? "Real multistore pilot · limited genre evidence." : "Real Wikidata CC0 pilot · limited genre evidence."),
     " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
     "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
     element("br"), versions
   );
-  if (!syntheticCatalog) document.querySelector(".footer-note").textContent =
-    "Only Wikidata CC0 genres and carefully normalized Dreven Games publisher tags affect fit (30% coverage). Storefront URLs and owner association never affect ranking. Mechanics and co-op remain unknown; platform constraints stay strict.";
+  if (!syntheticCatalog) document.querySelector(".footer-note").textContent = hasDreven ?
+    "Only Wikidata CC0 genres and carefully normalized Dreven Games publisher tags affect fit (30% coverage). Storefront URLs and owner association never affect ranking. Mechanics and co-op remain unknown; platform constraints stay strict." :
+    "Only Wikidata CC0 genres affect fit (30% coverage). Mechanics and co-op remain unknown; platform constraints stay strict.";
   document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
