@@ -18,7 +18,8 @@ jobs:
     if: github.ref == 'refs/heads/master'
     name: Verify and package exact master
     timeout-minutes: 10
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    # Playwright 1.55 does not support ubuntu26.04; keep packaging browser tests on Noble.
     permissions:
       contents: read
     steps:
