@@ -41,7 +41,9 @@ The runner uses the existing `src/benchmark.js` and `src/ranking.js`
 implementation, not a new scoring algorithm:
 
 - **Single-seed reference:** one arithmetic ranking per explicitly chosen seed,
-  with the same candidates/filters; it is not a fake multi-seed consensus.
+  using the **same basket-eligible candidate set** as every multi-seed method:
+  *all* selected favorites and explicit exclusions are removed, with the same
+  hard-constraint states and top-k. It is not a fake multi-seed consensus.
 - **Union:** strongest matching seed, even if others disagree.
 - **Arithmetic:** normalized weighted average seed affinity.
 - **Least misery:** minimum seed affinity.
@@ -106,6 +108,30 @@ The new Node regression checks pin these counts to the exact source blob and
 method version; CI must pass before treating the PR as accepted. This is
 mechanical genre-support measurement only. No relevance labels, interviews or
 comparative player-quality claims are available.
+
+## Single-seed comparison correction (2026-10-28)
+
+The first unmerged PR #62 implementation mistakenly excluded only each
+reference seed from its single-seed neighbors; other favorites in that basket
+could appear as recommendations despite being ineligible for all five
+multi-seed methods. Source/fixture reconstruction found **43 affected
+single-seed top-five lists across 17 of the 30 baskets** (80 single-seed lists
+in total). These were not valid same-eligibility comparisons.
+
+The corrected runner now excludes the **entire selected basket** as well as
+explicit exclusions for each single-seed reference, without relaxing hard
+constraints. For example, the `coherent-platformer` Celeste reference now
+returns Dead Cells, Circlanoid, Hunter Adventure, Idle Fantasy Shop and
+Inscryption; previously Spiritfarer and Shadow Runner (both selected
+favorites) incorrectly headed its list. The last four corrected suggestions
+have zero observed genre overlap, so their presence only fills five slots,
+not evidence of player suitability. The new regression checks every basket's
+single-seed lists against its complete seed-ID set and pins this example.
+
+Multi-seed diagnostics (3 abstentions, 17 unsupported Intersection baskets,
+21 identical Blend/arithmetic lists) are independent of the single-seed
+reference fix and retain their prior values. These remain **genre proxies**,
+not measured preference or demonstrated recommendation quality.
 
 ## What this does not settle
 
