@@ -93,8 +93,7 @@ def exercise(browser, base_url, engine, label, width, height):
             "docs/REAL_EXPANSION.md",
             "docs/STOREFRONTS.md",
         )
-        receipt_prefix = ("https://github.com/drevendev/Playmancer/blob/"
-                          "e20941f212f5501a5f5e8d30caf30fcb28b44e2a/")
+        receipt_prefix = "https://github.com/drevendev/Playmancer/blob/master/"
         check(case, "24-game footer links both Wikidata batches and publisher receipts",
               receipts.count() == len(expected_receipt_paths)
               and all(
