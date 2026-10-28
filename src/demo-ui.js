@@ -281,12 +281,18 @@ function drawResults() {
     const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
     const scoreLabel = blendSelection ? "selection objective / 1" : state.mode === "blend" ? "average fit / 1" : "fit / 1";
     fit.append(element("strong", score.toFixed(3)), element("small", scoreLabel));
-    // An exact zero is not a recommendation: sparse genre-only snapshots can
-    // rank eligible games even when no source-backed basket fit was observed.
-    if (!syntheticCatalog && score === 0) {
-      fit.append(element("small", state.mode === "intersection"
-        ? "No shared genres with at least one favorite"
-        : "No shared genres with your favorites", "fit-warning"));
+    // Blend's list-level marginal objective is not a candidate's source-backed
+    // affinity. Even at objective zero, the candidate can share genres with
+    // multiple seeds once earlier results have covered their taste strands.
+    const noGenreOverlap = !syntheticCatalog && item.scores.arithmetic === 0;
+    const noWholeBasketOverlap = !syntheticCatalog && state.mode === "intersection" && item.scores.intersection === 0;
+    const zeroBlendGain = !syntheticCatalog && blendSelection && item.blend.objective === 0 && item.scores.arithmetic > 0;
+    if (noGenreOverlap) {
+      fit.append(element("small", "No shared genres with any favorite", "fit-warning"));
+    } else if (noWholeBasketOverlap) {
+      fit.append(element("small", "No shared genres with at least one favorite", "fit-warning"));
+    } else if (zeroBlendGain) {
+      fit.append(element("small", "No additional uncovered-strand gain here; some genres still overlap", "fit-warning"));
     }
     top.append(element("span", String(index + 1).padStart(2, "0"), "rank"), title, fit);
     card.append(top, element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
@@ -298,7 +304,9 @@ function drawResults() {
     });
     card.append(affinities);
     const why = element("details", undefined, "explanation");
-    why.append(element("summary", `Why ${game.name} matches your basket`));
+    why.append(element("summary", noGenreOverlap || noWholeBasketOverlap || zeroBlendGain
+      ? `Why ${game.name} appears in this list`
+      : `Why ${game.name} matches your basket`));
     for (const pair of item.evidence) {
       why.append(element("p", `${BY_ID.get(pair.id).name} — shared: ${pair.shared.join(", ") || "none"}. Seed tags not shared: ${pair.notShared.join(", ") || "none"}.`));
     }
@@ -326,10 +334,13 @@ function drawResults() {
     footer.append(hide); card.append(footer); $("results").append(card);
   });
   drawEmptyRecovery(result);
-  const zeroFit = !syntheticCatalog ? result.ranked.filter((item) =>
-    (state.mode === "blend" ? (item.blend?.objective ?? item.scores.arithmetic) : item.scores[state.mode]) === 0).length : 0;
+  // Count actual absence of overlap, not Blend's marginal list objective.
+  const zeroFit = !syntheticCatalog ? result.ranked.filter((item) => item.scores.arithmetic === 0).length : 0;
+  const partialIntersection = !syntheticCatalog && state.mode === "intersection"
+    ? result.ranked.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
   $("status").textContent = `${result.ranked.length} shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
-    (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "");
+    (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "") +
+    (partialIntersection ? ` ${partialIntersection} lack overlap with at least one favorite; not whole-basket matches.` : "");
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
   $("partition-list").replaceChildren();
   for (const item of [...result.uncertain, ...result.excluded]) {
