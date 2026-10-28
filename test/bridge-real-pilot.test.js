@@ -11,6 +11,7 @@ test('Bridge route diagnostic pins the 30-game source and uses live player defau
   const result = run();
   assert.equal(result.catalog_snapshot_id, 'multi-store-genre-pilot-30-2026-10-28');
   assert.equal(result.catalog_git_blob_sha1, '0570fd610b14fb336c0de65e6cc3062892abe301');
+  assert.equal(result.basket_plan_git_blob_sha1, 'e28809801448df2f73c604d0349ce71c042d7f53');
   assert.equal(result.route_method_version, 'bridge-features-preview-3');
   assert.deepEqual(result.route_policy, {
     endpoint_selection: 'adjacent favorites in frozen basket order',
@@ -79,6 +80,14 @@ test('catalog or plan mutation invalidates the frozen comparison', () => {
   const altered = structuredClone(plan);
   altered.blendLambda = 0.7;
   assert.throws(() => evaluateFrozenBridgeRoutes(raw, altered), /frozen Blend lambda/);
+  // These remain schema-valid; the original evaluator would otherwise accept
+  // silently reordered endpoint tasks or changed weights under the same protocol.
+  const reordered = structuredClone(plan);
+  reordered.baskets[0].seeds.reverse();
+  assert.throws(() => evaluateFrozenBridgeRoutes(raw, reordered), /Frozen basket plan changed/);
+  const reweighted = structuredClone(plan);
+  reweighted.baskets[0].seeds[0].weight = 2;
+  assert.throws(() => evaluateFrozenBridgeRoutes(raw, reweighted), /Frozen basket plan changed/);
 });
 
 test('entire route report is deterministic and JSON serializable', () => {
