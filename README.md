@@ -66,15 +66,13 @@ rather than silently substituting newer entries.
 
 ## Player capabilities — 30-game pilot
 
-The historically verified Pages release at `dfb5f668` selected **17 real games** with safe
-outbound storefront references, including five Dreven Games titles. Its hosted
-revision and player checks are documented above; future builds must earn
-their own live verification. The fictional twelve-profile fixture remains
-available via plain `node scripts/build-demo.mjs` for isolated tests. Preview
-0.3 connects a validated build-time snapshot to the whole
-player journey. A separate six-profile synthetic fixture exercises aliases,
-editions/DLC and unknown metadata. Existing synthetic-only share links must
-pass the catalog-version gate; they are not silently upgraded to the real catalog.
+The currently published 30-game snapshot powers the player capabilities below.
+The earlier 17-game release is historical, not the current Pages catalog.
+For isolated tests, `node scripts/build-demo.mjs` builds a fictional
+twelve-profile fixture; a separate six-profile synthetic fixture covers aliases,
+editions/DLC and unknown metadata. Share links preserve catalog and method
+versions: the current site visibly rejects incompatible historical links instead
+of silently substituting games from a different snapshot.
 
 - Search names, canonical IDs and declared aliases; add/remove up to five profiles.
 - Edit explicit integer weights with keyboard controls.
