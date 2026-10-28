@@ -1,6 +1,6 @@
-# Seven-game Wikidata CC0 expansion — candidate 2026-10-28
+# Seven-game Wikidata CC0 expansion — snapshot 2026-10-28
 
-**Status: unpublished PR candidate, NOT `LIVE_VERIFIED`.** The prior 17-game JSON and its share-link version are preserved. New snapshot ID: `multi-store-genre-pilot-2026-10-28` (24 games: 19 Wikidata + five owner-associated).
+**Release status is revision-specific.** This document records source-field evidence for the 24-game snapshot; it does not prove that public Pages serves it. Confirm the exact revision and catalog through the [Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml) and hosted player. The prior 17-game JSON and share-link version are preserved. New snapshot ID: `multi-store-genre-pilot-2026-10-28` (24 games: 19 Wikidata + five owner-associated).
 
 ## Source and rights
 
@@ -18,7 +18,7 @@ Source: [Wikidata structured statements (CC0)](https://www.wikidata.org/wiki/Wik
 
 ## Immutable snapshot and limitations
 
-- Candidate checked-in JSON: [`examples/catalog.multistore-24.real.json`](../examples/catalog.multistore-24.real.json). Git **blob SHA-1** of this exact projection: `e76103935d249c4b8f5941c77489b01a36bf1920`. This is a digest of the committed *projection*, not the raw Wikidata export. Per-claim external citation quality varies, upstream statements may change.
+- Versioned checked-in JSON: [`examples/catalog.multistore-24.real.json`](../examples/catalog.multistore-24.real.json). Git **blob SHA-1** of this exact projection: `e76103935d249c4b8f5941c77489b01a36bf1920`. This is a digest of the committed *projection*, not the raw Wikidata export. Per-claim external citation quality varies, upstream statements may change.
 - The first 17 source records, their original order, and both source/rights declarations are unchanged. Existing 17-game release: `multi-store-genre-pilot-2026-10-27`. Old share links must fail visibly against a new snapshot; no silent migration.
 - Added records contain no aliases, edition/DLC merges, inferred co-op flags, mechanics, copied descriptions or artwork. Unknown `coop`/features remain `null`; unavailable platform evidence is not a hard-constraint pass.
 - Known genre fields: **23/24** (previously 16/17). Mechanics: **0/24**. Co-op: **0/24**. Descriptions: **0/24**. Selected desktop platforms are partial: unlisted systems are not independently disproven. No real-user evaluation has been performed.
@@ -36,4 +36,4 @@ python3 scripts/browser-real-catalog-acceptance.py
 python3 scripts/browser-http-acceptance.py
 ```
 
-New or altered catalog semantics must receive later independent exact-head PR acceptance, passing required CI, merge, then exact-SHA Pages deployment and actual hosted desktop/mobile browser inspection. This document is not deployment evidence.
+Release acceptance requires independent exact-head PR checks and merge, successful Pages deployment, and hosted desktop/mobile browser inspection of the exact served revision. Source receipts and local build evidence alone are not `LIVE_VERIFIED`.

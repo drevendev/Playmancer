@@ -90,7 +90,7 @@ navigation, screen-reader certification, real-device latency or player usefulnes
 
 ## Multi-store pilot (owner-authorized catalog extension)
 
-The expanded release candidate switches `npm run build` to
+The 24-game Pages build selects
 [`examples/catalog.multistore-24.real.json`](../examples/catalog.multistore-24.real.json), with **24 actual games**:
 19 CC0 Wikidata entities and five publisher-authored Dreven Games
 titles. The previously published 17-game catalog stays immutable; see the
