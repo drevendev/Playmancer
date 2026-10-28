@@ -52,3 +52,18 @@ fictional affinities. It is not a real-catalog experiment or a user-study result
 The runner records results, not a claim that Blend or Intersection beats baselines.
 Single-seed/human usefulness comparisons and frozen real-catalog judgments are tracked
 in [#10](https://github.com/drevendev/Playmancer/issues/10).
+
+## Frozen 30-game real-pilot diagnostic (issue #10)
+
+The separate, dependency-free [offline 30-basket comparison](EVALUATION_30.md)
+uses an immutable CC0/owner-published genre pilot and the same benchmark/ranking
+implementation. It freezes 30 explicit player baskets, shared hard constraints,
+method parameters and the exact source Git blob. Single-seed references and
+Union/arithmetic/least-misery/Intersection/Blend outputs are retained together
+with abstentions and negative cases. This is **genre-overlap proxy evidence**,
+not human relevance, accuracy, or a claim that Blend beats simpler methods.
+
+```sh
+node --test test/real-pilot-evaluation.test.js
+node scripts/evaluate-real-pilot.mjs > /tmp/real-pilot-evaluation.json
+```
