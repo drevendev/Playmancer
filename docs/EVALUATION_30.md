@@ -9,21 +9,21 @@ method is better for users. No external calls, stores, accounts or analytics.
 
 Run with Node 22 (no npm dependencies):
 
-\`\`\`sh
+```sh
 node --test test/real-pilot-evaluation.test.js
 node scripts/evaluate-real-pilot.mjs > /tmp/playmancer-real-pilot-evaluation.json
 node scripts/evaluate-real-pilot.mjs > /tmp/playmancer-real-pilot-evaluation-again.json
 cmp /tmp/playmancer-real-pilot-evaluation.json /tmp/playmancer-real-pilot-evaluation-again.json
-\`\`\`
+```
 
 The source is
-[\`examples/catalog.multistore-30.real.json\`](../examples/catalog.multistore-30.real.json),
-with snapshot ID \`multi-store-genre-pilot-30-2026-10-28\` and Git blob SHA-1
-\`0570fd610b14fb336c0de65e6cc3062892abe301\`.
+[`examples/catalog.multistore-30.real.json`](../examples/catalog.multistore-30.real.json),
+with snapshot ID `multi-store-genre-pilot-30-2026-10-28` and Git blob SHA-1
+`0570fd610b14fb336c0de65e6cc3062892abe301`.
 The exact UTF-8 blob is verified before analysis, not just the snapshot ID.
 Any catalog correction requires a new immutable source/protocol and reevaluation,
 never silently changing prior figures. The ordered 30 baskets are frozen in
-[\`examples/evaluation-baskets-30.real.json\`](../examples/evaluation-baskets-30.real.json).
+[`examples/evaluation-baskets-30.real.json`](../examples/evaluation-baskets-30.real.json).
 
 ## Predeclared comparison
 
@@ -36,8 +36,8 @@ exercise method differences and failure cases, **not randomly sampled players**.
 
 Each basket evaluates the same complete 30-game pool with identical
 seed exclusions, explicit weights, hard-constraint states, exclusions,
-\`topK=5\`, method version \`feature-overlap-2\`, and \`Blend lambda=0.3\`.
-The runner uses the existing \`src/benchmark.js\` and \`src/ranking.js\`
+`topK=5`, method version `feature-overlap-2`, and `Blend lambda=0.3`.
+The runner uses the existing `src/benchmark.js` and `src/ranking.js`
 implementation, not a new scoring algorithm:
 
 - **Single-seed reference:** one arithmetic ranking per explicitly chosen seed,
@@ -56,8 +56,8 @@ implementation, not a new scoring algorithm:
 unknown co-op fields. Pair affinity is Jaccard similarity of observed P136 or
 owner-published genre tags; both sides must have genres. Each comparable
 pair contributes only the actual **0.3 feature-group evidence coverage**,
-not full knowledge. A missing genre is \`null\`, never a zero match.
-Platform requirements are strict and missing platform facts are \`unknown\`.
+not full knowledge. A missing genre is `null`, never a zero match.
+Platform requirements are strict and missing platform facts are `unknown`.
 The script refuses catalog changes or a newly populated mechanics field
 rather than pretending these results are comparable after enrichment.
 
@@ -66,9 +66,9 @@ rather than pretending these results are comparable after enrichment.
 Each basket records complete runner partitions for each method: top-ranked
 IDs, per-seed affinities, evidence coverage, uncertain candidates with
 reasons, explicit exclusions, constraints, weights and method versions.
-\`mode_diagnostics\` gives count of top-five games with positive support
+`mode_diagnostics` gives count of top-five games with positive support
 from *every* seed, wholly zero-overlap games, and seed strands represented.
-\`summary\` retains all abstaining baskets, missing all-seed support and
+`summary` retains all abstaining baskets, missing all-seed support and
 cases where Blend selects the same top IDs as arithmetic. None is a metric
 of human preference or recommendation quality.
 
@@ -76,7 +76,7 @@ Expected **negative-case classes** (asserted in Node tests):
 
 - DevMatch carries no observed genres; baskets containing it as a seed
   cannot receive supported multi-seed rankings and must abstain.
-- Every game currently has unknown co-op evidence; \`required-coop-unknown\`
+- Every game currently has unknown co-op evidence; `required-coop-unknown`
   must yield no eligible recommended game, not silently relax the filter.
 - Infamous 2 has unknown platform metadata and must stay uncertain under
   the Windows filter rather than pass or be guessed available.
@@ -84,7 +84,7 @@ Expected **negative-case classes** (asserted in Node tests):
 Method-specific failures are **kept** in the JSON rather than omitted,
 including empty lists and overlaps that explain nothing. In particular,
 a zero Blend marginal objective is not evidence that the candidate has
-zero genre affinity. Comparing \`score\` numerically between Blend and
+zero genre affinity. Comparing `score` numerically between Blend and
 Intersection is invalid.
 
 ## What this does not settle
