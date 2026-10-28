@@ -39,8 +39,8 @@ jobs:
         run: python3 scripts/pages-preflight.py _site
       - name: Compare two independently built payloads
         run: |
-          node scripts/build-demo.mjs /tmp/playmancer-pages-a --catalog examples/catalog.multistore-24.real.json
-          node scripts/build-demo.mjs /tmp/playmancer-pages-b --catalog examples/catalog.multistore-24.real.json
+          node scripts/build-demo.mjs /tmp/playmancer-pages-a --catalog examples/catalog.multistore-30.real.json
+          node scripts/build-demo.mjs /tmp/playmancer-pages-b --catalog examples/catalog.multistore-30.real.json
           cmp _site/index.html /tmp/playmancer-pages-a/index.html
           cmp _site/index.html /tmp/playmancer-pages-b/index.html
           cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll

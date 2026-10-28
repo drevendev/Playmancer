@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "build": "node scripts/build-demo.mjs --catalog examples/catalog.multistore-24.real.json",
+    "build": "node scripts/build-demo.mjs --catalog examples/catalog.multistore-30.real.json",
     "validate:catalog": "node scripts/validate-catalog.mjs",
     "benchmark": "node scripts/run-ranking-benchmark.mjs examples/benchmark.synthetic.json"
   }

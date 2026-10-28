@@ -34,13 +34,14 @@ function renderStoreLinks(game) {
 // Keep the three receipt documents explicit so the original twelve Wikidata
 // entries are not misrepresented as evidence for the seven later additions.
 function renderCatalogReceipts() {
-  if (CATALOG_VERSION !== "multi-store-genre-pilot-2026-10-28") return null;
+  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28"].includes(CATALOG_VERSION)) return null;
   const base = "https://github.com/drevendev/Playmancer/blob/master/";
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
     ["Original Wikidata games", "docs/REAL_PILOT.md"],
     ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
+    ...(CATALOG_VERSION === "multi-store-genre-pilot-30-2026-10-28" ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
   ];
   for (const [index, [label, path]] of references.entries()) {

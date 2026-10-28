@@ -11,10 +11,10 @@ ARTIFACTS = ROOT / ".test-artifacts"
 SITE = ARTIFACTS / "real-catalog-site"
 ARTIFACTS.mkdir(exist_ok=True)
 subprocess.run(["node", "scripts/build-demo.mjs", str(SITE), "--catalog",
-                "examples/catalog.multistore-24.real.json"], cwd=ROOT, check=True)
+                "examples/catalog.multistore-30.real.json"], cwd=ROOT, check=True)
 subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
 HTML = (SITE / "index.html").read_text()
-SNAPSHOT = "multi-store-genre-pilot-2026-10-28"
+SNAPSHOT = "multi-store-genre-pilot-30-2026-10-28"
 results = []
 
 
@@ -47,7 +47,7 @@ try:
             print("REAL_PILOT_INITIAL_STATE " + json.dumps(observed), flush=True)
             check(label + ": real catalog provenance, two real basket games",
                   SNAPSHOT in observed["version"]
-                  and "24 real games" in observed["intro"]
+                  and "30 real games" in observed["intro"]
                   and "wikidata + dreven games" in observed["badge"].lower()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
