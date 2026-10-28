@@ -87,6 +87,26 @@ a zero Blend marginal objective is not evidence that the candidate has
 zero genre affinity. Comparing `score` numerically between Blend and
 Intersection is invalid.
 
+## Observed frozen-snapshot proxy results (2026-10-28)
+
+Replaying the declared inputs against the existing ranking and benchmark modules
+produced the following **diagnostic counts, not human judgments**:
+
+- **3/30 baskets abstained in every mode:** both DevMatch seed baskets
+  and the required-co-op basket. This exposes missing genres and unknown co-op,
+  not a recommendation failure rate measured from players.
+- **17/30 baskets had no top-five Intersection candidate with positive
+  observed overlap to *all* seeds.** Intersection can still return a zero-score
+  item when top-k slots remain; that is not a claim of whole-basket support.
+- **21/30 Blend top-five lists had exactly the same ordered IDs as the
+  arithmetic baseline; nine differed.** A different list is not automatically
+  more useful or diverse to humans.
+
+The new Node regression checks pin these counts to the exact source blob and
+method version; CI must pass before treating the PR as accepted. This is
+mechanical genre-support measurement only. No relevance labels, interviews or
+comparative player-quality claims are available.
+
 ## What this does not settle
 
 No gold-standard judgments of basket fit, relevance labels, or real
