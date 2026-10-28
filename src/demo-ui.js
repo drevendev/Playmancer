@@ -31,11 +31,11 @@ function renderStoreLinks(game) {
   return row;
 }
 // This exact snapshot has three separately documented data-source receipts.
-// Link to their merged, immutable Git revision rather than treating the first
-// 12-item receipt as evidence for the seven later Wikidata additions.
+// Keep the three receipt documents explicit so the original twelve Wikidata
+// entries are not misrepresented as evidence for the seven later additions.
 function renderCatalogReceipts() {
   if (CATALOG_VERSION !== "multi-store-genre-pilot-2026-10-28") return null;
-  const base = "https://github.com/drevendev/Playmancer/blob/e20941f212f5501a5f5e8d30caf30fcb28b44e2a/";
+  const base = "https://github.com/drevendev/Playmancer/blob/master/";
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
