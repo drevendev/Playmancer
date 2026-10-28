@@ -18,6 +18,10 @@ cmp /tmp/bridge-a.json /tmp/bridge-b.json
 The runner reuses `evaluateFrozenPilot` to verify the full immutable 30-game
 source, license gate, declared basket schema and Git blob SHA
 `0570fd610b14fb336c0de65e6cc3062892abe301` before calculating a route.
+The **basket-plan Git blob** is separately pinned to
+`e28809801448df2f73c604d0349ce71c042d7f53`. Reordered seeds, changed
+weights or other schema-valid plan edits must declare a new protocol instead
+of silently changing the task set under the same label.
 It invokes **the real** `buildBridgePreview` implementation for every adjacent
 ordered favorite pair in each of the 30 already declared baskets
 (`examples/evaluation-baskets-30.real.json`). These produce 50 endpoint tasks.
