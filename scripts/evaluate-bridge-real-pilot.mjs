@@ -2,6 +2,7 @@
 // A separate Bridge endpoint/hop diagnostic on the frozen 30-game source.
 // Routes are metadata connections, never player preference or an accuracy score.
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { evaluateFrozenPilot } from './evaluate-real-pilot.mjs';
@@ -9,6 +10,17 @@ import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from '../src/bridge-p
 
 const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.meta.url);
 const BASKETS = new URL('../examples/evaluation-baskets-30.real.json', import.meta.url);
+// The source catalog SHA alone does not freeze which endpoint tasks were chosen.
+const FROZEN_BASKETS_BLOB_SHA1 = 'e28809801448df2f73c604d0349ce71c042d7f53';
+function readPinnedPlan() {
+  const raw = readFileSync(BASKETS, 'utf8');
+  const blobSha = createHash('sha1').update('blob ' + Buffer.byteLength(raw, 'utf8') + '\0')
+    .update(raw).digest('hex');
+  if (blobSha !== FROZEN_BASKETS_BLOB_SHA1) {
+    throw new Error('Frozen basket plan blob changed (declare a new protocol)');
+  }
+  return JSON.parse(raw);
+}
 const PROTOCOL = 'bridge-real-genre-proxy-v1';
 const POLICY = Object.freeze({ maxHops: 3, minSimilarity: 0.31 });
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
@@ -18,6 +30,10 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
   // Reuse the frozen comparison's full schema, license, source SHA and basket
   // checks. A changed source/plan cannot silently inherit the old evidence.
   const baseline = evaluateFrozenPilot(catalogText, plan);
+  // Baseline schema checks accept other valid baskets; this diagnostic must not.
+  if (JSON.stringify(plan) !== JSON.stringify(readPinnedPlan())) {
+    throw new Error('Frozen basket plan changed (declare a new protocol)');
+  }
   if (BRIDGE_ROUTE_METHOD_VERSION !== 'bridge-features-preview-3') {
     throw new Error('Bridge method changed: declare and verify a new protocol');
   }
