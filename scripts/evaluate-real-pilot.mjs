@@ -150,7 +150,11 @@ export function evaluateFrozenPilot(catalogText, plan) {
     const benchmark = runBenchmark(input);
     const byMode = Object.fromEntries(benchmark.results.map(row => [row.mode, measuredMode(row)]));
     const excluded = new Set(basket.excludedCandidateIds);
-    const eligibleCandidates = candidates.filter(candidate => !excluded.has(candidate.id));
+    const basketSeedIds = new Set(basket.seeds.map(seed => seed.id));
+    // Keep the single-seed references on the *same eligible candidate set* as
+    // all multi-seed methods: no already-selected favorite may be recommended.
+    const eligibleCandidates = candidates.filter(candidate =>
+      !excluded.has(candidate.id) && !basketSeedIds.has(candidate.id));
     // Single-seed lists are contextual references, not a disguised multi-seed method.
     const singleSeedNeighbors = basket.seeds.map(seed => {
       const partition = rankCandidates(eligibleCandidates, [{ id: seed.id, weight: 1 }],
@@ -159,7 +163,7 @@ export function evaluateFrozenPilot(catalogText, plan) {
         seed_id: seed.id,
         top_ids: partition.ranked.slice(0, plan.topK).map(item => item.id),
         uncertain_count: partition.uncertain.length,
-        excluded_count: partition.excluded.length + excluded.size,
+        excluded_count: partition.excluded.length + excluded.size + basketSeedIds.size,
       };
     });
     const arithmeticIds = byMode.arithmetic.top_ids;
