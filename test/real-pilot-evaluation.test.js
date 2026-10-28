@@ -109,3 +109,14 @@ test('new catalog bits, duplicate seeds and invalid constraints cannot silently 
   excluded.baskets[0].excludedCandidateIds = [excluded.baskets[0].seeds[0].id];
   assert.throws(() => evaluateFrozenPilot(sourceText, excluded), /Invalid exclusion/);
 });
+
+test('the frozen pilot retains negative proxy comparisons (not user preference)', () => {
+  const report = loadFrozenPilot();
+  assert.deepEqual(report.summary.all_modes_abstained_baskets,
+    ['sparse-devmatch', 'sparse-devmatch-alt', 'required-coop-unknown']);
+  assert.equal(report.summary.no_all_seed_intersection_support_baskets.length, 17);
+  assert.equal(report.summary.blend_identical_to_arithmetic_baskets.length, 21);
+  // Nine baskets have a different Blend list from the arithmetic baseline;
+  // differences in ordering alone are not evidence of improved usefulness.
+  assert.equal(report.basket_count - report.summary.blend_identical_to_arithmetic_baskets.length, 9);
+});
