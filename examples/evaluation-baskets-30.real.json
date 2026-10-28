@@ -1,0 +1,578 @@
+{
+  "protocolVersion": "real-genre-proxy-v1",
+  "catalogSnapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "catalogBlobSha1": "0570fd610b14fb336c0de65e6cc3062892abe301",
+  "methodVersion": "feature-overlap-2",
+  "topK": 5,
+  "blendLambda": 0.3,
+  "baskets": [
+    {
+      "id": "coherent-action-rpg",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q59756366",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q96991833",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30639210",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-roguelike",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q59756366",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q48078440",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30639210",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-platformer",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q28451532",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q80533334",
+          "weight": 1
+        },
+        {
+          "id": "dreven:shadow-runner",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-adventure",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q75493248",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q1711379",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q14565978",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-simulation",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q23013817",
+          "weight": 1
+        },
+        {
+          "id": "dreven:idle-fantasy-shop",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q19581568",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-puzzle-sci-fi",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q1711359",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q19631660",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-sandbox",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q332697",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q248810",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q19581568",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-metroidvania",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q29300592",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30639210",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-strategy",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q112430705",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q4308783",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30591391",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "coherent-platform-arcade",
+      "group": "coherent",
+      "seeds": [
+        {
+          "id": "wikidata:q28451532",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q1784048",
+          "weight": 1
+        },
+        {
+          "id": "dreven:shadow-runner",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-farming-soulslike",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q23013817",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q54906424",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-strategy-metroidvania",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q4308783",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q29300592",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-puzzle-roguelike",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q59756366",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-survival-metroidvania",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q16972008",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30639210",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-idle-cards",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "dreven:idle-fantasy-shop",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q109051201",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-survival-puzzle",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q16972008",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q1711359",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-management-puzzle",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q80533334",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-adventure-rogue",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q1711379",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q59756366",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-three-strands",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q19581568",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q48078440",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q29300592",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "cross-five-strands",
+      "group": "conflicting",
+      "seeds": [
+        {
+          "id": "wikidata:q23013817",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q332697",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q4308783",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q29300592",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "weighted-roguelike",
+      "group": "weighted",
+      "seeds": [
+        {
+          "id": "wikidata:q59756366",
+          "weight": 10
+        },
+        {
+          "id": "wikidata:q48078440",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q29300592",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "weighted-puzzle",
+      "group": "weighted",
+      "seeds": [
+        {
+          "id": "wikidata:q279446",
+          "weight": 8
+        },
+        {
+          "id": "wikidata:q332697",
+          "weight": 2
+        },
+        {
+          "id": "wikidata:q1711359",
+          "weight": 5
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "weighted-tactics",
+      "group": "weighted",
+      "seeds": [
+        {
+          "id": "wikidata:q4308783",
+          "weight": 9
+        },
+        {
+          "id": "wikidata:q59756366",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30591391",
+          "weight": 3
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "weighted-management",
+      "group": "weighted",
+      "seeds": [
+        {
+          "id": "dreven:idle-fantasy-shop",
+          "weight": 7
+        },
+        {
+          "id": "wikidata:q19581568",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q248810",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "weighted-five",
+      "group": "weighted",
+      "seeds": [
+        {
+          "id": "wikidata:q28451532",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q30639210",
+          "weight": 7
+        },
+        {
+          "id": "wikidata:q80533334",
+          "weight": 2
+        },
+        {
+          "id": "wikidata:q29300592",
+          "weight": 4
+        },
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "sparse-devmatch",
+      "group": "sparse",
+      "seeds": [
+        {
+          "id": "dreven:devmatch",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q48078440",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "sparse-devmatch-alt",
+      "group": "sparse",
+      "seeds": [
+        {
+          "id": "dreven:devmatch",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q332697",
+          "weight": 1
+        }
+      ],
+      "constraints": {},
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "required-windows",
+      "group": "constrained",
+      "seeds": [
+        {
+          "id": "wikidata:q23013817",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q19581568",
+          "weight": 1
+        }
+      ],
+      "constraints": {
+        "platform": "windows"
+      },
+      "excludedCandidateIds": []
+    },
+    {
+      "id": "required-browser-exclusion",
+      "group": "constrained",
+      "seeds": [
+        {
+          "id": "dreven:shadow-runner",
+          "weight": 1
+        },
+        {
+          "id": "dreven:idle-fantasy-shop",
+          "weight": 1
+        }
+      ],
+      "constraints": {
+        "platform": "browser"
+      },
+      "excludedCandidateIds": [
+        "dreven:circlanoid"
+      ]
+    },
+    {
+      "id": "required-coop-unknown",
+      "group": "constrained",
+      "seeds": [
+        {
+          "id": "wikidata:q332697",
+          "weight": 1
+        },
+        {
+          "id": "wikidata:q279446",
+          "weight": 1
+        }
+      ],
+      "constraints": {
+        "coopOnly": true
+      },
+      "excludedCandidateIds": []
+    }
+  ]
+}
