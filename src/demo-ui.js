@@ -30,6 +30,29 @@ function renderStoreLinks(game) {
   }
   return row;
 }
+// This exact snapshot has three separately documented data-source receipts.
+// Keep the three receipt documents explicit so the original twelve Wikidata
+// entries are not misrepresented as evidence for the seven later additions.
+function renderCatalogReceipts() {
+  if (CATALOG_VERSION !== "multi-store-genre-pilot-2026-10-28") return null;
+  const base = "https://github.com/drevendev/Playmancer/blob/master/";
+  const row = element("span", undefined, "source-receipts");
+  row.append("Snapshot field receipts: ");
+  const references = [
+    ["Original Wikidata games", "docs/REAL_PILOT.md"],
+    ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
+    ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
+  ];
+  for (const [index, [label, path]] of references.entries()) {
+    if (index) row.append("; ");
+    const link = element("a", label);
+    link.href = base + path;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    row.append(link);
+  }
+  return row;
+}
 function showCatalogIdentity() {
   document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
     hasDreven ? "Real games · Wikidata + Dreven Games" : "Real games · Wikidata CC0 genre pilot";
@@ -50,11 +73,13 @@ function showCatalogIdentity() {
   }));
   $("dreven-browse").hidden = !hasDreven;
   const versions = $("versions");
+  const receipts = renderCatalogReceipts();
   document.querySelector(".foot").replaceChildren(
     element("strong", syntheticCatalog ? "Prototype, not a real catalog release." :
       hasDreven ? "Real multistore pilot · limited genre evidence." : "Real Wikidata CC0 pilot · limited genre evidence."),
     " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
     "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
+    ...(receipts ? [element("br"), receipts] : []),
     element("br"), versions
   );
   if (!syntheticCatalog) document.querySelector(".footer-note").textContent = hasDreven ?

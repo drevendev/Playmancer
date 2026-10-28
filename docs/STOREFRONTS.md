@@ -1,6 +1,6 @@
 # Multi-store Playmancer catalog — curated 27 October 2026
 
-**Release:** pending PR acceptance, merge and public deployment.
+**Release evidence:** The historical 17-game snapshot was live-verified at [`dfb5f668`](https://github.com/drevendev/Playmancer/actions/runs/40540951449). Its five Dreven Games entries were retained in the later 24-game snapshot, live-verified at [`e20941f`](https://github.com/drevendev/Playmancer/actions/runs/40620507170). These are revision-specific results, not proof of the currently served revision. See [seven additional Wikidata receipts](REAL_EXPANSION.md).
 **Snapshot ID:** `multi-store-genre-pilot-2026-10-27`.
 **Source JSON:** [`examples/catalog.multistore.real.json`](../examples/catalog.multistore.real.json).
 The existing [12-title CC0 pilot](REAL_PILOT.md) stays in the repo as a

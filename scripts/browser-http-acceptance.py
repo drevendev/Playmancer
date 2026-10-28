@@ -87,6 +87,22 @@ def exercise(browser, base_url, engine, label, width, height):
               and "Stardew Valley" in page.locator("#seeds").inner_text()
               and "Terraria" in page.locator("#seeds").inner_text()
               and page.locator("#intro-sample").is_visible())
+        receipts = page.locator(".source-receipts a")
+        expected_receipt_paths = (
+            "docs/REAL_PILOT.md",
+            "docs/REAL_EXPANSION.md",
+            "docs/STOREFRONTS.md",
+        )
+        receipt_prefix = "https://github.com/drevendev/Playmancer/blob/master/"
+        check(case, "24-game footer links both Wikidata batches and publisher receipts",
+              receipts.count() == len(expected_receipt_paths)
+              and all(
+                  receipts.nth(i).get_attribute("href") == receipt_prefix + path
+                  and receipts.nth(i).get_attribute("target") == "_blank"
+                  and "noopener" in (receipts.nth(i).get_attribute("rel") or "")
+                  and "noreferrer" in (receipts.nth(i).get_attribute("rel") or "")
+                  for i, path in enumerate(expected_receipt_paths)
+              ))
         check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
             "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
         check(case, "list-first results and explanatory evidence",

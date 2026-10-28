@@ -2,7 +2,7 @@
 > multistore pilot is a separate immutable catalog:
 > [Storefront sources and five Dreven Games entries](STOREFRONTS.md).
 > The 12-game receipt remains here for provenance; it must not be
-> mistaken for the 17-game candidate release.
+> confused with the later 17- or 24-game releases.
 
 # Real-game Wikidata pilot — frozen 2026-10-27
 
@@ -78,14 +78,15 @@ Known genre tags can be sparse or misleading; no artwork/text was copied.
 
 ```sh
 npm test
-npm run build
-python3 scripts/pages-preflight.py _site
+node scripts/build-demo.mjs _site-wikidata --catalog examples/catalog.wikidata.real.json
+python3 scripts/pages-preflight.py _site-wikidata
 node scripts/build-demo.mjs _site-fictional
 ```
 
-`npm run build` selects the real pilot for Pages; the last command builds the
-separate synthetic sample. The verification workflow also runs real-pilot
-HTTP keyboard/navigation/share tests and preserves synthetic regression suites.
+These commands reproduce the historical twelve-game catalog separately from the
+current 24-game Pages default selected by `npm run build`; the last command builds
+the synthetic sample. The release workflow tests the current selected catalog and
+keeps the older snapshots available for explicit validation.
 A green PR build is **not** a deployed release: `master`, Pages revision
 and public desktop/mobile screenshots must be independently verified after merge.
 
