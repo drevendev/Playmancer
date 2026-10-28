@@ -33,6 +33,23 @@ new, immutable static snapshot; there is **no runtime store API, copying of
 other publishers' descriptions/media, paid data feed or tracking**.
 See [storefront sources and constraints](docs/STOREFRONTS.md).
 
+## Candidate 24-game catalog (NOT YET PUBLISHED)
+
+The proposed build selects `multi-store-genre-pilot-2026-10-28`: **24 real games**
+(19 Wikidata CC0 items and five publisher-associated Dreven Games titles).
+Seven newly sourced entries are **Factorio, RimWorld, Into the Breach,
+The Witness, Outer Wilds, Dead Cells, and To the Moon**. Item-level genre,
+platform and identity receipts, their limitations and the immutable snapshot
+digest are in [Real expansion evidence](docs/REAL_EXPANSION.md).
+
+The previous 17-game catalog JSON and its share-link version stay intact.
+The additional genres provide only the existing **30% evidence-coverage lane**,
+not a quality metric. Mechanics, co-op, descriptions and artwork are unavailable;
+hard constraints still require known facts. Linked Steam IDs reflect Wikidata
+statements, not independently verified current storefront availability.
+**This candidate is not MERGED, DEPLOYED or LIVE_VERIFIED.** The historical
+17-game release verification below does not establish this candidate's status.
+
 ## Playable preview 0.3
 
 The verified Pages release at `dfb5f668` selects **17 real games** with safe
@@ -110,7 +127,7 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-On `master`, `npm run build` selects the 17-game multistore pilot. To build
+On this candidate branch, `npm run build` selects the 24-game multistore expansion. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently
@@ -147,8 +164,8 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The merged public-build input combines 12 original Wikidata CC0 items with five
-Dreven Games entries sourced from the owner's public game listings.
+The candidate public-build input retains 12 original Wikidata CC0 items, adds seven
+more Wikidata CC0 items, and preserves five Dreven Games entries from the owner.
 [Storefront receipts and limits](docs/STOREFRONTS.md) and the
 [original Wikidata evidence](docs/REAL_PILOT.md) remain separate.
 Descriptions, mechanics, co-op and artwork are **not inferred or copied**
