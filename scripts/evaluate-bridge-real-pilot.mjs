@@ -82,6 +82,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
     source_protocol_version: baseline.protocol_version,
     catalog_snapshot_id: baseline.catalog_snapshot_id,
     catalog_git_blob_sha1: baseline.catalog_git_blob_sha1,
+    basket_plan_git_blob_sha1: FROZEN_BASKETS_BLOB_SHA1,
     route_method_version: BRIDGE_ROUTE_METHOD_VERSION,
     route_policy: {
       endpoint_selection: 'adjacent favorites in frozen basket order',
