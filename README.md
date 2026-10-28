@@ -10,65 +10,61 @@ requests are needed.
 ## Play in your browser — GitHub Pages
 
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
-[Real pilot provenance](docs/REAL_PILOT.md) ·
+[30-game source receipts](docs/REAL_EXPANSION_30.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Verified public release (2026-10-27):** The 17-game catalog is published at
-> [`dfb5f668`](https://github.com/drevendev/Playmancer/commit/dfb5f668303ae26df3a0077b54e226f6933bfe31).
-> [Publish Playmancer Pages #40540951449](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
-> completed successfully: exact-master build, deployment, public HTTPS revision check,
-> same-origin Bridge worker, and hosted desktop/mobile player checks in Chromium,
-> Firefox and WebKit. **Status for this exact SHA: LIVE_VERIFIED.**
-> This is not a claim that later commits are live; inspect the
-> [latest Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-> before attributing that status to another revision. Native browser zoom and
-> spoken screen-reader acceptance remain open in [#14](https://github.com/drevendev/Playmancer/issues/14).
+> **Verified public release (2026-10-28): 30 real games.** The live Pages
+> revision is [`4dc2d0aca315ae68a30a99404a5738216c7bc806`](https://github.com/drevendev/Playmancer/commit/4dc2d0aca315ae68a30a99404a5738216c7bc806).
+> [Publish Pages #40754031261](https://github.com/drevendev/Playmancer/actions/runs/40754031261)
+> passed all three jobs: exact-master build, deployment, public HTTPS revision
+> check, same-origin Bridge worker and hosted desktop/mobile browser journeys.
+> [Verify #40754031279](https://github.com/drevendev/Playmancer/actions/runs/40754031279)
+> passed all four Node/build, Chromium, Firefox/WebKit and Bridge jobs.
+> **Status for this exact SHA: LIVE_VERIFIED.** Later commits need their own
+> exact-revision checks; an updated README or build alone is not a live deployment.
+> Native browser zoom and spoken screen-reader acceptance remain unverified
+> ([#14](https://github.com/drevendev/Playmancer/issues/14)).
 
-**Previously verified real-catalog pilot (17 games):** comprising
-12 existing Wikidata entities and all **five verified Dreven Games** entries,
-with direct Steam (11), itch.io (4) and Google Play (2) store pages. An owner
-association is disclosed in the UI and **never changes ranking**. Storefront
-link IDs and available owner-published genre/platform facts are curated into a
-new, immutable static snapshot; there is **no runtime store API, copying of
-other publishers' descriptions/media, paid data feed or tracking**.
-See [storefront sources and constraints](docs/STOREFRONTS.md).
+### Current real-catalog pilot
 
-## Versioned 30-game catalog (proposed build target)
+The public build selects immutable snapshot
+`multi-store-genre-pilot-30-2026-10-28`: **30 identifiable games** (25 sourced
+Wikidata CC0 items and five owner-associated Dreven Games titles). The six most
+recent additions are **Dwarf Fortress, FTL: Faster Than Light, Super Meat Boy,
+Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**. See
+[their item-level source receipts](docs/REAL_EXPANSION_30.md), the
+[previous expansion](docs/REAL_EXPANSION.md), the
+[original Wikidata pilot](docs/REAL_PILOT.md), and
+[storefront sources/limits](docs/STOREFRONTS.md).
 
-The build selects `multi-store-genre-pilot-30-2026-10-28`: **30 identifiable real games**
-(25 Wikidata CC0 items and five owner-associated Dreven Games titles).
-Six new items are **Dwarf Fortress, FTL: Faster Than Light, Super Meat Boy,
-Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**.
-Only documented Wikidata P136 genre labels, selected P400 desktop platforms and
-P1733 Steam identifiers are added. Review [six-game source receipts](docs/REAL_EXPANSION_30.md).
-The 24-game and 17-game files remain immutable for historical replay; their
-share links deliberately do not migrate to the new catalog. Genre-only evidence
-remains **30% coverage** of the defined feature groups, not recommendation accuracy.
-No gameplay mechanics, co-op, artwork or descriptions are inferred.
-**This selected build input is not proof of deployment.** This proposed revision
-must pass independent PR acceptance, merge and exact-revision public Pages checks.
+The interface uses source-backed genre and selected platform facts plus
+conservatively recorded publisher-authored tags. **Mechanics, co-op metadata,
+artwork and third-party descriptions are not invented or redistributed.**
+Genre-only matches have at most **30% comparable feature-group coverage**, not
+30% confidence or measured recommendation accuracy. Missing mandatory evidence
+remains unknown: hard platform/co-op constraints are not silently relaxed.
+Outbound store links, including owner-associated games, do not affect ranking.
+There is no account, tracking, runtime store API, paid inference or remote asset
+dependency.
 
-## Preserved 24-game catalog (previous build target)
+The 30-basket [scalar diagnostic](docs/EVALUATION_30.md) and independent
+50-endpoint [Bridge diagnostic](docs/BRIDGE_EVALUATION_30.md) are reproducible
+**offline proxy experiments, not human usefulness studies**. Bridge found
+5 supported routes, 44 no-routes and one unavailable endpoint under its frozen
+three-hop/0.31 settings. These negative results motivate better sourced game
+features; do not interpret them as real-player success or failure rates.
 
-The prior Pages build selected `multi-store-genre-pilot-2026-10-28`: **24 real games**
-(19 Wikidata CC0 items and five publisher-associated Dreven Games titles).
-Seven newly sourced entries are **Factorio, RimWorld, Into the Breach,
-The Witness, Outer Wilds, Dead Cells, and To the Moon**. Item-level genre,
-platform and identity receipts, their limitations and the immutable snapshot
-digest are in [Real expansion evidence](docs/REAL_EXPANSION.md).
+### Historical catalogs and share compatibility
 
-The previous 17-game catalog JSON and its share-link version stay intact.
-The additional genres provide only the existing **30% evidence-coverage lane**,
-not a quality metric. Mechanics, co-op, descriptions and artwork are unavailable;
-hard constraints still require known facts. Linked Steam IDs reflect Wikidata
-statements, not independently verified current storefront availability.
-**A selected build input is not proof of live deployment.** Check the
-[latest Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
-and the publicly served catalog/revision before claiming `DEPLOYED` or
-`LIVE_VERIFIED` for this snapshot. The historical 17-game verification below
-applies only to its stated commit.
+The 24-game (`multi-store-genre-pilot-2026-10-28`) and 17-game snapshots
+remain available for reproducible builds and prior share links. An older
+17-game release was independently [live-verified at `dfb5f668`](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
+on 2026-10-27; **that historical verification is not the current release**.
+The 12-item Wikidata-only and fictional sample fixtures also remain separate.
+Share links pin catalog and method versions; incompatible versions fail visibly
+rather than silently substituting newer entries.
 
-## Playable preview 0.3
+## Player capabilities — 30-game pilot
 
 The historically verified Pages release at `dfb5f668` selected **17 real games** with safe
 outbound storefront references, including five Dreven Games titles. Its hosted
@@ -98,37 +94,20 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
-## Historical 17-game multistore snapshot (verified at dfb5f668)
+## Rebuild the historical 17-game pilot
 
-That release snapshot combines **12 Wikidata games and five Dreven Games**.
-A separate versioned 12-title Wikidata-only pilot remains available as a test fixture. Choose
-**Stardew Valley, Terraria, Hades, Slay the Spire, Hollow Knight, Portal 2** and
-other identifiable titles from Wikidata. Real titles and selected genre/platform
-facts have [item-level source receipts](docs/REAL_PILOT.md); the structured
-Wikidata source is **CC0**. No third-party descriptions or artwork are bundled.
+The retained 17-game snapshot contains 12 Wikidata records and five Dreven
+Games entries. It is **not** the current Pages catalog. To reproduce that
+older artifact locally without changing the deployed site:
 
 ```sh
 node scripts/build-demo.mjs _site-real --catalog examples/catalog.multistore.real.json
 python3 scripts/pages-preflight.py _site-real
 python3 -m http.server 8080 --directory _site-real
-# After installing Playwright and Chromium:
-python3 scripts/browser-real-catalog-acceptance.py
 ```
 
-The multistore pilot uses source-stated Wikidata **P136 genres** plus conservatively
-normalized **publisher-authored Dreven Games genre tags**. These are carried
-through the current schema's `themes` field;
-gameplay mechanics and co-op metadata remain **unknown**. The real-pilot-only
-evidence gate admits a **30%** comparable-feature signal rather than inventing
-the remaining 70%. Bridge and basket modes use the same restricted signal;
-hard constraints are never loosened. A result is *not* proof of measured
-player usefulness. Catalog coverage is still tiny.
-
-The 17-game snapshot is live-verified at `dfb5f668` by the linked exact-revision
-public HTTP and desktop/mobile browser workflow. This is a small, sparse pilot,
-not a full game catalog or evidence of recommendation usefulness. Existing
-synthetic links remain bound to `synthetic-demo-1`; incompatible catalog
-versions fail visibly.
+Use the current `npm run build` command below for the published 30-game input.
+All snapshots retain their own catalog versions and provenance.
 
 ## Run and verify
 
@@ -145,7 +124,7 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-With this build configuration, `npm run build` selects the proposed 30-game multistore expansion. To build
+With this build configuration, `npm run build` selects the current live-verified 30-game multistore snapshot. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently
@@ -265,16 +244,17 @@ The build emits self-contained `index.html` and `.nojekyll`, including publicati
 revision and selected catalog metadata. Invalid catalog or bundle inputs fail before
 replacing the last valid HTML. Build success is not deployment evidence.
 
-The Pages workflow deploys **reviewed master only** and fails explicitly if Pages
-has not been enabled. An authorized admin/maintainer must first configure GitHub
-Actions as the Pages source; the workflow does not self-enable Pages or weaken
-protection. On successful deployment, CI probes the public index for its exact
-`playmancer-revision` commit SHA and checks the same-origin Bridge worker.
-Only successful public checks can establish LIVE_VERIFIED for a specific
-revision. On 2026-10-27, the 17-game `dfb5f668` release passed the
-[public Pages checks and hosted desktop/mobile navigation](https://github.com/drevendev/Playmancer/actions/runs/40540951449).
-An earlier hosted run at `59003d0` is documented
-[separately](https://github.com/drevendev/Playmancer/issues/14#issuecomment-6402806426).
+The Pages workflow deploys **reviewed master only** and fails explicitly if
+Pages is disabled. Pages is currently enabled, but the workflow does not change
+repository administration or weaken protection. On successful deployment, CI
+checks the public index against the exact `playmancer-revision` master SHA
+and tests the same-origin Bridge worker and hosted player flows.
+The **current 30-game release** passed
+[Publish Pages #40754031261](https://github.com/drevendev/Playmancer/actions/runs/40754031261)
+on 2026-10-28 at `4dc2d0aca315ae68a30a99404a5738216c7bc806`.
+The earlier 17-game release passed
+[its own exact-revision verification](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
+on 2026-10-27; neither run certifies future SHAs.
 Automated root-font reflow checks are **not** real browser-zoom or audible
 screen-reader acceptance; those remain tracked by
 [issue #14](https://github.com/drevendev/Playmancer/issues/14).
