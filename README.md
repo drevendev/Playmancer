@@ -33,9 +33,24 @@ new, immutable static snapshot; there is **no runtime store API, copying of
 other publishers' descriptions/media, paid data feed or tracking**.
 See [storefront sources and constraints](docs/STOREFRONTS.md).
 
-## Versioned 24-game catalog (current build target)
+## Versioned 30-game catalog (proposed build target)
 
-The Pages build configuration selects `multi-store-genre-pilot-2026-10-28`: **24 real games**
+The build selects `multi-store-genre-pilot-30-2026-10-28`: **30 identifiable real games**
+(25 Wikidata CC0 items and five owner-associated Dreven Games titles).
+Six new items are **Dwarf Fortress, FTL: Faster Than Light, Super Meat Boy,
+Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**.
+Only documented Wikidata P136 genre labels, selected P400 desktop platforms and
+P1733 Steam identifiers are added. Review [six-game source receipts](docs/REAL_EXPANSION_30.md).
+The 24-game and 17-game files remain immutable for historical replay; their
+share links deliberately do not migrate to the new catalog. Genre-only evidence
+remains **30% coverage** of the defined feature groups, not recommendation accuracy.
+No gameplay mechanics, co-op, artwork or descriptions are inferred.
+**This selected build input is not proof of deployment.** This proposed revision
+must pass independent PR acceptance, merge and exact-revision public Pages checks.
+
+## Preserved 24-game catalog (previous build target)
+
+The prior Pages build selected `multi-store-genre-pilot-2026-10-28`: **24 real games**
 (19 Wikidata CC0 items and five publisher-associated Dreven Games titles).
 Seven newly sourced entries are **Factorio, RimWorld, Into the Breach,
 The Witness, Outer Wilds, Dead Cells, and To the Moon**. Item-level genre,
@@ -130,7 +145,7 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-With this build configuration, `npm run build` selects the 24-game multistore expansion. To build
+With this build configuration, `npm run build` selects the proposed 30-game multistore expansion. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently
@@ -167,8 +182,9 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The selected public-build input retains 12 original Wikidata CC0 items, adds seven
-more Wikidata CC0 items, and preserves five Dreven Games entries from the owner.
+The selected public-build input retains the original 12 Wikidata CC0 items, seven
+previously added Wikidata items and five owner-associated Dreven Games entries,
+then appends six sourced Wikidata CC0 games; earlier snapshots remain immutable.
 [Storefront receipts and limits](docs/STOREFRONTS.md) and the
 [original Wikidata evidence](docs/REAL_PILOT.md) remain separate.
 Descriptions, mechanics, co-op and artwork are **not inferred or copied**

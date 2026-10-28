@@ -80,7 +80,7 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        is_real_pilot = catalog_id == "multi-store-genre-pilot-2026-10-28"
+        is_real_pilot = catalog_id == "multi-store-genre-pilot-30-2026-10-28"
         check(case, "real catalog sample and honest data provenance",
               is_real_pilot and page.locator("#seeds > li").count() >= 2
               and "real games" in page.locator(".badge").inner_text().lower()
@@ -91,10 +91,11 @@ def exercise(browser, base_url, engine, label, width, height):
         expected_receipt_paths = (
             "docs/REAL_PILOT.md",
             "docs/REAL_EXPANSION.md",
+            "docs/REAL_EXPANSION_30.md",
             "docs/STOREFRONTS.md",
         )
         receipt_prefix = "https://github.com/drevendev/Playmancer/blob/master/"
-        check(case, "24-game footer links both Wikidata batches and publisher receipts",
+        check(case, "30-game footer links all three Wikidata batches and publisher receipts",
               receipts.count() == len(expected_receipt_paths)
               and all(
                   receipts.nth(i).get_attribute("href") == receipt_prefix + path

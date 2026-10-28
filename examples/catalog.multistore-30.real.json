@@ -1,0 +1,1091 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "kind": "real",
+  "sources": [
+    {
+      "id": "wikidata-cc0",
+      "kind": "licensed",
+      "attribution": "Wikidata contributors (CC0); per-item QIDs and field receipts in docs/REAL_PILOT.md",
+      "rights": {
+        "status": "approved",
+        "reference": "https://www.wikidata.org/wiki/Wikidata:Licensing",
+        "fields": [
+          "id",
+          "kind",
+          "name",
+          "sourceId",
+          "themes",
+          "platforms",
+          "externalIds",
+          "storeLinks"
+        ]
+      }
+    },
+    {
+      "id": "dreven-owned",
+      "kind": "licensed",
+      "attribution": "Dreven Games — owner-published itch.io and Google Play listings reviewed 2026-10-27",
+      "rights": {
+        "status": "approved",
+        "reference": "https://drevengames.itch.io/",
+        "fields": [
+          "id",
+          "kind",
+          "name",
+          "sourceId",
+          "themes",
+          "platforms",
+          "externalIds",
+          "storeLinks"
+        ]
+      }
+    }
+  ],
+  "games": [
+    {
+      "id": "wikidata:q23013817",
+      "kind": "game",
+      "name": "Stardew Valley",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q23013817"
+        },
+        {
+          "provider": "steam",
+          "id": "413150"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "simulation video game",
+        "role-playing video game",
+        "life simulation game",
+        "farming simulation game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/413150"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q332697",
+      "kind": "game",
+      "name": "Terraria",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q332697"
+        },
+        {
+          "provider": "steam",
+          "id": "105600"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "sandbox game",
+        "role-playing video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/105600"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q96991833",
+      "kind": "game",
+      "name": "Mortal Shell",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q96991833"
+        },
+        {
+          "provider": "steam",
+          "id": "1110910"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action role-playing game",
+        "action game",
+        "role-playing video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/1110910"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q59756366",
+      "kind": "game",
+      "name": "Hades",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q59756366"
+        },
+        {
+          "provider": "steam",
+          "id": "1145360"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action role-playing game",
+        "roguelite",
+        "roguelike"
+      ],
+      "platforms": [
+        "windows",
+        "mac"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/1145360"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q48078440",
+      "kind": "game",
+      "name": "Slay the Spire",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q48078440"
+        },
+        {
+          "provider": "steam",
+          "id": "646570"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "roguelite",
+        "roguelike deck-building game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/646570"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q80533334",
+      "kind": "game",
+      "name": "Spiritfarer",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q80533334"
+        },
+        {
+          "provider": "steam",
+          "id": "972660"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "construction and management simulation",
+        "platformer"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/972660"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q29300592",
+      "kind": "game",
+      "name": "Hollow Knight",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q29300592"
+        },
+        {
+          "provider": "steam",
+          "id": "367520"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "Metroidvania",
+        "2D platform game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/367520"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q28451532",
+      "kind": "game",
+      "name": "Celeste",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q28451532"
+        },
+        {
+          "provider": "steam",
+          "id": "504230"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "platformer"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/504230"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q279446",
+      "kind": "game",
+      "name": "Portal 2",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q279446"
+        },
+        {
+          "provider": "steam",
+          "id": "620"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "puzzle video game",
+        "first-person shooter",
+        "science fiction video game",
+        "post-apocalyptic video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/620"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q24300",
+      "kind": "game",
+      "name": "Infamous 2",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q24300"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "science fiction video game"
+      ],
+      "platforms": null,
+      "coop": null,
+      "storeLinks": []
+    },
+    {
+      "id": "wikidata:q75493248",
+      "kind": "game",
+      "name": "Tell Me Why",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q75493248"
+        },
+        {
+          "provider": "steam",
+          "id": "1180660"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "adventure video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/1180660"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q112430705",
+      "kind": "game",
+      "name": "Minecraft Legends",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q112430705"
+        },
+        {
+          "provider": "steam",
+          "id": "1928870"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "strategy video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/1928870"
+        }
+      ]
+    },
+    {
+      "id": "dreven:idle-fantasy-shop",
+      "kind": "game",
+      "name": "Idle Fantasy Shop",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "itch",
+          "id": "idle-fantasy-shop"
+        }
+      ],
+      "sourceId": "dreven-owned",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "simulation video game",
+        "construction and management simulation"
+      ],
+      "platforms": [
+        "browser"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "itch",
+          "url": "https://drevengames.itch.io/idle-fantasy-shop"
+        }
+      ]
+    },
+    {
+      "id": "dreven:shadow-runner",
+      "kind": "game",
+      "name": "Shadow Runner",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "itch",
+          "id": "shadow-runner"
+        },
+        {
+          "provider": "googleplay",
+          "id": "com.TrilobytesStudio.ShadowRunner"
+        }
+      ],
+      "sourceId": "dreven-owned",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "platformer",
+        "2D platform game",
+        "action game"
+      ],
+      "platforms": [
+        "browser",
+        "android"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "itch",
+          "url": "https://drevengames.itch.io/shadow-runner"
+        },
+        {
+          "store": "googleplay",
+          "url": "https://play.google.com/store/apps/details?id=com.TrilobytesStudio.ShadowRunner"
+        }
+      ]
+    },
+    {
+      "id": "dreven:hunter-adventure",
+      "kind": "game",
+      "name": "Hunter Adventure",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "itch",
+          "id": "hunter-adventure"
+        }
+      ],
+      "sourceId": "dreven-owned",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "adventure video game",
+        "roguelike"
+      ],
+      "platforms": [
+        "browser"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "itch",
+          "url": "https://drevengames.itch.io/hunter-adventure"
+        }
+      ]
+    },
+    {
+      "id": "dreven:devmatch",
+      "kind": "game",
+      "name": "DevMatch",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "itch",
+          "id": "devmatch"
+        }
+      ],
+      "sourceId": "dreven-owned",
+      "parentId": null,
+      "mechanics": null,
+      "themes": null,
+      "platforms": [
+        "browser"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "itch",
+          "url": "https://drevengames.itch.io/devmatch"
+        }
+      ]
+    },
+    {
+      "id": "dreven:circlanoid",
+      "kind": "game",
+      "name": "Circlanoid",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "googleplay",
+          "id": "com.drevengames.circlanoid"
+        }
+      ],
+      "sourceId": "dreven-owned",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "arcade video game",
+        "action game"
+      ],
+      "platforms": [
+        "android"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "googleplay",
+          "url": "https://play.google.com/store/apps/details?id=com.drevengames.circlanoid"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q16972008",
+      "kind": "game",
+      "name": "Factorio",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q16972008"
+        },
+        {
+          "provider": "steam",
+          "id": "427520"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "survival game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/427520"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q19581568",
+      "kind": "game",
+      "name": "RimWorld",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q19581568"
+        },
+        {
+          "provider": "steam",
+          "id": "294100"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "construction and management simulation",
+        "hard science fiction",
+        "science fiction video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/294100"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q30591391",
+      "kind": "game",
+      "name": "Into the Breach",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q30591391"
+        },
+        {
+          "provider": "steam",
+          "id": "590380"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "turn-based strategy video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/590380"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q1711359",
+      "kind": "game",
+      "name": "The Witness",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q1711359"
+        },
+        {
+          "provider": "steam",
+          "id": "210970"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "puzzle video game",
+        "Metroidbrainia"
+      ],
+      "platforms": [
+        "windows",
+        "mac"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/210970"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q19631660",
+      "kind": "game",
+      "name": "Outer Wilds",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q19631660"
+        },
+        {
+          "provider": "steam",
+          "id": "753640"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "science fiction video game",
+        "Metroidbrainia"
+      ],
+      "platforms": [
+        "windows",
+        "mac"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/753640"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q30639210",
+      "kind": "game",
+      "name": "Dead Cells",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q30639210"
+        },
+        {
+          "provider": "steam",
+          "id": "588650"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "Metroidvania",
+        "roguelike",
+        "platformer",
+        "roguelite"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/588650"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q1711379",
+      "kind": "game",
+      "name": "To the Moon",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q1711379"
+        },
+        {
+          "provider": "steam",
+          "id": "206440"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "adventure video game",
+        "role-playing video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/206440"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q248810",
+      "kind": "game",
+      "name": "Dwarf Fortress",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q248810"
+        },
+        {
+          "provider": "steam",
+          "id": "975370"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "roguelike",
+        "construction and management simulation",
+        "adventure video game",
+        "sandbox game",
+        "text-based video game",
+        "survival game"
+      ],
+      "platforms": [
+        "windows",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/975370"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q4308783",
+      "kind": "game",
+      "name": "FTL: Faster Than Light",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q4308783"
+        },
+        {
+          "provider": "steam",
+          "id": "212680"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "strategy video game",
+        "roguelite",
+        "space flight simulation game",
+        "science fiction video game",
+        "roguelike"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/212680"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q1784048",
+      "kind": "game",
+      "name": "Super Meat Boy",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q1784048"
+        },
+        {
+          "provider": "steam",
+          "id": "40800"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "platform game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/40800"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q14565978",
+      "kind": "game",
+      "name": "Papers, Please",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q14565978"
+        },
+        {
+          "provider": "steam",
+          "id": "239030"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "adventure video game",
+        "simulation video game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/239030"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q109051201",
+      "kind": "game",
+      "name": "Inscryption",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q109051201"
+        },
+        {
+          "provider": "steam",
+          "id": "1092790"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "roguelike deck-building game"
+      ],
+      "platforms": [
+        "windows",
+        "mac",
+        "linux"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/1092790"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q54906424",
+      "kind": "game",
+      "name": "Sekiro: Shadows Die Twice",
+      "description": null,
+      "aliases": [],
+      "externalIds": [
+        {
+          "provider": "wikidata",
+          "id": "Q54906424"
+        },
+        {
+          "provider": "steam",
+          "id": "814380"
+        }
+      ],
+      "sourceId": "wikidata-cc0",
+      "parentId": null,
+      "mechanics": null,
+      "themes": [
+        "action-adventure game",
+        "soulslike",
+        "dark fantasy video game"
+      ],
+      "platforms": [
+        "windows"
+      ],
+      "coop": null,
+      "storeLinks": [
+        {
+          "store": "steam",
+          "url": "https://store.steampowered.com/app/814380"
+        }
+      ]
+    }
+  ]
+}
