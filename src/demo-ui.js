@@ -281,6 +281,13 @@ function drawResults() {
     const score = blendSelection ? item.blend.objective : item.scores[state.mode === "blend" ? "arithmetic" : state.mode];
     const scoreLabel = blendSelection ? "selection objective / 1" : state.mode === "blend" ? "average fit / 1" : "fit / 1";
     fit.append(element("strong", score.toFixed(3)), element("small", scoreLabel));
+    // An exact zero is not a recommendation: sparse genre-only snapshots can
+    // rank eligible games even when no source-backed basket fit was observed.
+    if (!syntheticCatalog && score === 0) {
+      fit.append(element("small", state.mode === "intersection"
+        ? "No shared genres with at least one favorite"
+        : "No shared genres with your favorites", "fit-warning"));
+    }
     top.append(element("span", String(index + 1).padStart(2, "0"), "rank"), title, fit);
     card.append(top, element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
     const affinities = element("div", undefined, "affinities");
@@ -319,7 +326,10 @@ function drawResults() {
     footer.append(hide); card.append(footer); $("results").append(card);
   });
   drawEmptyRecovery(result);
-  $("status").textContent = `${result.ranked.length} shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).`;
+  const zeroFit = !syntheticCatalog ? result.ranked.filter((item) =>
+    (state.mode === "blend" ? (item.blend?.objective ?? item.scores.arithmetic) : item.scores[state.mode]) === 0).length : 0;
+  $("status").textContent = `${result.ranked.length} shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
+    (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "");
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
   $("partition-list").replaceChildren();
   for (const item of [...result.uncertain, ...result.excluded]) {
