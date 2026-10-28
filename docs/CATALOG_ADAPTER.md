@@ -90,10 +90,11 @@ navigation, screen-reader certification, real-device latency or player usefulnes
 
 ## Multi-store pilot (owner-authorized catalog extension)
 
-The release candidate switches `npm run build` to
-[`examples/catalog.multistore.real.json`](../examples/catalog.multistore.real.json), with **17 actual games**:
-12 original CC0 Wikidata entities and five publisher-authored Dreven Games
-titles. Canonical store links are validated at build time and exposed only as
+The 24-game Pages build selects
+[`examples/catalog.multistore-24.real.json`](../examples/catalog.multistore-24.real.json), with **24 actual games**:
+19 CC0 Wikidata entities and five publisher-authored Dreven Games
+titles. The previously published 17-game catalog stays immutable; see the
+[new source-field receipts](REAL_EXPANSION.md). Canonical store links are validated at build time and exposed only as
 user-activated outbound anchors. Genres are a limited 30% evidence signal,
 never a quality percentage. The old snapshot remains separately reproducible.
 See [storefront provenance](STOREFRONTS.md) for data rights and API limits.

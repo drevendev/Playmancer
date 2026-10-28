@@ -8,19 +8,19 @@ import { validateCatalogSnapshot, catalogCoverage } from "../src/catalog.js";
 import { buildBridgePreview } from "../src/bridge-preview.js";
 import { rankCandidates } from "../src/ranking.js";
 
-const source = JSON.parse(readFileSync("examples/catalog.multistore.real.json", "utf8"));
+const source = JSON.parse(readFileSync("examples/catalog.multistore-24.real.json", "utf8"));
 const copy = () => structuredClone(source);
 
-test("multistore source has 12 Wikidata titles and all five real Dreven Games", () => {
+test("multistore source has 19 Wikidata titles and all five real Dreven Games", () => {
   const snapshot = validateCatalogSnapshot(source, { requirePublishable: true });
   assert.equal(snapshot.kind, "real");
-  assert.equal(snapshot.snapshotId, "multi-store-genre-pilot-2026-10-27");
-  assert.equal(snapshot.games.length, 17);
-  assert.equal(new Set(snapshot.games.map(game => game.id)).size, 17);
+  assert.equal(snapshot.snapshotId, "multi-store-genre-pilot-2026-10-28");
+  assert.equal(snapshot.games.length, 24);
+  assert.equal(new Set(snapshot.games.map(game => game.id)).size, 24);
   assert.deepEqual(snapshot.games.filter(game => game.sourceId === "dreven-owned")
     .map(game => game.name), ["Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid"]);
   const stores = snapshot.games.flatMap(game => game.storeLinks);
-  for (const [store, count] of [["steam", 11], ["itch", 4], ["googleplay", 2]]) {
+  for (const [store, count] of [["steam", 18], ["itch", 4], ["googleplay", 2]]) {
     assert.equal(stores.filter(link => link.store === store).length, count);
   }
   for (const game of snapshot.games) {
@@ -42,7 +42,7 @@ test("multistore source has 12 Wikidata titles and all five real Dreven Games", 
   assert.equal(sparse.themes, null);
   assert.deepEqual(sparse.platforms, ["browser"]);
   assert.equal(catalogCoverage(snapshot).mechanics.known, 0);
-  assert.equal(catalogCoverage(snapshot).themes.known, 16);
+  assert.equal(catalogCoverage(snapshot).themes.known, 23);
 });
 
 test("storefront allowlist rejects executable, lookalike and inconsistent destinations", () => {
@@ -91,16 +91,16 @@ test("store links and author identities cannot boost equal feature affinities", 
   assert.deepEqual(ranked.map(g=>g.id),["dreven:owner","wikidata:other"]);
 });
 
-test("Pages build contains 17 real titles, link references and no fictional demo profiles", () => {
+test("Pages build contains 24 real titles, link references and no fictional demo profiles", () => {
   const dir = mkdtempSync(join(tmpdir(),"playmancer-multistore-"));
   try {
     const run = spawnSync(process.execPath,["scripts/build-demo.mjs",dir,"--catalog",
-      "examples/catalog.multistore.real.json"],{encoding:"utf8"});
+      "examples/catalog.multistore-24.real.json"],{encoding:"utf8"});
     assert.equal(run.status,0,run.stderr);
     const html=readFileSync(join(dir,"index.html"),"utf8");
-    assert.match(html,/name="playmancer-catalog" content="multi-store-genre-pilot-2026-10-27"/);
+    assert.match(html,/name="playmancer-catalog" content="multi-store-genre-pilot-2026-10-28"/);
     assert.match(html,/"kind":"real"/);
-    for (const name of ["Idle Fantasy Shop","DevMatch","Circlanoid","Hades","Stardew Valley"])
+    for (const name of ["Idle Fantasy Shop","DevMatch","Circlanoid","Hades","Stardew Valley","Factorio","RimWorld","Outer Wilds","Dead Cells"])
       assert.ok(html.includes(name),name);
     for (const url of ["https://drevengames.itch.io/idle-fantasy-shop",
       "https://store.steampowered.com/app/413150",
@@ -109,4 +109,16 @@ test("Pages build contains 17 real titles, link references and no fictional demo
     assert.doesNotMatch(html,/Ember Circuit|Cloud Harvest|Grove Keepers/);
     assert.doesNotMatch(html,/<script[^>]+src=/i);
   } finally { rmSync(dir,{recursive:true,force:true}); }
+});
+
+test("seven-game expansion preserves every earlier identity and all rights declarations", () => {
+  const before = JSON.parse(readFileSync("examples/catalog.multistore.real.json", "utf8"));
+  assert.equal(before.snapshotId, "multi-store-genre-pilot-2026-10-27");
+  assert.deepEqual(source.sources, before.sources);
+  assert.deepEqual(source.games.slice(0, before.games.length), before.games);
+  const added = source.games.slice(before.games.length);
+  assert.deepEqual(added.map(game => game.id), ["wikidata:q16972008","wikidata:q19581568","wikidata:q30591391","wikidata:q1711359","wikidata:q19631660","wikidata:q30639210","wikidata:q1711379"]);
+  assert.ok(added.every(game => game.mechanics === null && game.coop === null && game.description === null));
+  assert.ok(added.every(game => game.externalIds.some(entry => entry.provider === "wikidata")));
+  assert.ok(added.every(game => game.storeLinks.length === 1 && game.storeLinks[0].store === "steam"));
 });

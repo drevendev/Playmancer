@@ -24,7 +24,7 @@ requests are needed.
 > before attributing that status to another revision. Native browser zoom and
 > spoken screen-reader acceptance remain open in [#14](https://github.com/drevendev/Playmancer/issues/14).
 
-**Merged real-catalog pilot:** 17 real games, comprising
+**Previously verified real-catalog pilot (17 games):** comprising
 12 existing Wikidata entities and all **five verified Dreven Games** entries,
 with direct Steam (11), itch.io (4) and Google Play (2) store pages. An owner
 association is disclosed in the UI and **never changes ranking**. Storefront
@@ -33,9 +33,29 @@ new, immutable static snapshot; there is **no runtime store API, copying of
 other publishers' descriptions/media, paid data feed or tracking**.
 See [storefront sources and constraints](docs/STOREFRONTS.md).
 
+## Versioned 24-game catalog (current build target)
+
+The Pages build configuration selects `multi-store-genre-pilot-2026-10-28`: **24 real games**
+(19 Wikidata CC0 items and five publisher-associated Dreven Games titles).
+Seven newly sourced entries are **Factorio, RimWorld, Into the Breach,
+The Witness, Outer Wilds, Dead Cells, and To the Moon**. Item-level genre,
+platform and identity receipts, their limitations and the immutable snapshot
+digest are in [Real expansion evidence](docs/REAL_EXPANSION.md).
+
+The previous 17-game catalog JSON and its share-link version stay intact.
+The additional genres provide only the existing **30% evidence-coverage lane**,
+not a quality metric. Mechanics, co-op, descriptions and artwork are unavailable;
+hard constraints still require known facts. Linked Steam IDs reflect Wikidata
+statements, not independently verified current storefront availability.
+**A selected build input is not proof of live deployment.** Check the
+[latest Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+and the publicly served catalog/revision before claiming `DEPLOYED` or
+`LIVE_VERIFIED` for this snapshot. The historical 17-game verification below
+applies only to its stated commit.
+
 ## Playable preview 0.3
 
-The verified Pages release at `dfb5f668` selects **17 real games** with safe
+The historically verified Pages release at `dfb5f668` selected **17 real games** with safe
 outbound storefront references, including five Dreven Games titles. Its hosted
 revision and player checks are documented above; future builds must earn
 their own live verification. The fictional twelve-profile fixture remains
@@ -63,9 +83,9 @@ Platform/co-op requirements and hidden-game exclusions also apply to routes.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
-## Real-game multistore pilot (17 titles; hosted release verified)
+## Historical 17-game multistore snapshot (verified at dfb5f668)
 
-The production snapshot combines **12 Wikidata games and five Dreven Games**.
+That release snapshot combines **12 Wikidata games and five Dreven Games**.
 A separate versioned 12-title Wikidata-only pilot remains available as a test fixture. Choose
 **Stardew Valley, Terraria, Hades, Slay the Spire, Hollow Knight, Portal 2** and
 other identifiable titles from Wikidata. Real titles and selected genre/platform
@@ -110,7 +130,7 @@ python3 scripts/pages-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-On `master`, `npm run build` selects the 17-game multistore pilot. To build
+With this build configuration, `npm run build` selects the 24-game multistore expansion. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently
@@ -147,8 +167,8 @@ co-op values are observations, not missing data. Arbitrary extras/artwork are om
 The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
 mobile latency guarantee. The first two selected-snapshot records form the sample.
 
-The merged public-build input combines 12 original Wikidata CC0 items with five
-Dreven Games entries sourced from the owner's public game listings.
+The selected public-build input retains 12 original Wikidata CC0 items, adds seven
+more Wikidata CC0 items, and preserves five Dreven Games entries from the owner.
 [Storefront receipts and limits](docs/STOREFRONTS.md) and the
 [original Wikidata evidence](docs/REAL_PILOT.md) remain separate.
 Descriptions, mechanics, co-op and artwork are **not inferred or copied**
