@@ -52,10 +52,28 @@ test('all methods share eligibility, explicit weights, exclusions and top-k with
     }
     for (const one of basket.single_seed_neighbors) {
       assert.ok(one.top_ids.length <= 5);
-      assert.ok(!one.top_ids.includes(one.seed_id), 'single-seed reference includes its own seed');
+      assert.ok(one.top_ids.every(id => !basket.seed_ids.includes(id)),
+        basket.basket_id + '/' + one.seed_id + ': single-seed reference leaked a selected basket game');
       assert.ok(one.top_ids.every(id => !basket.excluded_candidate_ids.includes(id)));
     }
   }
+});
+
+test('the platformer single-seed baseline excludes the other selected favorites', () => {
+  const basket = loadFrozenPilot().baskets.find(row => row.basket_id === 'coherent-platformer');
+  assert.ok(basket);
+  const celeste = basket.single_seed_neighbors.find(row => row.seed_id === 'wikidata:q28451532');
+  assert.ok(celeste);
+  // Spiritfarer and Shadow Runner were formerly ranked #1/#2 despite being seeds.
+  assert.deepEqual(celeste.top_ids, [
+    'wikidata:q30639210',
+    'dreven:circlanoid',
+    'dreven:hunter-adventure',
+    'dreven:idle-fantasy-shop',
+    'wikidata:q109051201',
+  ]);
+  assert.ok(basket.single_seed_neighbors.every(one =>
+    one.top_ids.every(id => !basket.seed_ids.includes(id))));
 });
 
 test('missing genres and unknown co-op abstain instead of becoming zero or pass', () => {
