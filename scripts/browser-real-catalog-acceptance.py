@@ -71,6 +71,53 @@ try:
                   and "30%" in evidence["footer_note"]
                   and "30% of the full model" in evidence["first_explanation"]
                   and float(evidence["first_score"]) > 0)
+            # All other catalog entries have no exact P136 tag in common
+            # with these two explicit favorites. Keep zero-ranked candidates
+            # visible as exploratory, but never advertise them as matches.
+            sparse = ctx.new_page()
+            sparse.set_content(HTML, wait_until="load")
+            sparse.locator("#clear").click()
+            sparse.locator("#search").fill("Factorio")
+            sparse.get_by_role("button", name="Add Factorio").click()
+            sparse.locator("#search").fill("Into the Breach")
+            sparse.get_by_role("button", name="Add Into the Breach").click()
+            zero_scores = sparse.locator("#results .fit strong").all_inner_texts()
+            check(label + ": zero-overlap real basket openly discloses unsupported suggestions",
+                  len(zero_scores) > 0
+                  and all(score == "0.000" for score in zero_scores)
+                  and sparse.locator("#results .fit .fit-warning").count() == len(zero_scores)
+                  and "zero demonstrated basket fit" in sparse.locator("#status").inner_text().lower()
+                  and "No shared genres with any favorite" in sparse.locator("#results .fit-warning").first.inner_text()
+                  and "appears in this list" in sparse.locator("#results .explanation summary").first.inner_text())
+            sparse.screenshot(path=str(ARTIFACTS / f"real-catalog-zero-overlap-{label}.png"), full_page=True)
+            sparse.close()
+            # Blend at lambda=0 optimizes only *new* strand coverage. A game
+            # may have genuine positive genre affinity yet add zero marginal
+            # coverage after earlier picks: never call that no genre match.
+            page.locator("#mode").select_option("blend")
+            page.locator("#lambda").evaluate(
+                "(slider) => { slider.value = '0'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
+            shell = page.locator('[data-game-id="wikidata:q96991833"]')
+            shell_affinities = [float(value) for value in shell.locator(".affinity b").all_inner_texts()]
+            shell_warning = shell.locator(".fit-warning").inner_text().lower()
+            zero_overlap_cards = page.locator("#results > li").evaluate_all(
+                "cards => cards.filter(card => [...card.querySelectorAll('.affinity b')].every(value => Number(value.textContent) === 0)).length")
+            blend_status = page.locator("#status").inner_text().lower()
+            check(label + ": Blend lambda zero retains real affinities despite zero marginal objective",
+                  shell.count() == 1
+                  and shell.locator(".fit strong").inner_text() == "0.000"
+                  and len(shell_affinities) == 2
+                  and all(value > 0 for value in shell_affinities)
+                  and "no additional uncovered-strand gain" in shell_warning
+                  and "no shared genres" not in shell_warning
+                  and "appears in this list" in shell.locator(".explanation summary").inner_text())
+            check(label + ": Blend status counts source-backed zero overlaps, not zero objectives",
+                  (f"{zero_overlap_cards} shown with zero demonstrated basket fit" in blend_status
+                   if zero_overlap_cards else "shown with zero demonstrated basket fit" not in blend_status))
+            page.screenshot(path=str(ARTIFACTS / f"real-catalog-blend-zero-marginal-{label}.png"), full_page=True)
+            page.locator("#mode").select_option("intersection")
+            page.locator("#lambda").evaluate(
+                "(slider) => { slider.value = '0.3'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
             check(label + ": per-result source links and no artwork",
                   page.locator('#results a[href^="https://www.wikidata.org/wiki/Q"]').count() > 0
                   and page.locator("img").count() == 0)
