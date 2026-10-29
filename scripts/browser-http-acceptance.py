@@ -230,6 +230,12 @@ def exercise(browser, base_url, engine, label, width, height):
               "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
+        # Browse shortcuts must not interrupt the input -> first result Tab path.
+        page.locator("#search").press("Tab")
+        check(case, "Tab reaches the first real-catalog search result before browse actions",
+              page.locator("#search-results button").first.evaluate(
+                  "node => document.activeElement === node"))
+        page.locator("#search").focus()
         # Search suggestions remain native buttons: Tab still works, while
         # Arrow Down/Up/Escape provide a keyboard-only fast path without
         # fabricating combobox or active-descendant semantics.
