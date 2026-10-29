@@ -152,6 +152,9 @@ jobs:
           PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
           PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
         run: python scripts/browser-http-acceptance.py
+      - name: Require retained 400% Chromium viewport screenshot after successful hosted acceptance
+        if: success()
+        run: test -s .test-artifacts/http-chromium-mobile-page-scale400.png
       - name: Retain real hosted desktop/mobile screenshots and assertion report
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,9 +162,7 @@ jobs:
           name: hosted-browser-${{ github.sha }}
           path: |
             .test-artifacts/http-cross-browser.json
-            .test-artifacts/http-*-desktop.png
-            .test-artifacts/http-*-mobile.png
-            .test-artifacts/http-*-text400.png
+            .test-artifacts/http-*.png
           include-hidden-files: true
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
