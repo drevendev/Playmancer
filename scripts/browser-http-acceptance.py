@@ -57,6 +57,52 @@ def check(case, title, condition, details=None):
         raise AssertionError(f"{case}: {title}; observed={details!r}")
 
 
+
+def chromium_status_in_accessibility_tree(page, element_id, expected_text):
+    """Verify Chromium exposes a live status and its dynamic text to the AX tree.
+
+    CDP checks accessibility semantics, NOT actual spoken screen-reader output.
+    """
+    session = page.context.new_cdp_session(page)
+    group = "playmancer-status-check"
+    try:
+        remote = session.send("Runtime.evaluate", {
+            "expression": f"document.getElementById({json.dumps(element_id)})",
+            "objectGroup": group,
+        }).get("result", {})
+        if not remote.get("objectId"):
+            return False
+        nodes = session.send("Accessibility.getPartialAXTree", {
+            "objectId": remote["objectId"], "fetchRelatives": True,
+        })["nodes"]
+        if not nodes:
+            return False
+        status = nodes[0]
+        properties = {
+            item["name"]: item.get("value", {}).get("value")
+            for item in status.get("properties", [])
+        }
+        by_id = {node["nodeId"]: node for node in nodes}
+        pending = list(status.get("childIds", []))
+        names = []
+        while pending:
+            child = by_id.get(pending.pop())
+            if child is None:
+                continue
+            names.append(str(child.get("name", {}).get("value", "")))
+            pending.extend(child.get("childIds", []))
+        return (
+            not status.get("ignored", True)
+            and status.get("role", {}).get("value") == "status"
+            and properties.get("live") == "polite"
+            and properties.get("atomic") is True
+            and expected_text in " ".join(names)
+        )
+    finally:
+        session.send("Runtime.releaseObjectGroup", {"objectGroup": group})
+        session.detach()
+
+
 def exercise(browser, base_url, engine, label, width, height):
     case = f"{engine}/{label}"
     context = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
@@ -133,6 +179,9 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#search-results li").count() == 0
               and page.evaluate("document.activeElement.id") == "search")
         # Search for a real game outside the default Stardew/Terraria basket.
+        if engine == "chromium":
+            check(case, "Chromium accessibility tree exposes the unmatched-search status",
+                  chromium_status_in_accessibility_tree(page, "search-hint", "No profiles match"))
         page.locator("#search").fill("Hades")
         check(case, "matching search count updates while retaining keyboard access",
               "matching catalog profiles" in hint.inner_text()
@@ -182,6 +231,9 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#seeds > li").count() == 3
               and feedback.inner_text().startswith(f"Added {added_name}. 3 of 5 games selected.")
               and page.evaluate("document.activeElement.id") == "search")
+        if engine == "chromium":
+            check(case, "Chromium accessibility tree exposes the named added-game status",
+                  chromium_status_in_accessibility_tree(page, "basket-feedback", f"Added {added_name}"))
         remove = page.get_by_role("button", name=f"Remove {added_name}")
         remove.focus()
         remove.press("Enter")
@@ -189,6 +241,9 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#seeds > li").count() == 2
               and feedback.inner_text().startswith(f"Removed {added_name}. 2 of 5 games selected.")
               and page.evaluate("document.activeElement.id") == "search")
+        if engine == "chromium":
+            check(case, "Chromium accessibility tree exposes the named removed-game status",
+                  chromium_status_in_accessibility_tree(page, "basket-feedback", f"Removed {added_name}"))
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
               "Type a game name" in hint.inner_text()
