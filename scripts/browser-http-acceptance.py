@@ -612,6 +612,40 @@ def exercise(browser, base_url, engine, label, width, height):
               and not sparse.locator("#coop").is_checked()
               and sparse.locator("#results > li").count() > 0
               and sparse.evaluate("document.activeElement.id") == "recommendations")
+        # CDP page scale exercises the actual Chromium visual viewport under
+        # pinch-like magnification. It is *not* browser-menu zoom or a screen
+        # reader test; those independent issue #14 gates remain open.
+        if engine == "chromium" and label == "mobile":
+            magnified = context.new_page()
+            scale_session = None
+            try:
+                magnified.goto(base_url + "/", wait_until="load")
+                magnified.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
+                scale_session = context.new_cdp_session(magnified)
+                scale_session.send("Emulation.setPageScaleFactor", {"pageScaleFactor": 4})
+                magnified.evaluate("() => new Promise(done => requestAnimationFrame(done))")
+                metrics = magnified.evaluate("""() => ({
+                    scale: visualViewport.scale,
+                    visualWidth: visualViewport.width,
+                    layoutWidth: innerWidth,
+                    actionHeight: document.querySelector('#intro-sample').getBoundingClientRect().height
+                })""")
+                check(case, "Chromium 400% page scale produces a smaller visual viewport",
+                      abs(metrics["scale"] - 4) < 0.05
+                      and metrics["visualWidth"] < metrics["layoutWidth"] / 3
+                      and metrics["actionHeight"] >= 44,
+                      details=metrics)
+                magnified.locator("#intro-sample").click()
+                check(case, "magnified sample action remains usable and transfers keyboard focus",
+                      magnified.locator("#seeds > li").count() >= 2
+                      and magnified.evaluate("document.activeElement.id") == "recommendations")
+                magnified.screenshot(
+                    path=str(ARTIFACTS / "http-chromium-mobile-page-scale400.png"),
+                    animations="disabled")
+            finally:
+                if scale_session is not None:
+                    scale_session.detach()
+                magnified.close()
         check(case, "no external requests or JavaScript exceptions",
               not errors and not external_requests)
     finally:
