@@ -74,7 +74,7 @@ editions/DLC and unknown metadata. Share links preserve catalog and method
 versions: the current site visibly rejects incompatible historical links instead
 of silently substituting games from a different snapshot.
 
-- Search names, canonical IDs and declared aliases; add/remove up to five profiles.
+- Search names, canonical IDs, declared aliases and source-recorded genre labels (synthetic profiles also support their authored feature tags); genre-only suggestions disclose the matching tag. Add/remove up to five profiles.
 - Edit explicit integer weights with keyboard controls.
 - Compare harmonic **Intersection**, diversified list-level **Blend**, and a weighted
   arithmetic baseline. Union is an evaluation baseline, not an Intersection label.

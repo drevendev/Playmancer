@@ -182,7 +182,25 @@ def exercise(browser, base_url, engine, label, width, height):
         if engine == "chromium":
             check(case, "Chromium accessibility tree exposes the unmatched-search status",
                   chromium_status_in_accessibility_tree(page, "search-hint", "No profiles match"))
+        # The real catalog's genre-only evidence is searchable without making
+        # unsupported co-op/feature claims or changing the selected basket.
+        page.locator("#search").fill("roguelike")
+        hades_hit = page.get_by_role("button", name="Add Hades", exact=True)
+        hades_hint_id = hades_hit.get_attribute("aria-describedby") if hades_hit.count() else None
+        check(case, "recorded genre search finds real games with explained evidence",
+              hades_hit.count() == 1
+              and page.get_by_role("button", name="Add Slay the Spire", exact=True).count() == 1
+              and hades_hint_id is not None
+              and page.locator("#" + hades_hint_id).inner_text() == "Recorded genre: roguelike"
+              and "matching catalog profiles" in hint.inner_text()
+              and page.locator("#seeds > li").count() == 2)
+        page.locator("#search").fill("co-op")
+        check(case, "unknown co-op is not manufactured into searchable genre data",
+              page.locator("#search-results button").count() == 0
+              and "No profiles match" in hint.inner_text())
         page.locator("#search").fill("Hades")
+        check(case, "direct name matches do not pretend to be genre matches",
+              page.get_by_role("button", name="Add Hades", exact=True).get_attribute("aria-describedby") is None)
         check(case, "matching search count updates while retaining keyboard access",
               "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
