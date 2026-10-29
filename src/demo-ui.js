@@ -166,11 +166,20 @@ function drawSearch() {
   const query = $("search").value.trim().normalize("NFC").toLowerCase();
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
+  // Explicit catalog genre labels improve discovery without inventing a
+  // mechanic, co-op flag or source-backed match where none is recorded.
   const matches = query
-    ? CATALOG.filter((game) => !chosen.has(game.id) && [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
-      .some(value => value.normalize("NFC").toLowerCase().includes(query)))
+    ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
+      const direct = [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
+        .some((value) => value.normalize("NFC").toLowerCase().includes(query));
+      const tags = syntheticCatalog
+        ? [...(game.mechanics ?? []), ...(game.themes ?? [])] : (game.themes ?? []);
+      const matchedTag = direct ? null
+        : (tags.find((value) => value.normalize("NFC").toLowerCase().includes(query)) ?? null);
+      return direct || matchedTag ? { game, matchedTag } : null;
+    }).filter(Boolean)
     : [];
-  for (const game of matches) {
+  for (const [index, { game, matchedTag }] of matches.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
@@ -196,12 +205,22 @@ function drawSearch() {
       $("search").value = ""; commit(true); $("search").focus();
       announceBasketAction("Added", game.name);
     });
-    row.append(button); $("search-results").append(row);
+    if (matchedTag) {
+      // Keep the button's stable "Add GAME" accessible name while exposing
+      // why a tag-only search matched, also for keyboard/screen-reader users.
+      const evidence = element("span", `${syntheticCatalog ? "Recorded feature tag" : "Recorded genre"}: ${matchedTag}`, "hint");
+      evidence.id = `search-match-${index}`;
+      button.setAttribute("aria-describedby", evidence.id);
+      row.append(button, evidence);
+    } else {
+      row.append(button);
+    }
+    $("search-results").append(row);
   }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
-    : !query ? `Type a game name or declared alias to see matching ${noun}.`
-    : matches.length ? `${matches.length} matching ${noun}. Use Arrow Down to browse; Enter adds a focused result.` : "No profiles match. Try another name.";
+    : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres"} to find ${noun}.`
+    : matches.length ? `${matches.length} matching ${noun}. Use Arrow Down to browse; Enter adds a focused result.` : "No profiles match. Try another name or recorded tag.";
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -383,6 +402,7 @@ $("share").addEventListener("click", async () => {
   catch { $("share-status").textContent = "Copy the selected URL manually. Your basket is fully encoded in it."; $("share-link").focus(); $("share-link").select(); }
 });
 showCatalogIdentity();
+$("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "fictional profiles or features" : "real games or genres"}…`;
 $("versions").textContent = `Catalog: ${CATALOG_VERSION} (${DEMO_SNAPSHOT.kind}) · Method: ${METHOD_VERSION} · Ranking: P03 harmonic / uncovered-strand baselines.`;
 document.querySelector(".skip").addEventListener("click", (event) => { event.preventDefault(); $("recommendations").focus(); });
 window.addEventListener("hashchange", readLocation);

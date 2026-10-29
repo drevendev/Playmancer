@@ -66,6 +66,15 @@ for (const [index, path] of modules.entries()) {
   // A static bundle does not need source-only whole-line comments.
   // Real JavaScript, inline comments and string literals remain unchanged.
   source = source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, "");
+  // Preserve the sub-100 kB self-contained synthetic build without weakening
+  // the payload test: remove only layout indentation in pure algorithm modules.
+  // Reject multiline template literals before changing generated source text.
+  if (["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js"].includes(path)) {
+    if (source.split(/\r?\n/).some((line) => ((line.match(/`/g) ?? []).length % 2) !== 0)) {
+      throw new Error(`Cannot compact multiline template literals in ${path}`);
+    }
+    source = source.replace(/^[ \t]+(?=\S)/gm, "");
+  }
   if (path === "src/bridge.js") {
     for (const name of ["assertCanonicalId", "assertUnitInterval", "comparePath", "compareState"]) {
       source = source.replace(new RegExp("\\b" + name + "\\b", "g"), "bridge" + name[0].toUpperCase() + name.slice(1));
