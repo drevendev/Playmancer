@@ -635,7 +635,39 @@ def exercise(browser, base_url, engine, label, width, height):
                       and metrics["visualWidth"] < metrics["layoutWidth"] / 3
                       and metrics["actionHeight"] >= 44,
                       details=metrics)
-                magnified.locator("#intro-sample").click()
+                # Playwright locator.click() targets a layout-viewport point,
+                # which can lie outside the 4x *visual* viewport. Send an
+                # actual CDP touch at the visible, unobstructed intersection.
+                magnified.locator("#intro-sample").scroll_into_view_if_needed()
+                touch = magnified.evaluate("""() => {
+                    const button = document.querySelector('#intro-sample');
+                    const rect = button.getBoundingClientRect();
+                    const viewport = visualViewport;
+                    const left = Math.max(rect.left, viewport.offsetLeft);
+                    const right = Math.min(rect.right, viewport.offsetLeft + viewport.width);
+                    const top = Math.max(rect.top, viewport.offsetTop);
+                    const bottom = Math.min(rect.bottom, viewport.offsetTop + viewport.height);
+                    const x = (left + right) / 2;
+                    const y = (top + bottom) / 2;
+                    return {
+                        visible: right > left && bottom > top,
+                        unobstructed: button.contains(document.elementFromPoint(x, y)),
+                        x: x - viewport.offsetLeft,
+                        y: y - viewport.offsetTop
+                    };
+                }""")
+                check(case, "magnified sample action has an unobstructed visible touch point",
+                      touch["visible"] and touch["unobstructed"], details=touch)
+                if touch["visible"] and touch["unobstructed"]:
+                    scale_session.send("Input.dispatchTouchEvent", {
+                        "type": "touchStart",
+                        "touchPoints": [{"x": touch["x"], "y": touch["y"]}],
+                    })
+                    scale_session.send("Input.dispatchTouchEvent", {
+                        "type": "touchEnd", "touchPoints": [],
+                    })
+                magnified.wait_for_function(
+                    "document.activeElement.id === 'recommendations'", timeout=5000)
                 check(case, "magnified sample action remains usable and transfers keyboard focus",
                       magnified.locator("#seeds > li").count() >= 2
                       and magnified.evaluate("document.activeElement.id") == "recommendations")
