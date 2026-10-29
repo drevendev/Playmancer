@@ -437,6 +437,17 @@ def exercise(browser, base_url, engine, label, width, height):
                                     scroll: node.scrollWidth, width: node.clientWidth};
                         }).filter(node => node.right > innerWidth + 1 || node.left < -1)
                           .slice(0, 12),
+                    firstAction: (() => {
+                        const button = document.querySelector('#intro-sample');
+                        const copy = document.querySelector('.intro p');
+                        const bounds = button.getBoundingClientRect();
+                        return {
+                            top: bounds.top, bottom: bounds.bottom, height: bounds.height,
+                            viewportHeight: innerHeight,
+                            precedesCopy: !!(button.compareDocumentPosition(copy) &
+                                             Node.DOCUMENT_POSITION_FOLLOWING)
+                        };
+                    })(),
                     actions: Array.from(document.querySelectorAll('.intro-actions button')).map(node => {
                         const box = node.getBoundingClientRect();
                         return {left: box.left, right: box.right,
@@ -474,6 +485,15 @@ def exercise(browser, base_url, engine, label, width, height):
                       details={"heroLines": enlarged["heroLines"],
                                "fontSize": enlarged["headingType"]["hero"],
                                "viewport": enlarged["viewport"]})
+            if text_size == 400 and enlarged["viewport"] <= 640:
+                # Large text must not bury the working start action below the
+                # initial mobile viewport. This is root-font scaling, NOT browser zoom.
+                first = enlarged["firstAction"]
+                check(case, "400% mobile sample action is fully visible before lengthy copy",
+                      first["precedesCopy"] and first["top"] >= 0
+                      and first["height"] >= 44
+                      and first["bottom"] <= first["viewportHeight"] + 1,
+                      details=first)
             check(case, f"{text_size}% root text enlarges recommendation score and evidence text",
                   all(enlarged["resultType"][name] >= original * factor - 1
                       for name, original in result_type_baseline.items()),
