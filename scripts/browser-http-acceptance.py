@@ -264,8 +264,9 @@ def exercise(browser, base_url, engine, label, width, height):
                   chromium_status_in_accessibility_tree(page, "basket-feedback", f"Removed {added_name}"))
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
-              "Type a game name" in hint.inner_text()
-              and page.locator("#search-results li").count() == 0)
+              hint.inner_text() == "Search names, IDs, aliases or recorded genres to find catalog profiles."
+              and page.locator("#search-results li").count() == 0
+              and page.locator("#search").input_value() == "")
 
         page.locator("#mode").select_option("blend")
         weight = page.locator('#seeds input[type="range"]').first
