@@ -164,6 +164,31 @@ def exercise(browser, base_url, engine, label, width, height):
               and all(item["game"] and item["summary"] and item["game"] in item["summary"]
                       for item in labels))
 
+        # Browse the actual catalog without guessing a title or genre first.
+        browse = page.locator("#catalog-browse")
+        browse.click()
+        items = page.locator("#search-results li > button")
+        check(case, "catalog browser starts with eight unselected games and observed genres",
+              browse.get_attribute("aria-expanded") == "true"
+              and items.count() == 9
+              and page.locator("#search-results .hint").count() == 8
+              and "Recorded genres:" in page.locator("#search-results").inner_text()
+              and "8 of 28 available catalog profiles" in page.locator("#search-hint").inner_text()
+              and page.locator("#seeds > li").count() == 2)
+        more = page.get_by_role("button", name="Show 8 more games")
+        more.focus()
+        more.press("Enter")
+        check(case, "show more preserves keyboard focus on the first new game",
+              page.locator("#search-results li > button").count() == 17
+              and page.locator("#search-results li > button").nth(8).evaluate(
+                  "node => document.activeElement === node")
+              and "16 of 28 available catalog profiles" in page.locator("#search-hint").inner_text())
+        browse.click()
+        check(case, "closing catalog browser restores compact search without altering basket",
+              browse.get_attribute("aria-expanded") == "false"
+              and page.locator("#search-results li").count() == 0
+              and page.locator("#seeds > li").count() == 2)
+
         # Search suggestions change while focus stays in the input. Give assistive
         # technology a real polite status target; aria-describedby alone is not
         # a live announcement when the user types.
@@ -205,6 +230,12 @@ def exercise(browser, base_url, engine, label, width, height):
               "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
+        # Browse shortcuts must not interrupt the input -> first result Tab path.
+        page.locator("#search").press("Tab")
+        check(case, "Tab reaches the first real-catalog search result before browse actions",
+              page.locator("#search-results button").first.evaluate(
+                  "node => document.activeElement === node"))
+        page.locator("#search").focus()
         # Search suggestions remain native buttons: Tab still works, while
         # Arrow Down/Up/Escape provide a keyboard-only fast path without
         # fabricating combobox or active-descendant semantics.
