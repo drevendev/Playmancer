@@ -96,8 +96,9 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <button id="jump-results" class="primary jump-results" type="button">View recommendations</button>
 <ul id="seeds" aria-label="Selected games"></ul>
 <p id="basket-feedback" class="hint" role="status" aria-live="polite" aria-atomic="true">Add or remove games to update your recommendations.</p>
+<button id="catalog-browse" type="button" aria-controls="search-results" aria-expanded="false">Browse all games</button><button id="dreven-browse" type="button">Browse Dreven Games (5)</button>
 <label for="search">Add a real game</label><input id="search" type="search" placeholder="Search catalog…" autocomplete="off" aria-describedby="search-hint">
-<p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><button id="catalog-browse" type="button" aria-controls="search-results" aria-expanded="false">Browse all games</button><button id="dreven-browse" type="button">Browse Dreven Games (5)</button><ul id="search-results" aria-label="Available games"></ul>
+<p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><ul id="search-results" aria-label="Available games"></ul>
 <div class="section"><label for="mode">Recommendation mode</label><select id="mode"><option value="intersection">Intersection</option><option value="blend">Blend</option><option value="arithmetic">Weighted average</option></select><p id="mode-note" class="hint mode-note"></p>
 <div id="blend-control" hidden><label for="lambda">Blend relevance weight: <output id="lambda-value">0.3</output></label><input id="lambda" type="range" min="0" max="1" step="0.1" value="0.3"><p class="hint">0 favors uncovered strands; 1 favors average fit.</p></div>
 <p class="hint">Bridge is a separate, explicitly experimental route panel below the ranking list; it is not another ranking score.</p></div>
