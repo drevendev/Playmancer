@@ -73,6 +73,7 @@ function showCatalogIdentity() {
     return option;
   }));
   $("dreven-browse").hidden = !hasDreven;
+  $("catalog-browse").textContent = `Browse all ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"}`;
   const versions = $("versions");
   const receipts = renderCatalogReceipts();
   document.querySelector(".foot").replaceChildren(
@@ -90,6 +91,8 @@ function showCatalogIdentity() {
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
 let state;
+let browseAll = false;
+let browseLimit = 8;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
   const summary = `${count} of 5 ${count === 1 ? "game" : "games"} selected.`;
@@ -111,6 +114,7 @@ function readLocation() {
     invalidLink = true;
   }
   $("search").value = "";
+  browseAll = false; browseLimit = 8;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -166,10 +170,12 @@ function drawSearch() {
   const query = $("search").value.trim().normalize("NFC").toLowerCase();
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
+  $("catalog-browse").setAttribute("aria-expanded", String(browseAll && !query));
   // Explicit catalog genre labels improve discovery without inventing a
   // mechanic, co-op flag or source-backed match where none is recorded.
-  const matches = query
+  const matches = query || browseAll
     ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
+      if (!query) return { game, matchedTag: null };
       const direct = [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
         .some((value) => value.normalize("NFC").toLowerCase().includes(query));
       const tags = syntheticCatalog
@@ -179,7 +185,8 @@ function drawSearch() {
       return direct || matchedTag ? { game, matchedTag } : null;
     }).filter(Boolean)
     : [];
-  for (const [index, { game, matchedTag }] of matches.entries()) {
+  const shown = browseAll && !query ? matches.slice(0, browseLimit) : matches;
+  for (const [index, { game, matchedTag }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
@@ -212,13 +219,28 @@ function drawSearch() {
       evidence.id = `search-match-${index}`;
       button.setAttribute("aria-describedby", evidence.id);
       row.append(button, evidence);
+    } else if (browseAll && !query) {
+      row.append(button, element("span", `${syntheticCatalog ? "Recorded themes" : "Recorded genres"}: ${game.themes?.join(", ") || "unknown"}`, "hint"));
     } else {
       row.append(button);
     }
     $("search-results").append(row);
   }
+  if (browseAll && !query && shown.length < matches.length) {
+    const row = element("li");
+    const more = element("button", `Show ${Math.min(8, matches.length - shown.length)} more games`);
+    more.type = "button";
+    more.addEventListener("click", () => {
+      const firstNew = shown.length;
+      browseLimit += 8;
+      drawSearch();
+      $("search-results").querySelectorAll("li > button")[firstNew]?.focus();
+    });
+    row.append(more); $("search-results").append(row);
+  }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
+    : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun} shown. Add a favorite or show more games.`
     : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres"} to find ${noun}.`
     : matches.length ? `${matches.length} matching ${noun}. Use Arrow Down to browse; Enter adds a focused result.` : "No profiles match. Try another name or recorded tag.";
 }
@@ -379,7 +401,7 @@ function render(rebuildSeeds) {
   if (rebuildSeeds) drawSeeds();
   drawSearch(); drawResults(); renderBridge(state);
 }
-$("search").addEventListener("input", drawSearch);
+$("search").addEventListener("input", () => { if ($("search").value.trim()) browseAll = false; drawSearch(); });
 $("search").addEventListener("keydown", (event) => {
   if (event.key !== "ArrowDown") return;
   const first = $("search-results").querySelector("button:not(:disabled)");
@@ -410,7 +432,13 @@ readLocation();
 bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(false); });
 
 // A clearly disclosed editorial shortcut changes search only, never ranking.
+$("catalog-browse").addEventListener("click", () => {
+  browseAll = !browseAll; browseLimit = 8;
+  $("search").value = "";
+  drawSearch();
+});
 $("dreven-browse").addEventListener("click", () => {
+  browseAll = false;
   $("search").value = "Dreven Games";
   drawSearch();
   $("search").focus();
