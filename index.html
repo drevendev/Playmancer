@@ -81,6 +81,16 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 .card-footer .hint{min-width:0;overflow-wrap:anywhere}
 .card-footer button{font-size:.75rem}
 .fit .fit-warning{display:block;max-width:20ch;margin-top:4px;color:var(--warn);font-weight:650;line-height:1.35}
+/* Compact phone results keep match evidence visible, with technical IDs in Why. */
+@media(max-width:600px){
+  .results{gap:10px}
+  .card{padding:14px}
+  .card-top{gap:8px}
+  .card-title>p.hint{margin:4px 0}
+  .affinities{margin:10px 0;gap:4px}
+  .explanation{padding-top:6px;margin-top:6px}
+  .card-footer{margin-top:6px}
+}
 </style>
 </head>
 <body>
