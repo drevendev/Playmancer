@@ -36,7 +36,7 @@ const expectedImports = [
   "import { findBridgeRoute } from './bridge.js';\n",
   'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { validateCatalogSnapshot } from "./catalog.js";\nimport { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\n',
   'import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\nimport { BY_ID, CATALOG, CATALOG_VERSION, BRIDGE_STATE_VERSION } from "./demo.js";\n',
-  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
+  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
 ];
 const defaultDemo = await import(new URL("../src/demo.js", import.meta.url));
 const effectiveSnapshot = selectedSnapshot ?? defaultDemo.DEMO_SNAPSHOT;
@@ -67,9 +67,10 @@ for (const [index, path] of modules.entries()) {
   // Real JavaScript, inline comments and string literals remain unchanged.
   source = source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, "");
   // Preserve the sub-100 kB self-contained synthetic build without weakening
-  // the payload test: remove only layout indentation in pure algorithm modules.
-  // Reject multiline template literals before changing generated source text.
-  if (["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js"].includes(path)) {
+  // the payload test: remove only line indentation in the audited modules.
+  // Refuse multiline template literals before changing generated source text.
+  if (["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js",
+       "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"].includes(path)) {
     if (source.split(/\r?\n/).some((line) => ((line.match(/`/g) ?? []).length % 2) !== 0)) {
       throw new Error(`Cannot compact multiline template literals in ${path}`);
     }

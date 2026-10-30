@@ -1,4 +1,4 @@
-import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, recommend, validateState } from "./demo.js";
+import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState } from "./demo.js";
 import { bindBridgeControls, renderBridge } from "./bridge-ui.js";
 const $ = (id) => document.getElementById(id);
 const element = (tag, text, className) => {
@@ -360,7 +360,22 @@ function drawResults() {
       ? `Why ${game.name} appears in this list`
       : `Why ${game.name} matches your basket`));
     for (const pair of item.evidence) {
-      why.append(element("p", `${BY_ID.get(pair.id).name} — shared: ${pair.shared.join(", ") || "none"}. Seed tags not shared: ${pair.notShared.join(", ") || "none"}.`));
+      const favorite = BY_ID.get(pair.id);
+      if (syntheticCatalog) {
+        why.append(element("p", `${favorite.name} — shared: ${pair.shared.join(", ") || "none"}. Seed tags not shared: ${pair.notShared.join(", ") || "none"}.`));
+      } else {
+        // An additional, explicitly uniform genre-mass explanation, NOT the
+        // score used for this ranked list. No fabricated tag importance.
+        const proxy = observedGenreMass(game, favorite);
+        if (proxy === null) {
+          why.append(element("p", `${favorite.name} — genre-mass comparison unavailable: recorded genres are missing. Unknown is not a zero match.`));
+        } else {
+          const percent = weight => (weight * 100).toFixed(1) + "%";
+          const gaps = proxy.favoriteGaps.map(entry =>
+            `${entry.tag} (${percent(entry.mass)})`).join(", ") || "none";
+          why.append(element("p", `${favorite.name} — equal-weight genre proxy (not used for ranking): ${percent(proxy.shared)} observed overlap; ${percent(proxy.favoriteResidual)} favorite genre weight not represented at equal emphasis. Residual genres: ${gaps}. Uniform weights are experimental, not source-supplied importance.`));
+        }
+      }
     }
     if (item.blend) why.append(element("p", `Blend selection objective: ${item.blend.objective.toFixed(3)}; average fit: ${item.scores.arithmetic.toFixed(3)}; uncovered-strand gain: ${item.blend.gain.toFixed(3)}; relevance weight λ: ${state.lambda}.`));
     if (state.mode === "intersection" && score === 0) why.append(element("p", "No overlap with at least one seed: this is not a strong whole-basket match."));

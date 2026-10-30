@@ -380,10 +380,12 @@ def exercise(browser, base_url, engine, label, width, height):
         summary = page.locator("#results > li .explanation summary").first
         summary.focus()
         summary.press("Enter")
+        explanation = page.locator("#results > li .explanation").first
         check(case, "keyboard opens named explanation and retains focus",
-              page.locator("#results > li .explanation").first.evaluate("el => el.open")
+              explanation.evaluate("el => el.open")
               and page.evaluate("document.activeElement.tagName") == "SUMMARY"
-              and "shared:" in page.locator("#results > li .explanation").first.inner_text())
+              and "equal-weight genre proxy (not used for ranking)" in explanation.inner_text()
+              and "Residual genres:" in explanation.inner_text())
 
         page.locator("#intro-bridge").focus()
         page.locator("#intro-bridge").press("Enter")

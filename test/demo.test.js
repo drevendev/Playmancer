@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CATALOG, BY_ID, BRIDGE_STATE_VERSION, initialState, validateState, encodeState, decodeState, constraintState, pairEvidence, recommend } from "../src/demo.js";
+import { CATALOG, BY_ID, BRIDGE_STATE_VERSION, initialState, validateState, encodeState, decodeState, constraintState, pairEvidence, observedGenreMass, recommend } from "../src/demo.js";
 import { BRIDGE_ROUTE_METHOD_VERSION } from "../src/bridge-preview.js";
 const ids = (result) => result.ranked.map((item) => item.id);
 
@@ -167,4 +167,24 @@ test("nonfinite/out-of-range weights and constraints are rejected rather than co
 });
 test("malformed and oversized links never silently become the default basket", () => {
   for (const hash of ["#unknown", "#basket=%FF", "#basket=null", "#basket=" + "x".repeat(6000)]) assert.throws(() => decodeState(hash));
+});
+
+test("real-catalog genre-mass explanation is deterministic and separate from ranking", () => {
+  const candidate = { themes: ["rpg", "puzzle"] }, favorite = { themes: ["rpg"] };
+  const detail = observedGenreMass(candidate, favorite);
+  assert.deepEqual(detail, { shared: 0.5, favoriteResidual: 0.5,
+    favoriteGaps: [{ tag: "rpg", mass: 0.5 }] });
+  assert.deepEqual(observedGenreMass({ themes: ["rpg"] }, { themes: ["rpg", "puzzle"] }), {
+    shared: 0.5, favoriteResidual: 0.5, favoriteGaps: [{ tag: "puzzle", mass: 0.5 }]
+  });
+  assert.deepEqual(observedGenreMass({ themes: ["rpg"] }, { themes: ["rpg"] }), {
+    shared: 1, favoriteResidual: 0, favoriteGaps: []
+  });
+  assert.deepEqual(observedGenreMass({ themes: ["rpg"] }, { themes: ["strategy"] }), {
+    shared: 0, favoriteResidual: 1, favoriteGaps: [{ tag: "strategy", mass: 1 }]
+  });
+  assert.equal(observedGenreMass({ themes: null }, favorite), null);
+  assert.equal(observedGenreMass(candidate, { themes: [] }), null);
+  assert.deepEqual(candidate.themes, ["rpg", "puzzle"]);
+  assert.deepEqual(favorite.themes, ["rpg"]);
 });
