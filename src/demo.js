@@ -162,6 +162,24 @@ export function constraintState(game, state) {
   return unknown ? "unknown" : "pass";
 }
 
+// Equal weights are an authored display-only proxy for recorded genre labels.
+// This does not change the published feature-overlap scorer or its share version.
+// Null/empty observations abstain; shared labels with unequal proportions retain
+// the residual favorite mass instead of being called a complete match.
+export function observedGenreMass(candidate, favorite) {
+  if (!Array.isArray(candidate?.themes) || !Array.isArray(favorite?.themes) ||
+      candidate.themes.length === 0 || favorite.themes.length === 0) return null;
+  const candidateTags = new Set(candidate.themes);
+  const candidateWeight = 1 / candidate.themes.length;
+  const favoriteWeight = 1 / favorite.themes.length;
+  const favoriteGaps = favorite.themes.map(tag => ({
+    tag,
+    mass: favoriteWeight - (candidateTags.has(tag) ? Math.min(candidateWeight, favoriteWeight) : 0),
+  })).filter(entry => entry.mass > 1e-12);
+  const favoriteResidual = favoriteGaps.reduce((sum, entry) => sum + entry.mass, 0);
+  return { shared: Math.max(0, 1 - favoriteResidual), favoriteResidual, favoriteGaps };
+}
+
 export function pairEvidence(a, b) {
   let weightedSimilarity = 0;
   let coverage = 0;
