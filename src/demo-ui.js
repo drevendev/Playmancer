@@ -307,6 +307,7 @@ function drawResults() {
     const top = element("div", undefined, "card-top");
     const title = element("div", undefined, "card-title");
     title.append(element("h3", game.name), element("p", game.description ?? (syntheticCatalog ? "Description unavailable for this profile." : `Recorded genre labels: ${game.themes?.join(", ") || "unknown"}. No sourced description or artwork.`), "hint"));
+    if (game.kind !== "game") title.append(element("p", `Type: ${game.kind}`, "hint"));
     if (!syntheticCatalog && /^wikidata:q[0-9]+$/.test(game.id)) {
       const itemLink = element("a", "View Wikidata source");
       itemLink.href = `https://www.wikidata.org/wiki/${game.id.split(":")[1].toUpperCase()}`;
