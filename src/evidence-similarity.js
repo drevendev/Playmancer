@@ -15,52 +15,52 @@ const TWO_HOP_DECAY = 0.5;
 function record(value, label) {
   if (!value || typeof value !== "object" || Array.isArray(value) ||
       (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
-    throw new TypeError(\`\${label} must be a plain record\`);
+    throw new TypeError(`${label} must be a plain record`);
   }
   return value;
 }
 function text(value, label) {
-  if (typeof value !== "string" || !value.trim()) throw new TypeError(\`\${label} must be nonempty text\`);
+  if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} must be nonempty text`);
   return value;
 }
 function unit(value, label, allowZero = false) {
   if (typeof value !== "number" || !Number.isFinite(value) ||
       value > 1 || (allowZero ? value < 0 : value <= 0)) {
-    throw new RangeError(\`\${label} must be finite in \${allowZero ? "[0,1]" : "(0,1]"}\`);
+    throw new RangeError(`${label} must be finite in ${allowZero ? "[0,1]" : "(0,1]"}`);
   }
   return value;
 }
 function canonicalId(value) {
   text(value, "game ID");
-  if (!TAG_ID.test(value)) throw new TypeError(\`noncanonical game ID: \${value}\`);
+  if (!TAG_ID.test(value)) throw new TypeError(`noncanonical game ID: ${value}`);
   return value;
 }
 function property(value, label) {
   if (value === undefined || value === null) return null;
   const entry = record(value, label);
-  const source = text(entry.source, \`\${label}.source\`);
-  if (!Object.hasOwn(entry, "value")) throw new TypeError(\`\${label}.value is required\`);
+  const source = text(entry.source, `${label}.source`);
+  if (!Object.hasOwn(entry, "value")) throw new TypeError(`${label}.value is required`);
   return { value: entry.value, source };
 }
 function normalizeMetadata(input, id) {
-  const metadata = record(input ?? {}, \`\${id}.metadata\`);
+  const metadata = record(input ?? {}, `${id}.metadata`);
   for (const name of Object.keys(metadata)) {
-    if (!Object.hasOwn(METADATA_WEIGHTS, name)) throw new TypeError(\`unknown metadata field: \${name}\`);
+    if (!Object.hasOwn(METADATA_WEIGHTS, name)) throw new TypeError(`unknown metadata field: ${name}`);
   }
   const result = {};
   for (const name of Object.keys(METADATA_WEIGHTS)) {
-    const field = property(metadata[name], \`\${id}.\${name}\`);
+    const field = property(metadata[name], `${id}.${name}`);
     if (field !== null) {
       if (name === "releaseYear") {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
-          throw new TypeError(\`\${id}.releaseYear must be a year\`);
+          throw new TypeError(`${id}.releaseYear must be a year`);
       } else if (name === "platforms") {
         if (!Array.isArray(field.value) || field.value.some(v => typeof v !== "string" || !v.trim()) ||
             new Set(field.value).size !== field.value.length) {
-          throw new TypeError(\`\${id}.platforms must be unique strings\`);
+          throw new TypeError(`${id}.platforms must be unique strings`);
         }
         field.value = [...field.value].sort();
-      } else text(field.value, \`\${id}.\${name}.value\`);
+      } else text(field.value, `${id}.${name}.value`);
     }
     result[name] = field;
   }
@@ -72,34 +72,34 @@ function normalizeProfile(input) {
   let tags = null;
   if (game.tags !== undefined && game.tags !== null) {
     if (!Array.isArray(game.tags) || game.tags.length === 0 || game.tags.length > MAX_TAGS)
-      throw new TypeError(\`\${id}.tags must have 1-\${MAX_TAGS} entries or be null\`);
+      throw new TypeError(`${id}.tags must have 1-${MAX_TAGS} entries or be null`);
     const seen = new Set();
     tags = game.tags.map((item) => {
-      const tag = record(item, \`\${id}.tag\`);
-      const key = text(tag.id, \`\${id}.tag.id\`);
-      if (!TAG_ID.test(key) || key.length > 96) throw new TypeError(\`invalid tag ID: \${key}\`);
-      if (seen.has(key)) throw new TypeError(\`duplicate tag: \${id}/\${key}\`);
+      const tag = record(item, `${id}.tag`);
+      const key = text(tag.id, `${id}.tag.id`);
+      if (!TAG_ID.test(key) || key.length > 96) throw new TypeError(`invalid tag ID: ${key}`);
+      if (seen.has(key)) throw new TypeError(`duplicate tag: ${id}/${key}`);
       seen.add(key);
-      return { id: key, weight: unit(tag.weight, \`\${id}/\${key}.weight\`), source: text(tag.source, \`\${id}/\${key}.source\`) };
+      return { id: key, weight: unit(tag.weight, `${id}/${key}.weight`), source: text(tag.source, `${id}/${key}.source`) };
     }).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     const total = tags.reduce((sum, tag) => sum + tag.weight, 0);
-    if (Math.abs(total - 1) > 1e-9) throw new RangeError(\`tag weights for \${id} must sum to 1; got \${total}\`);
+    if (Math.abs(total - 1) > 1e-9) throw new RangeError(`tag weights for ${id} must sum to 1; got ${total}`);
   }
   const metadata = normalizeMetadata(game.metadata, id);
   const coop = game.coop === undefined ? null : game.coop;
-  if (coop !== null && typeof coop !== "boolean") throw new TypeError(\`\${id}.coop must be boolean or null\`);
-  if (coop !== null) text(game.coopSource, \`\${id}.coopSource\`);
+  if (coop !== null && typeof coop !== "boolean") throw new TypeError(`${id}.coop must be boolean or null`);
+  if (coop !== null) text(game.coopSource, `${id}.coopSource`);
   return { id, tags, metadata, coop };
 }
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
 
 export function prepareEvidenceModel({ games, relations = [] } = {}) {
   if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
-    throw new TypeError(\`games must contain 1-\${MAX_GAMES} profiles\`);
+    throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
   for (const input of games) {
     const game = normalizeProfile(input);
-    if (profiles.has(game.id)) throw new TypeError(\`duplicate game: \${game.id}\`);
+    if (profiles.has(game.id)) throw new TypeError(`duplicate game: ${game.id}`);
     profiles.set(game.id, game);
   }
   if (!Array.isArray(relations) || relations.length > 4096) throw new TypeError("invalid relation list");
@@ -109,12 +109,12 @@ export function prepareEvidenceModel({ games, relations = [] } = {}) {
     const relation = record(input, "relation");
     const from = canonicalId(relation.from), to = canonicalId(relation.to);
     if (!profiles.has(from) || !profiles.has(to) || from === to)
-      throw new TypeError(\`relation endpoints must be distinct catalog games: \${from} -> \${to}\`);
-    if (!EDGE_TYPES.has(relation.type)) throw new TypeError(\`unsupported relation type: \${relation.type}\`);
+      throw new TypeError(`relation endpoints must be distinct catalog games: ${from} -> ${to}`);
+    if (!EDGE_TYPES.has(relation.type)) throw new TypeError(`unsupported relation type: ${relation.type}`);
     const strength = unit(relation.strength, "relation.strength");
     const source = text(relation.source, "relation.source");
     const key = pairKey(from, to);
-    if (seen.has(key)) throw new TypeError(\`duplicate pair relation: \${key}\`);
+    if (seen.has(key)) throw new TypeError(`duplicate pair relation: ${key}`);
     seen.add(key);
     const edge = { from, to, type: relation.type, strength, source };
     // Affinity works both ways; the causal claim still points from -> to.
