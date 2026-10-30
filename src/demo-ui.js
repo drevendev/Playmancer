@@ -60,7 +60,7 @@ function showCatalogIdentity() {
     .map(store => storeNames[store]);
   // Present actionable storefronts, not catalog-data provenance, in the hero.
   document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
-    "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : " · limited store links");
+    "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : "");
   document.querySelector(".intro p").replaceChildren(
     syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " :
       hasDreven ? "Combine real favorites, see sourced genre overlap and visit official game stores. This multistore pilot contains " :
