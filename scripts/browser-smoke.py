@@ -117,9 +117,12 @@ with sync_playwright() as p:
     check('explicit recovery changes only one selected filter',
           page.locator('#platform').input_value()=='any' and page.locator('#coop').is_checked())
     page.locator('#reset').click()
-    page.locator('#intro-empty').click()
-    check('first-screen build action opens an empty basket with search focus',
-          page.locator('#seeds > li').count()==0 and page.evaluate('document.activeElement.id')=='search')
+    page.locator('#intro-browse').click()
+    check('first-screen browse preserves sample favorites and focuses the first available game',
+          page.locator('#seeds > li').count()==2
+          and page.locator('#catalog-browse').get_attribute('aria-expanded')=='true'
+          and page.locator('#search-results li > button').first.evaluate('node => document.activeElement === node'))
+    page.locator('#catalog-browse').click()
     page.locator('#intro-sample').click()
     check('first-screen sample action shows results and focuses recommendations',
           page.locator('#results > li').count()>0 and page.evaluate('document.activeElement.id')=='recommendations')

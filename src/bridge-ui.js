@@ -215,7 +215,7 @@ export function bindBridgeControls(getState, updateBridge) {
     jump.id = "intro-bridge";
     jump.type = "button";
     jump.setAttribute("aria-controls", "bridge-lab");
-    bridgeEl("intro-empty").after(jump);
+    bridgeEl("intro-browse").after(jump);
     const title = bridgeEl("bridge-title");
     title.tabIndex = -1;
     jump.addEventListener("click", () => {
