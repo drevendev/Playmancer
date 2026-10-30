@@ -1,0 +1,19 @@
+{
+  "protocolVersion": "p76-synthetic-paired-1",
+  "catalogSnapshotId": "synthetic-demo-1",
+  "topK": 3,
+  "lambda": 0.3,
+  "relations": [
+    {"from":"demo:ember","to":"demo:tide","type":"similar","strength":0.8,"source":"playmancer:authored-fictional-fixture"},
+    {"from":"demo:tide","to":"demo:grove","type":"similar","strength":0.7,"source":"playmancer:authored-fictional-fixture"},
+    {"from":"demo:orbit","to":"demo:signal","type":"similar","strength":0.9,"source":"playmancer:authored-fictional-fixture"}
+  ],
+  "baskets": [
+    {"id":"combat-and-harvest","seeds":[{"id":"demo:ember","weight":3},{"id":"demo:harvest","weight":1}],"platform":"any","coopOnly":false,"excluded":[],"probeIds":["demo:tide","demo:grove"]},
+    {"id":"cozy-crafting","seeds":[{"id":"demo:harvest","weight":2},{"id":"demo:meadow","weight":1}],"platform":"windows","coopOnly":false,"excluded":[],"probeIds":["demo:grove"]},
+    {"id":"linux-coop-puzzles","seeds":[{"id":"demo:orbit","weight":2},{"id":"demo:signal","weight":1}],"platform":"linux","coopOnly":true,"excluded":[],"probeIds":["demo:tide"]},
+    {"id":"mixed-with-exclusion","seeds":[{"id":"demo:ember","weight":1},{"id":"demo:signal","weight":2}],"platform":"windows","coopOnly":false,"excluded":["demo:tide"],"probeIds":["demo:orbit"]},
+    {"id":"sparse-tag-evidence","seeds":[{"id":"demo:echo","weight":1},{"id":"demo:lantern","weight":1}],"platform":"windows","coopOnly":false,"excluded":[],"probeIds":["demo:meadow"]},
+    {"id":"three-strands","seeds":[{"id":"demo:ember","weight":1},{"id":"demo:harvest","weight":2},{"id":"demo:citadel","weight":1}],"platform":"any","coopOnly":false,"excluded":[],"probeIds":["demo:grove"]}
+  ]
+}
