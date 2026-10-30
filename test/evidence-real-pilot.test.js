@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateCatalogSnapshot } from '../src/catalog.js';
 import { canonicalGenreTag, projectFrozenGenres, runFrozenRealEvidenceComparison,
-  REAL_EVIDENCE_PROTOCOL, FROZEN_CATALOG_BLOB } from '../src/evidence-real-pilot.js';
+  REAL_EVIDENCE_PROTOCOL, FROZEN_CATALOG_BLOB, FROZEN_PLAN_BLOB } from '../src/evidence-real-pilot.js';
+import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 import { prepareEvidenceModel, compareEvidenceGames } from '../src/evidence-similarity.js';
 
 const raw = readFileSync(new URL('../examples/catalog.multistore-30.real.json', import.meta.url), 'utf8');
@@ -37,6 +38,7 @@ test('frozen 30-basket real-identity comparison shares exact catalog, filters an
   const report = runFrozenRealEvidenceComparison(raw, copy());
   assert.equal(report.report_schema, REAL_EVIDENCE_PROTOCOL);
   assert.equal(report.frozen_catalog_git_blob_sha1, FROZEN_CATALOG_BLOB);
+  assert.equal(report.frozen_basket_plan_git_blob_sha1, FROZEN_PLAN_BLOB);
   assert.equal(report.catalog_games, 30);
   assert.equal(report.basket_count, 30);
   assert.equal(report.rows.length, 150);
@@ -73,12 +75,31 @@ test('no silent changes to catalog digest, basket plan, rights or genre taxonomy
   const wrongHash = copy(); wrongHash.catalogBlobSha1 = 'a'.repeat(40);
   assert.throws(() => runFrozenRealEvidenceComparison(raw, wrongHash), /unexpected frozen catalog hash/);
   const wrongSeed = copy(); wrongSeed.baskets[0].seeds[1].id = wrongSeed.baskets[0].seeds[0].id;
-  assert.throws(() => runFrozenRealEvidenceComparison(raw, wrongSeed), /Duplicate basket seed/);
+  assert.throws(() => runFrozenRealEvidenceComparison(raw, wrongSeed), /frozen basket plan changed/);
+  assert.throws(() => evaluateFrozenPilot(raw, wrongSeed), /Duplicate basket seed/);
   const unlicensed = JSON.parse(raw); unlicensed.sources[0].rights.status = 'unreviewed';
   assert.throws(() => projectFrozenGenres(unlicensed), /Publication rights not approved/);
   const collision = JSON.parse(raw);
   collision.games[0].themes = ['Roguelike', 'roguelike'];
   assert.throws(() => projectFrozenGenres(collision), /genre alias collision/);
+});
+
+test('valid changed weights, filters and basket order cannot impersonate the predeclared plan', () => {
+  const changedWeight = copy();
+  changedWeight.baskets[0].seeds[0].weight = 2; // valid under the legacy schema
+  assert.doesNotThrow(() => evaluateFrozenPilot(raw, changedWeight));
+  assert.throws(() => runFrozenRealEvidenceComparison(raw, changedWeight),
+    /frozen basket plan changed/);
+
+  const changedFilter = copy();
+  changedFilter.baskets[0].constraints.platform = 'windows';
+  assert.throws(() => runFrozenRealEvidenceComparison(raw, changedFilter),
+    /frozen basket plan changed/);
+
+  const changedOrder = copy();
+  changedOrder.baskets.reverse();
+  assert.throws(() => runFrozenRealEvidenceComparison(raw, changedOrder),
+    /frozen basket plan changed/);
 });
 
 test('reports byte-stable diagnostics without fabricating quality wins', () => {

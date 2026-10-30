@@ -1,5 +1,6 @@
 // Offline, source-limited diagnostic for the already approved 30-game pilot.
 // Equal genre weights are an AUTHORED PROXY, never sourced game-tag importance.
+import { createHash } from 'node:crypto';
 import { validateCatalogSnapshot } from './catalog.js';
 import { prepareEvidenceModel, rankEvidenceBasket, EVIDENCE_METHOD_VERSION } from './evidence-similarity.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
@@ -7,10 +8,16 @@ import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-1';
 export const FROZEN_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 export const FROZEN_CATALOG_BLOB = '0570fd610b14fb336c0de65e6cc3062892abe301';
+// The immutable, predeclared 30-basket plan (Git blob of 2-space JSON + LF).
+export const FROZEN_PLAN_BLOB = 'e28809801448df2f73c604d0349ce71c042d7f53';
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 
 function assert(condition, message) {
   if (!condition) throw new TypeError(message);
+}
+function gitBlobSha1(text) {
+  return createHash('sha1').update('blob ' + Buffer.byteLength(text, 'utf8') + '\0')
+    .update(text).digest('hex');
 }
 export function canonicalGenreTag(value) {
   assert(typeof value === 'string' && value.trim(), 'genre label must be nonempty text');
@@ -83,6 +90,10 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
   // Reuse the existing exact-blob, rights-cleared, 30-basket legacy diagnostic.
   // The plan's own hash alone is insufficient; also pin the known source blob.
   assert(frozenPlan?.catalogBlobSha1 === FROZEN_CATALOG_BLOB, 'unexpected frozen catalog hash');
+  // Verify the complete declared basket plan, not merely its catalog reference.
+  // Its committed file is precisely JSON.stringify(plan, null, 2) + LF.
+  assert(gitBlobSha1(JSON.stringify(frozenPlan, null, 2) + '\n') === FROZEN_PLAN_BLOB,
+    'frozen basket plan changed (requires a new versioned evaluation)');
   const baseline = evaluateFrozenPilot(catalogText, frozenPlan);
   assert(baseline.catalog_snapshot_id === FROZEN_CATALOG_ID &&
     baseline.catalog_git_blob_sha1 === FROZEN_CATALOG_BLOB, 'frozen source changed');
@@ -138,6 +149,7 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
   return {
     report_schema: REAL_EVIDENCE_PROTOCOL,
     catalog_snapshot_id: FROZEN_CATALOG_ID, frozen_catalog_git_blob_sha1: FROZEN_CATALOG_BLOB,
+    frozen_basket_plan_git_blob_sha1: FROZEN_PLAN_BLOB,
     catalog_games: profiles.length, genre_tagged_games: known, missing_genre_game_ids: absent,
     old_method: baseline.method_version, v2_method: EVIDENCE_METHOD_VERSION,
     basket_count: frozenPlan.baskets.length, top_k: frozenPlan.topK,

@@ -5,7 +5,8 @@
 snapshot `multi-store-genre-pilot-30-2026-10-28`, Git blob
 `0570fd610b14fb336c0de65e6cc3062892abe301`.
 **Plan:** the predeclared 30 baskets from
-`examples/evaluation-baskets-30.real.json` with unchanged hard filters,
+`examples/evaluation-baskets-30.real.json`, Git blob
+`e28809801448df2f73c604d0349ce71c042d7f53`, with unchanged hard filters,
 exclusions, positive weights, top-five, and Blend lambda 0.3.
 
 ## Run (Node.js 22; no credentials or network)
@@ -15,11 +16,16 @@ exclusions, positive weights, top-five, and Blend lambda 0.3.
 `node scripts/compare-real-evidence.mjs > /tmp/playmancer-p76-real-proxy.json`
 
 Repeat the command and byte-compare files to verify determinism. The runner
-loads the already approved immutable catalog, reuses the existing
-`evaluateFrozenPilot` legacy computation and its exact-blob check, and
+loads the already approved immutable catalog, verifies the complete basket
+plan against its committed Git blob (two-space JSON serialization plus LF),
+reuses the existing `evaluateFrozenPilot` legacy computation and its
+exact-catalog-blob check, and
 compares it with `src/evidence-similarity.js` on the identical 30 candidate
 IDs, eligibility, 30 baskets and five ranking modes: Union, arithmetic,
 least-misery, Intersection, Blend. Bridge is NOT benchmarked or redefined.
+A valid change to any basket weight, order, constraint or exclusion is rejected
+as a changed protocol rather than silently relabeled as the predeclared pilot.
+The report includes both frozen catalog and plan blob identities.
 
 ## What evidence actually exists
 
