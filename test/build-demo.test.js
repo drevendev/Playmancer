@@ -20,6 +20,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     assert.doesNotMatch(html, /<script[^>]+src=/i);
     assert.doesNotMatch(html, /^\s*(?:import|export)\s/m);
     assert.ok(first.byteLength < 100_000);
+    assert.match(html, /id="results-view"/);
+    assert.doesNotMatch(html, /\/\* Compact mobile cards retain match evidence\. \*\//);
     assert.ok(firstWorker.byteLength > 0 && firstWorker.byteLength < 40_000);
     assert.match(firstWorker.toString("utf8"), /self\.onmessage =/);
     assert.match(html, /new Worker\(new URL\("\.\/bridge-worker\.js"/);

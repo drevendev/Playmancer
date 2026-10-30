@@ -93,6 +93,7 @@ function showCatalogIdentity() {
 let state;
 let browseAll = false;
 let browseLimit = 8;
+let compactResults = false;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
   const summary = `${count} of 5 ${count === 1 ? "game" : "games"} selected.`;
@@ -114,7 +115,7 @@ function readLocation() {
     invalidLink = true;
   }
   $("search").value = "";
-  browseAll = false; browseLimit = 8;
+  browseAll = false; browseLimit = 8; compactResults = false;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -301,7 +302,8 @@ function drawEmptyRecovery(result) {
 function drawResults() {
   const result = recommend(state);
   $("results").replaceChildren();
-  result.ranked.forEach((item, index) => {
+  const visible = compactResults ? result.ranked.slice(0, 5) : result.ranked;
+  visible.forEach((item, index) => {
     const game = BY_ID.get(item.id);
     const card = element("li", undefined, "card"); card.dataset.gameId = item.id;
     const top = element("div", undefined, "card-top");
@@ -381,11 +383,15 @@ function drawResults() {
     footer.append(hide); card.append(footer); $("results").append(card);
   });
   drawEmptyRecovery(result);
+  const view = $("results-view");
+  view.hidden = result.ranked.length <= 5;
+  view.setAttribute("aria-pressed", String(compactResults));
+  view.textContent = compactResults ? `Show all ${result.ranked.length} recommendations` : "Show top 5 recommendations";
   // Count actual absence of overlap, not Blend's marginal list objective.
-  const zeroFit = !syntheticCatalog ? result.ranked.filter((item) => item.scores.arithmetic === 0).length : 0;
+  const zeroFit = !syntheticCatalog ? visible.filter((item) => item.scores.arithmetic === 0).length : 0;
   const partialIntersection = !syntheticCatalog && state.mode === "intersection"
-    ? result.ranked.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
-  $("status").textContent = `${result.ranked.length} shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
+    ? visible.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
+  $("status").textContent = `${visible.length} of ${result.ranked.length} eligible shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
     (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "") +
     (partialIntersection ? ` ${partialIntersection} lack overlap with at least one favorite; not whole-basket matches.` : "");
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
@@ -418,6 +424,7 @@ $("mode").addEventListener("change", (event) => { state.mode = event.target.valu
 $("platform").addEventListener("change", (event) => { state.platform = event.target.value; commit(); });
 $("coop").addEventListener("change", (event) => { state.coopOnly = event.target.checked; commit(); });
 $("lambda").addEventListener("input", (event) => { state.lambda = Number(event.target.value); commit(); });
+$("results-view").addEventListener("click", () => { compactResults = !compactResults; drawResults(); $("results-view").focus(); });
 $("restore").addEventListener("click", () => { state.excluded = []; commit(); $("recommendations").focus(); });
 $("clear").addEventListener("click", () => { state = { ...state, seeds: [], excluded: [] }; $("search").value = ""; commit(true); $("search").focus(); announceBasketAction("Basket cleared"); });
 $("reset").addEventListener("click", () => { state = initialState(); $("search").value = ""; commit(true); $("search").focus(); announceBasketAction("Sample basket restored"); });
