@@ -48,7 +48,9 @@ try:
             check(label + ": real catalog provenance, two real basket games",
                   SNAPSHOT in observed["version"]
                   and "30 real games" in observed["intro"]
-                  and "wikidata + dreven games" in observed["badge"].lower()
+                  and all(store in observed["badge"] for store in ("Steam", "Google Play", "itch.io"))
+                  and "Wikidata" not in observed["badge"]
+                  and "Dreven Games" not in observed["badge"]
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
             # Native <details> content is correctly hidden until the player opens
