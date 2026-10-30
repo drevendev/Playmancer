@@ -5,7 +5,7 @@ import { validateCatalogSnapshot } from './catalog.js';
 import { prepareEvidenceModel, rankEvidenceBasket, EVIDENCE_METHOD_VERSION } from './evidence-similarity.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 
-export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-1';
+export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-2';
 export const FROZEN_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 export const FROZEN_CATALOG_BLOB = '0570fd610b14fb336c0de65e6cc3062892abe301';
 // The immutable, predeclared 30-basket plan (Git blob of 2-space JSON + LF).
@@ -83,6 +83,12 @@ function detail(item) {
       [pair.seedId, pair.affinity])),
     evidence_coverage_by_seed: Object.fromEntries(item.evidence.map(pair =>
       [pair.seedId, pair.evidenceCoverage])),
+    // For this pair: left is the recommendation, right is the explicit seed.
+    observed_genre_gaps_by_seed: Object.fromEntries(item.evidence.map(pair =>
+      [pair.seedId, pair.tags.similarity === null ? null : {
+        candidate_only: pair.tags.leftOnly,
+        favorite_only: pair.tags.rightOnly,
+      }])),
   };
 }
 

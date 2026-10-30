@@ -51,6 +51,20 @@ test('frozen 30-basket real-identity comparison shares exact catalog, filters an
     assert.ok(row.v2_top.every(id => !row.explicit_exclusions.includes(id)));
     assert.ok(row.shared_top_k >= 0 && row.shared_top_k <= 5);
     assert.equal(row.v2_top.length, row.v2_top_observed_evidence.length);
+    for (const candidate of row.v2_top_observed_evidence) {
+      assert.deepEqual(Object.keys(candidate.observed_genre_gaps_by_seed).sort(),
+        row.seeds.map(seed => seed.id).sort());
+      for (const seed of row.seeds) {
+        const overlap = candidate.observed_genre_support_by_seed[seed.id];
+        const gap = candidate.observed_genre_gaps_by_seed[seed.id];
+        if (overlap === null) { assert.equal(gap, null); continue; }
+        const total = tags => tags.reduce((sum, tag) => sum + tag.mass, 0);
+        assert.ok(Math.abs(overlap + total(gap.candidate_only) - 1) < 1e-9);
+        assert.ok(Math.abs(overlap + total(gap.favorite_only) - 1) < 1e-9);
+        assert.ok(gap.candidate_only.every(tag => tag.source.includes(candidate.id)));
+        assert.ok(gap.favorite_only.every(tag => tag.source.includes(seed.id)));
+      }
+    }
     assert.equal(row.lost_observed_genre_support,
       row.v2_top_all_seed_genre_support < row.old_top_all_seed_genre_support);
   }

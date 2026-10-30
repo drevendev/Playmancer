@@ -32,12 +32,32 @@ test("weighted mass intersection respects unequal tag weights, not set size", ()
   assert.deepEqual(ab.tags.shared.map(e => e.id), ["genre:rpg", "mood:cozy"]);
   assert.equal(compareEvidenceGames(model(), b.id, a.id).affinity, ab.affinity);
 });
+test("reports sourced residual weighted mass on both sides including emphasis gaps", () => {
+  const pair = compareEvidenceGames(model(), a.id, b.id);
+  assert.deepEqual(pair.tags.leftOnly.map(item => item.id), ["genre:rpg"]);
+  assert.deepEqual(pair.tags.rightOnly.map(item => item.id), ["mood:cozy"]);
+  assert.ok(Math.abs(pair.tags.leftOnly[0].mass - .4) < 1e-12);
+  assert.ok(Math.abs(pair.tags.rightOnly[0].mass - .4) < 1e-12);
+  assert.equal(pair.tags.leftOnly[0].source, "authored-fixture");
+  assert.equal(pair.tags.rightOnly[0].source, "authored-fixture");
+  for (const side of ["leftOnly", "rightOnly"]) {
+    assert.ok(Math.abs(pair.tags.similarity +
+      pair.tags[side].reduce((sum, item) => sum + item.mass, 0) - 1) < 1e-12);
+  }
+  const disjoint = compareEvidenceGames(model(), a.id, c.id);
+  assert.equal(disjoint.tags.similarity, 0);
+  for (const side of ["leftOnly", "rightOnly"]) {
+    assert.ok(Math.abs(disjoint.tags[side].reduce((sum, item) => sum + item.mass, 0) - 1) < 1e-12);
+  }
+});
 test("missing tags abstain instead of treating missing as a mismatch", () => {
   const m = model([a, { ...b, tags: null }]);
   const pair = compareEvidenceGames(m, a.id, b.id);
   assert.equal(pair.status, "uncertain");
   assert.equal(pair.affinity, null);
   assert.ok(pair.metadata.coverage > 0);
+  assert.equal(pair.tags.leftOnly, null);
+  assert.equal(pair.tags.rightOnly, null);
 });
 test("metadata is secondary: same common platform is a weak match", () => {
   const pair = compareEvidenceGames(model(), a.id, c.id);
@@ -62,8 +82,25 @@ test("two hops decay, never claim that a transitive link is a direct source", ()
   assert.equal(ac.relations.direct, null);
   assert.equal(ac.relations.twoHop.via, "demo:b");
   assert.equal(ac.relations.twoHop.strength, .2);
+  assert.deepEqual(ac.relations.twoHop.hops.map(hop => [hop.from, hop.to, hop.type]),
+    [["demo:a", "demo:b", "similar"], ["demo:b", "demo:c", "similar"]]);
+  assert.deepEqual(ac.relations.twoHop.hops.map(hop => hop.source), ac.relations.twoHop.sources);
   assert.ok(ac.affinity > 0);
   assert.equal(compareEvidenceGames(m, a.id, d.id).relations.twoHop, null);
+});
+test("reverse traversal preserves both original authored direction/type claims", () => {
+  const m = model(undefined, [
+    relation("demo:b", "demo:a", .8, "inspired-by"),
+    relation("demo:c", "demo:b", .5, "references"),
+  ]);
+  const forward = compareEvidenceGames(m, a.id, c.id).relations.twoHop;
+  const reverse = compareEvidenceGames(m, c.id, a.id).relations.twoHop;
+  assert.equal(forward.strength, reverse.strength);
+  const edges = hops => hops.map(h => [h.from, h.to, h.type, h.strength, h.source]).sort();
+  assert.deepEqual(edges(forward.hops), edges(reverse.hops));
+  assert.deepEqual(edges(forward.hops).map(h => h.slice(0, 3)), [
+    ["demo:b", "demo:a", "inspired-by"], ["demo:c", "demo:b", "references"]
+  ]);
 });
 test("direct evidence does not double-count a two-hop path", () => {
   const m = model(undefined, [relation("demo:a", "demo:b"), relation("demo:b", "demo:c"), relation("demo:a", "demo:c", .4)]);
