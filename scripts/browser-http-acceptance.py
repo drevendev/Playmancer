@@ -174,6 +174,8 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#results > li").first.locator(".affinity").count() >= 2
               and page.evaluate("document.activeElement.id") == "results-view"
               and page.evaluate("location.hash") == before_hash)
+        page.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-top-five.png"),
+                        full_page=True, animations="disabled")
         view.press("Enter")
         check(case, "keyboard restores every result in original order",
               page.locator("#results > li").evaluate_all(
