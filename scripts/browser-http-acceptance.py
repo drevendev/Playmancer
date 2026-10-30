@@ -155,6 +155,33 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "list-first results and explanatory evidence",
               page.locator("#results > li").count() > 0
               and "Evidence coverage" in page.locator("#results > li").first.inner_text())
+        # A visual preference changes only the displayed slice, never ranking or share state.
+        view = page.locator("#results-view")
+        all_ids = page.locator("#results > li").evaluate_all(
+            "cards => cards.map(card => card.dataset.gameId)")
+        before_hash = page.evaluate("location.hash")
+        check(case, "full eligible ranking remains the default",
+              len(all_ids) > 5 and view.is_visible()
+              and view.get_attribute("aria-pressed") == "false")
+        view.focus()
+        view.press("Enter")
+        compact_ids = page.locator("#results > li").evaluate_all(
+            "cards => cards.map(card => card.dataset.gameId)")
+        check(case, "keyboard toggles top five without hiding evidence or changing basket",
+              compact_ids == all_ids[:5]
+              and view.get_attribute("aria-pressed") == "true"
+              and page.locator("#status").inner_text().startswith("5 of ")
+              and page.locator("#results > li").first.locator(".affinity").count() >= 2
+              and page.evaluate("document.activeElement.id") == "results-view"
+              and page.evaluate("location.hash") == before_hash)
+        page.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-top-five.png"),
+                        full_page=True, animations="disabled")
+        view.press("Enter")
+        check(case, "keyboard restores every result in original order",
+              page.locator("#results > li").evaluate_all(
+                  "cards => cards.map(card => card.dataset.gameId)") == all_ids
+              and view.get_attribute("aria-pressed") == "false"
+              and page.evaluate("document.activeElement.id") == "results-view")
         labels = page.locator("#results > li").evaluate_all(
             "nodes => nodes.map(card => ({game: card.querySelector('h3')?.textContent, "
             "summary: card.querySelector('summary')?.textContent}))")

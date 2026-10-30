@@ -75,6 +75,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 .explanation p,.explanation ul{font-size:.8125rem}
 .card-footer{flex-wrap:wrap}
 .card-footer .hint{min-width:0;overflow-wrap:anywhere}
+#results-view{margin:0 0 12px;max-width:100%;white-space:normal}
 .card-footer button{font-size:.75rem}
 .fit .fit-warning{display:block;max-width:20ch;margin-top:4px;color:var(--warn);font-weight:650;line-height:1.35}
 /* Compact mobile cards retain match evidence. */
@@ -116,6 +117,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <section id="recommendations" aria-labelledby="results-title" tabindex="-1">
 <div class="results-head"><div><h2 id="results-title">Your next possibilities</h2><p class="hint">Feature overlap, not popularity. Scores are not confidence percentages.</p></div></div>
 <p id="status" class="hint" role="status"></p>
+<button id="results-view" type="button" aria-controls="results" aria-pressed="false" hidden>Show top 5 recommendations</button>
 <ol id="results" class="results" aria-label="Ranked recommendations"></ol>
 <div id="empty" class="empty" hidden></div>
 <details id="uncertainty"><summary id="uncertainty-title">Uncertain and excluded profiles</summary><ul id="partition-list"></ul></details>

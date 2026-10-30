@@ -102,7 +102,8 @@ const script = parts.join("\n\n");
 // Individual modules can parse while conflicting declarations break their bundle.
 new Script(script, { filename: "playmancer-browser-bundle.js" });
 const entry = '<script type="module" src="./src/demo-ui.js"></script>';
-const template = await readFile(join(root, "index.html"), "utf8");
+const template = (await readFile(join(root, "index.html"), "utf8"))
+  .replace(/(<style>)([\s\S]*?)(<\/style>)/, (_, open, css, close) => open + css.replace(/\/\*[\s\S]*?\*\//g, "") + close);
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
 const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
 if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
