@@ -337,7 +337,10 @@ function drawResults() {
       fit.append(element("small", "No additional uncovered-strand gain here; some genres still overlap", "fit-warning"));
     }
     top.append(element("span", String(index + 1).padStart(2, "0"), "rank"), title, fit);
-    card.append(top, element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata"));
+    card.append(top);
+    // Technical identifiers and source-filter fields are available on demand;
+    // keep per-seed affinities, compromise warnings and coverage visible in the list.
+    const technicalMetadata = element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata");
     const affinities = element("div", undefined, "affinities");
     item.evidence.forEach((pair) => {
       const row = element("div", undefined, "affinity");
@@ -357,6 +360,7 @@ function drawResults() {
     why.append(element("p", syntheticCatalog
       ? `Comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}%. Mechanics use 70% and themes 30%; popularity is not used.`
       : `Observed comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}% of the full model (genre labels only, internally held in the themes field). Mechanics are unknown; similarities are exploratory and popularity is not used.`));
+    why.append(technicalMetadata);
     card.append(why);
     const footer = element("div", undefined, "card-footer");
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
