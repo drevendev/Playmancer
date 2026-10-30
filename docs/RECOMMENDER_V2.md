@@ -9,40 +9,40 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
 
 1. **Tags are the foundation.** Every known game's tag vector has a total
    weight of exactly **1**, distributed across canonical namespace IDs such as
-   \`genre:crpg\`, \`mechanic:dialogue-choices\`, \`art:isometric\`,
-   \`character:party\`, and \`mood:melancholic\`. The per-tag source receipt is
+   `genre:crpg`, `mechanic:dialogue-choices`, `art:isometric`,
+   `character:party`, and `mood:melancholic`. The per-tag source receipt is
    required. This is a *game's* distribution, not a global tag popularity score.
-   Unknown tag vectors are \`null\` and cause an abstention, not zero similarity.
+   Unknown tag vectors are `null` and cause an abstention, not zero similarity.
    Two known, completely disjoint tag vectors have a supported zero overlap.
 2. **Secondary metadata** records franchise, creator/author, developer, publisher,
    release year and known platforms, each with a source receipt. A same-year or
    same-platform match is a weak secondary signal, never a genre-equivalent match.
    Missing fields are not mismatches or passes for hard filters.
-3. **Explicit editorial relations** record \`similar\`, \`inspired-by\`, or
-   \`references\` with distinct canonical endpoints, source receipt, direction
+3. **Explicit editorial relations** record `similar`, `inspired-by`, or
+   `references` with distinct canonical endpoints, source receipt, direction
    and bounded strength. Relations are symmetric *only for the affinity measure*:
    the evidence explanation must retain that game A was inspired by B, never
    assert the reverse causal claim. Rights/source review is mandatory.
 4. **Transitive similarity** can only traverse two sourced explicit edges,
    never a broad common platform or an automatically inferred neighbor.
-   For A—B—C, its maximum strength is \`0.5 × strength(A,B) × strength(B,C)\`.
+   For A—B—C, its maximum strength is `0.5 × strength(A,B) × strength(B,C)`.
    No self-loops, duplicate unordered pairs, or compounded infinite walks.
    A direct edge suppresses the duplicate transitive contribution.
 
 The experimental tag similarity is the **overlapping tag mass**:
-\`T(A,B) = Σ_t min(weight_A(t), weight_B(t))\` (0–1). For example,
+`T(A,B) = Σ_t min(weight_A(t), weight_B(t))` (0–1). For example,
 A = {genre:rpg: 0.7, mood:cozy: 0.3} and
 B = {genre:rpg: 0.3, mood:cozy: 0.7} gives **T = 0.6**.
 
 The trial composite score is
-\`0.76 T + 0.13 M + 0.08 D + 0.03 G\` where:
-- \`M\` is the **bounded, not missing-field-renormalized** secondary match
+`0.76 T + 0.13 M + 0.08 D + 0.03 G` where:
+- `M` is the **bounded, not missing-field-renormalized** secondary match
   (franchise 0.30, creator 0.27, developer 0.18, publisher 0.12,
   release year 0.05, platform Jaccard 0.08). If no comparable metadata exists,
-  \`M\` is *unknown*, and its score contribution is omitted rather than falsely
+  `M` is *unknown*, and its score contribution is omitted rather than falsely
   labeled a confirmed mismatch.
-- \`D\` is a direct sourced relation's strength, otherwise unrecorded.
-- \`G\` is the strongest decayed two-hop sourced path, otherwise unrecorded.
+- `D` is a direct sourced relation's strength, otherwise unrecorded.
+- `G` is the strongest decayed two-hop sourced path, otherwise unrecorded.
   The direct and two-hop contributions are mutually exclusive.
 
 **These coefficients are experimental, not tuned, and are not confidence
@@ -53,7 +53,7 @@ not similarity inputs.
 
 ## Schema prototype (synthetic; no redistributable commercial tags)
 
-\`\`\`json
+```json
 {
   "games": [
     {
@@ -73,9 +73,9 @@ not similarity inputs.
   ],
   "relations": []
 }
-\`\`\`
+```
 
-The existing live schema v1 and \`METHOD_VERSION = feature-overlap-2\`
+The existing live schema v1 and `METHOD_VERSION = feature-overlap-2`
 remain unchanged. This separate experiment does **not** reinterpret published
 basket links. If a future edition adopts it, migrate catalog/source contracts,
 method identifiers, share state and Bridge version **explicitly**; incompatible
@@ -95,7 +95,7 @@ are not proof that tags or artwork are redistributable.
 Ebb developer describes adopting some Disco Elysium elements in the official
 FAQ: https://steamcommunity.com/app/2057760/discussions/0/759556695324210776/ .
 A future rights-reviewed snapshot could record a directed
-\`inspired-by: Esoteric Ebb → Disco Elysium\` edge with that receipt; neither
+`inspired-by: Esoteric Ebb → Disco Elysium` edge with that receipt; neither
 game is added to the current 30-game snapshot by this experiment.
 
 ## Performance and evaluation gates
