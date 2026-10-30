@@ -444,6 +444,11 @@ $("dreven-browse").addEventListener("click", () => {
   $("search").focus();
   announceBasketAction("Browsing Dreven Games");
 });
-// First-screen actions reuse the authoritative reset/clear paths, not a second state store.
+// First-screen actions preserve the shared basket; catalog discovery is not a reset.
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
-$("intro-empty").addEventListener("click", () => { $("clear").click(); $("search").focus(); });
+$("intro-browse").addEventListener("click", () => {
+  browseAll = true; browseLimit = 8;
+  $("search").value = "";
+  drawSearch();
+  ($("search-results").querySelector("button:not(:disabled)") ?? $("search")).focus();
+});
