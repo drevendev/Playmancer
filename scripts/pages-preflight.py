@@ -62,8 +62,10 @@ def main() -> int:
     assert catalog_match, "Catalog version marker missing"
     if catalog_match.group(1).startswith(("wikidata-genre-pilot-", "multi-store-genre-pilot-")):
         assert '"kind":"real"' in text, "Real player snapshot not embedded"
-        assert ("Wikidata CC0 genre pilot" in text or "Wikidata + Dreven Games" in text), "Real pilot provenance missing"
+        # Provenance is mandatory in the validated snapshot/footer, not the player-facing hero badge.
+        assert '"id":"wikidata-cc0"' in text and "Source attribution:" in text, "Real Wikidata provenance missing"
         if catalog_match.group(1).startswith("multi-store-genre-pilot-"):
+            assert '"id":"dreven-owned"' in text, "Real owner-source provenance missing"
             for name in ("Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid"):
                 assert name in text, "Missing Dreven Games game: " + name
             assert "https://store.steampowered.com/app/413150" in text, "Steam store URL missing"

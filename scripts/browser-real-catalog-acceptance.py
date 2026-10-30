@@ -48,7 +48,9 @@ try:
             check(label + ": real catalog provenance, two real basket games",
                   SNAPSHOT in observed["version"]
                   and "30 real games" in observed["intro"]
-                  and "wikidata + dreven games" in observed["badge"].lower()
+                  and all(store in observed["badge"].casefold() for store in ("steam", "google play", "itch.io"))
+                  and "wikidata" not in observed["badge"].casefold()
+                  and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
             # Native <details> content is correctly hidden until the player opens
@@ -224,7 +226,7 @@ try:
         legacy_page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
         check("legacy Wikidata-only pilot reports the selected 12-game provenance",
               "12 real games" in legacy_page.locator(".intro").inner_text()
-              and "wikidata cc0 genre pilot" in legacy_page.locator(".badge").inner_text().lower()
+              and legacy_page.locator(".badge").inner_text().strip().lower() == "real games"
               and "dreven games" not in legacy_page.locator(".footer-note").inner_text().lower()
               and not legacy_errors)
         check("legacy Wikidata-only pilot does not expose nonfunctional creator browse or store links",
