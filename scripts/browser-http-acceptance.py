@@ -164,6 +164,32 @@ def exercise(browser, base_url, engine, label, width, height):
               and all(item["game"] and item["summary"] and item["game"] in item["summary"]
                       for item in labels))
 
+        # Technical identifiers are discoverable but do not crowd the default
+        # mobile result list; scores, seed evidence and coverage stay visible.
+        first_card = page.locator("#results > li").first
+        technical = first_card.locator(".explanation .metadata")
+        why_summary = first_card.locator(".explanation summary")
+        check(case, "compact result keeps visible seed support, fit and coverage",
+              first_card.locator(".affinity").count() >= 2
+              and first_card.locator(".fit strong").is_visible()
+              and first_card.locator(".card-footer .hint").is_visible()
+              and technical.count() == 1
+              and not technical.is_visible())
+        why_summary.focus()
+        why_summary.press("Enter")
+        check(case, "keyboard reveals technical details with named explanation",
+              first_card.locator(".explanation").evaluate("el => el.open")
+              and technical.is_visible()
+              and "Entity:" in technical.inner_text()
+              and "Platforms:" in technical.inner_text()
+              and page.evaluate("document.activeElement.tagName") == "SUMMARY")
+        why_summary.press("Enter")
+        check(case, "keyboard closes details without removing evidence or focus",
+              not first_card.locator(".explanation").evaluate("el => el.open")
+              and not technical.is_visible()
+              and first_card.locator(".affinity").first.is_visible()
+              and page.evaluate("document.activeElement.tagName") == "SUMMARY")
+
         # From the hero, browse without discarding the sample basket or share state.
         share_before_browse = page.evaluate('location.hash')
         page.locator('#intro-browse').click()
