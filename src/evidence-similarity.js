@@ -124,14 +124,30 @@ export function prepareEvidenceModel({ games, relations = [] } = {}) {
   return { version: EVIDENCE_METHOD_VERSION, profiles, edges };
 }
 
+function unmatchedTagMass(tags, otherById) {
+  // Also expose unequal emphasis on a tag shared by two known vectors.
+  return tags.flatMap(tag => {
+    const matched = Math.min(tag.weight, otherById.get(tag.id)?.weight ?? 0);
+    const mass = tag.weight - matched;
+    return mass > 0 ? [{ id: tag.id, mass, source: tag.source }] : [];
+  });
+}
 function tagEvidence(a, b) {
-  if (a.tags === null || b.tags === null) return { similarity: null, shared: [] };
+  if (a.tags === null || b.tags === null) {
+    return { similarity: null, shared: [], leftOnly: null, rightOnly: null };
+  }
+  const left = new Map(a.tags.map(tag => [tag.id, tag]));
   const right = new Map(b.tags.map(tag => [tag.id, tag]));
   const shared = a.tags.filter(tag => right.has(tag.id)).map(tag => {
     const other = right.get(tag.id);
     return { id: tag.id, mass: Math.min(tag.weight, other.weight), sources: [tag.source, other.source] };
   });
-  return { similarity: shared.reduce((sum, item) => sum + item.mass, 0), shared };
+  return {
+    similarity: shared.reduce((sum, item) => sum + item.mass, 0),
+    shared,
+    leftOnly: unmatchedTagMass(a.tags, right),
+    rightOnly: unmatchedTagMass(b.tags, left),
+  };
 }
 function secondaryEvidence(a, b) {
   let score = 0, coverage = 0;
@@ -165,7 +181,12 @@ function relationEvidence(model, a, b) {
     const strength = first.strength * second.strength * TWO_HOP_DECAY;
     if (!strongest || strength > strongest.strength ||
         (strength === strongest.strength && middle < strongest.via)) {
-      strongest = { via: middle, strength, sources: [first.source, second.source] };
+      // Symmetric affinity never reverses the authored relation claim.
+      const hops = [first, second].map(edge => ({
+        from: edge.from, to: edge.to, type: edge.type,
+        strength: edge.strength, source: edge.source,
+      }));
+      strongest = { via: middle, strength, sources: hops.map(hop => hop.source), hops };
     }
   }
   return { direct: null, twoHop: strongest };

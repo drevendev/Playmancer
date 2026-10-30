@@ -56,6 +56,13 @@ overlap, experimental composite fit, coverage, abstentions, hard exclusions
 and count of top recommendations supported by **all** seeds' known genres.
 The report records changed orders and both increases **and decreases** in
 observed genre support; none are proof of human preference or uplift.
+Protocol `p76-frozen-real-genre-proxy-2` adds
+`v2_top_observed_evidence[].observed_genre_gaps_by_seed`: each
+candidate/favorite pair retains source-backed `candidate_only` and
+`favorite_only` genre mass, including unequal emphasis on shared tags.
+Known overlap plus either residual mass sums to 1; unobserved vectors
+remain `null`, not zero overlap. The frozen catalog/plan, ranking,
+eligibility and live-player method are unchanged.
 The v2 coefficient vector remains experimental and does not become a
 confidence percentage. A pair of records with matching platforms but no
 matching genre can have a small positive composite fit: consult

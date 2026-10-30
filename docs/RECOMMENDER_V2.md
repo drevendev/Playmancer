@@ -34,6 +34,16 @@ The experimental tag similarity is the **overlapping tag mass**:
 A = {genre:rpg: 0.7, mood:cozy: 0.3} and
 B = {genre:rpg: 0.3, mood:cozy: 0.7} gives **T = 0.6**.
 
+For a known pair the explanation also reports residual tag weight on
+both sides: `leftOnly` (candidate) and `rightOnly` (favorite), each
+with canonical tag ID, residual mass and source receipt. Shared tags
+with different weights expose an emphasis gap; overlap plus each side's
+residual mass equals 1. Missing vectors yield `null` gaps, not an
+invented 100% mismatch. A two-hop explanation retains `hops`, each
+with the original authored direction, type, strength and receipt even
+when a similarity query traverses it backward. These fields do not
+add new ranking boosts.
+
 The trial composite score is
 `0.76 T + 0.13 M + 0.08 D + 0.03 G` where:
 - `M` is the **bounded, not missing-field-renormalized** secondary match
