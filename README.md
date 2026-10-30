@@ -3,7 +3,7 @@
 **Mix your favorites. See the trade-offs.**
 
 Choose one to five favorite profiles, set weights and hard filters, and see why
-recommendations fit each preference or require a compromise. Start with a sample or
+recommendations fit each preference or require a compromise. Start with **Browse games**, a sample, or
 an empty basket; no account, paid inference, tracking, remote assets or runtime API
 requests are needed.
 
@@ -13,12 +13,12 @@ requests are needed.
 [30-game source receipts](docs/REAL_EXPANSION_30.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Verified public release (2026-10-28): 30 real games.** The live Pages
-> revision is [`4dc2d0aca315ae68a30a99404a5738216c7bc806`](https://github.com/drevendev/Playmancer/commit/4dc2d0aca315ae68a30a99404a5738216c7bc806).
-> [Publish Pages #40754031261](https://github.com/drevendev/Playmancer/actions/runs/40754031261)
+> **Verified public release (2026-10-30): 30 real games, with first-screen browsing.** The live Pages
+> revision is [`e500a2d57b608c6e96a91464a8f3aba5689d383f`](https://github.com/drevendev/Playmancer/commit/e500a2d57b608c6e96a91464a8f3aba5689d383f).
+> [Publish Pages #40991264586](https://github.com/drevendev/Playmancer/actions/runs/40991264586)
 > passed all three jobs: exact-master build, deployment, public HTTPS revision
-> check, same-origin Bridge worker and hosted desktop/mobile browser journeys.
-> [Verify #40754031279](https://github.com/drevendev/Playmancer/actions/runs/40754031279)
+> check, same-origin Bridge worker and hosted desktop/mobile browsing and basket journeys.
+> [Verify #40991264496](https://github.com/drevendev/Playmancer/actions/runs/40991264496)
 > passed all four Node/build, Chromium, Firefox/WebKit and Bridge jobs.
 > **Status for this exact SHA: LIVE_VERIFIED.** Later commits need their own
 > exact-revision checks; an updated README or build alone is not a live deployment.
@@ -74,6 +74,7 @@ editions/DLC and unknown metadata. Share links preserve catalog and method
 versions: the current site visibly rejects incompatible historical links instead
 of silently substituting games from a different snapshot.
 
+- Browse the 30 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time and add them to the basket without losing existing choices.
 - Search names, canonical IDs, declared aliases and source-recorded genre labels (synthetic profiles also support their authored feature tags); genre-only suggestions disclose the matching tag. Add/remove up to five profiles.
 - Edit explicit integer weights with keyboard controls.
 - Compare harmonic **Intersection**, diversified list-level **Blend**, and a weighted
@@ -248,8 +249,8 @@ repository administration or weaken protection. On successful deployment, CI
 checks the public index against the exact `playmancer-revision` master SHA
 and tests the same-origin Bridge worker and hosted player flows.
 The **current 30-game release** passed
-[Publish Pages #40754031261](https://github.com/drevendev/Playmancer/actions/runs/40754031261)
-on 2026-10-28 at `4dc2d0aca315ae68a30a99404a5738216c7bc806`.
+[Publish Pages #40991264586](https://github.com/drevendev/Playmancer/actions/runs/40991264586)
+on 2026-10-30 at `e500a2d57b608c6e96a91464a8f3aba5689d383f`.
 The earlier 17-game release passed
 [its own exact-revision verification](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
 on 2026-10-27; neither run certifies future SHAs.
