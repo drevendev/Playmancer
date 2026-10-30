@@ -67,9 +67,10 @@ for (const [index, path] of modules.entries()) {
   // Real JavaScript, inline comments and string literals remain unchanged.
   source = source.replace(/^[ \t]*\/\/[^\r\n]*(?:\r?\n|$)/gm, "");
   // Preserve the sub-100 kB self-contained synthetic build without weakening
-  // the payload test: remove only layout indentation in pure algorithm modules.
-  // Reject multiline template literals before changing generated source text.
-  if (["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js"].includes(path)) {
+  // the payload test: remove only line indentation in the audited modules.
+  // Refuse multiline template literals before changing generated source text.
+  if (["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js",
+       "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"].includes(path)) {
     if (source.split(/\r?\n/).some((line) => ((line.match(/`/g) ?? []).length % 2) !== 0)) {
       throw new Error(`Cannot compact multiline template literals in ${path}`);
     }
