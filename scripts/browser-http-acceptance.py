@@ -164,6 +164,17 @@ def exercise(browser, base_url, engine, label, width, height):
               and all(item["game"] and item["summary"] and item["game"] in item["summary"]
                       for item in labels))
 
+        # From the hero, browse without discarding the sample basket or share state.
+        share_before_browse = page.evaluate('location.hash')
+        page.locator('#intro-browse').click()
+        check(case, 'first-screen catalog browsing preserves favorites, share state and keyboard focus',
+              page.locator('#catalog-browse').get_attribute('aria-expanded') == 'true'
+              and page.locator('#seeds > li').count() == 2
+              and page.locator('#search-results li > button').first.evaluate(
+                  'node => document.activeElement === node')
+              and page.evaluate('location.hash') == share_before_browse)
+        page.locator('#catalog-browse').click()
+
         # Browse the actual catalog without guessing a title or genre first.
         browse = page.locator("#catalog-browse")
         browse.click()
