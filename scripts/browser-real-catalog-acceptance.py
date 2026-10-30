@@ -226,7 +226,7 @@ try:
         legacy_page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
         check("legacy Wikidata-only pilot reports the selected 12-game provenance",
               "12 real games" in legacy_page.locator(".intro").inner_text()
-              and "wikidata cc0 genre pilot" in legacy_page.locator(".badge").inner_text().lower()
+              and legacy_page.locator(".badge").inner_text().strip().lower() == "real games"
               and "dreven games" not in legacy_page.locator(".footer-note").inner_text().lower()
               and not legacy_errors)
         check("legacy Wikidata-only pilot does not expose nonfunctional creator browse or store links",
