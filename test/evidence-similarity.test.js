@@ -14,6 +14,15 @@ const d = { id: "demo:d", tags: [tag("genre:puzzle", 1)], metadata: {}, coop: nu
 const model = (games = [a, b, c, d], relations = []) => prepareEvidenceModel({ games, relations });
 const relation = (from, to, strength = 1, type = "similar") =>
   ({ from, to, strength, type, source: "https://example.org/receipt" });
+// Evidence lane arithmetic is floating point (0.27 + 0.08 != 0.35 exactly).
+// Verify the lane names exactly and each value within a tight numeric tolerance.
+function assertCoverageLanes(actual, expected) {
+  assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort());
+  for (const [lane, value] of Object.entries(expected)) {
+    assert.ok(Math.abs(actual[lane] - value) < 1e-12,
+      `unexpected coverage for ${lane}: ${actual[lane]} vs ${value}`);
+  }
+}
 
 test("weighted tags allocate exactly one unit per game", () => {
   assert.throws(() => model([{ ...a, tags: [tag("genre:rpg", .4)] }]), /sum to 1/);
@@ -151,7 +160,7 @@ test("partial and missing tags retain independently sourced relation coverage wi
   assert.equal(direct.affinity, null);
   assert.equal(direct.tags.similarity, null);
   assert.equal(direct.relations.direct.from, "demo:b");
-  assert.deepEqual(direct.evidenceCoverageByLane, {
+  assertCoverageLanes(direct.evidenceCoverageByLane, {
     tags: 0, metadata: .13 * .35, direct: .08, twoHop: 0,
   });
   assert.ok(Math.abs(direct.evidenceCoverage - (.13 * .35 + .08)) < 1e-12);
@@ -171,7 +180,7 @@ test("partial and missing tags retain independently sourced relation coverage wi
   assert.equal(twoHop.reason, "missing-weighted-tags");
   assert.equal(twoHop.affinity, null);
   assert.equal(twoHop.relations.twoHop.strength, .2);
-  assert.deepEqual(twoHop.evidenceCoverageByLane, {
+  assertCoverageLanes(twoHop.evidenceCoverageByLane, {
     tags: 0, metadata: .13 * .35, direct: 0, twoHop: .03,
   });
   const noEdge = compareEvidenceGames(model([a, b, unknown]), a.id, c.id);
@@ -187,7 +196,7 @@ test("complete-tag pairs retain the existing score and expose independent covera
   assert.equal(unchanged.status, "rankable");
   assert.ok(Math.abs(unchanged.evidenceCoverage -
     (.76 + .13 * .35)) < 1e-12);
-  assert.deepEqual(sourced.evidenceCoverageByLane, {
+  assertCoverageLanes(sourced.evidenceCoverageByLane, {
     tags: .76, metadata: .13 * .35, direct: .08, twoHop: 0,
   });
   assert.ok(Math.abs(sourced.affinity - unchanged.affinity - .08 * .8) < 1e-12);
