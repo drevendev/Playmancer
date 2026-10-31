@@ -1,4 +1,4 @@
-// Frozen, offline release-gate audit for the eight selected-fact profiles.
+// Frozen, offline release-gate audit for eight- and twelve-game selected-fact profiles.
 // This measures abstention/eligibility, not recommendation quality.
 import { createHash } from 'node:crypto';
 import { validateCatalogSnapshot } from './catalog.js';
@@ -11,6 +11,8 @@ import {
 
 export const REVIEWED_TAG_READINESS_PROTOCOL = 'p76-reviewed-eight-readiness-1';
 export const REVIEWED_EIGHT_TAGS_BLOB = '4c480de60b6d09f465cdd29f942ecdf17a6684c9';
+export const REVIEWED_TWELVE_TAG_READINESS_PROTOCOL = 'p76-reviewed-twelve-readiness-1';
+export const REVIEWED_TWELVE_TAGS_BLOB = 'cd79f729d960f5c495c2d1e16448ff8058f582dd';
 
 function assert(condition, message) {
   if (!condition) throw new TypeError(message);
@@ -59,16 +61,22 @@ function hardFilterPartition(games, basket) {
 
 // Catalog/plan/selected-fact JSON are exact checked-in UTF-8 strings.
 // No fetching, implicit tags, unverified complete vectors, or fallback ranking.
-export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsText) {
+export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsText, cohort = 'eight') {
+  const fixture = cohort === 'eight'
+    ? { count: 8, blob: REVIEWED_EIGHT_TAGS_BLOB, protocol: REVIEWED_TAG_READINESS_PROTOCOL }
+    : cohort === 'twelve'
+      ? { count: 12, blob: REVIEWED_TWELVE_TAGS_BLOB, protocol: REVIEWED_TWELVE_TAG_READINESS_PROTOCOL }
+      : null;
+  assert(fixture !== null, 'unsupported reviewed-tag audit cohort');
   assert(typeof catalogText === 'string' && blobSha(catalogText) === FROZEN_CATALOG_BLOB,
     'catalog blob changed: use a new versioned audit');
-  assert(typeof reviewedTagsText === 'string' && blobSha(reviewedTagsText) === REVIEWED_EIGHT_TAGS_BLOB,
+  assert(typeof reviewedTagsText === 'string' && blobSha(reviewedTagsText) === fixture.blob,
     'reviewed tag blob changed: use a new versioned audit');
 
   const reviewed = JSON.parse(reviewedTagsText);
   assert(reviewed.schemaVersion === 1 && reviewed.catalogGitBlobSha1 === FROZEN_CATALOG_BLOB &&
     reviewed.catalogSnapshotId === frozenPlan.catalogSnapshotId &&
-    reviewed.games?.length === 8 && reviewed.receipts?.length === 8,
+    reviewed.games?.length === fixture.count && reviewed.receipts?.length === fixture.count,
   'reviewed tag fixture/catalog mismatch');
 
   // The existing paired evaluator also validates the exact immutable basket-plan
@@ -81,8 +89,8 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
   const snapshot = validateCatalogSnapshot(JSON.parse(catalogText), { requirePublishable: true });
   const sourceProfiles = projectFrozenGenres(snapshot);
   const reviewedById = new Map(reviewed.games.map(game => [game.id, game]));
-  assert(reviewedById.size === 8 && reviewed.receipts.length === 8 &&
-    new Set(reviewed.receipts.map(receipt => receipt.id)).size === 8,
+  assert(reviewedById.size === fixture.count && reviewed.receipts.length === fixture.count &&
+    new Set(reviewed.receipts.map(receipt => receipt.id)).size === fixture.count,
   'duplicate reviewed game or receipt');
   assert(reviewed.games.every(game => game.tagCoverage === 'partial' &&
     reviewed.receipts.some(receipt => receipt.id === game.id) &&
@@ -152,11 +160,11 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
   });
 
   return {
-    schema: REVIEWED_TAG_READINESS_PROTOCOL,
+    schema: fixture.protocol,
     catalog_snapshot_id: snapshot.snapshotId,
     catalog_git_blob_sha1: FROZEN_CATALOG_BLOB,
     basket_plan_git_blob_sha1: FROZEN_PLAN_BLOB,
-    reviewed_tags_git_blob_sha1: REVIEWED_EIGHT_TAGS_BLOB,
+    reviewed_tags_git_blob_sha1: fixture.blob,
     taxonomy_version: taxonomy.version,
     experimental_method: EVIDENCE_METHOD_VERSION,
     legacy_method: legacy.old_method,
