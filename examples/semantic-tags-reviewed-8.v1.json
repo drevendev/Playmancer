@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "catalogSnapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "catalogGitBlobSha1": "0570fd610b14fb336c0de65e6cc3062892abe301",
+  "editorialMethod": "manual-non-genre-observations-equal-mass-2",
+  "reviewedOn": "2026-10-31",
+  "observationCoverage": "partial-selected-facts-only; unmentioned attributes are unknown, not verified absent",
+  "weightSemantics": "equal editorial normalization over four selected facts per observed game; NOT source-importance or confidence; incomplete observations abstain",
+  "rightsScope": "independently authored short factual labels and source URLs only; no publisher text, assets, store tags or bulk metadata",
+  "taxonomy": {
+    "version": "tag-taxonomy-1",
+    "tags": [
+      {
+        "id": "activity:befriending",
+        "label": "Befriending townsfolk",
+        "aliases": []
+      },
+      {
+        "id": "activity:caring-for-spirits",
+        "label": "Caring for spirit passengers",
+        "aliases": []
+      },
+      {
+        "id": "activity:character-stories",
+        "label": "Character-driven stories",
+        "aliases": []
+      },
+      {
+        "id": "activity:exploration",
+        "label": "Exploring game locations",
+        "aliases": []
+      },
+      {
+        "id": "character:playable-heroes",
+        "label": "Multiple playable heroes",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:action-combat",
+        "label": "Action combat",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:boat-building",
+        "label": "Boat building",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:build-variation",
+        "label": "Varying character builds",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:building",
+        "label": "Constructing structures",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:combat",
+        "label": "Fighting enemies",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:crafting",
+        "label": "Crafting",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:dashing",
+        "label": "Directional dash movement",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:deck-building",
+        "label": "Deck building",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:digging",
+        "label": "Digging into terrain",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:farming",
+        "label": "Farming",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:fishing",
+        "label": "Fishing",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:platforming",
+        "label": "Platform jumping and traversal",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:relic-collection",
+        "label": "Relic collection",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:wall-jumping",
+        "label": "Wall-jump movement",
+        "aliases": []
+      },
+      {
+        "id": "setting:mountain-climb",
+        "label": "Climbing a mountain",
+        "aliases": []
+      },
+      {
+        "id": "setting:underground-kingdom",
+        "label": "Underground ruined kingdom",
+        "aliases": []
+      },
+      {
+        "id": "structure:repeatable-runs",
+        "label": "Repeatable roguelike runs",
+        "aliases": []
+      },
+      {
+        "id": "visual:hand-drawn-2d",
+        "label": "Hand-drawn 2D presentation",
+        "aliases": []
+      }
+    ]
+  },
+  "receipts": [
+    {
+      "id": "wikidata:q23013817",
+      "publisher": "ConcernedApe",
+      "url": "https://www.stardewvalley.net/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q28451532",
+      "publisher": "EXOK Games / Celeste creators",
+      "url": "https://www.celestegame.com/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q29300592",
+      "publisher": "Team Cherry",
+      "url": "https://www.teamcherry.com.au/games",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q30639210",
+      "publisher": "Motion Twin",
+      "url": "https://deadcells.com/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q332697",
+      "publisher": "Re-Logic",
+      "url": "https://www.terraria.org/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q48078440",
+      "publisher": "Mega Crit",
+      "url": "https://www.megacrit.com/press-kits/slay-the-spire/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q59756366",
+      "publisher": "Supergiant Games",
+      "url": "https://www.supergiantgames.com/blog/hades-faq/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q80533334",
+      "publisher": "Thunder Lotus",
+      "url": "https://thunderlotusgames.com/games/spiritfarer/",
+      "reviewedOn": "2026-10-31"
+    }
+  ],
+  "games": [
+    {
+      "id": "wikidata:q23013817",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:befriending",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:crafting",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:farming",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:fishing",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q28451532",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "mechanic:dashing",
+          "weight": 0.25,
+          "source": "https://www.celestegame.com/changelog.html"
+        },
+        {
+          "id": "mechanic:platforming",
+          "weight": 0.25,
+          "source": "https://www.celestegame.com/"
+        },
+        {
+          "id": "mechanic:wall-jumping",
+          "weight": 0.25,
+          "source": "https://www.celestegame.com/changelog.html"
+        },
+        {
+          "id": "setting:mountain-climb",
+          "weight": 0.25,
+          "source": "https://www.celestegame.com/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q29300592",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:exploration",
+          "weight": 0.25,
+          "source": "https://www.teamcherry.com.au/games"
+        },
+        {
+          "id": "mechanic:action-combat",
+          "weight": 0.25,
+          "source": "https://www.teamcherry.com.au/games"
+        },
+        {
+          "id": "setting:underground-kingdom",
+          "weight": 0.25,
+          "source": "https://www.teamcherry.com.au/games"
+        },
+        {
+          "id": "visual:hand-drawn-2d",
+          "weight": 0.25,
+          "source": "https://www.teamcherry.com.au/games"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q30639210",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:exploration",
+          "weight": 0.25,
+          "source": "https://deadcells.com/"
+        },
+        {
+          "id": "mechanic:action-combat",
+          "weight": 0.25,
+          "source": "https://deadcells.com/"
+        },
+        {
+          "id": "mechanic:platforming",
+          "weight": 0.25,
+          "source": "https://deadcells.com/"
+        },
+        {
+          "id": "structure:repeatable-runs",
+          "weight": 0.25,
+          "source": "https://deadcells.com/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q332697",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:exploration",
+          "weight": 0.25,
+          "source": "https://www.terraria.org/"
+        },
+        {
+          "id": "mechanic:building",
+          "weight": 0.25,
+          "source": "https://www.terraria.org/"
+        },
+        {
+          "id": "mechanic:combat",
+          "weight": 0.25,
+          "source": "https://www.terraria.org/"
+        },
+        {
+          "id": "mechanic:digging",
+          "weight": 0.25,
+          "source": "https://www.terraria.org/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q48078440",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "character:playable-heroes",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "mechanic:deck-building",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "mechanic:relic-collection",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "structure:repeatable-runs",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q59756366",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:character-stories",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "mechanic:action-combat",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "mechanic:build-variation",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "structure:repeatable-runs",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q80533334",
+      "tagCoverage": "partial",
+      "tags": [
+        {
+          "id": "activity:caring-for-spirits",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:boat-building",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:farming",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:fishing",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        }
+      ]
+    }
+  ],
+  "supersedes": "semantic-tags-reviewed-4.v1.json"
+}
