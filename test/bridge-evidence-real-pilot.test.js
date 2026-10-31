@@ -62,7 +62,8 @@ test('every frozen task preserves endpoint order, constraints, exclusions and ro
       }
     }
     const n = basket.eligibility.pass;
-    assert.equal(Object.values(basket.pair_evidence).reduce((a, b) => a + b, 0), n * (n - 1) / 2);
+    assert.equal(Object.values(basket.pair_evidence).reduce((a, b) => a + b, 0),
+      n < 2 ? 0 : n * (n - 1) / 2);
   }
 });
 
