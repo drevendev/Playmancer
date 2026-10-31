@@ -27,7 +27,14 @@ test('new protocol reuses exact frozen catalog, basket plan and 50 real endpoint
   assert.deepEqual(result.summary.baseline_statuses, {
     route: 5, 'no-route': 44, 'unavailable-endpoint': 1,
   });
-  assert.equal(Object.values(result.summary.experimental_statuses).reduce((a, b) => a + b, 0), 50);
+  assert.deepEqual(result.summary.experimental_statuses, {
+    route: 4, 'no-route': 45, 'unavailable-endpoint': 1,
+  });
+  assert.deepEqual(result.summary.route_gains, []);
+  assert.deepEqual(result.summary.route_losses, [{
+    basket_id: 'coherent-platformer',
+    from: 'wikidata:q80533334', to: 'dreven:shadow-runner',
+  }]);
 });
 
 test('every frozen task preserves endpoint order, constraints, exclusions and route receipts', () => {
