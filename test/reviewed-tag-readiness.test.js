@@ -31,6 +31,10 @@ test('frozen eight-game selected-fact audit proves abstention across identical 3
   assert.ok(report.rows.every(row => row.reviewed_top.length === 0));
   assert.deepEqual(report.rows.filter(row => row.basket_id === 'required-coop-unknown')
     .map(row => row.mode), report.modes);
+  assert.ok(report.rows.filter(row => row.basket_id === 'required-coop-unknown')
+    .every(row => row.hard_constraint_unknown_count === 28 && row.eligible_count === 0));
+  assert.ok(report.rows.every(row => row.eligible_count + row.excluded_count +
+    row.hard_constraint_unknown_count === report.game_count));
 });
 
 test('audit is stable and rejects any unversioned change to source, plan or selected facts', () => {
