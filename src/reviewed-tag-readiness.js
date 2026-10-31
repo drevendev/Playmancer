@@ -24,6 +24,39 @@ function sortedIds(entries) {
     .sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
 }
 
+// Independently reconstruct the hard-filter partition from the frozen source.
+// Ranking uncertainty is broader: missing similarity must never be confused
+// with an unknown required platform/co-op property.
+function hardFilterPartition(games, basket) {
+  const seeds = new Set(basket.seeds.map(seed => seed.id));
+  const explicit = new Set(basket.excludedCandidateIds);
+  const excluded = [], hardUnknown = [];
+  for (const game of games) {
+    if (seeds.has(game.id) || explicit.has(game.id)) {
+      excluded.push(game.id);
+      continue;
+    }
+    let unknown = false;
+    const requiredPlatform = basket.constraints.platform;
+    if (requiredPlatform && requiredPlatform !== 'any') {
+      if (game.platforms === null) unknown = true;
+      else if (!game.platforms.includes(requiredPlatform)) {
+        excluded.push(game.id);
+        continue;
+      }
+    }
+    if (basket.constraints.coopOnly) {
+      if (game.coop === false) {
+        excluded.push(game.id);
+        continue;
+      }
+      if (game.coop === null) unknown = true;
+    }
+    if (unknown) hardUnknown.push(game.id);
+  }
+  return { excluded: excluded.sort(), hardUnknown: hardUnknown.sort() };
+}
+
 // Catalog/plan/selected-fact JSON are exact checked-in UTF-8 strings.
 // No fetching, implicit tags, unverified complete vectors, or fallback ranking.
 export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsText) {
@@ -98,16 +131,23 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
       excluded: basket.excludedCandidateIds,
     });
     const excluded = sortedIds(result.excluded);
-    assert(JSON.stringify(excluded) === JSON.stringify(old.excluded_old),
-      'hard-constraint/seed/exclusion parity changed: ' + old.basket_id + '/' + old.mode);
+    const hardUnknown = sortedIds(result.uncertain.filter(item =>
+      item.reason === 'hard-constraint-unknown'));
+    const expected = hardFilterPartition(snapshot.games, basket);
+    assert(JSON.stringify(excluded) === JSON.stringify(expected.excluded) &&
+      JSON.stringify(old.excluded_old) === JSON.stringify(expected.excluded),
+    'hard-filter/seed/exclusion parity changed: ' + old.basket_id + '/' + old.mode);
+    assert(JSON.stringify(hardUnknown) === JSON.stringify(expected.hardUnknown) &&
+      expected.hardUnknown.every(id => old.unknown_old.includes(id)),
+    'unknown required platform/co-op parity changed: ' + old.basket_id + '/' + old.mode);
     return {
       basket_id: old.basket_id, mode: old.mode,
       legacy_top: old.old_top, reviewed_top: result.ranked.map(item => item.id),
       legacy_unknown_count: old.unknown_old.length,
       reviewed_unknown_count: result.uncertain.length,
+      hard_constraint_unknown_count: hardUnknown.length,
       excluded_count: excluded.length,
-      eligible_count: snapshot.games.length - excluded.length - result.uncertain.filter(item =>
-        item.reason === 'hard-constraint-unknown').length,
+      eligible_count: snapshot.games.length - excluded.length - hardUnknown.length,
     };
   });
 
