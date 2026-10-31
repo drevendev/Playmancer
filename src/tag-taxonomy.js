@@ -80,7 +80,7 @@ export function projectWeightedTagProfiles(taxonomy, games) {
   }
   const seenGames = new Set();
   const result = games.map(raw => {
-    const game = record(raw, 'game', ['id', 'tags', 'metadata', 'coop', 'coopSource']);
+    const game = record(raw, 'game', ['id', 'tags', 'tagCoverage', 'metadata', 'coop', 'coopSource']);
     const id = string(game.id, 'game ID');
     if (!GAME_ID.test(id) || id.length > 96) throw new TypeError(`invalid game ID: ${id}`);
     if (seenGames.has(id)) throw new TypeError(`duplicate game: ${id}`);
@@ -112,7 +112,13 @@ export function projectWeightedTagProfiles(taxonomy, games) {
     }
     // The evidence model validates metadata, co-op receipts and hard constraints.
     // Do not mutate, infer or strip these fields while normalizing tags.
+    // An incomplete editorial observation is never a verified complete tag vector.
+    if (Object.hasOwn(game, 'tagCoverage') &&
+        (tags === null || !['complete', 'partial'].includes(game.tagCoverage))) {
+      throw new TypeError(`${id}.tagCoverage requires observed tags and complete or partial`);
+    }
     const projected = { id, tags };
+    if (Object.hasOwn(game, 'tagCoverage')) projected.tagCoverage = game.tagCoverage;
     for (const key of ['metadata', 'coop', 'coopSource']) {
       if (Object.hasOwn(game, key)) projected[key] = structuredClone(game[key]);
     }

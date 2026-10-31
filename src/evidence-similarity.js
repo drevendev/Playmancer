@@ -85,11 +85,18 @@ function normalizeProfile(input) {
     const total = tags.reduce((sum, tag) => sum + tag.weight, 0);
     if (Math.abs(total - 1) > 1e-9) throw new RangeError(`tag weights for ${id} must sum to 1; got ${total}`);
   }
+  // Legacy complete fixtures retain their existing scoring behavior.
+  // Reviewed, selected-fact snapshots must explicitly opt into partial coverage.
+  if (game.tagCoverage !== undefined && !["complete", "partial"].includes(game.tagCoverage))
+    throw new TypeError(`${id}.tagCoverage must be complete or partial`);
+  if (tags === null && game.tagCoverage !== undefined)
+    throw new TypeError(`${id}.tagCoverage requires observed tags`);
+  const tagCoverage = tags === null ? "unknown" : (game.tagCoverage ?? "complete");
   const metadata = normalizeMetadata(game.metadata, id);
   const coop = game.coop === undefined ? null : game.coop;
   if (coop !== null && typeof coop !== "boolean") throw new TypeError(`${id}.coop must be boolean or null`);
   if (coop !== null) text(game.coopSource, `${id}.coopSource`);
-  return { id, tags, metadata, coop };
+  return { id, tags, tagCoverage, metadata, coop };
 }
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
 
@@ -134,7 +141,8 @@ function unmatchedTagMass(tags, otherById) {
 }
 function tagEvidence(a, b) {
   if (a.tags === null || b.tags === null) {
-    return { similarity: null, shared: [], leftOnly: null, rightOnly: null };
+    return { coverage: "unknown", similarity: null, observedOverlap: null,
+      shared: [], leftOnly: null, rightOnly: null };
   }
   const left = new Map(a.tags.map(tag => [tag.id, tag]));
   const right = new Map(b.tags.map(tag => [tag.id, tag]));
@@ -142,9 +150,16 @@ function tagEvidence(a, b) {
     const other = right.get(tag.id);
     return { id: tag.id, mass: Math.min(tag.weight, other.weight), sources: [tag.source, other.source] };
   });
+  const observedOverlap = shared.reduce((sum, item) => sum + item.mass, 0);
+  // Selected facts are not exhaustive observations. Positive shared facts can be
+  // reported, but neither missing facts nor remaining weight prove a mismatch.
+  // Even a positive selected-fact overlap is not a calibrated full-game affinity.
+  if (a.tagCoverage === "partial" || b.tagCoverage === "partial") {
+    return { coverage: "partial", similarity: null, observedOverlap,
+      shared, leftOnly: null, rightOnly: null };
+  }
   return {
-    similarity: shared.reduce((sum, item) => sum + item.mass, 0),
-    shared,
+    coverage: "complete", similarity: observedOverlap, observedOverlap, shared,
     leftOnly: unmatchedTagMass(a.tags, right),
     rightOnly: unmatchedTagMass(b.tags, left),
   };
@@ -198,7 +213,8 @@ export function compareEvidenceGames(model, leftId, rightId) {
   const metadata = secondaryEvidence(a, b);
   const relations = relationEvidence(model, a, b);
   if (tags.similarity === null) {
-    return { status: "uncertain", affinity: null, reason: "missing-weighted-tags", tags, metadata, relations,
+    return { status: "uncertain", affinity: null, reason: tags.coverage === "partial" ? "partial-weighted-tags" : "missing-weighted-tags",
+      tags, metadata, relations,
       evidenceCoverage: EVIDENCE_LANES.metadata * metadata.coverage };
   }
   const direct = relations.direct?.strength ?? 0;
