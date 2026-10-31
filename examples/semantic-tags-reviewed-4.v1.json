@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "catalogSnapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "catalogGitBlobSha1": "0570fd610b14fb336c0de65e6cc3062892abe301",
+  "editorialMethod": "manual-non-genre-observations-equal-mass-1",
+  "reviewedOn": "2026-10-31",
+  "observationCoverage": "partial-selected-facts-only; unmentioned attributes are unknown, not verified absent",
+  "weightSemantics": "equal editorial normalization over four selected facts per observed game; NOT source-importance or confidence",
+  "rightsScope": "independently authored short factual labels and source URLs only; no publisher text, assets, store tags or bulk metadata",
+  "taxonomy": {
+    "version": "tag-taxonomy-1",
+    "tags": [
+      {
+        "id": "activity:befriending",
+        "label": "Befriending townsfolk",
+        "aliases": []
+      },
+      {
+        "id": "activity:caring-for-spirits",
+        "label": "Caring for spirit passengers",
+        "aliases": []
+      },
+      {
+        "id": "activity:character-stories",
+        "label": "Character-driven stories",
+        "aliases": []
+      },
+      {
+        "id": "character:playable-heroes",
+        "label": "Multiple playable heroes",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:action-combat",
+        "label": "Action combat",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:boat-building",
+        "label": "Boat building",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:build-variation",
+        "label": "Varying character builds",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:crafting",
+        "label": "Crafting",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:deck-building",
+        "label": "Deck building",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:farming",
+        "label": "Farming",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:fishing",
+        "label": "Fishing",
+        "aliases": []
+      },
+      {
+        "id": "mechanic:relic-collection",
+        "label": "Relic collection",
+        "aliases": []
+      },
+      {
+        "id": "structure:repeatable-runs",
+        "label": "Repeatable roguelike runs",
+        "aliases": []
+      }
+    ]
+  },
+  "receipts": [
+    {
+      "id": "wikidata:q23013817",
+      "publisher": "ConcernedApe",
+      "url": "https://www.stardewvalley.net/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q80533334",
+      "publisher": "Thunder Lotus",
+      "url": "https://thunderlotusgames.com/games/spiritfarer/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q59756366",
+      "publisher": "Supergiant Games",
+      "url": "https://www.supergiantgames.com/blog/hades-faq/",
+      "reviewedOn": "2026-10-31"
+    },
+    {
+      "id": "wikidata:q48078440",
+      "publisher": "Mega Crit",
+      "url": "https://www.megacrit.com/press-kits/slay-the-spire/",
+      "reviewedOn": "2026-10-31"
+    }
+  ],
+  "games": [
+    {
+      "id": "wikidata:q23013817",
+      "tags": [
+        {
+          "id": "activity:befriending",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:crafting",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:farming",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        },
+        {
+          "id": "mechanic:fishing",
+          "weight": 0.25,
+          "source": "https://www.stardewvalley.net/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q48078440",
+      "tags": [
+        {
+          "id": "character:playable-heroes",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "mechanic:deck-building",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "mechanic:relic-collection",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        },
+        {
+          "id": "structure:repeatable-runs",
+          "weight": 0.25,
+          "source": "https://www.megacrit.com/press-kits/slay-the-spire/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q59756366",
+      "tags": [
+        {
+          "id": "activity:character-stories",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "mechanic:action-combat",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "mechanic:build-variation",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        },
+        {
+          "id": "structure:repeatable-runs",
+          "weight": 0.25,
+          "source": "https://www.supergiantgames.com/blog/hades-faq/"
+        }
+      ]
+    },
+    {
+      "id": "wikidata:q80533334",
+      "tags": [
+        {
+          "id": "activity:caring-for-spirits",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:boat-building",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:farming",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        },
+        {
+          "id": "mechanic:fishing",
+          "weight": 0.25,
+          "source": "https://thunderlotusgames.com/games/spiritfarer/"
+        }
+      ]
+    }
+  ]
+}
