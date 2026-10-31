@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { auditReviewedTagReadiness, REVIEWED_EIGHT_TAGS_BLOB } from '../src/reviewed-tag-readiness.js';
 
 const catalog = readFileSync(new URL('../examples/catalog.multistore-30.real.json', import.meta.url), 'utf8');
@@ -47,4 +49,17 @@ test('audit is stable and rejects any unversioned change to source, plan or sele
     /reviewed tag blob changed/);
   assert.throws(() => auditReviewedTagReadiness(catalog, { ...plan, topK: 4 }, reviewed),
     /basket plan changed/);
+});
+
+test('standalone audit CLI produces the same exact-blob report as the library', () => {
+  const cliPath = fileURLToPath(new URL('../scripts/audit-reviewed-tags.mjs', import.meta.url));
+  // Run the actual public CLI entry point, not only its imported audit function.
+  const stdout = execFileSync(process.execPath, [cliPath], {
+    encoding: 'utf8', maxBuffer: 8 * 1024 * 1024,
+  });
+  const fromCli = JSON.parse(stdout);
+  const fromLibrary = auditReviewedTagReadiness(catalog, plan, reviewed);
+  assert.deepEqual(fromCli, fromLibrary);
+  assert.equal(fromCli.scenario_count, 150);
+  assert.equal(fromCli.reviewed_nonempty_scenarios, 0);
 });
