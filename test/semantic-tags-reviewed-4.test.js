@@ -67,6 +67,7 @@ test('the real-fact pilot uses the v1 taxonomy and never fills 26 unreviewed gam
   assert.equal(reviewed.length, 4);
   assert.equal(projected.games.filter(game => game.tags === null).length, 26);
   for (const game of reviewed) {
+    assert.equal(game.tagCoverage, 'partial');
     assert.ok(game.tags.every(tag => tag.source.startsWith('https://')));
     assert.equal(game.tags.reduce((sum, tag) => sum + tag.weight, 0), 1);
   }
@@ -77,22 +78,40 @@ test('the real-fact pilot uses the v1 taxonomy and never fills 26 unreviewed gam
     projectWeightedTagProfiles(taxonomy, pilot.games).games);
 });
 
-test('non-genre overlap is measurable, while unreviewed pairs abstain', () => {
+test('partial observations report shared facts but abstain from full-game affinity and gap claims', () => {
   const { evidence } = model();
   const farmAndCare = compareEvidenceGames(evidence, stardew, spiritfarer);
   const runs = compareEvidenceGames(evidence, hades, spire);
-  assert.equal(farmAndCare.status, 'rankable');
-  assert.equal(farmAndCare.tags.similarity, 0.5);
+  assert.equal(farmAndCare.status, 'uncertain');
+  assert.equal(farmAndCare.reason, 'partial-weighted-tags');
+  assert.equal(farmAndCare.affinity, null);
+  assert.equal(farmAndCare.tags.coverage, 'partial');
+  assert.equal(farmAndCare.tags.similarity, null);
+  assert.equal(farmAndCare.tags.observedOverlap, 0.5);
+  assert.equal(farmAndCare.tags.leftOnly, null);
+  assert.equal(farmAndCare.tags.rightOnly, null);
   assert.deepEqual(farmAndCare.tags.shared.map(tag => tag.id),
     ['mechanic:farming', 'mechanic:fishing']);
-  assert.equal(runs.tags.similarity, 0.25);
+  assert.equal(runs.tags.similarity, null);
+  assert.equal(runs.tags.observedOverlap, 0.25);
+  assert.equal(runs.status, 'uncertain');
   assert.deepEqual(runs.tags.shared.map(tag => tag.id), ['structure:repeatable-runs']);
-  assert.equal(compareEvidenceGames(evidence, spiritfarer, stardew).tags.similarity, 0.5);
+  assert.equal(compareEvidenceGames(evidence, spiritfarer, stardew).tags.observedOverlap, 0.5);
+  const unshared = compareEvidenceGames(evidence, stardew, hades);
+  assert.equal(unshared.status, 'uncertain');
+  assert.equal(unshared.tags.observedOverlap, 0);
+  assert.equal(unshared.tags.similarity, null);
+  assert.equal(unshared.tags.leftOnly, null);
   const unknownId = catalog.games.find(game => !pilot.games.some(x => x.id === game.id)).id;
   const missing = compareEvidenceGames(evidence, stardew, unknownId);
   assert.equal(missing.status, 'uncertain');
   assert.equal(missing.affinity, null);
   assert.equal(missing.tags.leftOnly, null);
+  assert.equal(missing.tags.coverage, 'unknown');
+  assert.equal(missing.tags.observedOverlap, null);
+  assert.equal(rankEvidenceBasket(evidence, {
+    seeds: [{ id: stardew, weight: 1 }], limit: 10,
+  }).ranked.length, 0);
 });
 
 test('pilot-only evidence does not silently satisfy platform hard constraints', () => {
