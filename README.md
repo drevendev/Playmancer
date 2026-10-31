@@ -13,17 +13,23 @@ requests are needed.
 [30-game source receipts](docs/REAL_EXPANSION_30.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Verified public release (2026-10-30): 30 real games, with first-screen browsing.** The live Pages
-> revision is [`e500a2d57b608c6e96a91464a8f3aba5689d383f`](https://github.com/drevendev/Playmancer/commit/e500a2d57b608c6e96a91464a8f3aba5689d383f).
-> [Publish Pages #40991264586](https://github.com/drevendev/Playmancer/actions/runs/40991264586)
-> passed all three jobs: exact-master build, deployment, public HTTPS revision
-> check, same-origin Bridge worker and hosted desktop/mobile browsing and basket journeys.
-> [Verify #40991264496](https://github.com/drevendev/Playmancer/actions/runs/40991264496)
+> **Public pilot:** 30 real games, with first-screen browsing. The
+> [Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+> tests the served `master` revision, same-origin Bridge worker, and hosted desktop/mobile
+> player journeys after each successful deployment. **This README is not a live
+> deployment-status pointer**: check the latest workflow run for the currently served SHA.
+>
+> **Last independently inspected checkpoint (2026-10-31):**
+> [`318229a00b17556336f4437bc989fd7cb0df55b0`](https://github.com/drevendev/Playmancer/commit/318229a00b17556336f4437bc989fd7cb0df55b0).
+> [Publish Pages #41209458813](https://github.com/drevendev/Playmancer/actions/runs/41209458813)
+> passed all three jobs, including public HTTPS revision/Bridge-worker verification and
+> **453/453 hosted browser assertions**. [Desktop/mobile browser screenshots and report](https://github.com/drevendev/Playmancer/actions/runs/41209458813/artifacts/13045439559)
+> are retained with that exact SHA.
+> [Verify #41209458850](https://github.com/drevendev/Playmancer/actions/runs/41209458850)
 > passed all four Node/build, Chromium, Firefox/WebKit and Bridge jobs.
-> **Status for this exact SHA: LIVE_VERIFIED.** Later commits need their own
-> exact-revision checks; an updated README or build alone is not a live deployment.
-> Native browser zoom and spoken screen-reader acceptance remain unverified
-> ([#14](https://github.com/drevendev/Playmancer/issues/14)).
+> **That exact checkpoint is LIVE_VERIFIED; newer commits need their own verification.**
+> Automated browser checks and screenshots do not certify spoken screen-reader behavior
+> or actual browser zoom ([#14](https://github.com/drevendev/Playmancer/issues/14)).
 
 ### Current real-catalog pilot
 
@@ -249,12 +255,13 @@ Pages is disabled. Pages is currently enabled, but the workflow does not change
 repository administration or weaken protection. On successful deployment, CI
 checks the public index against the exact `playmancer-revision` master SHA
 and tests the same-origin Bridge worker and hosted player flows.
-The **current 30-game release** passed
-[Publish Pages #40991264586](https://github.com/drevendev/Playmancer/actions/runs/40991264586)
-on 2026-10-30 at `e500a2d57b608c6e96a91464a8f3aba5689d383f`.
-The earlier 17-game release passed
-[its own exact-revision verification](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
-on 2026-10-27; neither run certifies future SHAs.
+The 30-game public pilot passed a dated [exact-revision Pages and hosted-player
+checkpoint](https://github.com/drevendev/Playmancer/actions/runs/41209458813)
+on 2026-10-31 at `318229a00b17556336f4437bc989fd7cb0df55b0`.
+The earlier 17-game release passed [its own exact-revision
+verification](https://github.com/drevendev/Playmancer/actions/runs/40540951449)
+on 2026-10-27. These are historical evidence checkpoints, **not automatic proof
+that the current live URL serves either SHA**. Always check the newest Pages run.
 Automated root-font reflow checks are **not** real browser-zoom or audible
 screen-reader acceptance; those remain tracked by
 [issue #14](https://github.com/drevendev/Playmancer/issues/14).
