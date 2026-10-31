@@ -206,26 +206,39 @@ function relationEvidence(model, a, b) {
   }
   return { direct: null, twoHop: strongest };
 }
+// Presence of an independently sourced relation is known even when tag
+// observations are partial. Coverage measures observed lanes, not fit,
+// confidence, or proof that an absent edge/attribute is a negative fact.
+function observedLaneCoverage(tags, metadata, relations) {
+  const lanes = {
+    tags: tags.coverage === "complete" ? EVIDENCE_LANES.tags : 0,
+    metadata: EVIDENCE_LANES.metadata * metadata.coverage,
+    direct: relations.direct ? EVIDENCE_LANES.direct : 0,
+    twoHop: relations.twoHop ? EVIDENCE_LANES.twoHop : 0,
+  };
+  return { lanes, total: Object.values(lanes).reduce((sum, value) => sum + value, 0) };
+}
+
 export function compareEvidenceGames(model, leftId, rightId) {
   const a = model.profiles.get(leftId), b = model.profiles.get(rightId);
   if (!a || !b) throw new TypeError("comparison references a missing game");
   const tags = tagEvidence(a, b);
   const metadata = secondaryEvidence(a, b);
   const relations = relationEvidence(model, a, b);
+  const observedCoverage = observedLaneCoverage(tags, metadata, relations);
   if (tags.similarity === null) {
     return { status: "uncertain", affinity: null, reason: tags.coverage === "partial" ? "partial-weighted-tags" : "missing-weighted-tags",
       tags, metadata, relations,
-      evidenceCoverage: EVIDENCE_LANES.metadata * metadata.coverage };
+      evidenceCoverage: observedCoverage.total, evidenceCoverageByLane: observedCoverage.lanes };
   }
   const direct = relations.direct?.strength ?? 0;
   const twoHop = relations.twoHop?.strength ?? 0;
   const affinity = EVIDENCE_LANES.tags * tags.similarity +
     EVIDENCE_LANES.metadata * (metadata.similarity ?? 0) +
     EVIDENCE_LANES.direct * direct + EVIDENCE_LANES.twoHop * twoHop;
-  const evidenceCoverage = EVIDENCE_LANES.tags + EVIDENCE_LANES.metadata * metadata.coverage +
-    (relations.direct ? EVIDENCE_LANES.direct : 0) + (relations.twoHop ? EVIDENCE_LANES.twoHop : 0);
   return { status: "rankable", affinity: Math.min(1, affinity), reason: null,
-    tags, metadata, relations, evidenceCoverage };
+    tags, metadata, relations, evidenceCoverage: observedCoverage.total,
+    evidenceCoverageByLane: observedCoverage.lanes };
 }
 function eligible(game, { platform, coopOnly, excluded }) {
   if (excluded.has(game.id)) return "fail";

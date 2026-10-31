@@ -14,6 +14,15 @@ const d = { id: "demo:d", tags: [tag("genre:puzzle", 1)], metadata: {}, coop: nu
 const model = (games = [a, b, c, d], relations = []) => prepareEvidenceModel({ games, relations });
 const relation = (from, to, strength = 1, type = "similar") =>
   ({ from, to, strength, type, source: "https://example.org/receipt" });
+// Evidence lane arithmetic is floating point (0.27 + 0.08 != 0.35 exactly).
+// Verify the lane names exactly and each value within a tight numeric tolerance.
+function assertCoverageLanes(actual, expected) {
+  assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort());
+  for (const [lane, value] of Object.entries(expected)) {
+    assert.ok(Math.abs(actual[lane] - value) < 1e-12,
+      `unexpected coverage for ${lane}: ${actual[lane]} vs ${value}`);
+  }
+}
 
 test("weighted tags allocate exactly one unit per game", () => {
   assert.throws(() => model([{ ...a, tags: [tag("genre:rpg", .4)] }]), /sum to 1/);
@@ -139,4 +148,58 @@ test("input order and graph edge order do not change scores or ranks", () => {
   }
   assert.deepEqual(rankEvidenceBasket(first, { seeds: [{ id: "demo:a" }] }).ranked.map(x => x.id),
     rankEvidenceBasket(second, { seeds: [{ id: "demo:a" }] }).ranked.map(x => x.id));
+});
+
+test("partial and missing tags retain independently sourced relation coverage without ranking", () => {
+  const partial = { ...b, tagCoverage: "partial" };
+  const directModel = model([a, partial, c],
+    [relation("demo:b", "demo:a", .8, "inspired-by")]);
+  const direct = compareEvidenceGames(directModel, a.id, b.id);
+  assert.equal(direct.status, "uncertain");
+  assert.equal(direct.reason, "partial-weighted-tags");
+  assert.equal(direct.affinity, null);
+  assert.equal(direct.tags.similarity, null);
+  assert.equal(direct.relations.direct.from, "demo:b");
+  assertCoverageLanes(direct.evidenceCoverageByLane, {
+    tags: 0, metadata: .13 * .35, direct: .08, twoHop: 0,
+  });
+  assert.ok(Math.abs(direct.evidenceCoverage - (.13 * .35 + .08)) < 1e-12);
+  const ranked = rankEvidenceBasket(directModel, {
+    seeds: [{ id: a.id, weight: 1 }], mode: "intersection",
+  });
+  assert.ok(!ranked.ranked.some(item => item.id === b.id));
+  assert.ok(ranked.uncertain.some(item => item.id === b.id));
+
+  const unknown = { ...c, tags: null };
+  const twoHopModel = model([a, b, unknown], [
+    relation("demo:a", "demo:b", .8),
+    relation("demo:b", "demo:c", .5),
+  ]);
+  const twoHop = compareEvidenceGames(twoHopModel, a.id, c.id);
+  assert.equal(twoHop.status, "uncertain");
+  assert.equal(twoHop.reason, "missing-weighted-tags");
+  assert.equal(twoHop.affinity, null);
+  assert.equal(twoHop.relations.twoHop.strength, .2);
+  assertCoverageLanes(twoHop.evidenceCoverageByLane, {
+    tags: 0, metadata: .13 * .35, direct: 0, twoHop: .03,
+  });
+  const noEdge = compareEvidenceGames(model([a, b, unknown]), a.id, c.id);
+  assert.equal(noEdge.evidenceCoverageByLane.direct, 0);
+  assert.equal(noEdge.evidenceCoverageByLane.twoHop, 0);
+  assert.equal(noEdge.affinity, null);
+});
+
+test("complete-tag pairs retain the existing score and expose independent coverage lanes", () => {
+  const unchanged = compareEvidenceGames(model(), a.id, b.id);
+  const sourced = compareEvidenceGames(model(undefined,
+    [relation("demo:a", "demo:b", .8)]), a.id, b.id);
+  assert.equal(unchanged.status, "rankable");
+  assert.ok(Math.abs(unchanged.evidenceCoverage -
+    (.76 + .13 * .35)) < 1e-12);
+  assertCoverageLanes(sourced.evidenceCoverageByLane, {
+    tags: .76, metadata: .13 * .35, direct: .08, twoHop: 0,
+  });
+  assert.ok(Math.abs(sourced.affinity - unchanged.affinity - .08 * .8) < 1e-12);
+  assert.ok(Math.abs(sourced.evidenceCoverage -
+    Object.values(sourced.evidenceCoverageByLane).reduce((a, b) => a + b, 0)) < 1e-12);
 });
