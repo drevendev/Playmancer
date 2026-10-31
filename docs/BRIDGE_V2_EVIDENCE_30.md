@@ -38,6 +38,18 @@ tag/metadata explanations for each supported step. A no-route result may mean
 disconnection or a three-hop bound. The frozen plan deliberately contains no
 real-player relevance labels, so even a route gain cannot establish usefulness.
 
+## Frozen proxy result (2026-10-31)
+
+On the exact 30-game source, the currently published Bridge supports **5/50**
+declared endpoint tasks; the candidate uniform-genre-weight v2 graph supports
+**4/50**. The published method returns 44 no-routes and one unavailable
+endpoint; v2 returns **45 no-routes and one unavailable endpoint**. There
+are **zero gained routes and one lost route**, from the second favorite to
+Shadow Runner in the coherent-platformer basket. This is an observed
+*negative* connectivity result at the frozen numerical threshold, not a
+human-relevance measurement. Score scales differ, so no claim of generalized
+v2 inferiority follows. The test pins these counts against regressions.
+
 **Decision gate:** do not switch the public Bridge to v2 on this proxy alone.
 Acquire rights-cleared non-genre tags/curated relations, evaluate methods on the
 same eligible source-backed snapshot with independently defined task judgments,
