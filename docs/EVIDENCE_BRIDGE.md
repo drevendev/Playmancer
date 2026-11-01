@@ -115,7 +115,12 @@ cmp /tmp/official-3-a.json /tmp/official-3-b.json
 
 The source-enriched report compares the same 50 frozen endpoint tasks, hard
 platform/co-op filters, exclusions and two-hop cap, and records **every**
-supported and unsupported result. It includes independently checkable route
+supported and unsupported result. The fixed cohort yields **4 sourced route
+tasks**, **45 no-route tasks**, and **1 uncertain co-op endpoint**; the previous
+zero-receipt cohort yields 0 / 49 / 1. The four routes include two direct
+references and two Slay the Spire → Dead Cells → Hollow Knight traversals.
+This is graph-evidence availability on selected pairs, **not measured
+recommendation uplift**. It includes independently checkable route
 hops and source URLs; it never inserts tag-inferred graph edges. Any
 unsupported endpoint, missing co-op fact or excluded intermediary retains
 the honest `uncertain`, `excluded` or `no-route` state.
