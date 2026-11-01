@@ -102,7 +102,7 @@ test('mutated catalog, reordered endpoints and revised basket weights fail close
   reordered.baskets[0].seeds.reverse();
   assert.throws(() => compareFrozenCuratedBridge(raw, reordered), /Frozen basket plan changed/);
   const reweighted = structuredClone(plan);
-  reweighted.baskets[0].seeds[0].weight = 99;
+  reweighted.baskets[0].seeds[0].weight = 2;
   assert.throws(() => compareFrozenCuratedBridge(raw, reweighted), /Frozen basket plan changed/);
 });
 
