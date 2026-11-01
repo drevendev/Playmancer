@@ -60,11 +60,14 @@ The trial composite score is
 - `D` is a direct sourced `similar` relation's strength; `inspired-by`
   and `references` links contribute **zero to fit**, though their original
   direction and receipt are still exposed as graph evidence.
-- `G` is the strongest decayed two-hop sourced path **only when both links
-  are `similar`**; mixed reference/inspiration routes remain explorable but
-  contribute zero to fit. A recorded direct edge suppresses the transitive
-  contribution, even when that direct receipt is not a similarity claim.
-  Direct and two-hop fit contributions are mutually exclusive.
+- `G` is the strongest decayed two-hop sourced path **among paths where
+  both links are `similar`**; mixed reference/inspiration routes remain
+  explorable but contribute zero to fit. The graph explanation exposes the
+  strongest factual route in `relations.twoHop` and separately identifies
+  the scoring path in `relations.fitTwoHop` when they differ. A recorded
+  direct edge suppresses the transitive contribution, even when that direct
+  receipt is not a similarity claim. Direct and two-hop fit contributions
+  are mutually exclusive.
 
 **These coefficients are experimental, not tuned, and are not confidence
 percentages.** Report components, explicit source receipts, comparable metadata

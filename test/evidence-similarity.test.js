@@ -146,6 +146,27 @@ test("reverse traversal preserves both original authored direction/type claims",
     ["demo:b", "demo:a", "inspired-by"], ["demo:c", "demo:b", "references"]
   ]);
 });
+test("a stronger factual route cannot mask a weaker sourced similarity path", () => {
+  const baseline = compareEvidenceGames(model(), a.id, c.id);
+  const m = model(undefined, [
+    relation("demo:a", "demo:b", 1, "references"),
+    relation("demo:b", "demo:c", 1, "similar"),
+    relation("demo:a", "demo:d", .6, "similar"),
+    relation("demo:d", "demo:c", .6, "similar"),
+  ]);
+  const pair = compareEvidenceGames(m, a.id, c.id);
+  assert.equal(pair.relations.twoHop.via, "demo:b");
+  assert.deepEqual(pair.relations.twoHop.hops.map(h => h.type),
+    ["references", "similar"]);
+  assert.equal(pair.relations.fitTwoHop.via, "demo:d");
+  assert.deepEqual(pair.relations.fitTwoHop.hops.map(h => h.type),
+    ["similar", "similar"]);
+  assert.ok(Math.abs(pair.affinity - baseline.affinity - .03 * .18) < 1e-12);
+  const reversed = compareEvidenceGames(m, c.id, a.id);
+  assert.equal(reversed.relations.fitTwoHop.via, "demo:d");
+  assert.equal(reversed.affinity, pair.affinity);
+});
+
 test("direct evidence does not double-count a two-hop path", () => {
   const m = model(undefined, [relation("demo:a", "demo:b"), relation("demo:b", "demo:c"), relation("demo:a", "demo:c", .4)]);
   assert.equal(compareEvidenceGames(m, a.id, c.id).relations.twoHop, null);
