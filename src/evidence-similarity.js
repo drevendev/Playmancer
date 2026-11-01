@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-1";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-2";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -186,25 +186,30 @@ function secondaryEvidence(a, b) {
 }
 function relationEvidence(model, a, b) {
   const direct = model.edges.get(a.id).get(b.id) ?? null;
-  if (direct) return { direct, twoHop: null };
-  let strongest = null;
-  // Only *curated, sourced* relations participate; never diffuse inferred tag neighbors.
+  // A recorded direct edge suppresses transitive taste and route contributions.
+  if (direct) return { direct, twoHop: null, fitTwoHop: null };
+  let strongest = null, strongestFit = null;
+  // Route evidence can include reference/inspiration facts. Taste evidence can
+  // use only sourced "similar" edges; a stronger reference path must never
+  // eclipse an independently supported (weaker) similarity path.
   for (const [middle, first] of model.edges.get(a.id)) {
     if (middle === b.id) continue;
     const second = model.edges.get(middle).get(b.id);
     if (!second) continue;
     const strength = first.strength * second.strength * TWO_HOP_DECAY;
-    if (!strongest || strength > strongest.strength ||
-        (strength === strongest.strength && middle < strongest.via)) {
-      // Symmetric affinity never reverses the authored relation claim.
-      const hops = [first, second].map(edge => ({
-        from: edge.from, to: edge.to, type: edge.type,
-        strength: edge.strength, source: edge.source,
-      }));
-      strongest = { via: middle, strength, sources: hops.map(hop => hop.source), hops };
-    }
+    // Preserve the original authored arrows, even for reverse traversal.
+    const hops = [first, second].map(edge => ({
+      from: edge.from, to: edge.to, type: edge.type,
+      strength: edge.strength, source: edge.source,
+    }));
+    const candidate = { via: middle, strength, sources: hops.map(hop => hop.source), hops };
+    const better = best => !best || strength > best.strength ||
+      (strength === best.strength && middle < best.via);
+    if (better(strongest)) strongest = candidate;
+    if (first.type === "similar" && second.type === "similar" && better(strongestFit))
+      strongestFit = candidate;
   }
-  return { direct: null, twoHop: strongest };
+  return { direct: null, twoHop: strongest, fitTwoHop: strongestFit };
 }
 // Presence of an independently sourced relation is known even when tag
 // observations are partial. Coverage measures observed lanes, not fit,
@@ -231,8 +236,12 @@ export function compareEvidenceGames(model, leftId, rightId) {
       tags, metadata, relations,
       evidenceCoverage: observedCoverage.total, evidenceCoverageByLane: observedCoverage.lanes };
   }
-  const direct = relations.direct?.strength ?? 0;
-  const twoHop = relations.twoHop?.strength ?? 0;
+  // A documented crossover/reference or inspiration is route evidence, not
+  // independently verified taste similarity. Only editorial "similar" edges
+  // may increase the trial affinity; all receipt types remain explainable.
+  // A direct authored edge takes precedence over a two-hop path.
+  const direct = relations.direct?.type === "similar" ? relations.direct.strength : 0;
+  const twoHop = relations.fitTwoHop?.strength ?? 0;
   const affinity = EVIDENCE_LANES.tags * tags.similarity +
     EVIDENCE_LANES.metadata * (metadata.similarity ?? 0) +
     EVIDENCE_LANES.direct * direct + EVIDENCE_LANES.twoHop * twoHop;
