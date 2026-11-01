@@ -17,6 +17,7 @@ test('invalid actual demo metadata fails before replacing last-valid static outp
     const build = () => spawnSync(process.execPath, [join(dir, 'scripts/build-demo.mjs')], { encoding: 'utf8' });
     const first = build(); assert.equal(first.status, 0, first.stderr);
     const before = readFileSync(join(dir, '_site/index.html'));
+    const cssBefore = readFileSync(join(dir, '_site/player.css'));
     const path = join(dir, 'src/demo.js');
     const source = readFileSync(path, 'utf8');
     assert.ok(source.includes('profile("harvest"'));
@@ -24,6 +25,7 @@ test('invalid actual demo metadata fails before replacing last-valid static outp
     const invalid = build(); assert.notEqual(invalid.status, 0);
     assert.match(invalid.stderr, /Duplicate game ID/);
     assert.deepEqual(readFileSync(join(dir, '_site/index.html')), before);
+    assert.deepEqual(readFileSync(join(dir, '_site/player.css')), cssBefore);
     assert.equal(invalid.stdout, '');
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

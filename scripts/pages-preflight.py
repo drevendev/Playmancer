@@ -43,21 +43,27 @@ def main() -> int:
     index = site / "index.html"
     marker = site / ".nojekyll"
     worker = site / "bridge-worker.js"
+    css = site / "player.css"
     assert site.is_dir(), f"Static output missing: {site}"
     assert index.is_file() and not index.is_symlink(), "Expected regular _site/index.html"
     assert marker.is_file() and not marker.is_symlink(), "Expected regular _site/.nojekyll"
     assert marker.stat().st_size == 0, ".nojekyll must be empty"
     assert worker.is_file() and not worker.is_symlink(), "Expected regular same-origin bridge-worker.js"
     assert worker.stat().st_size < 40_000, "Bridge worker exceeds bounded static asset budget"
+    assert css.is_file() and not css.is_symlink(), "Expected regular same-origin player.css"
+    assert 0 < css.stat().st_size < 20_000, "Stylesheet exceeds bounded static asset budget"
     paths = {p.relative_to(site).as_posix() for p in site.rglob("*") if p.is_file()}
-    assert paths == {"index.html", ".nojekyll", "bridge-worker.js"}, f"Unexpected public build contents: {paths}"
+    assert paths == {"index.html", ".nojekyll", "bridge-worker.js", "player.css"}, f"Unexpected public build contents: {paths}"
     text = index.read_text(encoding="utf-8")
     worker_text = worker.read_text(encoding="utf-8")
+    css_text = css.read_text(encoding="utf-8")
     parser = AssetLinks()
     parser.feed(text)
     assert parser.has_title and parser.has_viewport, "Missing title or responsive viewport"
     assert parser.script_count >= 1 and parser.script_modules == 1, "Expected exactly one inline module"
-    assert not parser.assets, f"Unbundled or network assets: {parser.assets}"
+    assert parser.assets == ["link[href]=./player.css"], f"Unexpected or remote assets: {parser.assets}"
+    assert '<link rel="stylesheet" href="./player.css">' in text, "Same-origin stylesheet link missing"
+    assert not re.search(r"@import\b|url\s*\(", css_text, re.I), "Stylesheet must not load other assets"
     catalog_match = re.search(r'<meta name="playmancer-catalog" content="([^"]+)">', text)
     assert catalog_match, "Catalog version marker missing"
     if catalog_match.group(1).startswith(("wikidata-genre-pilot-", "multi-store-genre-pilot-")):
@@ -85,6 +91,8 @@ def main() -> int:
         "size_bytes": len(index.read_bytes()),
         "index_sha256": hashlib.sha256(index.read_bytes()).hexdigest(),
         "worker_size_bytes": len(worker.read_bytes()),
+        "css_size_bytes": len(css.read_bytes()),
+        "css_sha256": hashlib.sha256(css.read_bytes()).hexdigest(),
         "worker_sha256": hashlib.sha256(worker.read_bytes()).hexdigest(),
         "scope": "LOCAL_STATIC_PAYLOAD_ONLY_NOT_DEPLOYED",
     }

@@ -43,6 +43,10 @@ jobs:
           node scripts/build-demo.mjs /tmp/playmancer-pages-b --catalog examples/catalog.multistore-30.real.json
           cmp _site/index.html /tmp/playmancer-pages-a/index.html
           cmp _site/index.html /tmp/playmancer-pages-b/index.html
+          cmp _site/player.css /tmp/playmancer-pages-a/player.css
+          cmp _site/player.css /tmp/playmancer-pages-b/player.css
+          cmp _site/bridge-worker.js /tmp/playmancer-pages-a/bridge-worker.js
+          cmp _site/bridge-worker.js /tmp/playmancer-pages-b/bridge-worker.js
           cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll
           cmp _site/.nojekyll /tmp/playmancer-pages-b/.nojekyll
       # The container's Python has working SSL and its Chromium binary is

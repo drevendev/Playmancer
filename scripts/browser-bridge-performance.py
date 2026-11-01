@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 
 from playwright.sync_api import sync_playwright
+from browser_test_html import offline_html
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
@@ -153,7 +154,7 @@ try:
                                 cdp.send("Emulation.setCPUThrottlingRate", {"rate": throttle})
                                 errors = []
                                 page.on("pageerror", lambda e: errors.append(str(e)))
-                                page.set_content((sites[(size, topology)] / "index.html").read_text(),
+                                page.set_content(offline_html(sites[(size, topology)]),
                                                  wait_until="load")
                                 page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
                                 result = exercise(page, topology, size, throttle)

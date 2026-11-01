@@ -52,13 +52,16 @@ test("static revision is deterministic and invalid input preserves last valid ou
     let result = run(process.execPath, ["scripts/build-demo.mjs", out], env);
     assert.equal(result.status, 0, result.stderr);
     const first = readFileSync(join(out, "index.html"));
+    const firstCss = readFileSync(join(out, "player.css"));
     assert.ok(first.includes(`name="playmancer-revision" content="${env.PLAYMANCER_REVISION}"`));
     result = run(process.execPath, ["scripts/build-demo.mjs", out], env);
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(readFileSync(join(out, "index.html")), first);
+    assert.deepEqual(readFileSync(join(out, "player.css")), firstCss);
     result = run(process.execPath, ["scripts/build-demo.mjs", out], { PLAYMANCER_REVISION: "bad revision" });
     assert.notEqual(result.status, 0);
     assert.deepEqual(readFileSync(join(out, "index.html")), first);
+    assert.deepEqual(readFileSync(join(out, "player.css")), firstCss);
   } finally { rmSync(out, { recursive: true, force: true }); }
 });
 
@@ -75,6 +78,11 @@ test("Pages preflight rejects extra files, symlinks and remote assets", () => {
     rmSync(join(out, "linked"));
     const html = readFileSync(join(out, "index.html"), "utf8");
     writeFileSync(join(out, "index.html"), html.replace("</head>", '<script src="https://example.invalid/asset.js"></script></head>'));
+    assert.notEqual(run("python3", ["scripts/pages-preflight.py", out]).status, 0);
+    writeFileSync(join(out, "index.html"), html);
+    writeFileSync(join(out, "player.css"), "@import url(https://example.invalid/style.css);");
+    assert.notEqual(run("python3", ["scripts/pages-preflight.py", out]).status, 0);
+    rmSync(join(out, "player.css"));
     assert.notEqual(run("python3", ["scripts/pages-preflight.py", out]).status, 0);
   } finally { rmSync(out, { recursive: true, force: true }); }
 });

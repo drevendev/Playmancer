@@ -113,8 +113,16 @@ const script = parts.join("\n\n");
 // Individual modules can parse while conflicting declarations break their bundle.
 new Script(script, { filename: "playmancer-browser-bundle.js" });
 const entry = '<script type="module" src="./src/demo-ui.js"></script>';
-const template = (await readFile(join(root, "index.html"), "utf8"))
-  .replace(/(<style>)([\s\S]*?)(<\/style>)/, (_, open, css, close) => open + css.replace(/\/\*[\s\S]*?\*\//g, "") + close);
+const sourceHtml = await readFile(join(root, "index.html"), "utf8");
+const sourceStyles = sourceHtml.match(/<style>([\s\S]*?)<\/style>/);
+if (!sourceStyles || sourceHtml.split(sourceStyles[0]).length !== 2) {
+  throw new Error("Expected exactly one inline source stylesheet");
+}
+const stylesheet = sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
+if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
+  throw new Error("Stylesheet must not import other assets");
+}
+const template = sourceHtml.replace(sourceStyles[0], '<link rel="stylesheet" href="./player.css">');
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
 const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
 if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
@@ -125,15 +133,19 @@ const html = template.replace(entry, () => `<script type="module">\n${script}\n<
 await mkdir(output, { recursive: true });
 const temporary = join(output, `.index.html.${process.pid}.tmp`);
 const temporaryWorker = join(output, `.bridge-worker.js.${process.pid}.tmp`);
+const temporaryStyles = join(output, `.player.css.${process.pid}.tmp`);
 try {
   await writeFile(temporary, html);
   await writeFile(temporaryWorker, workerScript);
+  await writeFile(temporaryStyles, stylesheet);
   await writeFile(join(output, ".nojekyll"), "");
   // Publish the worker first so every newly published index can load its route code.
+  await rename(temporaryStyles, join(output, "player.css"));
   await rename(temporaryWorker, join(output, "bridge-worker.js"));
   await rename(temporary, join(output, "index.html"));
 } finally {
   await rm(temporary, { force: true });
   await rm(temporaryWorker, { force: true });
+  await rm(temporaryStyles, { force: true });
 }
-console.log(`Built ${Buffer.byteLength(html)} HTML bytes and ${Buffer.byteLength(workerScript)} worker bytes into ${output}`);
+console.log(`Built ${Buffer.byteLength(html)} HTML bytes, ${Buffer.byteLength(stylesheet)} CSS bytes and ${Buffer.byteLength(workerScript)} worker bytes into ${output}`);

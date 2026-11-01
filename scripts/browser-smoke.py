@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 from playwright.sync_api import sync_playwright
+from browser_test_html import offline_html
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / '.test-artifacts'
 ARTIFACTS.mkdir(exist_ok=True)
@@ -32,7 +33,7 @@ with sync_playwright() as p:
     context = browser.new_context(viewport={'width':1280,'height':1000}, reduced_motion='reduce')
     page=context.new_page(); errors=[]
     page.on('pageerror', lambda e: errors.append(str(e)))
-    page.set_content((ROOT / '_site/index.html').read_text()); page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+    page.set_content(offline_html(ROOT / "_site")); page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
     check('initial two-seed basket renders real ranking',page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     page.locator('#clear').click()
     check('start empty basket clears sample explicitly',page.locator('#seeds > li').count()==0 and page.locator('#results > li').count()==0 and page.evaluate('document.activeElement.id')=='search')
@@ -51,7 +52,7 @@ with sync_playwright() as p:
     expected=page.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')
     page.locator('#share').click(); page.wait_for_timeout(80)
     share=page.locator('#share-link').input_value()
-    reopened=context.new_page(); reopened.evaluate('(hash) => { location.hash = hash; }', __import__('urllib.parse',fromlist=['urlsplit']).urlsplit(share).fragment); reopened.set_content((ROOT / '_site/index.html').read_text()); reopened.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+    reopened=context.new_page(); reopened.evaluate('(hash) => { location.hash = hash; }', __import__('urllib.parse',fromlist=['urlsplit']).urlsplit(share).fragment); reopened.set_content(offline_html(ROOT / "_site")); reopened.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
     check('shared URL restores weights filters mode and ranking',reopened.locator('#weight-ember').input_value()=='2' and reopened.locator('#mode').input_value()=='blend' and reopened.locator('#platform').input_value()=='linux' and reopened.locator('#coop').is_checked() and reopened.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')==expected)
     # The share-restoration tab has finished its work. Do not leave the main
     # interaction page backgrounded while exercising its viewport/compositor.
@@ -218,7 +219,7 @@ with sync_playwright() as p:
             visual_errors = []
             page.on('pageerror', lambda error: visual_errors.append(str(error)))
             page.bring_to_front()
-            page.set_content((ROOT / '_site/index.html').read_text())
+            page.set_content(offline_html(ROOT / "_site"))
             page.wait_for_function("document.querySelectorAll('#results > li').length === 6")
             page.evaluate("document.fonts.ready")
             page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")

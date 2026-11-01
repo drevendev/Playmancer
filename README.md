@@ -192,7 +192,7 @@ Benchmark report versioning is separate from player shares.
 For validated snapshots of **50–250 profiles served over HTTP(S)**, Bridge
 calculates routes inside a **same-origin static Web Worker** built from the
 same exact-rational source modules as the small preview. The publishable artifact
-contains exactly `index.html`, `bridge-worker.js`, and an empty `.nojekyll`. Changing an endpoint,
+contains exactly `index.html`, same-origin `player.css`, `bridge-worker.js`, and an empty `.nojekyll`. Changing an endpoint,
 filter, exclusion or threshold cancels the previous worker; only the newest
 result can update the visible explanation. The panel announces its busy state,
 and calculation failures are visible instead of substituting a guessed route.
@@ -246,9 +246,13 @@ mobile SLA or user-input latency; no product speedup is claimed. See [Bridge evi
 
 ## Publication and contribution
 
-The build emits self-contained `index.html` and `.nojekyll`, including publication
-revision and selected catalog metadata. Invalid catalog or bundle inputs fail before
-replacing the last valid HTML. Build success is not deployment evidence.
+The dependency-free build emits a self-contained **static site**: `index.html`,
+`player.css`, `bridge-worker.js` and an empty `.nojekyll`. Moving the stylesheet into
+a same-origin asset restores HTML size headroom without remote requests; offline
+`page.set_content` harnesses inline the exact built CSS, while HTTP and Pages
+load the real asset. HTML includes publication revision and catalog metadata.
+Invalid catalog or bundle inputs fail before replacing the last valid HTML.
+Build success is not deployment evidence.
 
 The Pages workflow deploys **reviewed master only** and fails explicitly if
 Pages is disabled. Pages is currently enabled, but the workflow does not change
