@@ -85,6 +85,41 @@ test("sourced direct influence is symmetric as affinity but keeps its arrow", ()
   assert.equal(ac.relations.twoHop, null);
   assert.equal(ac.relations.direct.source, "https://example.org/receipt");
 });
+test("reference and inspiration receipts are factual routes, not taste boosts", () => {
+  const baseline = compareEvidenceGames(model(), a.id, c.id);
+  for (const type of ["references", "inspired-by"]) {
+    const withReceipt = compareEvidenceGames(model(undefined,
+      [relation("demo:c", "demo:a", 1, type)]), a.id, c.id);
+    assert.equal(withReceipt.status, "rankable");
+    assert.equal(withReceipt.affinity, baseline.affinity);
+    assert.equal(withReceipt.relations.direct.type, type);
+    assert.equal(withReceipt.relations.direct.from, "demo:c");
+    assert.equal(withReceipt.relations.direct.source, "https://example.org/receipt");
+    assert.equal(withReceipt.evidenceCoverageByLane.direct, .08);
+  }
+  const similar = compareEvidenceGames(model(undefined,
+    [relation("demo:c", "demo:a", 1, "similar")]), a.id, c.id);
+  assert.ok(Math.abs(similar.affinity - baseline.affinity - .08) < 1e-12);
+});
+test("mixed two-hop reference routes do not masquerade as semantic affinity", () => {
+  const baseline = compareEvidenceGames(model(), a.id, c.id);
+  const mixed = compareEvidenceGames(model(undefined, [
+    relation("demo:a", "demo:b", .8, "references"),
+    relation("demo:b", "demo:c", .5, "similar"),
+  ]), a.id, c.id);
+  assert.equal(mixed.relations.direct, null);
+  assert.equal(mixed.relations.twoHop.strength, .2);
+  assert.deepEqual(mixed.relations.twoHop.hops.map(hop => hop.type),
+    ["references", "similar"]);
+  assert.equal(mixed.affinity, baseline.affinity);
+  assert.equal(mixed.evidenceCoverageByLane.twoHop, .03);
+  const bothSimilar = compareEvidenceGames(model(undefined, [
+    relation("demo:a", "demo:b", .8, "similar"),
+    relation("demo:b", "demo:c", .5, "similar"),
+  ]), a.id, c.id);
+  assert.ok(Math.abs(bothSimilar.affinity - baseline.affinity - .03 * .2) < 1e-12);
+});
+
 test("two hops decay, never claim that a transitive link is a direct source", () => {
   const m = model(undefined, [relation("demo:a", "demo:b", .8), relation("demo:b", "demo:c", .5)]);
   const ac = compareEvidenceGames(m, a.id, c.id);

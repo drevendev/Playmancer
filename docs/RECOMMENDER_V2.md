@@ -20,9 +20,11 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
    Missing fields are not mismatches or passes for hard filters.
 3. **Explicit editorial relations** record `similar`, `inspired-by`, or
    `references` with distinct canonical endpoints, source receipt, direction
-   and bounded strength. Relations are symmetric *only for the affinity measure*:
-   the evidence explanation must retain that game A was inspired by B, never
-   assert the reverse causal claim. Rights/source review is mandatory.
+   and bounded strength. The graph is traversable in either direction, but the
+   original sourced claim direction is retained. **Only `similar` is a taste
+   affinity assertion.** Inspiration and crossover/reference receipts remain
+   visible route evidence, not automatic recommendations or fit boosts.
+   Rights/source review is mandatory.
 4. **Transitive similarity** can only traverse two sourced explicit edges,
    never a broad common platform or an automatically inferred neighbor.
    For A—B—C, its maximum strength is `0.5 × strength(A,B) × strength(B,C)`.
@@ -44,6 +46,10 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
+Version `weighted-tags-graph-experiment-2` narrows the experimental
+relation-to-fit mapping; prior v1 reports are not interchangeable. The public
+`feature-overlap-2` method and live player are unchanged.
+
 The trial composite score is
 `0.76 T + 0.13 M + 0.08 D + 0.03 G` where:
 - `M` is the **bounded, not missing-field-renormalized** secondary match
@@ -51,9 +57,14 @@ The trial composite score is
   release year 0.05, platform Jaccard 0.08). If no comparable metadata exists,
   `M` is *unknown*, and its score contribution is omitted rather than falsely
   labeled a confirmed mismatch.
-- `D` is a direct sourced relation's strength, otherwise unrecorded.
-- `G` is the strongest decayed two-hop sourced path, otherwise unrecorded.
-  The direct and two-hop contributions are mutually exclusive.
+- `D` is a direct sourced `similar` relation's strength; `inspired-by`
+  and `references` links contribute **zero to fit**, though their original
+  direction and receipt are still exposed as graph evidence.
+- `G` is the strongest decayed two-hop sourced path **only when both links
+  are `similar`**; mixed reference/inspiration routes remain explorable but
+  contribute zero to fit. A recorded direct edge suppresses the transitive
+  contribution, even when that direct receipt is not a similarity claim.
+  Direct and two-hop fit contributions are mutually exclusive.
 
 **These coefficients are experimental, not tuned, and are not confidence
 percentages.** Report components, explicit source receipts, comparable metadata

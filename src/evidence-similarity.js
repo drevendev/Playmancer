@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-1";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-2";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -231,8 +231,13 @@ export function compareEvidenceGames(model, leftId, rightId) {
       tags, metadata, relations,
       evidenceCoverage: observedCoverage.total, evidenceCoverageByLane: observedCoverage.lanes };
   }
-  const direct = relations.direct?.strength ?? 0;
-  const twoHop = relations.twoHop?.strength ?? 0;
+  // A documented crossover/reference or inspiration is route evidence, not
+  // independently verified taste similarity. Only editorial "similar" edges
+  // may increase the trial affinity; all receipt types remain explainable.
+  // A direct authored edge takes precedence over a two-hop path.
+  const direct = relations.direct?.type === "similar" ? relations.direct.strength : 0;
+  const twoHop = relations.twoHop?.hops.every(hop => hop.type === "similar")
+    ? relations.twoHop.strength : 0;
   const affinity = EVIDENCE_LANES.tags * tags.similarity +
     EVIDENCE_LANES.metadata * (metadata.similarity ?? 0) +
     EVIDENCE_LANES.direct * direct + EVIDENCE_LANES.twoHop * twoHop;
