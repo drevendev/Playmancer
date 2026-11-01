@@ -53,6 +53,22 @@ try:
                   and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # Mobile section navigation must not change the state-bearing URL fragment.
+            nav = page.get_by_role("navigation", name="Page sections")
+            check(label + ": section shortcuts are shown only on narrow screens",
+                  nav.is_visible() == (label == "mobile"))
+            if label == "mobile":
+                initial_hash = page.evaluate("location.hash")
+                check(label + ": shortcuts stay sticky", nav.evaluate(
+                    "element => getComputedStyle(element).position === 'sticky'"))
+                for button, destination in (("jump-bridge", "bridge-title"),
+                                            ("jump-results", "recommendations"),
+                                            ("jump-basket", "basket-title")):
+                    page.locator("#" + button).click()
+                    check(label + ": " + button + " focuses its section without rewriting the share URL",
+                          page.locator("#" + destination).evaluate(
+                              "element => document.activeElement === element")
+                          and page.evaluate("location.hash") == initial_hash)
             # Storefront discovery is an editorial catalog view, not ranking or
             # a platform requirement. Exercise both viewports with real link data.
             initial_ranks = page.locator("#results > li").evaluate_all(
