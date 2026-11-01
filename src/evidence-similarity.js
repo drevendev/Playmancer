@@ -1,6 +1,6 @@
 // Experimental, offline-first similarity model. Not wired into the public player.
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
-import { rankCandidates, blendCandidates } from "./ranking.js";
+import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
 export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-1";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
@@ -262,17 +262,21 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
       !Array.isArray(excluded) || new Set(excluded).size !== excluded.length ||
       excluded.some(id => !model.profiles.has(id))) throw new TypeError("invalid hard filters");
   if (!Number.isInteger(limit) || limit < 0) throw new RangeError("limit must be a nonnegative integer");
+  // Build pair evidence from the same positive-weight, deduplicated basket used
+  // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
+  // for coverage, explanations, or eligibility.
+  const activeSeeds = normalizeSeeds(seeds);
   const hidden = new Set(excluded);
   const evidence = new Map();
   const candidates = [...model.profiles.values()].map(game => {
-    const pairs = seeds.map(seed => ({ seedId: seed.id, ...compareEvidenceGames(model, game.id, seed.id) }));
+    const pairs = activeSeeds.map(seed => ({ seedId: seed.id, ...compareEvidenceGames(model, game.id, seed.id) }));
     evidence.set(game.id, pairs);
     return { id: game.id, affinities: Object.fromEntries(pairs.map(pair => [pair.seedId, pair.affinity])),
       evidenceCoverage: Math.min(...pairs.map(pair => pair.evidenceCoverage)),
       hardConstraintState: eligible(game, { platform, coopOnly, excluded: hidden }) };
   });
-  const result = mode === "blend" ? blendCandidates(candidates, seeds, { lambda, limit })
-    : rankCandidates(candidates, seeds, { mode });
+  const result = mode === "blend" ? blendCandidates(candidates, activeSeeds, { lambda, limit })
+    : rankCandidates(candidates, activeSeeds, { mode });
   return { ...result, method: EVIDENCE_METHOD_VERSION,
     ranked: result.ranked.slice(0, limit).map(item => ({ ...item, evidence: evidence.get(item.id) })) };
 }
