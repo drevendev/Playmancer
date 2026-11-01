@@ -104,12 +104,14 @@ test('the frozen 50 tasks gain sourced evidence without losing explicit negative
   assert.equal(report.pairs.length, 50);
   assert.deepEqual(report.summary.zero_receipt_curated_statuses,
     { route: 0, 'no-route': 49, uncertain: 1, excluded: 0 });
-  assert.ok(report.summary.newly_sourced_route_tasks.length >= 3);
+  assert.equal(report.summary.newly_sourced_route_tasks.length, 4);
+  assert.deepEqual(report.summary.with_official_receipts_statuses,
+    { route: 4, 'no-route': 45, uncertain: 1, excluded: 0 });
   assert.equal(report.summary.with_official_receipts_statuses.route,
     report.summary.newly_sourced_route_tasks.length);
   assert.equal(Object.values(report.summary.with_official_receipts_statuses)
     .reduce((a,b) => a + b,0), 50);
-  assert.ok(report.summary.still_without_sourced_route_tasks > 0);
+  assert.equal(report.summary.still_without_sourced_route_tasks, 45);
   const row = report.pairs.find(p => p.basket_id === 'required-coop-unknown');
   assert.equal(row.with_official_receipts_status, 'uncertain');
   const direct = report.pairs.find(p => p.from === SPIRE && p.to === DEAD);
