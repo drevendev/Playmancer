@@ -1,0 +1,36 @@
+{
+  "schema": "p76-deadcells-crossovers-3-v1",
+  "catalogSnapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "catalogBlobSha1": "0570fd610b14fb336c0de65e6cc3062892abe301",
+  "recordedAt": "2026-11-01",
+  "scope": "offline-factual-reference-pilot; not part of published catalog",
+  "relations": [
+    {
+      "from": "wikidata:q30639210",
+      "to": "wikidata:q29300592",
+      "type": "references",
+      "strength": 1,
+      "source": "https://deadcells.com/patchnotes/26",
+      "sourceDate": "2021-11-22",
+      "observedFact": "Dead Cells update 26 includes the Pure Nail weapon referring to Hollow Knight."
+    },
+    {
+      "from": "wikidata:q30639210",
+      "to": "wikidata:q332697",
+      "type": "references",
+      "strength": 1,
+      "source": "https://deadcells.com/patchnotes/32",
+      "sourceDate": "2022-11-07",
+      "observedFact": "Dead Cells update 32 includes the Starfury weapon referring to Terraria."
+    },
+    {
+      "from": "wikidata:q30639210",
+      "to": "wikidata:q48078440",
+      "type": "references",
+      "strength": 1,
+      "source": "https://deadcells.com/patchnotes/32",
+      "sourceDate": "2022-11-07",
+      "observedFact": "Dead Cells update 32 includes the Diverse Deck power referring to Slay the Spire."
+    }
+  ]
+}
