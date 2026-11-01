@@ -53,6 +53,44 @@ try:
                   and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # Storefront discovery is an editorial catalog view, not ranking or
+            # a platform requirement. Exercise both viewports with real link data.
+            initial_ranks = page.locator("#results > li").evaluate_all(
+                "cards => cards.map(card => card.dataset.gameId)")
+            check(label + ": real catalog exposes only recorded store options",
+                  not page.locator("#store-filter-wrap").is_hidden()
+                  and page.locator("#store-filter option").evaluate_all(
+                      "options => options.map(option => option.value)") == ["all", "steam", "googleplay", "itch"])
+            page.locator("#store-filter").select_option("googleplay")
+            check(label + ": Google Play discovery shows exactly its linked titles",
+                  page.locator("#search-results li > button").count() == 2
+                  and all(name in page.locator("#search-results").inner_text()
+                          for name in ("Shadow Runner", "Circlanoid"))
+                  and "Google Play link" in page.locator("#search-hint").inner_text())
+            page.locator("#search").fill("Shadow")
+            check(label + ": store filter combines with text search",
+                  page.locator("#search-results li > button").count() == 1
+                  and "Shadow Runner" in page.locator("#search-results").inner_text())
+            page.locator("#search").fill("Stardew")
+            check(label + ": missing recorded store link cannot be inferred from platform",
+                  page.locator("#search-results li > button").count() == 0
+                  and "No catalog profiles with a recorded Google Play link" in page.locator("#search-hint").inner_text())
+            page.locator("#search").fill("")
+            page.locator("#store-filter").select_option("itch")
+            check(label + ": itch.io discovery preserves real multi-store memberships",
+                  page.locator("#search-results li > button").count() == 4
+                  and "Shadow Runner" in page.locator("#search-results").inner_text())
+            page.locator("#store-filter").select_option("steam")
+            check(label + ": Steam discovery paginates rather than dropping entries",
+                  page.locator("#search-results li > button").count() == 9
+                  and page.get_by_role("button", name="Show 8 more games").count() == 1)
+            page.locator("#catalog-browse").click()
+            check(label + ": storefront discovery never changes basket or ranking",
+                  page.locator("#store-filter").input_value() == "all"
+                  and page.locator("#seeds > li").count() == 2
+                  and page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks
+                  and not requests)
             # Native <details> content is correctly hidden until the player opens
             # the explanation. Expand it before assessing the visible evidence.
             page.locator("#results .explanation summary").first.click()

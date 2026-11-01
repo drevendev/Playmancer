@@ -55,9 +55,17 @@ function renderCatalogReceipts() {
   return row;
 }
 function showCatalogIdentity() {
-  const storeLabels = ["steam", "googleplay", "itch"]
-    .filter(store => CATALOG.some(game => game.storeLinks?.some(link => link.store === store)))
-    .map(store => storeNames[store]);
+  const stores = ["steam", "googleplay", "itch"]
+    .filter(store => CATALOG.some(game => game.storeLinks?.some(link => link.store === store)));
+  const storeLabels = stores.map(store => storeNames[store]);
+  const all = element("option", "All games"); all.value = "all";
+  const options = stores.map(store => {
+    const count = CATALOG.filter(game => game.storeLinks?.some(link => link.store === store)).length;
+    const option = element("option", `${storeNames[store]} (${count})`);
+    option.value = store; return option;
+  });
+  $("store-filter").replaceChildren(all, ...options);
+  $("store-filter-wrap").hidden = stores.length === 0;
   // Present actionable storefronts, not catalog-data provenance, in the hero.
   document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
     "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : "");
@@ -119,6 +127,7 @@ function readLocation() {
     invalidLink = true;
   }
   $("search").value = "";
+  $("store-filter").value = "all"; // Discovery filters are not part of shared basket state.
   browseAll = false; browseLimit = 8; compactResults = false;
   clearShareFeedback();
   render(true);
@@ -173,13 +182,15 @@ function drawSeeds() {
 }
 function drawSearch() {
   const query = $("search").value.trim().normalize("NFC").toLowerCase();
+  const store = $("store-filter").value;
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
   $("catalog-browse").setAttribute("aria-expanded", String(browseAll && !query));
   // Explicit catalog genre labels improve discovery without inventing a
   // mechanic, co-op flag or source-backed match where none is recorded.
   const matches = query || browseAll
-    ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
+    ? CATALOG.filter((game) => !chosen.has(game.id) &&
+        (store === "all" || game.storeLinks?.some(link => link.store === store))).map((game) => {
       if (!query) return { game, matchedTag: null };
       const direct = [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
         .some((value) => value.normalize("NFC").toLowerCase().includes(query));
@@ -214,7 +225,9 @@ function drawSearch() {
       if (state.seeds.length >= 5 || state.seeds.some((seed) => seed.id === game.id)) return;
       state.seeds.push({ id: game.id, weight: 1 });
       state.excluded = state.excluded.filter((id) => id !== game.id);
-      $("search").value = ""; commit(true); $("search").focus();
+      $("search").value = "";
+      if ($("store-filter").value !== "all") browseAll = true;
+      commit(true); $("search").focus();
       announceBasketAction("Added", game.name);
     });
     if (matchedTag) {
@@ -244,10 +257,13 @@ function drawSearch() {
     row.append(more); $("search-results").append(row);
   }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
+  const fromStore = store === "all" ? "" : ` with a recorded ${storeNames[store]} link`;
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
-    : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun} shown. Add a favorite or show more games.`
+    : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
+    : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
     : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres"} to find ${noun}.`
-    : matches.length ? `${matches.length} matching ${noun}. Use Arrow Down to browse; Enter adds a focused result.` : "No profiles match. Try another name or recorded tag.";
+    : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
+    : `No ${noun}${fromStore} match this search. Try another name, tag, or store.`;
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -431,7 +447,11 @@ function render(rebuildSeeds) {
   if (rebuildSeeds) drawSeeds();
   drawSearch(); drawResults(); renderBridge(state);
 }
-$("search").addEventListener("input", () => { if ($("search").value.trim()) browseAll = false; drawSearch(); });
+$("search").addEventListener("input", () => {
+  browseAll = !$("search").value.trim() && $("store-filter").value !== "all";
+  drawSearch();
+});
+$("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; drawSearch(); });
 $("search").addEventListener("keydown", (event) => {
   if (event.key !== "ArrowDown") return;
   const first = $("search-results").querySelector("button:not(:disabled)");
@@ -464,12 +484,15 @@ bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(
 
 // A clearly disclosed editorial shortcut changes search only, never ranking.
 $("catalog-browse").addEventListener("click", () => {
-  browseAll = !browseAll; browseLimit = 8;
+  const filtered = $("store-filter").value !== "all";
+  $("store-filter").value = "all";
+  browseAll = filtered || !browseAll; browseLimit = 8;
   $("search").value = "";
   drawSearch();
 });
 $("dreven-browse").addEventListener("click", () => {
   browseAll = false;
+  $("store-filter").value = "all";
   $("search").value = "Dreven Games";
   drawSearch();
   $("search").focus();
@@ -479,6 +502,7 @@ $("dreven-browse").addEventListener("click", () => {
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
 $("intro-browse").addEventListener("click", () => {
   browseAll = true; browseLimit = 8;
+  $("store-filter").value = "all";
   $("search").value = "";
   drawSearch();
   ($("search-results").querySelector("button:not(:disabled)") ?? $("search")).focus();

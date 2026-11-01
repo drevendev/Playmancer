@@ -104,6 +104,7 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <ul id="seeds" aria-label="Selected games"></ul>
 <p id="basket-feedback" class="hint" role="status" aria-live="polite" aria-atomic="true">Add or remove games to update your recommendations.</p>
 <button id="catalog-browse" type="button" aria-controls="search-results" aria-expanded="false">Browse all games</button><button id="dreven-browse" type="button">Browse Dreven Games (5)</button>
+<div id="store-filter-wrap" hidden><label for="store-filter">Browse by store</label><select id="store-filter" aria-describedby="store-filter-note"><option value="all">All games</option></select><p id="store-filter-note" class="hint">Only recorded links are used. This changes discovery, not ranking, required platforms, or your shared basket.</p></div>
 <label for="search">Add a real game</label><input id="search" type="search" placeholder="Search catalog…" autocomplete="off" aria-describedby="search-hint">
 <p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><ul id="search-results" aria-label="Available games"></ul>
 <div class="section"><label for="mode">Recommendation mode</label><select id="mode"><option value="intersection">Intersection</option><option value="blend">Blend</option><option value="arithmetic">Weighted average</option></select><p id="mode-note" class="hint mode-note"></p>
