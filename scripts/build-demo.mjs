@@ -75,6 +75,8 @@ for (const [index, path] of modules.entries()) {
       throw new Error(`Cannot compact multiline template literals in ${path}`);
     }
     source = source.replace(/^[ \t]+(?=\S)/gm, "");
+    // Join only explicit semicolon-terminated lines; preserve ASI-sensitive line breaks.
+    source = source.replace(/;\r?\n(?=[A-Za-z_$({])/g, ";");
   }
   if (path === "src/bridge.js") {
     for (const name of ["assertCanonicalId", "assertUnitInterval", "comparePath", "compareState"]) {
