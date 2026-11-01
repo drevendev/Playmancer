@@ -277,6 +277,11 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   });
   const result = mode === "blend" ? blendCandidates(candidates, activeSeeds, { lambda, limit })
     : rankCandidates(candidates, activeSeeds, { mode });
+  // Abstention is the primary result for partial semantic profiles. Expose the
+  // same per-seed receipts and lane coverage as ranked candidates so callers
+  // can distinguish observed overlap, missing tags, and unknown hard filters
+  // without promoting selected facts into a fabricated affinity.
   return { ...result, method: EVIDENCE_METHOD_VERSION,
-    ranked: result.ranked.slice(0, limit).map(item => ({ ...item, evidence: evidence.get(item.id) })) };
+    ranked: result.ranked.slice(0, limit).map(item => ({ ...item, evidence: evidence.get(item.id) })),
+    uncertain: result.uncertain.map(item => ({ ...item, evidence: evidence.get(item.id) })) };
 }
