@@ -5,6 +5,7 @@ import os
 import subprocess
 from urllib.parse import unquote, urlsplit
 from playwright.sync_api import sync_playwright
+from browser_test_html import offline_html
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
@@ -13,7 +14,7 @@ ARTIFACTS.mkdir(exist_ok=True)
 subprocess.run(["node", "scripts/build-demo.mjs", str(SITE), "--catalog",
                 "examples/catalog.multistore-30.real.json"], cwd=ROOT, check=True)
 subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
-HTML = (SITE / "index.html").read_text()
+HTML = offline_html(SITE)
 SNAPSHOT = "multi-store-genre-pilot-30-2026-10-28"
 results = []
 
@@ -276,7 +277,7 @@ try:
         legacy_page = legacy_ctx.new_page()
         legacy_errors = []
         legacy_page.on("pageerror", lambda err: legacy_errors.append(str(err)))
-        legacy_page.set_content((legacy_site / "index.html").read_text(), wait_until="load")
+        legacy_page.set_content(offline_html(legacy_site), wait_until="load")
         legacy_page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
         check("legacy Wikidata-only pilot reports the selected 12-game provenance",
               "12 real games" in legacy_page.locator(".intro").inner_text()

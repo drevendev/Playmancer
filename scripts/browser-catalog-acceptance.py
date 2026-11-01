@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 from urllib.parse import unquote, urlsplit
 from playwright.sync_api import sync_playwright
+from browser_test_html import offline_html
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
@@ -13,7 +14,7 @@ ARTIFACTS.mkdir(exist_ok=True)
 subprocess.run(["node", "scripts/build-demo.mjs", str(SITE), "--catalog",
                 "examples/catalog.alternative.synthetic.json"], cwd=ROOT, check=True)
 subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
-HTML = (SITE / "index.html").read_text()
+HTML = offline_html(SITE)
 results = []
 
 

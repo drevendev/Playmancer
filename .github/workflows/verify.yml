@@ -40,6 +40,7 @@ jobs:
           node scripts/build-demo.mjs /tmp/playmancer-build-b
           cmp /tmp/playmancer-build-a/index.html /tmp/playmancer-build-b/index.html
           cmp /tmp/playmancer-build-a/bridge-worker.js /tmp/playmancer-build-b/bridge-worker.js
+          cmp /tmp/playmancer-build-a/player.css /tmp/playmancer-build-b/player.css
           cmp /tmp/playmancer-build-a/.nojekyll /tmp/playmancer-build-b/.nojekyll
 
   browser:
@@ -74,6 +75,7 @@ jobs:
             .test-artifacts/*.png
             .test-artifacts/*.json
             .test-artifacts/catalog-site/index.html
+            .test-artifacts/catalog-site/player.css
             .test-artifacts/catalog-site/.nojekyll
           include-hidden-files: true
           if-no-files-found: error

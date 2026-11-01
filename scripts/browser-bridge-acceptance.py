@@ -5,12 +5,13 @@ from pathlib import Path
 import subprocess
 from urllib.parse import urlsplit
 from playwright.sync_api import sync_playwright
+from browser_test_html import offline_html
 
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACTS = ROOT / ".test-artifacts"
 ARTIFACTS.mkdir(exist_ok=True)
 subprocess.run(["node", "scripts/build-demo.mjs"], cwd=ROOT, check=True)
-HTML = (ROOT / "_site/index.html").read_text()
+HTML = offline_html(ROOT / "_site")
 results = []
 
 
