@@ -263,7 +263,7 @@ function drawSearch() {
     : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
     : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres"} to find ${noun}.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
-    : `No ${noun}${fromStore} match this search. Try another name, tag, or store.`;
+    : store === "all" ? "No profiles match. Try another name or recorded tag." : `No ${noun}${fromStore} match this search. Try another name, tag, or store.`;
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
