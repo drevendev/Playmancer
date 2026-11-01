@@ -75,6 +75,16 @@ for (const [index, path] of modules.entries()) {
       throw new Error(`Cannot compact multiline template literals in ${path}`);
     }
     source = source.replace(/^[ \t]+(?=\S)/gm, "");
+    // Join only explicit semicolon-terminated lines; preserve ASI-sensitive line breaks.
+    // Keep the catalog projection's single JSON declaration on its own line,
+    // where the existing source-bound validation can identify and inspect it.
+    source = source.replace(/;\r?\n(?=[A-Za-z_$({])/g, (separator, offset, original) => {
+      if (path !== "src/demo.js") return ";";
+      const current = original.slice(original.lastIndexOf("\n", offset - 1) + 1, offset);
+      const next = original.slice(offset + separator.length);
+      return current.startsWith("const BUILD_CATALOG_SNAPSHOT = ") ||
+        next.startsWith("const BUILD_CATALOG_SNAPSHOT = ") ? separator : ";";
+    });
   }
   if (path === "src/bridge.js") {
     for (const name of ["assertCanonicalId", "assertUnitInterval", "comparePath", "compareState"]) {
