@@ -29,7 +29,9 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
    never a broad common platform or an automatically inferred neighbor.
    For A—B—C, its maximum strength is `0.5 × strength(A,B) × strength(B,C)`.
    No self-loops, duplicate unordered pairs, or compounded infinite walks.
-   A direct edge suppresses the duplicate transitive contribution.
+   A direct `similar` edge suppresses duplicate transitive **taste** evidence.
+   A factual direct receipt can coexist with a separate two-hop `similar`
+   route without claiming that the direct receipt proves gameplay similarity.
 
 The experimental tag similarity is the **overlapping tag mass**:
 `T(A,B) = Σ_t min(weight_A(t), weight_B(t))` (0–1). For example,
@@ -46,14 +48,16 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-3` also prevents a subtler rank
-boost: the scalar/Blend rankers break equal-fit ties using coverage. A factual
-reference or inspiration receipt must not win that tie. Pair explanations keep
-`evidenceCoverage`/`evidenceCoverageByLane` for all sourced routes; the new
-`tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` count only rank-relevant
-`similar` relations alongside comparable tags/metadata. Only taste coverage
-is supplied to ranking tie-breaks. A route still displays its original type,
-direction and receipt. Prior v1/v2 reports are not interchangeable. The public
+Version `weighted-tags-graph-experiment-4` retains the v3 ranking tie-break
+guard: factual references/inspirations may raise observed route coverage but
+cannot raise taste-comparable coverage or win a score tie. It additionally
+prevents a factual direct edge from concealing an independent all-`similar`
+two-hop path. `relations.direct` preserves the factual arrow and receipt;
+`relations.twoHop` is the strongest explanatory two-hop route and
+`relations.fitTwoHop` is the strongest sourced taste path. Pair explanations
+expose both `evidenceCoverage`/`evidenceCoverageByLane` and the independent
+`tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` used by rank tie-breaks.
+Prior v1/v2/v3 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is
@@ -71,9 +75,11 @@ The trial composite score is
   explorable but contribute zero to fit. The graph explanation exposes the
   strongest factual route in `relations.twoHop` and separately identifies
   the scoring path in `relations.fitTwoHop` when they differ. A recorded
-  direct edge suppresses the transitive contribution, even when that direct
-  receipt is not a similarity claim. Direct and two-hop fit contributions
-  are mutually exclusive.
+  direct `similar` edge suppresses a transitive taste contribution, but a
+  factual `references`/`inspired-by` direct receipt does **not**. A sourced
+  all-`similar` two-hop path can still contribute to taste while the direct
+  factual route remains visible. Direct and two-hop *taste* contributions
+  remain mutually exclusive.
 
 **These coefficients are experimental, not tuned, and are not confidence
 percentages.** Report components, explicit source receipts, comparable metadata
