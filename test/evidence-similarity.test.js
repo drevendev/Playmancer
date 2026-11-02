@@ -389,3 +389,60 @@ test("factual direct receipts never mask independent two-hop taste evidence", ()
   assert.equal(sparse.relations.fitTwoHop.via, b.id);
   assert.equal(sparse.tasteEvidenceCoverageByLane.twoHop, .03);
 });
+
+
+test("basket two-hop taste paths cannot borrow excluded or unknown-hard-filter intermediates", () => {
+  const games = ["seed", "candidate", "other", "via"].map(name => ({
+    id: "demo:" + name,
+    tags: [tag("genre:rpg", 1)],
+    metadata: { platforms: field(name === "via" ? ["linux"] : ["windows"]) },
+    coop: name === "via" ? null : true,
+    ...(name === "via" ? {} : { coopSource: "authored-fixture" }),
+  }));
+  const edges = [relation("demo:seed", "demo:via"),
+    relation("demo:via", "demo:candidate")];
+  const sourced = model(games, edges);
+  const withoutEdges = model(games);
+  const basket = { seeds: [{ id: "demo:seed", weight: 1 }] };
+  const candidate = (m, opts = {}) => rankEvidenceBasket(m, { ...basket, ...opts })
+    .ranked.find(item => item.id === "demo:candidate");
+
+  // The unconstrained fixture has one legitimate, fully sourced taste path.
+  const admitted = candidate(sourced);
+  const raw = compareEvidenceGames(sourced, "demo:seed", "demo:candidate");
+  assert.equal(raw.relations.fitTwoHop.via, "demo:via");
+  assert.equal(admitted.evidence[0].relations.fitTwoHop.via, "demo:via");
+  assert.ok(candidate(sourced).scores.intersection > candidate(withoutEdges).scores.intersection);
+
+  for (const [reason, opts] of Object.entries({
+    "platform mismatch": { platform: "windows" },
+    "explicit exclusion": { excluded: ["demo:via"] },
+    "unknown coop": { coopOnly: true },
+  })) {
+    for (const mode of ["intersection", "arithmetic", "blend"]) {
+      const actual = rankEvidenceBasket(sourced, { ...basket, ...opts, mode });
+      const baseline = rankEvidenceBasket(withoutEdges, { ...basket, ...opts, mode });
+      const item = actual.ranked.find(entry => entry.id === "demo:candidate");
+      const plain = baseline.ranked.find(entry => entry.id === "demo:candidate");
+      assert.ok(item && plain, reason + "/" + mode + ": candidate must stay eligible");
+      assert.equal(item.evidence[0].relations.twoHop.via, "demo:via", reason);
+      assert.equal(item.evidence[0].relations.fitTwoHop, null, reason);
+      assert.equal(item.evidence[0].tasteEvidenceCoverageByLane.twoHop, 0, reason);
+      assert.equal(item.evidence[0].evidenceCoverageByLane.twoHop, .03, reason);
+      assert.ok(Math.abs(item.scores.intersection - plain.scores.intersection) < 1e-12,
+        reason + "/" + mode + ": excluded via must not raise taste fit");
+      assert.deepEqual(actual.ranked.map(entry => entry.id), baseline.ranked.map(entry => entry.id),
+        reason + "/" + mode + ": ordering must not benefit from blocked via");
+    }
+  }
+
+  // Unknown required platforms are abstentions, not implicit permission to
+  // traverse via an unverified intermediate.
+  const unknownVia = model(games.map(game => game.id === "demo:via"
+    ? { ...game, metadata: {} } : game), edges);
+  const unknown = candidate(unknownVia, { platform: "windows" });
+  assert.equal(unknown.evidence[0].relations.twoHop.via, "demo:via");
+  assert.equal(unknown.evidence[0].relations.fitTwoHop, null);
+  assert.ok(Math.abs(unknown.scores.intersection -
+    candidate(withoutEdges, { platform: "windows" }).scores.intersection) < 1e-12);
+});
