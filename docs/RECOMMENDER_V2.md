@@ -48,7 +48,7 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-4` retains the v3 ranking tie-break
+Version `weighted-tags-graph-experiment-5` retains the v3 ranking tie-break
 guard: factual references/inspirations may raise observed route coverage but
 cannot raise taste-comparable coverage or win a score tie. It additionally
 prevents a factual direct edge from concealing an independent all-`similar`
@@ -57,7 +57,15 @@ two-hop path. `relations.direct` preserves the factual arrow and receipt;
 `relations.fitTwoHop` is the strongest sourced taste path. Pair explanations
 expose both `evidenceCoverage`/`evidenceCoverageByLane` and the independent
 `tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` used by rank tie-breaks.
-Prior v1/v2/v3 reports are not interchangeable. The public
+In basket scoring, an all-`similar` two-hop path can raise taste fit only when
+its intermediate game **passes the same platform/co-op/exclusion hard filters**
+as the basket candidates. Unknown required metadata is not an admissible
+intermediate. Context-free pair comparisons still show sourced paths, and
+`relations.twoHop` preserves observed graph receipts even when a basket cannot
+traverse them; `relations.fitTwoHop` is the constrained scoring path. Observed
+route coverage is not playable route availability. This is an offline v5
+correctness guard, not evidence of higher player relevance.
+Prior v1/v2/v3/v4 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is
@@ -71,7 +79,7 @@ The trial composite score is
   and `references` links contribute **zero to fit**, though their original
   direction and receipt are still exposed as graph evidence.
 - `G` is the strongest decayed two-hop sourced path **among paths where
-  both links are `similar`**; mixed reference/inspiration routes remain
+  both links are `similar`**, and only through basket-eligible intermediates; mixed reference/inspiration routes remain
   explorable but contribute zero to fit. The graph explanation exposes the
   strongest factual route in `relations.twoHop` and separately identifies
   the scoring path in `relations.fitTwoHop` when they differ. A recorded
