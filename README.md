@@ -19,14 +19,15 @@ requests are needed.
 > player journeys after each successful deployment. **This README is not a live
 > deployment-status pointer**: check the latest workflow run for the currently served SHA.
 >
-> **Last independently inspected checkpoint (2026-10-31):**
-> [`318229a00b17556336f4437bc989fd7cb0df55b0`](https://github.com/drevendev/Playmancer/commit/318229a00b17556336f4437bc989fd7cb0df55b0).
-> [Publish Pages #41209458813](https://github.com/drevendev/Playmancer/actions/runs/41209458813)
+> **Last independently inspected checkpoint (2026-11-02):**
+> [`9844933255626e804dfa69d98d843128f6a18537`](https://github.com/drevendev/Playmancer/commit/9844933255626e804dfa69d98d843128f6a18537).
+> [Publish Pages #41393137711](https://github.com/drevendev/Playmancer/actions/runs/41393137711)
 > passed all three jobs, including public HTTPS revision/Bridge-worker verification and
-> **453/453 hosted browser assertions**. [Desktop/mobile browser screenshots and report](https://github.com/drevendev/Playmancer/actions/runs/41209458813/artifacts/13045439559)
-> are retained with that exact SHA.
-> [Verify #41209458850](https://github.com/drevendev/Playmancer/actions/runs/41209458850)
-> passed all four Node/build, Chromium, Firefox/WebKit and Bridge jobs.
+> **453/453 hosted browser assertions** across Chromium, Firefox and WebKit on desktop
+> and mobile. [Desktop/mobile screenshots and assertion report](https://github.com/drevendev/Playmancer/actions/runs/41393137711/artifacts/13118297068)
+> were inspected for the exact SHA, including 400% text reflow.
+> [Verify #41393137791](https://github.com/drevendev/Playmancer/actions/runs/41393137791)
+> passed all four Node/build, Chromium, multi-engine HTTP and Bridge jobs.
 > **That exact checkpoint is LIVE_VERIFIED; newer commits need their own verification.**
 > Automated browser checks and screenshots do not certify spoken screen-reader behavior
 > or actual browser zoom ([#14](https://github.com/drevendev/Playmancer/issues/14)).
