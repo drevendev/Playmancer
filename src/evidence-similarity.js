@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-3";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-4";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -186,8 +186,10 @@ function secondaryEvidence(a, b) {
 }
 function relationEvidence(model, a, b) {
   const direct = model.edges.get(a.id).get(b.id) ?? null;
-  // A recorded direct edge suppresses transitive taste and route contributions.
-  if (direct) return { direct, twoHop: null, fitTwoHop: null };
+  // Only direct taste similarity supersedes its transitive substitute.
+  // A factual direct reference/inspiration can coexist with an independent
+  // sourced two-hop similarity path; the fact itself adds no taste boost.
+  if (direct?.type === "similar") return { direct, twoHop: null, fitTwoHop: null };
   let strongest = null, strongestFit = null;
   // Route evidence can include reference/inspiration facts. Taste evidence can
   // use only sourced "similar" edges; a stronger reference path must never
@@ -209,7 +211,7 @@ function relationEvidence(model, a, b) {
     if (first.type === "similar" && second.type === "similar" && better(strongestFit))
       strongestFit = candidate;
   }
-  return { direct: null, twoHop: strongest, fitTwoHop: strongestFit };
+  return { direct, twoHop: strongest, fitTwoHop: strongestFit };
 }
 // Presence of an independently sourced relation is known even when tag
 // observations are partial. Coverage measures observed lanes, not fit,
@@ -250,7 +252,8 @@ export function compareEvidenceGames(model, leftId, rightId) {
   // A documented crossover/reference or inspiration is route evidence, not
   // independently verified taste similarity. Only editorial "similar" edges
   // may increase the trial affinity; all receipt types remain explainable.
-  // A direct authored edge takes precedence over a two-hop path.
+  // A direct similarity edge takes precedence over two-hop taste; factual direct
+  // receipts do not suppress independently supported two-hop similarity.
   const direct = relations.direct?.type === "similar" ? relations.direct.strength : 0;
   const twoHop = relations.fitTwoHop?.strength ?? 0;
   const affinity = EVIDENCE_LANES.tags * tags.similarity +

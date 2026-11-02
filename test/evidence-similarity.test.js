@@ -318,3 +318,74 @@ test("factual receipts cannot reorder score ties through evidence-coverage tie-b
   assert.equal(compareEvidenceGames(fitTwoHop, "demo:seed", "demo:c").tasteEvidenceCoverageByLane.twoHop, 0.03);
   assert.ok(rank(fitTwoHop).indexOf("demo:c") < rank(fitTwoHop).indexOf("demo:b"));
 });
+
+test("factual direct receipts never mask independent two-hop taste evidence", () => {
+  const legs = [
+    relation("demo:a", "demo:b", .8, "similar"),
+    relation("demo:b", "demo:c", .5, "similar"),
+  ];
+  const withoutDirect = compareEvidenceGames(model(undefined, legs), a.id, c.id);
+  assert.ok(Math.abs(withoutDirect.affinity - .03 * .2) < 1e-12);
+
+  for (const type of ["references", "inspired-by"]) {
+    const enriched = model(undefined, [
+      relation("demo:c", "demo:a", 1, type), ...legs,
+    ]);
+    const pair = compareEvidenceGames(enriched, a.id, c.id);
+    const reverse = compareEvidenceGames(enriched, c.id, a.id);
+    assert.equal(pair.relations.direct.type, type);
+    assert.deepEqual([pair.relations.direct.from, pair.relations.direct.to],
+      [c.id, a.id]);
+    assert.equal(pair.relations.twoHop.via, b.id);
+    assert.equal(pair.relations.fitTwoHop.via, b.id);
+    assert.deepEqual(pair.relations.fitTwoHop.hops.map(hop => hop.type),
+      ["similar", "similar"]);
+    assert.deepEqual(pair.relations.fitTwoHop.sources,
+      ["https://example.org/receipt", "https://example.org/receipt"]);
+    assert.equal(pair.affinity, withoutDirect.affinity);
+    assert.equal(reverse.affinity, pair.affinity);
+    assert.equal(reverse.relations.direct.from, c.id);
+    assert.equal(reverse.relations.fitTwoHop.via, b.id);
+    assert.equal(pair.evidenceCoverageByLane.direct, .08);
+    assert.equal(pair.evidenceCoverageByLane.twoHop, .03);
+    assert.equal(pair.tasteEvidenceCoverageByLane.direct, 0);
+    assert.equal(pair.tasteEvidenceCoverageByLane.twoHop, .03);
+    assert.equal(pair.tasteEvidenceCoverage, withoutDirect.tasteEvidenceCoverage);
+    const ranked = rankEvidenceBasket(enriched, {
+      seeds: [{ id: a.id, weight: 1 }], mode: "intersection",
+    });
+    const candidate = ranked.ranked.find(item => item.id === c.id);
+    assert.equal(candidate.evidence[0].affinity, withoutDirect.affinity);
+  }
+
+  // The strongest explanatory route may be a factual crossover while the
+  // scoring route remains a different, weaker all-similar path.
+  const competing = compareEvidenceGames(model(undefined, [
+    ...legs,
+    relation("demo:a", "demo:d", 1, "references"),
+    relation("demo:d", "demo:c", 1, "references"),
+    relation("demo:c", "demo:a", 1, "inspired-by"),
+  ]), a.id, c.id);
+  assert.equal(competing.relations.twoHop.via, d.id);
+  assert.equal(competing.relations.fitTwoHop.via, b.id);
+  assert.equal(competing.affinity, withoutDirect.affinity);
+
+  // A sourced *direct similarity* does supersede a transitive similarity
+  // and contributes only its direct lane (no graph double count).
+  const directSimilar = compareEvidenceGames(model(undefined, [
+    ...legs, relation("demo:a", "demo:c", .4, "similar"),
+  ]), a.id, c.id);
+  assert.equal(directSimilar.relations.fitTwoHop, null);
+  assert.equal(directSimilar.relations.twoHop, null);
+  assert.equal(directSimilar.tasteEvidenceCoverageByLane.twoHop, 0);
+  assert.ok(Math.abs(directSimilar.affinity - .08 * .4) < 1e-12);
+
+  // Even with sourced paths, missing required tags still abstain.
+  const sparse = compareEvidenceGames(model([a, b, { ...c, tags: null }], [
+    ...legs, relation("demo:c", "demo:a", 1, "references"),
+  ]), a.id, c.id);
+  assert.equal(sparse.status, "uncertain");
+  assert.equal(sparse.affinity, null);
+  assert.equal(sparse.relations.fitTwoHop.via, b.id);
+  assert.equal(sparse.tasteEvidenceCoverageByLane.twoHop, .03);
+});
