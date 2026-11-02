@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-2";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-3";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -221,7 +221,16 @@ function observedLaneCoverage(tags, metadata, relations) {
     direct: relations.direct ? EVIDENCE_LANES.direct : 0,
     twoHop: relations.twoHop ? EVIDENCE_LANES.twoHop : 0,
   };
-  return { lanes, total: Object.values(lanes).reduce((sum, value) => sum + value, 0) };
+  // Factual reference/inspiration routes are sourced route evidence, not evidence
+  // of taste fit. Ranking tie-breaks must not favor them over otherwise
+  // identical candidates merely because a crossover receipt exists.
+  const tasteLanes = {
+    ...lanes,
+    direct: relations.direct?.type === "similar" ? EVIDENCE_LANES.direct : 0,
+    twoHop: relations.fitTwoHop ? EVIDENCE_LANES.twoHop : 0,
+  };
+  return { lanes, total: Object.values(lanes).reduce((sum, value) => sum + value, 0),
+    tasteLanes, tasteTotal: Object.values(tasteLanes).reduce((sum, value) => sum + value, 0) };
 }
 
 export function compareEvidenceGames(model, leftId, rightId) {
@@ -234,7 +243,9 @@ export function compareEvidenceGames(model, leftId, rightId) {
   if (tags.similarity === null) {
     return { status: "uncertain", affinity: null, reason: tags.coverage === "partial" ? "partial-weighted-tags" : "missing-weighted-tags",
       tags, metadata, relations,
-      evidenceCoverage: observedCoverage.total, evidenceCoverageByLane: observedCoverage.lanes };
+      evidenceCoverage: observedCoverage.total, evidenceCoverageByLane: observedCoverage.lanes,
+      tasteEvidenceCoverage: observedCoverage.tasteTotal,
+      tasteEvidenceCoverageByLane: observedCoverage.tasteLanes };
   }
   // A documented crossover/reference or inspiration is route evidence, not
   // independently verified taste similarity. Only editorial "similar" edges
@@ -247,7 +258,9 @@ export function compareEvidenceGames(model, leftId, rightId) {
     EVIDENCE_LANES.direct * direct + EVIDENCE_LANES.twoHop * twoHop;
   return { status: "rankable", affinity: Math.min(1, affinity), reason: null,
     tags, metadata, relations, evidenceCoverage: observedCoverage.total,
-    evidenceCoverageByLane: observedCoverage.lanes };
+    evidenceCoverageByLane: observedCoverage.lanes,
+    tasteEvidenceCoverage: observedCoverage.tasteTotal,
+    tasteEvidenceCoverageByLane: observedCoverage.tasteLanes };
 }
 function eligible(game, { platform, coopOnly, excluded }) {
   if (excluded.has(game.id)) return "fail";
@@ -281,7 +294,9 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
     const pairs = activeSeeds.map(seed => ({ seedId: seed.id, ...compareEvidenceGames(model, game.id, seed.id) }));
     evidence.set(game.id, pairs);
     return { id: game.id, affinities: Object.fromEntries(pairs.map(pair => [pair.seedId, pair.affinity])),
-      evidenceCoverage: Math.min(...pairs.map(pair => pair.evidenceCoverage)),
+      // The scalar/Blend rankers use coverage as a deterministic tie-break:
+      // use only taste-comparable evidence, not unrelated factual graph routes.
+      evidenceCoverage: Math.min(...pairs.map(pair => pair.tasteEvidenceCoverage)),
       hardConstraintState: eligible(game, { platform, coopOnly, excluded: hidden }) };
   });
   const result = mode === "blend" ? blendCandidates(candidates, activeSeeds, { lambda, limit })
