@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-4";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-5";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -184,7 +184,7 @@ function secondaryEvidence(a, b) {
   }
   return { similarity: coverage ? score : null, coverage, matches };
 }
-function relationEvidence(model, a, b) {
+function relationEvidence(model, a, b, fitEligibleVia = null) {
   const direct = model.edges.get(a.id).get(b.id) ?? null;
   // Only direct taste similarity supersedes its transitive substitute.
   // A factual direct reference/inspiration can coexist with an independent
@@ -208,7 +208,8 @@ function relationEvidence(model, a, b) {
     const better = best => !best || strength > best.strength ||
       (strength === best.strength && middle < best.via);
     if (better(strongest)) strongest = candidate;
-    if (first.type === "similar" && second.type === "similar" && better(strongestFit))
+    if (first.type === "similar" && second.type === "similar" &&
+        (fitEligibleVia === null || fitEligibleVia.has(middle)) && better(strongestFit))
       strongestFit = candidate;
   }
   return { direct, twoHop: strongest, fitTwoHop: strongestFit };
@@ -235,12 +236,12 @@ function observedLaneCoverage(tags, metadata, relations) {
     tasteLanes, tasteTotal: Object.values(tasteLanes).reduce((sum, value) => sum + value, 0) };
 }
 
-export function compareEvidenceGames(model, leftId, rightId) {
+export function compareEvidenceGames(model, leftId, rightId, { fitEligibleVia = null } = {}) {
   const a = model.profiles.get(leftId), b = model.profiles.get(rightId);
   if (!a || !b) throw new TypeError("comparison references a missing game");
   const tags = tagEvidence(a, b);
   const metadata = secondaryEvidence(a, b);
-  const relations = relationEvidence(model, a, b);
+  const relations = relationEvidence(model, a, b, fitEligibleVia);
   const observedCoverage = observedLaneCoverage(tags, metadata, relations);
   if (tags.similarity === null) {
     return { status: "uncertain", affinity: null, reason: tags.coverage === "partial" ? "partial-weighted-tags" : "missing-weighted-tags",
@@ -292,15 +293,23 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   // for coverage, explanations, or eligibility.
   const activeSeeds = normalizeSeeds(seeds);
   const hidden = new Set(excluded);
+  // A basket cannot borrow two-hop taste evidence through a game that fails
+  // its hard filters, is explicitly excluded, or has unknown required metadata.
+  // Raw sourced routes remain observable but cannot enter fit or its tie-break.
+  const eligibility = new Map([...model.profiles.values()].map(game => [game.id,
+    eligible(game, { platform, coopOnly, excluded: hidden })]));
+  const fitEligibleVia = new Set([...eligibility].filter(([, state]) => state === "pass")
+    .map(([id]) => id));
   const evidence = new Map();
   const candidates = [...model.profiles.values()].map(game => {
-    const pairs = activeSeeds.map(seed => ({ seedId: seed.id, ...compareEvidenceGames(model, game.id, seed.id) }));
+    const pairs = activeSeeds.map(seed => ({ seedId: seed.id,
+      ...compareEvidenceGames(model, game.id, seed.id, { fitEligibleVia }) }));
     evidence.set(game.id, pairs);
     return { id: game.id, affinities: Object.fromEntries(pairs.map(pair => [pair.seedId, pair.affinity])),
       // The scalar/Blend rankers use coverage as a deterministic tie-break:
       // use only taste-comparable evidence, not unrelated factual graph routes.
       evidenceCoverage: Math.min(...pairs.map(pair => pair.tasteEvidenceCoverage)),
-      hardConstraintState: eligible(game, { platform, coopOnly, excluded: hidden }) };
+      hardConstraintState: eligibility.get(game.id) };
   });
   const result = mode === "blend" ? blendCandidates(candidates, activeSeeds, { lambda, limit })
     : rankCandidates(candidates, activeSeeds, { mode });
