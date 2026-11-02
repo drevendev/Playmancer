@@ -46,8 +46,14 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-2` narrows the experimental
-relation-to-fit mapping; prior v1 reports are not interchangeable. The public
+Version `weighted-tags-graph-experiment-3` also prevents a subtler rank
+boost: the scalar/Blend rankers break equal-fit ties using coverage. A factual
+reference or inspiration receipt must not win that tie. Pair explanations keep
+`evidenceCoverage`/`evidenceCoverageByLane` for all sourced routes; the new
+`tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` count only rank-relevant
+`similar` relations alongside comparable tags/metadata. Only taste coverage
+is supplied to ranking tie-breaks. A route still displays its original type,
+direction and receipt. Prior v1/v2 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is

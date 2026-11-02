@@ -259,3 +259,62 @@ test("complete-tag pairs retain the existing score and expose independent covera
   assert.ok(Math.abs(sourced.evidenceCoverage -
     Object.values(sourced.evidenceCoverageByLane).reduce((a, b) => a + b, 0)) < 1e-12);
 });
+
+test("factual receipts cannot reorder score ties through evidence-coverage tie-breaks", () => {
+  const ids = ["demo:seed", "demo:other", "demo:b", "demo:c", "demo:z"];
+  const games = ids.map(id => ({ id, tags: [tag("genre:rpg", 1)], metadata: {} }));
+  const seeds = [{ id: "demo:seed", weight: 2 }];
+  const rank = (m, chosenSeeds = seeds, mode = "intersection") =>
+    rankEvidenceBasket(m, { seeds: chosenSeeds, mode, lambda: 0.3 })
+      .ranked.map(item => item.id);
+  const baseline = model(games);
+  const original = rank(baseline);
+  assert.deepEqual(original, ["demo:b", "demo:c", "demo:other", "demo:z"]);
+
+  for (const type of ["references", "inspired-by"]) {
+    const factual = model(games, [relation("demo:seed", "demo:c", 1, type)]);
+    const pair = compareEvidenceGames(factual, "demo:seed", "demo:c");
+    const noReceipt = compareEvidenceGames(baseline, "demo:seed", "demo:c");
+    assert.equal(pair.affinity, noReceipt.affinity);
+    assert.ok(pair.evidenceCoverage > noReceipt.evidenceCoverage);
+    assert.equal(pair.tasteEvidenceCoverage, noReceipt.tasteEvidenceCoverage);
+    assert.equal(pair.evidenceCoverageByLane.direct, 0.08);
+    assert.equal(pair.tasteEvidenceCoverageByLane.direct, 0);
+    assert.deepEqual(rank(factual), original);
+    assert.deepEqual(rank(factual, seeds, "blend"), rank(baseline, seeds, "blend"));
+  }
+
+  const mixed = model(games, [
+    relation("demo:seed", "demo:z", 1, "references"),
+    relation("demo:z", "demo:c", 1, "similar"),
+  ]);
+  const mixedPair = compareEvidenceGames(mixed, "demo:seed", "demo:c");
+  assert.equal(mixedPair.relations.twoHop.hops[0].type, "references");
+  assert.equal(mixedPair.relations.fitTwoHop, null);
+  assert.equal(mixedPair.evidenceCoverageByLane.twoHop, 0.03);
+  assert.equal(mixedPair.tasteEvidenceCoverageByLane.twoHop, 0);
+  assert.deepEqual(rank(mixed), original);
+  assert.deepEqual(rank(mixed, seeds, "blend"), rank(baseline, seeds, "blend"));
+
+  const twoSeeds = [{ id: "demo:seed", weight: 2 }, { id: "demo:other", weight: 1 }];
+  const factualToBoth = model(games, [
+    relation("demo:seed", "demo:c", 1, "references"),
+    relation("demo:other", "demo:c", 1, "inspired-by"),
+  ]);
+  for (const mode of ["intersection", "arithmetic", "blend"]) {
+    assert.deepEqual(rank(factualToBoth, twoSeeds, mode), rank(baseline, twoSeeds, mode));
+  }
+
+  const actuallySimilar = model(games, [relation("demo:seed", "demo:c", 1, "similar")]);
+  const positive = compareEvidenceGames(actuallySimilar, "demo:seed", "demo:c");
+  assert.equal(positive.tasteEvidenceCoverageByLane.direct, 0.08);
+  assert.ok(positive.affinity > compareEvidenceGames(baseline, "demo:seed", "demo:c").affinity);
+  assert.equal(rank(actuallySimilar)[0], "demo:c");
+
+  const fitTwoHop = model(games, [
+    relation("demo:seed", "demo:z", 1, "similar"),
+    relation("demo:z", "demo:c", 1, "similar"),
+  ]);
+  assert.equal(compareEvidenceGames(fitTwoHop, "demo:seed", "demo:c").tasteEvidenceCoverageByLane.twoHop, 0.03);
+  assert.ok(rank(fitTwoHop).indexOf("demo:c") < rank(fitTwoHop).indexOf("demo:b"));
+});

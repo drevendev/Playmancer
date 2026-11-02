@@ -15,7 +15,7 @@ test('new protocol reuses exact frozen catalog, basket plan and 50 real endpoint
   assert.equal(result.frozen_catalog_git_blob_sha1, '0570fd610b14fb336c0de65e6cc3062892abe301');
   assert.equal(result.frozen_basket_plan_git_blob_sha1, 'e28809801448df2f73c604d0349ce71c042d7f53');
   assert.equal(result.legacy_bridge_method, 'bridge-features-preview-3');
-  assert.equal(result.experimental_similarity_method, 'weighted-tags-graph-experiment-2');
+  assert.equal(result.experimental_similarity_method, 'weighted-tags-graph-experiment-3');
   assert.equal(result.relations, 0);
   assert.deepEqual(result.policy, {
     endpoint_selection: 'adjacent favorites in original frozen basket order',
