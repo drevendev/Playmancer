@@ -35,10 +35,10 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
     assert.equal(row.paired_shared_top_k, row.paired_top_old.filter(id => row.paired_top_v2.includes(id)).length);
     assert.equal(row.paired_rankable_ids.length + row.old_only_rankable_ids.length, row.rankable_opportunities_old);
     assert.equal(row.paired_rankable_ids.length + row.v2_only_rankable_ids.length, row.rankable_opportunities_v2);
-    assert.deepEqual([...row.paired_rankable_ids, ...row.old_only_rankable_ids, ...row.v2_only_rankable_ids]
-      .filter((id, index, ids) => ids.indexOf(id) === index).sort(),
-      [...new Set([...row.paired_rankable_ids, ...row.old_only_rankable_ids,
-        ...row.v2_only_rankable_ids])].sort());
+    const cohortIds = [...row.paired_rankable_ids, ...row.old_only_rankable_ids,
+      ...row.v2_only_rankable_ids];
+    assert.equal(new Set(cohortIds).size, cohortIds.length,
+      'paired and one-sided candidate sets must be disjoint');
     assert.ok(row.probe_evidence_unpaired.every(item => ['rankable', 'abstained'].includes(item.old)
       && ['rankable', 'abstained'].includes(item.v2) && (item.old === 'abstained' || item.v2 === 'abstained')));
     assert.equal(row.eligible_candidates + row.hard_unknown_candidates +
