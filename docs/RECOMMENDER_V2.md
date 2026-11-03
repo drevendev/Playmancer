@@ -48,13 +48,16 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-5` retains the v3 ranking tie-break
+Version `weighted-tags-graph-experiment-6` retains the v3 ranking tie-break
 guard: factual references/inspirations may raise observed route coverage but
 cannot raise taste-comparable coverage or win a score tie. It additionally
 prevents a factual direct edge from concealing an independent all-`similar`
 two-hop path. `relations.direct` preserves the factual arrow and receipt;
 `relations.twoHop` is the strongest explanatory two-hop route and
-`relations.fitTwoHop` is the strongest sourced taste path. Pair explanations
+`relations.fitTwoHop` is the strongest sourced taste path. A sourced direct
+`similar` edge suppresses only transitive **taste** (`fitTwoHop`), not the
+independent observed two-hop route or its factual source receipts; the latter
+may increase observed route coverage but never taste-score or ranking coverage. Pair explanations
 expose both `evidenceCoverage`/`evidenceCoverageByLane` and the independent
 `tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` used by rank tie-breaks.
 In basket scoring, an all-`similar` two-hop path can raise taste fit only when
@@ -65,7 +68,7 @@ intermediate. Context-free pair comparisons still show sourced paths, and
 traverse them; `relations.fitTwoHop` is the constrained scoring path. Observed
 route coverage is not playable route availability. This is an offline v5
 correctness guard, not evidence of higher player relevance.
-Prior v1/v2/v3/v4 reports are not interchangeable. The public
+Prior v1/v2/v3/v4/v5 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is
