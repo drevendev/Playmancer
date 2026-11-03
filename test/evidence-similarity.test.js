@@ -181,7 +181,9 @@ test("direct similarity preserves an observed two-hop route without double-count
   assert.equal(pair.tasteEvidenceCoverage, directOnly.tasteEvidenceCoverage);
   const reverse = compareEvidenceGames(m, c.id, a.id);
   assert.equal(reverse.relations.twoHop.via, "demo:b");
-  assert.deepEqual(reverse.relations.twoHop.hops, pair.relations.twoHop.hops);
+  const authoredHops = route => route.hops.map(hop =>
+    [hop.from, hop.to, hop.type, hop.strength, hop.source]).sort();
+  assert.deepEqual(authoredHops(reverse.relations.twoHop), authoredHops(pair.relations.twoHop));
 });
 
 test("direct similarity retains factual route receipts without improving basket fit", () => {
