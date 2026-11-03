@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-3';
+const VERSION = 'p76-synthetic-paired-4';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 function knownId(id, ids, label) {
@@ -95,6 +95,32 @@ export function pairedProbeDiagnostics(probes, oldTop, v2Top, oldAbstained, v2Ab
     paired_probe_hits_old: oldHits, paired_probe_hits_v2: v2Hits,
     paired_probe_delta: v2Hits - oldHits };
 }
+// A probe-only intersection is insufficient: one-sided rankable background games
+// still consume top-k slots, and Blend's greedy state depends on those choices.
+// Re-run BOTH production rankers on the exact same fully scoreable candidate pool.
+export function pairedRankableCohort(legacyFull, experimentalFull, seeds, mode, lambda, topK) {
+  const oldById = new Map(legacyFull.ranked.map(item => [item.id, item]));
+  const newById = new Map(experimentalFull.ranked.map(item => [item.id, item]));
+  const shared = [...oldById.keys()].filter(id => newById.has(id)).sort();
+  const oldOnly = [...oldById.keys()].filter(id => !newById.has(id)).sort();
+  const newOnly = [...newById.keys()].filter(id => !oldById.has(id)).sort();
+  const rerank = byId => {
+    const candidates = shared.map(id => {
+      const item = byId.get(id);
+      return { id, affinities: item.affinities, evidenceCoverage: item.evidenceCoverage,
+        hardConstraintState: 'pass' };
+    });
+    const ranked = mode === 'blend'
+      ? blendCandidates(candidates, seeds, { lambda, limit: topK }).ranked
+      : rankCandidates(candidates, seeds, { mode }).ranked.slice(0, topK);
+    return idsOf(ranked);
+  };
+  const pairedOld = rerank(oldById), pairedV2 = rerank(newById);
+  return { paired_rankable_ids: shared, old_only_rankable_ids: oldOnly,
+    v2_only_rankable_ids: newOnly, paired_top_old: pairedOld, paired_top_v2: pairedV2,
+    paired_shared_top_k: pairedOld.filter(id => pairedV2.includes(id)).length };
+}
+
 function hardUnknownIds(partition) {
   return partition.uncertain.filter(item => item.reason === 'hard-constraint-unknown')
     .map(item => item.id).sort();
@@ -126,10 +152,10 @@ export function runEvidenceComparison(input) {
     // hard filters and exclusions are passed to both ranking implementations.
     // Differences in evidence-known status are reported, not reclassified as failures.
     for (const mode of MODES) {
-      const legacyResult = oldRanking(basket, mode, input.topK, input.lambda);
+      const legacyResult = oldRanking(basket, mode, CATALOG.length, input.lambda);
       const experimentalResult = rankEvidenceBasket(model, {
         seeds: basket.seeds, mode, platform: basket.platform, coopOnly: basket.coopOnly,
-        excluded: basket.excluded, lambda: input.lambda, limit: input.topK,
+        excluded: basket.excluded, lambda: input.lambda, limit: CATALOG.length,
       });
       // Ranking uncertainty may differ because the models observe different
       // features. Unknown *hard-filter* states may not differ or become passes.
@@ -154,8 +180,13 @@ export function runEvidenceComparison(input) {
       const experimental = summarize(experimentalResult, input.topK);
       const legacyHits = probeHits(legacy.top, basket.probeIds);
       const experimentalHits = probeHits(experimental.top, basket.probeIds);
-      const pairedProbes = pairedProbeDiagnostics(basket.probeIds, legacy.top, experimental.top,
-        oldAbstained, v2Abstained);
+      const paired = pairedRankableCohort(legacyResult, experimentalResult,
+        basket.seeds, mode, input.lambda, input.topK);
+      const pairedProbes = pairedProbeDiagnostics(basket.probeIds, paired.paired_top_old,
+        paired.paired_top_v2, oldAbstained, v2Abstained);
+      check(JSON.stringify(pairedProbes.comparable_probe_ids) ===
+        JSON.stringify(basket.probeIds.filter(id => paired.paired_rankable_ids.includes(id))),
+        `paired probe/candidate mismatch for ${basket.id}/${mode}`);
       rows.push({ basket_id: basket.id, mode, constraints: { platform: basket.platform, coopOnly: basket.coopOnly },
         seeds: basket.seeds.map(seed => ({ id: seed.id, weight: seed.weight })),
         excluded_ids: [...basket.excluded], probe_ids: [...basket.probeIds],
@@ -170,7 +201,7 @@ export function runEvidenceComparison(input) {
         shared_top_k: legacy.top.filter(id => experimental.top.includes(id)).length,
         probe_hits_old: legacyHits, probe_hits_v2: experimentalHits,
         probe_delta: experimentalHits - legacyHits,
-        ...pairedProbes });
+        ...paired, ...pairedProbes });
     }
   }
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
