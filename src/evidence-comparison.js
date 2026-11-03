@@ -31,7 +31,8 @@ function prepareFixture(input) {
   check(typeof input.lambda === 'number' && Number.isFinite(input.lambda) && input.lambda >= 0 && input.lambda <= 1, 'invalid Blend lambda');
   check(Array.isArray(input.baskets) && input.baskets.length > 0 && input.baskets.length <= 50, 'expected 1-50 baskets');
   check(Array.isArray(input.relations), 'explicit authored relations are required');
-  const ids = new Set(CATALOG.map(game => game.id));
+  const gameById = new Map(CATALOG.map(game => [game.id, game]));
+  const ids = new Set(gameById.keys());
   const baskets = new Set();
   for (const basket of input.baskets) {
     check(basket && typeof basket === 'object' && typeof basket.id === 'string' && basket.id.trim(), 'invalid basket id');
@@ -51,7 +52,15 @@ function prepareFixture(input) {
     check(Array.isArray(basket.excluded) && new Set(basket.excluded).size === basket.excluded.length, 'duplicate or missing exclusions');
     for (const id of basket.excluded) { knownId(id, ids, 'exclusion'); check(!seeds.has(id), 'seed cannot be excluded'); }
     check(Array.isArray(basket.probeIds) && new Set(basket.probeIds).size === basket.probeIds.length, 'probeIds must be unique array');
-    for (const id of basket.probeIds) { knownId(id, ids, 'probe'); check(!seeds.has(id), 'probe cannot be a seed'); }
+    for (const id of basket.probeIds) {
+      knownId(id, ids, 'probe');
+      check(!seeds.has(id), 'probe cannot be a seed');
+      check(!basket.excluded.includes(id), 'probe cannot be explicitly excluded: ' + id);
+      // Probe deltas are meaningless if a proposed target is unavailable under
+      // the same mandatory platform/co-op filters as both rankers.
+      check(constraintState(gameById.get(id), basket) === 'pass',
+        'probe must pass hard constraints (not fail or unknown): ' + id);
+    }
   }
   return prepareEvidenceModel({ games: CATALOG.map(profile), relations: input.relations });
 }
@@ -73,6 +82,16 @@ function summarize(partition, topK) {
     uncertain: idsOf(partition.uncertain), excluded: idsOf(partition.excluded) };
 }
 function probeHits(top, probes) { return probes.filter(id => top.includes(id)).length; }
+function hardUnknownIds(partition) {
+  return partition.uncertain.filter(item => item.reason === 'hard-constraint-unknown')
+    .map(item => item.id).sort();
+}
+function expectedHardUnknownIds(basket) {
+  const seeds = new Set(basket.seeds.map(seed => seed.id));
+  const excluded = new Set(basket.excluded);
+  return CATALOG.filter(game => !seeds.has(game.id) && !excluded.has(game.id) &&
+    constraintState(game, basket) === 'unknown').map(game => game.id).sort();
+}
 
 export function runEvidenceComparison(input) {
   const model = prepareFixture(input);
@@ -82,11 +101,19 @@ export function runEvidenceComparison(input) {
     // hard filters and exclusions are passed to both ranking implementations.
     // Differences in evidence-known status are reported, not reclassified as failures.
     for (const mode of MODES) {
-      const legacy = summarize(oldRanking(basket, mode, input.topK, input.lambda), input.topK);
-      const experimental = summarize(rankEvidenceBasket(model, {
+      const legacyResult = oldRanking(basket, mode, input.topK, input.lambda);
+      const experimentalResult = rankEvidenceBasket(model, {
         seeds: basket.seeds, mode, platform: basket.platform, coopOnly: basket.coopOnly,
         excluded: basket.excluded, lambda: input.lambda, limit: input.topK,
-      }), input.topK);
+      });
+      // Ranking uncertainty may differ because the models observe different
+      // features. Unknown *hard-filter* states may not differ or become passes.
+      const expectedUnknown = JSON.stringify(expectedHardUnknownIds(basket));
+      check(JSON.stringify(hardUnknownIds(legacyResult)) === expectedUnknown &&
+        JSON.stringify(hardUnknownIds(experimentalResult)) === expectedUnknown,
+      `hard constraint unknown drift for ${basket.id}/${mode}`);
+      const legacy = summarize(legacyResult, input.topK);
+      const experimental = summarize(experimentalResult, input.topK);
       check(JSON.stringify(legacy.excluded) === JSON.stringify(experimental.excluded),
         `hard exclusion drift for ${basket.id}/${mode}`);
       const legacyHits = probeHits(legacy.top, basket.probeIds);
