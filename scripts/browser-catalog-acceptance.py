@@ -73,10 +73,18 @@ try:
             page.locator("#platform").select_option("windows")
             page.locator("#coop").check()
             check(label + ": co-op does not silently pass an endpoint", "unavailable" in page.locator("#bridge-status").inner_text().lower())
-            page.locator("#coop").uncheck()
-            # Inspect rendered evidence through the same native disclosure a player opens.
+            # The same disclosure must name every missing required fact, without
+            # treating unknown platform or co-op metadata as incompatibility.
             page.locator("#uncertainty-title").click()
-            check(label + ": missing required metadata abstains", "Uncharted Hollow: required filter evidence is unknown." in page.locator("#partition-list").inner_text()
+            unknown = page.locator("#partition-list li").filter(has_text="Uncharted Hollow:").inner_text()
+            check(label + ": missing platform and co-op both abstain with specific evidence",
+                  "Uncharted Hollow: missing evidence: support for required platform windows is unrecorded; required co-op support is unrecorded (not proof of incompatibility)" in unknown
+                  and page.locator('[data-game-id="pilot:unknown"]').count() == 0)
+            page.locator("#coop").uncheck()
+            unknown_platform = page.locator("#partition-list li").filter(has_text="Uncharted Hollow:").inner_text()
+            check(label + ": missing platform alone still abstains without invented co-op evidence",
+                  "Uncharted Hollow: missing evidence: support for required platform windows is unrecorded (not proof of incompatibility)" in unknown_platform
+                  and "required co-op support" not in unknown_platform
                   and page.locator('[data-game-id="pilot:unknown"]').count() == 0)
             page.locator("#share").click()
             link = page.locator("#share-link").input_value()

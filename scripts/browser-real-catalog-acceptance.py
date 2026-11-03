@@ -160,8 +160,22 @@ try:
                   and "Hades: no recorded android support in this snapshot" in partition
                   and "not proof the game is unavailable there" in partition
                   and page.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
-            page.locator("#uncertainty-title").click()
+            # If two required fields are missing, name both. A nonmatching
+            # *recorded* platform stays a hard failure even when co-op is unknown.
+            page.locator("#coop").check()
+            missing_both = page.locator("#partition-list").inner_text()
+            check(label + ": unknown required platform and co-op are both named",
+                  "Infamous 2: missing evidence: support for required platform android is unrecorded; required co-op support is unrecorded (not proof of incompatibility)" in missing_both
+                  and "Hades: no recorded android support in this snapshot" in missing_both
+                  and page.locator("#results > li").count() == 0)
             page.locator("#platform").select_option("any")
+            coop_only_partition = page.locator("#partition-list").inner_text()
+            check(label + ": co-op-only unknown does not invent missing platform support",
+                  "Infamous 2: missing evidence: required co-op support is unrecorded" in coop_only_partition
+                  and "required platform android" not in coop_only_partition
+                  and page.locator("#results > li").count() == 0)
+            page.locator("#coop").uncheck()
+            page.locator("#uncertainty-title").click()
             # Blend at lambda=0 optimizes only *new* strand coverage. A game
             # may have genuine positive genre affinity yet add zero marginal
             # coverage after earlier picks: never call that no genre match.

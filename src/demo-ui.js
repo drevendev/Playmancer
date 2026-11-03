@@ -29,6 +29,17 @@ function hardFilterExplanation(game) {
   if (state.coopOnly && game.coop === false) return "co-op explicitly recorded as unavailable";
   return reasons["hard-constraint-fail"];
 }
+// A hard-filter unknown is not the same as a documented failure. Explain
+// which required facts are missing without inferring unsupported platforms.
+function hardUnknownExplanation(game) {
+  const missing = [];
+  if (state.platform !== "any" && game.platforms === null)
+    missing.push(`support for required platform ${state.platform} is unrecorded`);
+  if (state.coopOnly && game.coop === null)
+    missing.push("required co-op support is unrecorded");
+  return missing.length ? `missing evidence: ${missing.join("; ")} (not proof of incompatibility)`
+    : reasons["hard-constraint-unknown"];
+}
 function renderStoreLinks(game) {
   if (!game.storeLinks?.length) return null;
   const row = element("span", undefined, "storefront-links");
@@ -448,6 +459,7 @@ function drawResults() {
     const reason = item.reason === "seed" ? reasons.seed
       : state.excluded.includes(item.id) ? "hidden by you"
       : item.reason === "hard-constraint-fail" ? hardFilterExplanation(BY_ID.get(item.id))
+      : item.reason === "hard-constraint-unknown" ? hardUnknownExplanation(BY_ID.get(item.id))
       : reasons[item.reason] ?? item.reason;
     $("partition-list").append(element("li", `${BY_ID.get(item.id).name}: ${reason}.`));
   }
