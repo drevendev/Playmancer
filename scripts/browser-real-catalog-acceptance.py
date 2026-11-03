@@ -151,11 +151,16 @@ try:
             # Selected P400/platform listings prove observed support, not universal
             # incompatibility for every unlisted platform. Filters remain strict.
             page.locator("#platform").select_option("android")
+            # The partition is a native <details>: closed content is not
+            # visually exposed to players, nor returned by inner_text().
+            page.locator("#uncertainty-title").click()
             partition = page.locator("#partition-list").inner_text()
             check(label + ": unlisted real platform is not labelled unsupported",
-                  "Hades: no recorded android support in this snapshot" in partition
+                  page.locator("#uncertainty").evaluate("details => details.open")
+                  and "Hades: no recorded android support in this snapshot" in partition
                   and "not proof the game is unavailable there" in partition
-                  and page.locator('[data-game-id="wikidata:q59756366"]').count() == 0)
+                  and page.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
+            page.locator("#uncertainty-title").click()
             page.locator("#platform").select_option("any")
             # Blend at lambda=0 optimizes only *new* strand coverage. A game
             # may have genuine positive genre affinity yet add zero marginal
