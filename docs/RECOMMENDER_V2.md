@@ -57,8 +57,8 @@ two-hop path. `relations.direct` preserves the factual arrow and receipt;
 `relations.fitTwoHop` is the strongest sourced taste path. A sourced direct
 `similar` edge suppresses only transitive **taste** (`fitTwoHop`), not the
 independent observed two-hop route or its factual source receipts; the latter
-may increase observed route coverage but never taste-score or ranking coverage. Pair explanations
-expose both `evidenceCoverage`/`evidenceCoverageByLane` and the independent
+may increase observed route coverage but never taste-score or ranking coverage.
+Pair explanations expose both `evidenceCoverage`/`evidenceCoverageByLane` and the independent
 `tasteEvidenceCoverage`/`tasteEvidenceCoverageByLane` used by rank tie-breaks.
 In basket scoring, an all-`similar` two-hop path can raise taste fit only when
 its intermediate game **passes the same platform/co-op/exclusion hard filters**
@@ -66,7 +66,7 @@ as the basket candidates. Unknown required metadata is not an admissible
 intermediate. Context-free pair comparisons still show sourced paths, and
 `relations.twoHop` preserves observed graph receipts even when a basket cannot
 traverse them; `relations.fitTwoHop` is the constrained scoring path. Observed
-route coverage is not playable route availability. This is an offline v5
+route coverage is not playable route availability. This is an offline v6
 correctness guard, not evidence of higher player relevance.
 Prior v1/v2/v3/v4/v5 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
