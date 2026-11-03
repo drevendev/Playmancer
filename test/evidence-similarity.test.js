@@ -167,9 +167,45 @@ test("a stronger factual route cannot mask a weaker sourced similarity path", ()
   assert.equal(reversed.affinity, pair.affinity);
 });
 
-test("direct evidence does not double-count a two-hop path", () => {
-  const m = model(undefined, [relation("demo:a", "demo:b"), relation("demo:b", "demo:c"), relation("demo:a", "demo:c", .4)]);
-  assert.equal(compareEvidenceGames(m, a.id, c.id).relations.twoHop, null);
+test("direct similarity preserves an observed two-hop route without double-counting taste", () => {
+  const direct = relation("demo:a", "demo:c", .4, "similar");
+  const m = model(undefined, [relation("demo:a", "demo:b"), relation("demo:b", "demo:c"), direct]);
+  const pair = compareEvidenceGames(m, a.id, c.id);
+  const directOnly = compareEvidenceGames(model(undefined, [direct]), a.id, c.id);
+  assert.equal(pair.relations.direct.type, "similar");
+  assert.equal(pair.relations.twoHop.via, "demo:b");
+  assert.equal(pair.relations.fitTwoHop, null);
+  assert.equal(pair.evidenceCoverageByLane.twoHop, .03);
+  assert.equal(pair.tasteEvidenceCoverageByLane.twoHop, 0);
+  assert.equal(pair.affinity, directOnly.affinity);
+  assert.equal(pair.tasteEvidenceCoverage, directOnly.tasteEvidenceCoverage);
+  const reverse = compareEvidenceGames(m, c.id, a.id);
+  assert.equal(reverse.relations.twoHop.via, "demo:b");
+  assert.deepEqual(reverse.relations.twoHop.hops, pair.relations.twoHop.hops);
+});
+
+test("direct similarity retains factual route receipts without improving basket fit", () => {
+  const direct = relation("demo:a", "demo:c", .4, "similar");
+  const m = model(undefined, [
+    direct,
+    relation("demo:a", "demo:d", 1, "references"),
+    relation("demo:d", "demo:c", 1, "references"),
+  ]);
+  const pair = compareEvidenceGames(m, a.id, c.id);
+  const baseline = compareEvidenceGames(model(undefined, [direct]), a.id, c.id);
+  assert.equal(pair.relations.twoHop.via, "demo:d");
+  assert.deepEqual(pair.relations.twoHop.hops.map(h => h.type), ["references", "references"]);
+  assert.equal(pair.relations.fitTwoHop, null);
+  assert.equal(pair.evidenceCoverageByLane.twoHop, .03);
+  assert.equal(pair.tasteEvidenceCoverageByLane.twoHop, 0);
+  assert.equal(pair.affinity, baseline.affinity);
+  assert.equal(pair.tasteEvidenceCoverage, baseline.tasteEvidenceCoverage);
+  const ranked = rankEvidenceBasket(m, { seeds: [{ id: a.id, weight: 1 }] });
+  const item = ranked.ranked.find(result => result.id === c.id);
+  assert.ok(item);
+  assert.equal(item.evidence[0].relations.twoHop.via, d.id);
+  assert.equal(item.evidence[0].relations.fitTwoHop, null);
+  assert.equal(item.evidence[0].affinity, baseline.affinity);
 });
 test("duplicate, dangling and self referential connections are rejected", () => {
   assert.throws(() => model(undefined, [relation("demo:a", "demo:z")]), /endpoints/);
@@ -376,7 +412,8 @@ test("factual direct receipts never mask independent two-hop taste evidence", ()
     ...legs, relation("demo:a", "demo:c", .4, "similar"),
   ]), a.id, c.id);
   assert.equal(directSimilar.relations.fitTwoHop, null);
-  assert.equal(directSimilar.relations.twoHop, null);
+  assert.equal(directSimilar.relations.twoHop.via, b.id);
+  assert.equal(directSimilar.evidenceCoverageByLane.twoHop, .03);
   assert.equal(directSimilar.tasteEvidenceCoverageByLane.twoHop, 0);
   assert.ok(Math.abs(directSimilar.affinity - .08 * .4) < 1e-12);
 
