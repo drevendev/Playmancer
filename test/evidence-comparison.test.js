@@ -10,6 +10,7 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
   const report = runEvidenceComparison(clone());
   assert.equal(report.report_schema, 'p76-synthetic-paired-1');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
+  assert.equal(report.new_method, 'weighted-tags-graph-experiment-6');
   assert.equal(report.game_count, 12);
   assert.equal(report.rows.length, fixture.baskets.length * 5);
   for (const row of report.rows) {
@@ -61,4 +62,22 @@ test('sparse tag evidence abstains, while strict unknown platform and coop filte
     assert.ok(row.old.uncertain.includes('demo:echo'));
     assert.deepEqual(row.old.excluded, row.v2.excluded);
   }
+});
+
+test('paired probes cannot be excluded, hard-failed or unknown under either filter', () => {
+  const excluded = clone();
+  excluded.baskets[0].excluded.push('demo:tide');
+  assert.throws(() => runEvidenceComparison(excluded), /probe cannot be explicitly excluded/);
+
+  const unknownPlatform = clone();
+  unknownPlatform.baskets[1].probeIds = ['demo:echo']; // Windows unknown.
+  assert.throws(() => runEvidenceComparison(unknownPlatform), /probe must pass hard constraints/);
+
+  const failedPlatform = clone();
+  failedPlatform.baskets[2].probeIds = ['demo:meadow']; // No Linux, no co-op.
+  assert.throws(() => runEvidenceComparison(failedPlatform), /probe must pass hard constraints/);
+
+  const failedCoop = clone();
+  failedCoop.baskets[2].probeIds = ['demo:ember']; // Linux is known, co-op is false.
+  assert.throws(() => runEvidenceComparison(failedCoop), /probe must pass hard constraints/);
 });
