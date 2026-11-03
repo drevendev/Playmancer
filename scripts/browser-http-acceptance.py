@@ -208,7 +208,7 @@ def exercise(browser, base_url, engine, label, width, height):
               first_card.locator(".explanation").evaluate("el => el.open")
               and technical.is_visible()
               and "Entity:" in technical.inner_text()
-              and "Platforms:" in technical.inner_text()
+              and "Recorded platforms (not exhaustive):" in technical.inner_text()
               and page.evaluate("document.activeElement.tagName") == "SUMMARY")
         why_summary.press("Enter")
         check(case, "keyboard closes details without removing evidence or focus",
