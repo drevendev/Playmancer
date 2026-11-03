@@ -8,7 +8,7 @@ const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-1');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-2');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-6');
   assert.equal(report.game_count, 12);
@@ -22,6 +22,18 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
     assert.ok(row.v2.top.every(id => !row.seeds.some(seed => seed.id === id)));
     assert.ok(row.shared_top_k >= 0 && row.shared_top_k <= report.top_k);
     assert.equal(row.probe_delta, row.probe_hits_v2 - row.probe_hits_old);
+    assert.equal(row.eligible_candidates + row.hard_unknown_candidates +
+      row.hard_excluded_candidates, report.game_count);
+    assert.ok(row.rankable_opportunities_old >= 0 &&
+      row.rankable_opportunities_old <= row.eligible_candidates);
+    assert.ok(row.rankable_opportunities_v2 >= 0 &&
+      row.rankable_opportunities_v2 <= row.eligible_candidates);
+    assert.ok(row.old.top.length <= row.rankable_opportunities_old);
+    assert.ok(row.v2.top.length <= row.rankable_opportunities_v2);
+    assert.ok(row.probe_evidence_unknown_old.every(id => row.probe_ids.includes(id) &&
+      !row.old.top.includes(id)));
+    assert.ok(row.probe_evidence_unknown_v2.every(id => row.probe_ids.includes(id) &&
+      !row.v2.top.includes(id)));
   }
 });
 
@@ -56,6 +68,10 @@ test('sparse tag evidence abstains, while strict unknown platform and coop filte
     assert.deepEqual(row.old.top, []);
     assert.deepEqual(row.v2.top, []);
     assert.ok(row.old.uncertain.length > 0 && row.v2.uncertain.length > 0);
+    assert.deepEqual(row.probe_evidence_unknown_old, ['demo:meadow']);
+    assert.deepEqual(row.probe_evidence_unknown_v2, ['demo:meadow']);
+    assert.equal(row.rankable_opportunities_old, 0);
+    assert.equal(row.rankable_opportunities_v2, 0);
   }
   for (const row of report.rows.filter(row => row.basket_id === 'linux-coop-puzzles')) {
     assert.ok(row.old.excluded.includes('demo:ember'));

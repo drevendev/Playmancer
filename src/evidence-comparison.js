@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-1';
+const VERSION = 'p76-synthetic-paired-2';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 function knownId(id, ids, label) {
@@ -86,11 +86,23 @@ function hardUnknownIds(partition) {
   return partition.uncertain.filter(item => item.reason === 'hard-constraint-unknown')
     .map(item => item.id).sort();
 }
-function expectedHardUnknownIds(basket) {
+// Independent catalog eligibility, not a model-produced prediction. Blend returns
+// only top-k ranked items, so its ranked.length is not the opportunity denominator.
+function eligibleUniverse(basket) {
   const seeds = new Set(basket.seeds.map(seed => seed.id));
   const excluded = new Set(basket.excluded);
-  return CATALOG.filter(game => !seeds.has(game.id) && !excluded.has(game.id) &&
-    constraintState(game, basket) === 'unknown').map(game => game.id).sort();
+  const eligible = [], hardUnknown = [], hardExcluded = [];
+  for (const game of CATALOG) {
+    const state = constraintState(game, basket);
+    if (seeds.has(game.id) || excluded.has(game.id) || state === 'fail') hardExcluded.push(game.id);
+    else if (state === 'unknown') hardUnknown.push(game.id);
+    else eligible.push(game.id);
+  }
+  return { eligible: eligible.sort(), hardUnknown: hardUnknown.sort(), hardExcluded: hardExcluded.sort() };
+}
+function evidenceAbstentions(partition) {
+  return partition.uncertain.filter(item => item.reason !== 'hard-constraint-unknown')
+    .map(item => item.id).sort();
 }
 
 export function runEvidenceComparison(input) {
@@ -108,20 +120,38 @@ export function runEvidenceComparison(input) {
       });
       // Ranking uncertainty may differ because the models observe different
       // features. Unknown *hard-filter* states may not differ or become passes.
-      const expectedUnknown = JSON.stringify(expectedHardUnknownIds(basket));
-      check(JSON.stringify(hardUnknownIds(legacyResult)) === expectedUnknown &&
-        JSON.stringify(hardUnknownIds(experimentalResult)) === expectedUnknown,
-      `hard constraint unknown drift for ${basket.id}/${mode}`);
+      const universe = eligibleUniverse(basket);
+      const eligibleSet = new Set(universe.eligible);
+      const expectedUnknown = JSON.stringify(universe.hardUnknown);
+      const expectedExcluded = JSON.stringify(universe.hardExcluded);
+      const oldAbstained = evidenceAbstentions(legacyResult);
+      const v2Abstained = evidenceAbstentions(experimentalResult);
+      for (const [method, partition, abstained] of [
+        ['old', legacyResult, oldAbstained], ['v2', experimentalResult, v2Abstained],
+      ]) {
+        check(JSON.stringify(hardUnknownIds(partition)) === expectedUnknown,
+          `hard constraint unknown drift for ${basket.id}/${mode}/${method}`);
+        check(JSON.stringify(idsOf(partition.excluded).sort()) === expectedExcluded,
+          `hard exclusion drift for ${basket.id}/${mode}/${method}`);
+        check(abstained.every(id => eligibleSet.has(id)) &&
+          partition.ranked.every(item => eligibleSet.has(item.id) && !abstained.includes(item.id)),
+          `non-eligible ranked/abstained candidate for ${basket.id}/${mode}/${method}`);
+      }
       const legacy = summarize(legacyResult, input.topK);
       const experimental = summarize(experimentalResult, input.topK);
-      check(JSON.stringify(legacy.excluded) === JSON.stringify(experimental.excluded),
-        `hard exclusion drift for ${basket.id}/${mode}`);
       const legacyHits = probeHits(legacy.top, basket.probeIds);
       const experimentalHits = probeHits(experimental.top, basket.probeIds);
       rows.push({ basket_id: basket.id, mode, constraints: { platform: basket.platform, coopOnly: basket.coopOnly },
         seeds: basket.seeds.map(seed => ({ id: seed.id, weight: seed.weight })),
         excluded_ids: [...basket.excluded], probe_ids: [...basket.probeIds],
         old: legacy, v2: experimental,
+        eligible_candidates: universe.eligible.length,
+        hard_unknown_candidates: universe.hardUnknown.length,
+        hard_excluded_candidates: universe.hardExcluded.length,
+        rankable_opportunities_old: universe.eligible.length - oldAbstained.length,
+        rankable_opportunities_v2: universe.eligible.length - v2Abstained.length,
+        probe_evidence_unknown_old: basket.probeIds.filter(id => oldAbstained.includes(id)),
+        probe_evidence_unknown_v2: basket.probeIds.filter(id => v2Abstained.includes(id)),
         shared_top_k: legacy.top.filter(id => experimental.top.includes(id)).length,
         probe_hits_old: legacyHits, probe_hits_v2: experimentalHits,
         probe_delta: experimentalHits - legacyHits });
