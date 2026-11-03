@@ -50,6 +50,11 @@ artwork and third-party descriptions are not invented or redistributed.**
 Genre-only matches have at most **30% comparable feature-group coverage**, not
 30% confidence or measured recommendation accuracy. Missing mandatory evidence
 remains unknown: hard platform/co-op constraints are not silently relaxed.
+The real snapshot's recorded platform lists are **positive observations only**:
+an unlisted platform fails the strict support filter, but is **not evidence that
+the game cannot run there**. The player now distinguishes that missing support
+receipt from explicitly observed non-co-op metadata in its exclusion details.
+This is a disclosure/UX change, **not** a ranking or method-version change.
 Outbound store links, including owner-associated games, do not affect ranking.
 There is no account, tracking, runtime store API, paid inference or remote asset
 dependency.

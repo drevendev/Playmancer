@@ -17,6 +17,18 @@ const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails
 const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
 const hasDreven = DEMO_SNAPSHOT.sources.some(source => source.id === "dreven-owned");
 const storeNames = { steam: "Steam", itch: "itch.io", googleplay: "Google Play" };
+// A positive platform observation is not an exhaustive compatibility list.
+// Keep strict filtering, but do not tell players that an unlisted platform is
+// known to be unsupported. Explicitly observed non-co-op is different.
+function hardFilterExplanation(game) {
+  if (state.platform !== "any" && game.platforms !== null &&
+      !game.platforms.includes(state.platform)) {
+    return syntheticCatalog ? `no recorded ${state.platform} support in this fictional profile`
+      : `no recorded ${state.platform} support in this snapshot (not proof the game is unavailable there)`;
+  }
+  if (state.coopOnly && game.coop === false) return "co-op explicitly recorded as unavailable";
+  return reasons["hard-constraint-fail"];
+}
 function renderStoreLinks(game) {
   if (!game.storeLinks?.length) return null;
   const row = element("span", undefined, "storefront-links");
@@ -91,7 +103,8 @@ function showCatalogIdentity() {
   document.querySelector(".foot").replaceChildren(
     element("strong", syntheticCatalog ? "Prototype, not a real catalog release." :
       hasDreven ? "Real multistore pilot · limited genre evidence." : "Real Wikidata CC0 pilot · limited genre evidence."),
-    " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. ",
+    " No APIs, tracking, images, paid inference, or external assets. Missing metadata remains unknown. " +
+      (syntheticCatalog ? "" : "Platform lists record positive evidence only; unlisted platforms are not verified unsupported. "),
     "Source attribution: " + DEMO_SNAPSHOT.sources.map(source => source.attribution).join("; ") + ".",
     ...(receipts ? [element("br"), receipts] : []),
     element("br"), versions
@@ -286,7 +299,7 @@ function drawEmptyRecovery(result) {
     if (count) list.append(element("li", `${count} ${count === 1 ? singular : plural}.`));
   };
   explain(hidden.length, "profile was explicitly hidden", "profiles were explicitly hidden");
-  explain(failed.length, "profile fails a required filter", "profiles fail a required filter");
+  explain(failed.length, "profile lacks recorded support for a required filter", "profiles lack recorded support for a required filter");
   explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
   explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
   if (sparseSeeds.length) {
@@ -363,7 +376,7 @@ function drawResults() {
     card.append(top);
     // Technical identifiers and source-filter fields are available on demand;
     // keep per-seed affinities, compromise warnings and coverage visible in the list.
-    const technicalMetadata = element("p", `Entity: ${game.kind} · ${game.id} · Platforms: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata");
+    const technicalMetadata = element("p", `Entity: ${game.kind} · ${game.id} · ${syntheticCatalog ? "Platforms" : "Recorded platforms (not exhaustive)"}: ${game.platforms?.join(", ") ?? "unknown"} · Co-op: ${game.coop == null ? "unknown" : game.coop ? "yes" : "no"}`, "metadata");
     const affinities = element("div", undefined, "affinities");
     item.evidence.forEach((pair) => {
       const row = element("div", undefined, "affinity");
@@ -433,7 +446,9 @@ function drawResults() {
   $("partition-list").replaceChildren();
   for (const item of [...result.uncertain, ...result.excluded]) {
     const reason = item.reason === "seed" ? reasons.seed
-      : state.excluded.includes(item.id) ? "hidden by you" : reasons[item.reason] ?? item.reason;
+      : state.excluded.includes(item.id) ? "hidden by you"
+      : item.reason === "hard-constraint-fail" ? hardFilterExplanation(BY_ID.get(item.id))
+      : reasons[item.reason] ?? item.reason;
     $("partition-list").append(element("li", `${BY_ID.get(item.id).name}: ${reason}.`));
   }
 }
