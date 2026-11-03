@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-2';
+const VERSION = 'p76-synthetic-paired-3';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 function knownId(id, ids, label) {
@@ -82,6 +82,19 @@ function summarize(partition, topK) {
     uncertain: idsOf(partition.uncertain), excluded: idsOf(partition.excluded) };
 }
 function probeHits(top, probes) { return probes.filter(id => top.includes(id)).length; }
+// Raw probe deltas include evidence availability. Keep them, but also report
+// authored probes scoreable by BOTH methods; this is not a human relevance study.
+export function pairedProbeDiagnostics(probes, oldTop, v2Top, oldAbstained, v2Abstained) {
+  const oldUnknown = new Set(oldAbstained), v2Unknown = new Set(v2Abstained);
+  const comparable = probes.filter(id => !oldUnknown.has(id) && !v2Unknown.has(id));
+  const unpaired = probes.filter(id => oldUnknown.has(id) || v2Unknown.has(id))
+    .map(id => ({ id, old: oldUnknown.has(id) ? 'abstained' : 'rankable',
+      v2: v2Unknown.has(id) ? 'abstained' : 'rankable' }));
+  const oldHits = probeHits(oldTop, comparable), v2Hits = probeHits(v2Top, comparable);
+  return { comparable_probe_ids: comparable, probe_evidence_unpaired: unpaired,
+    paired_probe_hits_old: oldHits, paired_probe_hits_v2: v2Hits,
+    paired_probe_delta: v2Hits - oldHits };
+}
 function hardUnknownIds(partition) {
   return partition.uncertain.filter(item => item.reason === 'hard-constraint-unknown')
     .map(item => item.id).sort();
@@ -141,6 +154,8 @@ export function runEvidenceComparison(input) {
       const experimental = summarize(experimentalResult, input.topK);
       const legacyHits = probeHits(legacy.top, basket.probeIds);
       const experimentalHits = probeHits(experimental.top, basket.probeIds);
+      const pairedProbes = pairedProbeDiagnostics(basket.probeIds, legacy.top, experimental.top,
+        oldAbstained, v2Abstained);
       rows.push({ basket_id: basket.id, mode, constraints: { platform: basket.platform, coopOnly: basket.coopOnly },
         seeds: basket.seeds.map(seed => ({ id: seed.id, weight: seed.weight })),
         excluded_ids: [...basket.excluded], probe_ids: [...basket.probeIds],
@@ -154,7 +169,8 @@ export function runEvidenceComparison(input) {
         probe_evidence_unknown_v2: basket.probeIds.filter(id => v2Abstained.includes(id)),
         shared_top_k: legacy.top.filter(id => experimental.top.includes(id)).length,
         probe_hits_old: legacyHits, probe_hits_v2: experimentalHits,
-        probe_delta: experimentalHits - legacyHits });
+        probe_delta: experimentalHits - legacyHits,
+        ...pairedProbes });
     }
   }
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
@@ -165,5 +181,7 @@ export function runEvidenceComparison(input) {
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
     gains: rows.filter(row => row.probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
+    paired_losses: rows.filter(row => row.paired_probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
+    paired_gains: rows.filter(row => row.paired_probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
     rows };
 }
