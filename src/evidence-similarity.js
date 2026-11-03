@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-5";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-6";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -189,7 +189,8 @@ function relationEvidence(model, a, b, fitEligibleVia = null) {
   // Only direct taste similarity supersedes its transitive substitute.
   // A factual direct reference/inspiration can coexist with an independent
   // sourced two-hop similarity path; the fact itself adds no taste boost.
-  if (direct?.type === "similar") return { direct, twoHop: null, fitTwoHop: null };
+  // A sourced direct similarity supersedes transitive TASTE, but must not erase
+  // independently observed explanatory routes (including factual crossovers).
   let strongest = null, strongestFit = null;
   // Route evidence can include reference/inspiration facts. Taste evidence can
   // use only sourced "similar" edges; a stronger reference path must never
@@ -208,7 +209,7 @@ function relationEvidence(model, a, b, fitEligibleVia = null) {
     const better = best => !best || strength > best.strength ||
       (strength === best.strength && middle < best.via);
     if (better(strongest)) strongest = candidate;
-    if (first.type === "similar" && second.type === "similar" &&
+    if (direct?.type !== "similar" && first.type === "similar" && second.type === "similar" &&
         (fitEligibleVia === null || fitEligibleVia.has(middle)) && better(strongestFit))
       strongestFit = candidate;
   }
