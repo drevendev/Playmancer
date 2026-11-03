@@ -48,7 +48,13 @@ with sync_playwright() as p:
     slider=page.locator('#weight-ember'); slider.focus(); page.keyboard.press('ArrowRight')
     check('keyboard weight edit retains focus and updates value',slider.input_value()=='2' and page.evaluate('document.activeElement.id')=='weight-ember')
     page.locator('#platform').select_option('linux'); page.locator('#coop').check(); page.locator('#uncertainty > summary').click()
-    check('Linux co-op filter excludes uncertain platform profiles',page.locator('#results > li').count()>0 and 'Echo Atlas' not in page.locator('#results').inner_text() and 'Echo Atlas: required filter evidence is unknown.' in page.locator('#partition-list').inner_text())
+    partition = page.locator('#partition-list').inner_text()
+    check('Linux co-op filter excludes uncertain platform profiles',
+          page.locator('#results > li').count() > 0
+          and 'Echo Atlas' not in page.locator('#results').inner_text()
+          and 'Echo Atlas: missing evidence: support for required platform linux is unrecorded; required co-op support is unrecorded (not proof of incompatibility)' in partition
+          and 'Silent Archive: missing evidence: support for required platform linux is unrecorded; required co-op support is unrecorded (not proof of incompatibility)' in partition
+          and 'Orbit Cartographer: co-op explicitly recorded as unavailable' in partition)
     expected=page.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')
     page.locator('#share').click(); page.wait_for_timeout(80)
     share=page.locator('#share-link').input_value()
