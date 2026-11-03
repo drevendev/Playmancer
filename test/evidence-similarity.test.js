@@ -31,6 +31,31 @@ test("weighted tags allocate exactly one unit per game", () => {
   assert.throws(() => model([{ ...a, tags: [tag("genre:rpg", 1, "")] }]), /source/);
   assert.equal(model().version, EVIDENCE_METHOD_VERSION);
 });
+test("platform source observations must not disguise missing or noncanonical eligibility", () => {
+  for (const value of [[], ["any"], ["Windows"], [" windows"], [""],
+    ["windows", "Windows"], ["windows", "windows"], ["x".repeat(33)]]) {
+    assert.throws(() => model([{ ...a, metadata: { platforms: field(value) } }]),
+      /platforms must be nonempty unique canonical IDs/);
+  }
+  const canonical = model([{ ...a, metadata: { platforms: field(["windows", "linux"]) } }]);
+  assert.deepEqual(canonical.profiles.get(a.id).metadata.platforms.value, ["linux", "windows"]);
+
+  // Unknown platform evidence is different from an asserted empty (known-failing)
+  // platform list: the former remains in the strict hard-filter abstention lane.
+  const noPlatform = model([a, { ...b, metadata: {} }]);
+  const opts = { seeds: [{ id: a.id, weight: 1 }], platform: "windows" };
+  const partition = rankEvidenceBasket(noPlatform, opts);
+  assert.ok(partition.uncertain.some(item =>
+    item.id === b.id && item.reason === "hard-constraint-unknown"));
+  for (const platform of ["Windows", " windows", "any ", "", "x".repeat(33)]) {
+    assert.throws(() => rankEvidenceBasket(noPlatform, { ...opts, platform }), /invalid hard filters/);
+  }
+  // Unknown-but-canonical platform keys are allowed, and cannot become passes.
+  const unknownPlatform = rankEvidenceBasket(noPlatform, { ...opts, platform: "future-console" });
+  assert.ok(unknownPlatform.uncertain.some(item =>
+    item.id === b.id && item.reason === "hard-constraint-unknown"));
+});
+
 test("weighted mass intersection respects unequal tag weights, not set size", () => {
   const ab = compareEvidenceGames(model(), a.id, b.id);
   assert.equal(ab.status, "rankable");
