@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { pairedProbeDiagnostics, runEvidenceComparison } from '../src/evidence-comparison.js';
+import { pairedProbeDiagnostics, pairedRankableCohort, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-3');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-4');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-6');
   assert.equal(report.game_count, 12);
@@ -27,8 +27,18 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
       [...row.probe_ids].sort());
     assert.ok(row.paired_probe_hits_old <= row.comparable_probe_ids.length);
     assert.ok(row.paired_probe_hits_v2 <= row.comparable_probe_ids.length);
-    assert.ok(row.paired_probe_hits_old <= row.probe_hits_old);
-    assert.ok(row.paired_probe_hits_v2 <= row.probe_hits_v2);
+    assert.deepEqual(row.comparable_probe_ids,
+      row.probe_ids.filter(id => row.paired_rankable_ids.includes(id)));
+    assert.ok(row.paired_top_old.every(id => row.paired_rankable_ids.includes(id)));
+    assert.ok(row.paired_top_v2.every(id => row.paired_rankable_ids.includes(id)));
+    assert.ok(row.paired_top_old.length <= report.top_k && row.paired_top_v2.length <= report.top_k);
+    assert.equal(row.paired_shared_top_k, row.paired_top_old.filter(id => row.paired_top_v2.includes(id)).length);
+    assert.equal(row.paired_rankable_ids.length + row.old_only_rankable_ids.length, row.rankable_opportunities_old);
+    assert.equal(row.paired_rankable_ids.length + row.v2_only_rankable_ids.length, row.rankable_opportunities_v2);
+    assert.deepEqual([...row.paired_rankable_ids, ...row.old_only_rankable_ids, ...row.v2_only_rankable_ids]
+      .filter((id, index, ids) => ids.indexOf(id) === index).sort(),
+      [...new Set([...row.paired_rankable_ids, ...row.old_only_rankable_ids,
+        ...row.v2_only_rankable_ids])].sort());
     assert.ok(row.probe_evidence_unpaired.every(item => ['rankable', 'abstained'].includes(item.old)
       && ['rankable', 'abstained'].includes(item.v2) && (item.old === 'abstained' || item.v2 === 'abstained')));
     assert.equal(row.eligible_candidates + row.hard_unknown_candidates +
@@ -136,4 +146,47 @@ test('paired probes cannot be excluded, hard-failed or unknown under either filt
   const failedCoop = clone();
   failedCoop.baskets[2].probeIds = ['demo:ember']; // Linux is known, co-op is false.
   assert.throws(() => runEvidenceComparison(failedCoop), /probe must pass hard constraints/);
+});
+
+test('paired cohort reranks the full shared candidate pool rather than merely filtering probes', () => {
+  const seeds = [{ id: 'seed:a', weight: 1 }, { id: 'seed:b', weight: 1 }];
+  const item = (id, a, b) => ({
+    id, affinities: { 'seed:a': a, 'seed:b': b }, evidenceCoverage: 1,
+  });
+  const old = { ranked: [
+    item('only:old', 1, 1), item('shared:a', 0.9, 0.9), item('shared:b', 0.2, 0.2),
+  ] };
+  const v2 = { ranked: [
+    item('only:v2', 1, 1), item('shared:a', 0.1, 0.1), item('shared:b', 0.95, 0.95),
+  ] };
+  const paired = pairedRankableCohort(old, v2, seeds, 'arithmetic', 0.3, 1);
+  assert.deepEqual(paired.paired_rankable_ids, ['shared:a', 'shared:b']);
+  assert.deepEqual(paired.old_only_rankable_ids, ['only:old']);
+  assert.deepEqual(paired.v2_only_rankable_ids, ['only:v2']);
+  assert.deepEqual(paired.paired_top_old, ['shared:a']);
+  assert.deepEqual(paired.paired_top_v2, ['shared:b']);
+  const probes = pairedProbeDiagnostics(['shared:a', 'shared:b'], paired.paired_top_old,
+    paired.paired_top_v2, [], []);
+  assert.equal(probes.paired_probe_delta, 0);
+  assert.equal(paired.paired_shared_top_k, 0);
+});
+
+test('paired Blend recomputes list-level marginal gains on the same shared pool', () => {
+  const seeds = [{ id: 'seed:a', weight: 1 }, { id: 'seed:b', weight: 1 }];
+  const item = (id, a, b) => ({
+    id, affinities: { 'seed:a': a, 'seed:b': b }, evidenceCoverage: 1,
+  });
+  const old = { ranked: [
+    item('old:exclusive', 1, 1), item('shared:a', 1, 0.1),
+    item('shared:b', 0.1, 1), item('shared:c', 0.8, 0.8),
+  ] };
+  const v2 = { ranked: [
+    item('v2:exclusive', 1, 1), item('shared:a', 1, 0.1),
+    item('shared:b', 0.1, 1), item('shared:c', 0.8, 0.8),
+  ] };
+  const paired = pairedRankableCohort(old, v2, seeds, 'blend', 0, 2);
+  assert.deepEqual(paired.paired_top_old, ['shared:c', 'shared:a']);
+  assert.deepEqual(paired.paired_top_v2, paired.paired_top_old);
+  assert.equal(paired.paired_shared_top_k, 2);
+  assert.equal(paired.paired_rankable_ids.length, 3);
 });
