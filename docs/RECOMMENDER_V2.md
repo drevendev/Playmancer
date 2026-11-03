@@ -145,6 +145,19 @@ A future rights-reviewed snapshot could record a directed
 `inspired-by: Esoteric Ebb → Disco Elysium` edge with that receipt; neither
 game is added to the current 30-game snapshot by this experiment.
 
+## Canonical platform evidence
+
+In the offline v2 model, a **recorded** platform list must be nonempty,
+lowercase, hyphenated canonical tokens (maximum 32 characters), with no
+duplicates. The `any` wildcard belongs only to basket filters and never to
+a game's source-backed platform list. Empty arrays and misspelled/case-shifted
+platform names are rejected during snapshot validation rather than being
+treated as evidence that a game fails a hard constraint. A **missing** platform
+observation remains unknown, and a required platform filter must abstain;
+the validator never invents or normalizes source claims. Unrecognized but
+canonical filter tokens remain valid strict filters, not a relaxed fallback.
+These are experimental input guards, not a public share-schema change.
+
 ## Performance and evaluation gates
 
 The offline implementation supports up to **250** distinct games, **128** tags
