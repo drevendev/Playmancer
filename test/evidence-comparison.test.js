@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { runEvidenceComparison } from '../src/evidence-comparison.js';
+import { pairedProbeDiagnostics, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-2');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-3');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-6');
   assert.equal(report.game_count, 12);
@@ -22,6 +22,15 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
     assert.ok(row.v2.top.every(id => !row.seeds.some(seed => seed.id === id)));
     assert.ok(row.shared_top_k >= 0 && row.shared_top_k <= report.top_k);
     assert.equal(row.probe_delta, row.probe_hits_v2 - row.probe_hits_old);
+    assert.equal(row.paired_probe_delta, row.paired_probe_hits_v2 - row.paired_probe_hits_old);
+    assert.deepEqual([...row.comparable_probe_ids, ...row.probe_evidence_unpaired.map(item => item.id)].sort(),
+      [...row.probe_ids].sort());
+    assert.ok(row.paired_probe_hits_old <= row.comparable_probe_ids.length);
+    assert.ok(row.paired_probe_hits_v2 <= row.comparable_probe_ids.length);
+    assert.ok(row.paired_probe_hits_old <= row.probe_hits_old);
+    assert.ok(row.paired_probe_hits_v2 <= row.probe_hits_v2);
+    assert.ok(row.probe_evidence_unpaired.every(item => ['rankable', 'abstained'].includes(item.old)
+      && ['rankable', 'abstained'].includes(item.v2) && (item.old === 'abstained' || item.v2 === 'abstained')));
     assert.equal(row.eligible_candidates + row.hard_unknown_candidates +
       row.hard_excluded_candidates, report.game_count);
     assert.ok(row.rankable_opportunities_old >= 0 &&
@@ -45,6 +54,37 @@ test('reports reproducible byte-for-byte rankings and explicit wins/losses witho
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })));
   assert.deepEqual(first.gains, first.rows.filter(row => row.probe_delta > 0)
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })));
+  assert.deepEqual(first.paired_losses, first.rows.filter(row => row.paired_probe_delta < 0)
+    .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
+  assert.deepEqual(first.paired_gains, first.rows.filter(row => row.paired_probe_delta > 0)
+    .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
+});
+
+test('unrankable evidence cannot masquerade as a paired probe ranking loss or gain', () => {
+  const probes = ['stable', 'unobserved', 'unknown-both'];
+  const oldTop = ['stable', 'unobserved'], v2Top = ['stable'];
+  const paired = pairedProbeDiagnostics(probes, oldTop, v2Top,
+    ['unknown-both'], ['unobserved', 'unknown-both']);
+  assert.deepEqual(paired.comparable_probe_ids, ['stable']);
+  assert.deepEqual(paired.probe_evidence_unpaired, [
+    { id: 'unobserved', old: 'rankable', v2: 'abstained' },
+    { id: 'unknown-both', old: 'abstained', v2: 'abstained' },
+  ]);
+  assert.equal(paired.paired_probe_hits_old, 1);
+  assert.equal(paired.paired_probe_hits_v2, 1);
+  assert.equal(paired.paired_probe_delta, 0);
+  // Raw probe delta remains negative and separately visible.
+  assert.equal(v2Top.filter(id => probes.includes(id)).length -
+    oldTop.filter(id => probes.includes(id)).length, -1);
+  const reverse = pairedProbeDiagnostics(['old-missing', 'shared'],
+    ['shared'], ['old-missing', 'shared'], ['old-missing'], []);
+  assert.deepEqual(reverse.comparable_probe_ids, ['shared']);
+  assert.deepEqual(reverse.probe_evidence_unpaired,
+    [{ id: 'old-missing', old: 'abstained', v2: 'rankable' }]);
+  assert.equal(reverse.paired_probe_delta, 0);
+  const bothAbsent = pairedProbeDiagnostics(['x'], [], [], ['x'], ['x']);
+  assert.deepEqual(bothAbsent.comparable_probe_ids, []);
+  assert.equal(bothAbsent.paired_probe_delta, 0);
 });
 
 test('rejects incompatible catalog, invalid baskets and hidden filter changes', () => {
