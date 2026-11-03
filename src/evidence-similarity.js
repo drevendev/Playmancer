@@ -7,6 +7,8 @@ export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
 const TAG_ID = /^[a-z][a-z0-9-]*:[a-z0-9][a-z0-9._-]*$/;
+// `any` belongs to a basket filter, never to a source-backed game platform.
+const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
 const EDGE_TYPES = new Set(["similar", "inspired-by", "references"]);
 const MAX_GAMES = 250;
 const MAX_TAGS = 128;
@@ -55,9 +57,11 @@ function normalizeMetadata(input, id) {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
           throw new TypeError(`${id}.releaseYear must be a year`);
       } else if (name === "platforms") {
-        if (!Array.isArray(field.value) || field.value.some(v => typeof v !== "string" || !v.trim()) ||
+        if (!Array.isArray(field.value) || field.value.length === 0 ||
+            field.value.some(v => typeof v !== "string" || v.length > 32 ||
+              !PLATFORM_ID.test(v) || v === "any") ||
             new Set(field.value).size !== field.value.length) {
-          throw new TypeError(`${id}.platforms must be unique strings`);
+          throw new TypeError(`${id}.platforms must be nonempty unique canonical IDs (not 'any')`);
         }
         field.value = [...field.value].sort();
       } else text(field.value, `${id}.${name}.value`);
@@ -285,7 +289,8 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   limit = 6, platform = "any", coopOnly = false, excluded = [] } = {}) {
   if (!Array.isArray(seeds) || !seeds.length || seeds.some(seed => !model.profiles.has(seed?.id)))
     throw new TypeError("seeds must reference known catalog games");
-  if (typeof platform !== "string" || !platform || typeof coopOnly !== "boolean" ||
+  if (typeof platform !== "string" || (platform !== "any" &&
+      (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
       !Array.isArray(excluded) || new Set(excluded).size !== excluded.length ||
       excluded.some(id => !model.profiles.has(id))) throw new TypeError("invalid hard filters");
   if (!Number.isInteger(limit) || limit < 0) throw new RangeError("limit must be a nonnegative integer");
