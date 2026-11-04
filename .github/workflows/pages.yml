@@ -114,23 +114,8 @@ jobs:
           EXPECTED_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          if [[ "$DEPLOY_URL" != https://* ]]; then
-            echo "::error title=Missing Pages URL::deploy-pages returned no HTTPS page_url"
-            exit 1
-          fi
-          for attempt in $(seq 1 12); do
-            if curl --fail --silent --show-error --location --max-time 15 "$DEPLOY_URL" -o /tmp/playmancer-live-index.html \
-              && grep -Fq "name=\"playmancer-revision\" content=\"$EXPECTED_SHA\"" /tmp/playmancer-live-index.html \
-              && curl --fail --silent --show-error --location --max-time 15 "${DEPLOY_URL%/}/bridge-worker.js" -o /tmp/playmancer-live-worker.js \
-              && grep -Fq "self.onmessage =" /tmp/playmancer-live-worker.js; then
-              printf '### Live Pages verified\n\n- URL: %s\n- Revision: `%s`\n- Same-origin worker: HTTP 200 and expected entry point\n' "$DEPLOY_URL" "$EXPECTED_SHA" >> "$GITHUB_STEP_SUMMARY"
-              echo "Live Pages index and worker verified at $EXPECTED_SHA"
-              exit 0
-            fi
-            if [[ "$attempt" -lt 12 ]]; then sleep 10; fi
-          done
-          echo "::error title=Pages live check failed::Expected revision or same-origin bridge-worker.js was not served after deploy"
-          exit 1
+          python3 scripts/pages_live_probe.py
+
 
   hosted-player-acceptance:
     if: github.ref == 'refs/heads/master'
