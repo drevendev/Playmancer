@@ -89,7 +89,7 @@ try:
                       {"id": "wikidata:q23013817", "weight": 1}])
             gap.screenshot(path=str(ARTIFACTS / f"real-catalog-seed-evidence-gap-{label}.png"),
                            full_page=True)
-            gap.get_by_role("button", name="Remove DevMatch").click()
+            gap.get_by_role("button", name="Remove DevMatch", exact=True).click()
             check(label + ": removing the sparse favorite clears its warning",
                   gap.locator("#seeds > li").count() == 1
                   and gap.locator("#seeds .seed-evidence-warning").count() == 0)
