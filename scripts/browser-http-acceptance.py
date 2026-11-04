@@ -522,6 +522,7 @@ def exercise(browser, base_url, engine, label, width, height):
             return {
                 heading: size("#bridge-title"),
                 eyebrow: size(".eyebrow"),
+                intro: size(":scope > .hint"),
                 warning: size(".bridge-warning")
             };
         }""")
@@ -582,6 +583,7 @@ def exercise(browser, base_url, engine, label, width, height):
                         return {
                             heading: size("#bridge-title"),
                             eyebrow: size(".eyebrow"),
+                            intro: size(":scope > .hint"),
                             warning: size(".bridge-warning")
                         };
                     })(),
@@ -669,20 +671,58 @@ def exercise(browser, base_url, engine, label, width, height):
                   all(enlarged["resultType"][name] >= original * factor - 1
                       for name, original in result_type_baseline.items()),
                   details={"baseline": result_type_baseline, "enlarged": enlarged["resultType"]})
-            # The long Bridge heading is viewport-capped so whole English
-            # words survive 400% root text on 320px screens. Its relative
-            # hierarchy stays above the Bridge copy; warnings/labels still
-            # scale with the root without capping.
+            # Bridge static copy is viewport-capped like the heading. At 400%
+            # on narrow screens, a strict 4x font-size rule would break words
+            # inside the label and warning, despite no page overflow.
+            # This bounded rule retains text growth and whole-word reflow.
             bridge_heading_floor = min(bridge_type_baseline["heading"] * factor,
                                        enlarged["viewport"] * .17)
-            check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
+            bridge_copy_floors = {
+                "eyebrow": min(bridge_type_baseline["eyebrow"] * factor,
+                               enlarged["viewport"] * .07),
+                "intro": min(bridge_type_baseline["intro"] * factor,
+                             enlarged["viewport"] * .07),
+                "warning": min(bridge_type_baseline["warning"] * factor,
+                               enlarged["viewport"] * .09),
+            }
+            check(case, f"{text_size}% root text retains readable Bridge hierarchy and reflow",
                   enlarged["bridgeType"]["heading"] >= bridge_heading_floor - 1
                   and enlarged["bridgeType"]["heading"] >= enlarged["bridgeType"]["warning"]
-                  and all(enlarged["bridgeType"][name] >= original * factor - 1
-                          for name, original in bridge_type_baseline.items()
-                          if name != "heading"),
+                  and enlarged["bridgeType"]["warning"] >= enlarged["bridgeType"]["eyebrow"]
+                  and all(enlarged["bridgeType"][name] >= minimum - 1
+                          for name, minimum in bridge_copy_floors.items()),
                   details={"baseline": bridge_type_baseline, "enlarged": enlarged["bridgeType"],
-                           "bridge_heading_floor": bridge_heading_floor})
+                           "bridge_heading_floor": bridge_heading_floor,
+                           "copy_floors": bridge_copy_floors})
+            if text_size == 400 and enlarged["viewport"] <= 640:
+                broken = restored.locator("#bridge-lab").evaluate("""panel => {
+                    const results = {};
+                    for (const [name, selector] of Object.entries({
+                        eyebrow: ":scope > .eyebrow",
+                        intro: ":scope > .hint",
+                        warning: ":scope > .bridge-warning"
+                    })) {
+                        const text = panel.querySelector(selector).firstChild;
+                        const value = text.textContent, range = document.createRange();
+                        let cursor = 0;
+                        const fragments = [];
+                        for (const word of value.match(/\\S+/g) || []) {
+                            const start = value.indexOf(word, cursor);
+                            const tops = new Set();
+                            for (let i = 0; i < word.length; i++) {
+                                range.setStart(text, start + i);
+                                range.setEnd(text, start + i + 1);
+                                tops.add(Math.round(range.getBoundingClientRect().top));
+                            }
+                            if (tops.size > 1) fragments.push(word);
+                            cursor = start + word.length;
+                        }
+                        results[name] = fragments;
+                    }
+                    return results;
+                }""")
+                check(case, "400% Bridge static label and explanation keep whole words",
+                      all(not words for words in broken.values()), details=broken)
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
                   and len(enlarged["actions"]) == 3
