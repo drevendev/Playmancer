@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Explore and compare source-backed gameplay observations without pretending incomplete data proves similarity.">
+<title>Gameplay facts — Playmancer</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0e1421;color:#edf4fd;line-height:1.6}
+*{box-sizing:border-box}body{margin:0;overflow-wrap:anywhere}main{max-width:1120px;margin:auto;padding:24px}a{color:#9af4d0}a,button,summary{min-height:44px}a{display:inline-flex;align-items:center;padding:6px 0}h1{font-size:clamp(1.8rem,6vw,3rem);line-height:1.15}h2{font-size:1.5rem}h3{font-size:1.1rem}h1,h2,h3,p,a,li{overflow-wrap:anywhere}p{max-width:80ch}.muted{color:#bbc8da}.notice{border-left:3px solid #ffd894;padding:10px 16px;color:#ffd894}
+label{display:block;font-weight:650}.controls label{min-width:0;overflow:hidden;padding:4px}input,select,button{font:inherit;min-height:48px;min-block-size:48px;max-width:100%;border:1px solid #586b86;border-radius:9px;background:#202c40;color:#edf4fd;padding:12px}input,select{width:100%;min-width:0}select{font-size:1rem;appearance:none;-webkit-appearance:none;text-overflow:ellipsis;white-space:nowrap;padding-inline-end:44px;background-image:linear-gradient(45deg,transparent 50%,#edf4fd 50%),linear-gradient(135deg,#edf4fd 50%,transparent 50%);background-size:6px 6px;background-position:right 18px center,right 12px center;background-repeat:no-repeat}button{cursor:pointer;white-space:normal}button:hover{border-color:#9af4d0}:focus-visible,[tabindex="-1"]:focus{outline:3px solid #9af4d0;outline-offset:3px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}.primary{background:#9af4d0;color:#122b24;font-weight:700}
+.controls,.fact-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.controls>*,.fact-columns>*{min-inline-size:0}.panel,.game-card{border:1px solid #334258;border-radius:14px;background:#161f30;padding:20px;margin:20px 0;min-width:0}.fact-list{padding-left:22px}.fact-list li{margin:12px 0}.fact-list a{display:flex;font-size:.9rem}.fact-list strong{display:block}summary{cursor:pointer;padding:10px 0;font-weight:600}#observation-games{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#observation-games .game-card{margin:0}footer{border-top:1px solid #334258;margin-top:32px;padding-top:20px}[hidden]{display:none!important}
+.skip{position:absolute;transform:translateY(-150%);background:#161f30;padding:12px}.skip:focus{transform:none;top:0;left:0;z-index:10}@media(max-width:700px){main{padding:16px}.controls,.fact-columns,#observation-games{grid-template-columns:minmax(0,1fr)}.panel,.game-card{padding:16px}h1{font-size:min(1.8rem,16vw);overflow-wrap:normal}h2{font-size:min(1.5rem,12vw);overflow-wrap:normal}h3{font-size:min(1.1rem,10vw);overflow-wrap:normal}}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#comparison-title">Skip to game comparison</a>
+<main>
+<header><a href="./index.html">Playmancer · basket recommendations</a><p class="muted">SOURCE-BACKED OBSERVATIONS · NOT A RANKING MODE</p>
+<h1>Look beyond the genre.</h1><p>Find recorded gameplay facts and compare what two games have in common. Every observation links to its source. Unreviewed features stay unknown.</p>
+<div class="actions"><button id="sample" class="primary" type="button">Compare a sample pair</button><button id="show-link" type="button">Show comparison link</button></div>
+<p id="coverage" class="muted"></p><p class="notice">These are selected historical observations, not complete profiles or confidence scores. This explorer does not apply your basket filters or change Intersection, Blend or Bridge. Opening from the basket keeps it in its existing tab.</p></header>
+<div id="link-error" class="panel notice" role="alert" tabindex="-1" hidden><p id="link-error-message"></p><button id="reset" type="button">Reset observation link</button></div>
+<section class="panel" aria-labelledby="comparison-title"><h2 id="comparison-title" tabindex="-1">Compare two games</h2>
+<div class="controls"><label for="left">First game<select id="left"><option value="">Choose a game…</option></select></label><label for="right">Second game<select id="right"><option value="">Choose a different game…</option></select></label></div>
+<p id="action-status" role="status" aria-live="polite" aria-atomic="true"></p><div id="comparison"></div>
+<div id="share-box" hidden><label for="share-url">Versioned comparison URL — copy to share<input id="share-url" readonly type="text"></label></div></section>
+<section aria-labelledby="explore-title"><h2 id="explore-title">Explore recorded facts</h2><div class="controls">
+<label for="query">Search game names or gameplay facts<input id="query" type="search" maxlength="120" autocomplete="off" placeholder="Try farming, building or exploration"></label>
+<label for="tag">Recorded fact<select id="tag"><option value="">All facts</option></select></label></div>
+<p id="search-status" role="status" aria-live="polite" aria-atomic="true"></p><div id="observation-games"></div></section>
+<footer><p>Labels are independently authored summaries of selected facts reviewed on 31 October 2026. Source websites can change. No publisher prose, artwork, scraped store tags or external assets are included.</p><p>No tracking, accounts, live data requests or inferred missing features. The catalog and observation revisions are embedded in every comparison link.</p></footer>
+</main><noscript><p>JavaScript is needed to search and compare these static observations. No remote data requests are made.</p></noscript>
+<script type="module" src="./src/observations-ui.js"></script>
+</body></html>

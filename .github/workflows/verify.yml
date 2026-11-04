@@ -32,7 +32,7 @@ jobs:
           node scripts/run-ranking-benchmark.mjs examples/benchmark.synthetic.json > /tmp/benchmark-b.json
           cmp /tmp/benchmark-a.json /tmp/benchmark-b.json
       - run: npm run build
-      - run: python3 scripts/pages-preflight.py _site
+      - run: python3 scripts/release-preflight.py _site
       - name: Verify byte-identical builds
         run: |
           rm -rf /tmp/playmancer-build-a /tmp/playmancer-build-b
@@ -104,7 +104,9 @@ jobs:
         # /github/home owned by pwuser. Firefox requires $HOME owned by the user.
         env:
           HOME: /root
-        run: python scripts/browser-http-acceptance.py
+        run: |
+          python scripts/browser-http-acceptance.py
+          python scripts/browser-observations-acceptance.py --engine all
       - name: Retain HTTP screenshots and per-engine results
         if: always()
         uses: actions/upload-artifact@v4
@@ -113,6 +115,8 @@ jobs:
           path: |
             .test-artifacts/http-*.png
             .test-artifacts/http-cross-browser.json
+            .test-artifacts/observations-*.png
+            .test-artifacts/observations-browser.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14

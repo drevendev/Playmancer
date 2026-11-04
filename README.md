@@ -19,7 +19,7 @@ requests are needed.
 > player journeys after each successful deployment. **This README is not a live
 > deployment-status pointer**: check the latest workflow run for the currently served SHA.
 >
-> **Last independently inspected checkpoint (2026-11-02):**
+> **Historical independently inspected checkpoint (2026-11-02):**
 > [`9844933255626e804dfa69d98d843128f6a18537`](https://github.com/drevendev/Playmancer/commit/9844933255626e804dfa69d98d843128f6a18537).
 > [Publish Pages #41393137711](https://github.com/drevendev/Playmancer/actions/runs/41393137711)
 > passed all three jobs, including public HTTPS revision/Bridge-worker verification and
@@ -44,9 +44,13 @@ Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**. See
 [original Wikidata pilot](docs/REAL_PILOT.md), and
 [storefront sources/limits](docs/STOREFRONTS.md).
 
-The interface uses source-backed genre and selected platform facts plus
-conservatively recorded publisher-authored tags. **Mechanics, co-op metadata,
-artwork and third-party descriptions are not invented or redistributed.**
+The **ranking interface** uses source-backed genres, selected platform facts and
+carefully normalized publisher-authored tags; mechanics and co-op remain unknown
+in its scoring snapshot. A **separate source-backed gameplay fact explorer**
+(`observations.html`) exposes 48 independently written, dated non-genre facts for
+12 real games. The other 18 games remain unreviewed, never verified lacking
+those features. This inventory is not a new recommendation mode or a claim of
+improved ranking quality. Artwork and third-party descriptions are not copied.
 Genre-only matches have at most **30% comparable feature-group coverage**, not
 30% confidence or measured recommendation accuracy. Missing mandatory evidence
 remains unknown: hard platform/co-op constraints are not silently relaxed.
@@ -133,7 +137,7 @@ npm run validate:catalog
 npm run benchmark
 node scripts/run-bridge-preview.mjs
 npm run build
-python3 scripts/pages-preflight.py _site
+python3 scripts/release-preflight.py _site
 # Optional local hosting; this is not public deployment.
 python3 -m http.server 8080 --directory _site
 ```
@@ -200,7 +204,7 @@ Benchmark report versioning is separate from player shares.
 For validated snapshots of **50–250 profiles served over HTTP(S)**, Bridge
 calculates routes inside a **same-origin static Web Worker** built from the
 same exact-rational source modules as the small preview. The publishable artifact
-contains exactly `index.html`, same-origin `player.css`, `bridge-worker.js`, and an empty `.nojekyll`. Changing an endpoint,
+contains `index.html`, same-origin `player.css`, `bridge-worker.js`, a separate `observations.html`, and an empty `.nojekyll`. Changing an endpoint,
 filter, exclusion or threshold cancels the previous worker; only the newest
 result can update the visible explanation. The panel announces its busy state,
 and calculation failures are visible instead of substituting a guessed route.
@@ -254,8 +258,10 @@ mobile SLA or user-input latency; no product speedup is claimed. See [Bridge evi
 
 ## Publication and contribution
 
-The dependency-free build emits a self-contained **static site**: `index.html`,
-`player.css`, `bridge-worker.js` and an empty `.nojekyll`. Moving the stylesheet into
+The dependency-free production build emits a self-contained **static site**:
+`index.html`, `player.css`, `bridge-worker.js`, `observations.html` and an empty
+`.nojekyll`. A separate [observation explorer](docs/OBSERVATION_EXPLORER.md)
+provides source links and partial-data comparisons, without altering the basket. Moving the stylesheet into
 a same-origin asset restores HTML size headroom without remote requests; offline
 `page.set_content` harnesses inline the exact built CSS, while HTTP and Pages
 load the real asset. HTML includes publication revision and catalog metadata.

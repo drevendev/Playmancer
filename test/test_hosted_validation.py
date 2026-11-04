@@ -100,7 +100,8 @@ class PagesHostedRuntimeTests(unittest.TestCase):
         self.assertIn('python scripts/browser-smoke.py', package)
         self.assertIn('npm test', package)
         self.assertIn('npm run build', package)
-        self.assertIn('python3 scripts/pages-preflight.py _site', package)
+        self.assertIn('python3 scripts/release-preflight.py _site', package)
+        self.assertIn('python scripts/browser-observations-acceptance.py --engine all', workflow)
         self.assertIn('actions/upload-pages-artifact@v4', package)
 
     def test_hosted_browser_job_reuses_pinned_preinstalled_engines(self):
