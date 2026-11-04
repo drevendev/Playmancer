@@ -77,6 +77,11 @@ try:
                   and gap.locator("#seeds .seed-evidence-warning").count() == 1
                   and "Its weight cannot create source-backed genre similarity"
                       in gap.locator("#seeds .seed-evidence-warning").inner_text())
+            check(label + ": sparse owner-game explanation does not claim missing Wikidata data",
+                  gap.locator("#empty").is_visible()
+                  and "DevMatch has no recorded genre evidence for this pilot"
+                      in gap.locator("#empty").inner_text()
+                  and "DevMatch has no Wikidata" not in gap.locator("#empty").inner_text())
             gap.locator("#seeds input[type=range]").first.evaluate(
                 "(slider) => { slider.value = '9'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
             gap.locator("#share").click()
