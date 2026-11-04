@@ -669,10 +669,20 @@ def exercise(browser, base_url, engine, label, width, height):
                   all(enlarged["resultType"][name] >= original * factor - 1
                       for name, original in result_type_baseline.items()),
                   details={"baseline": result_type_baseline, "enlarged": enlarged["resultType"]})
+            # The long Bridge heading is viewport-capped so whole English
+            # words survive 400% root text on 320px screens. Its relative
+            # hierarchy stays above the Bridge copy; warnings/labels still
+            # scale with the root without capping.
+            bridge_heading_floor = min(bridge_type_baseline["heading"] * factor,
+                                       enlarged["viewport"] * .17)
             check(case, f"{text_size}% root text enlarges Bridge experiment labels and warnings",
-                  all(enlarged["bridgeType"][name] >= original * factor - 1
-                      for name, original in bridge_type_baseline.items()),
-                  details={"baseline": bridge_type_baseline, "enlarged": enlarged["bridgeType"]})
+                  enlarged["bridgeType"]["heading"] >= bridge_heading_floor - 1
+                  and enlarged["bridgeType"]["heading"] >= enlarged["bridgeType"]["warning"]
+                  and all(enlarged["bridgeType"][name] >= original * factor - 1
+                          for name, original in bridge_type_baseline.items()
+                          if name != "heading"),
+                  details={"baseline": bridge_type_baseline, "enlarged": enlarged["bridgeType"],
+                           "bridge_heading_floor": bridge_heading_floor})
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
                   and len(enlarged["actions"]) == 3

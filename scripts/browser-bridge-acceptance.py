@@ -73,6 +73,35 @@ try:
             check(label + ": keyboard preserves exact share URL", page.evaluate("location.href") == href_before)
             check(label + ": keyboard preserves route and endpoints", page.locator("#bridge-steps").inner_text() == route_before and page.locator("#bridge-end").input_value() == "demo:harvest")
             check(label + ": title is in the viewport", page.locator("#bridge-title").evaluate("e => { const r=e.getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; }"))
+            if root_scale == 4:
+                # A document-level no-overflow assertion missed words split into
+                # letter fragments. Measure actual character line positions.
+                heading = page.locator("#bridge-title").evaluate("""node => {
+                    const text = node.firstChild, value = text.textContent;
+                    const range = document.createRange(), broken = [];
+                    let cursor = 0;
+                    for (const word of value.match(/\\S+/g) || []) {
+                        const start = value.indexOf(word, cursor), tops = new Set();
+                        for (let i = 0; i < word.length; i++) {
+                            range.setStart(text, start + i);
+                            range.setEnd(text, start + i + 1);
+                            tops.add(Math.round(range.getBoundingClientRect().top));
+                        }
+                        if (tops.size !== 1) broken.push(word);
+                        cursor = start + word.length;
+                    }
+                    return {
+                        broken,
+                        headingSize: parseFloat(getComputedStyle(node).fontSize),
+                        copySize: parseFloat(getComputedStyle(node.nextElementSibling).fontSize),
+                        scrollWidth: document.documentElement.scrollWidth,
+                        viewport: innerWidth
+                    };
+                }""")
+                check(label + ": 400% Bridge title keeps whole readable words",
+                      not heading["broken"]
+                      and heading["headingSize"] >= heading["copySize"]
+                      and heading["scrollWidth"] <= heading["viewport"])
             page.screenshot(path=str(ARTIFACTS / ("bridge-route-" + label + ".png")))
             button.click()
             check(label + ": pointer navigation preserves URL and focus", page.evaluate("location.href") == href_before and page.evaluate("document.activeElement.id") == "bridge-title")
