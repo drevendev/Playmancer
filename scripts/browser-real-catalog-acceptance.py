@@ -74,6 +74,41 @@ try:
             # a platform requirement. Exercise both viewports with real link data.
             initial_ranks = page.locator("#results > li").evaluate_all(
                 "cards => cards.map(card => card.dataset.gameId)")
+            # A hidden result needs a reversible per-game action. Undoing one
+            # exclusion must not reset any other exclusion or required filter.
+            hidden_pair = page.locator("#results > li").evaluate_all(
+                "cards => cards.slice(0, 2).map(card => ({id: card.dataset.gameId, name: card.querySelector('h3').textContent}))")
+            check(label + ": individual undo has at least two real recommendations",
+                  len(hidden_pair) == 2)
+            for item in hidden_pair:
+                page.locator(f'#results > li[data-game-id="{item["id"]}"] button[aria-label^="Hide "]').click()
+            page.locator("#uncertainty-title").click()
+            check(label + ": both hidden games offer separate restore actions",
+                  all(page.get_by_role("button", name=f'Restore {item["name"]}').is_visible()
+                      for item in hidden_pair))
+            page.get_by_role("button", name=f'Restore {hidden_pair[1]["name"]}').click()
+            one_restored = page.locator("#results > li").evaluate_all(
+                "cards => cards.map(card => card.dataset.gameId)")
+            check(label + ": single undo restores only the selected game and preserves focus",
+                  hidden_pair[1]["id"] in one_restored
+                  and hidden_pair[0]["id"] not in one_restored
+                  and page.get_by_role("button", name=f'Restore {hidden_pair[0]["name"]}').count() == 1
+                  and page.get_by_role("button", name=f'Restore {hidden_pair[1]["name"]}').count() == 0
+                  and page.locator("#uncertainty-title").evaluate(
+                      "element => document.activeElement === element")
+                  and "Required filters are unchanged" in page.locator("#status").inner_text())
+            page.locator("#share").click()
+            one_restored_state = json.loads(unquote(page.locator("#share-link").input_value().split("#basket=", 1)[1]))
+            check(label + ": sharing retains only the still-hidden game",
+                  one_restored_state["excluded"] == [hidden_pair[0]["id"]]
+                  and one_restored_state["catalog"] == SNAPSHOT)
+            page.screenshot(path=str(ARTIFACTS / f"real-catalog-single-restore-{label}.png"), full_page=True)
+            page.locator("#restore").click()
+            page.locator("#uncertainty-title").click()
+            check(label + ": bulk restore still returns the identical ordering",
+                  page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks
+                  and page.locator("#restore").is_hidden())
             check(label + ": real catalog exposes only recorded store options",
                   not page.locator("#store-filter-wrap").is_hidden()
                   and page.locator("#store-filter option").evaluate_all(
