@@ -77,6 +77,28 @@ function renderCatalogReceipts() {
   }
   return row;
 }
+// Inspect source-backed favorite facts before changing weights. This does not
+// upgrade missing genre/mechanic/coop evidence or change recommendation scores.
+function renderBasketEvidence(game) {
+  if (syntheticCatalog) return null;
+  const details = element("details", undefined, "basket-evidence");
+  details.append(element("summary", `Inspect evidence for ${game.name}`));
+  const genreOrigin = game.sourceId === "wikidata-cc0"
+    ? "Wikidata genre statements" : "publisher-authored tags";
+  details.append(element("p", `Recorded genres (${genreOrigin}): ${game.themes?.length ? game.themes.join(", ") : "unknown"}.`));
+  details.append(element("p", `Recorded platforms (positive observations, not an exhaustive support list): ${game.platforms?.length ? game.platforms.join(", ") : "unknown"}.`));
+  details.append(element("p", `Mechanics: ${game.mechanics?.length ? game.mechanics.join(", ") : "unknown"}. Co-op: ${game.coop === null ? "unknown" : game.coop ? "recorded yes" : "recorded no"}.`));
+  const wikidataQid = game.sourceId === "wikidata-cc0"
+    ? game.externalIds.find(item => item.provider === "wikidata")?.id : null;
+  const source = element("a", wikidataQid ? "Inspect Wikidata item" : "Inspect publisher/storefront receipts");
+  source.href = wikidataQid && /^Q[1-9][0-9]*$/.test(wikidataQid)
+    ? `https://www.wikidata.org/wiki/${wikidataQid}`
+    : "https://github.com/drevendev/Playmancer/blob/master/docs/STOREFRONTS.md";
+  source.target = "_blank";
+  source.rel = "noopener noreferrer";
+  details.append(source);
+  return details;
+}
 function showCatalogIdentity() {
   const stores = ["steam", "googleplay", "itch"]
     .filter(store => CATALOG.some(game => game.storeLinks?.some(link => link.store === store)));
@@ -208,6 +230,8 @@ function drawSeeds() {
         "No recorded genres for this favorite. Its weight cannot create source-backed genre similarity; comparisons may abstain.",
         "hint seed-evidence-warning"));
     }
+    const inspected = renderBasketEvidence(BY_ID.get(seed.id));
+    if (inspected) row.append(inspected);
     $("seeds").append(row);
   }
 }
