@@ -201,6 +201,13 @@ function drawSeeds() {
       commit(false);
     });
     row.append(title, label, input);
+    // A source-sparse favorite must not look as if its weight supplies
+    // genre evidence. This is a disclosure only; ranking stays unchanged.
+    if (!syntheticCatalog && !BY_ID.get(seed.id).themes?.length) {
+      row.append(element("p",
+        "No recorded genres for this favorite. Its weight cannot create source-backed genre similarity; comparisons may abstain.",
+        "hint seed-evidence-warning"));
+    }
     $("seeds").append(row);
   }
 }
@@ -259,6 +266,15 @@ function drawSearch() {
       // why a tag-only search matched, also for keyboard/screen-reader users.
       const evidence = element("span", `${syntheticCatalog ? "Recorded feature tag" : "Recorded genre"}: ${matchedTag}`, "hint");
       evidence.id = `search-match-${index}`;
+      button.setAttribute("aria-describedby", evidence.id);
+      row.append(button, evidence);
+    } else if (!syntheticCatalog && !game.themes?.length) {
+      // Surface the gap during direct name search as well as browsing, before
+      // the player spends a basket slot or assigns this game a high weight.
+      const evidence = element("span",
+        "No recorded genres; recommendations involving this favorite may lack comparable evidence.",
+        "hint seed-evidence-warning");
+      evidence.id = `search-evidence-${index}`;
       button.setAttribute("aria-describedby", evidence.id);
       row.append(button, evidence);
     } else if (browseAll && !query) {
