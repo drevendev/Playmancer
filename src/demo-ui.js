@@ -201,6 +201,13 @@ function drawSeeds() {
       commit(false);
     });
     row.append(title, label, input);
+    // A source-sparse favorite must not look as if its weight supplies
+    // genre evidence. This is a disclosure only; ranking stays unchanged.
+    if (!syntheticCatalog && !BY_ID.get(seed.id).themes?.length) {
+      row.append(element("p",
+        "No recorded genres for this favorite. Its weight cannot create source-backed genre similarity; comparisons may abstain.",
+        "hint seed-evidence-warning"));
+    }
     $("seeds").append(row);
   }
 }
@@ -261,6 +268,15 @@ function drawSearch() {
       evidence.id = `search-match-${index}`;
       button.setAttribute("aria-describedby", evidence.id);
       row.append(button, evidence);
+    } else if (!syntheticCatalog && !game.themes?.length) {
+      // Surface the gap during direct name search as well as browsing, before
+      // the player spends a basket slot or assigns this game a high weight.
+      const evidence = element("span",
+        "No recorded genres; recommendations involving this favorite may lack comparable evidence.",
+        "hint seed-evidence-warning");
+      evidence.id = `search-evidence-${index}`;
+      button.setAttribute("aria-describedby", evidence.id);
+      row.append(button, evidence);
     } else if (browseAll && !query) {
       row.append(button, element("span", `${syntheticCatalog ? "Recorded themes" : "Recorded genres"}: ${game.themes?.join(", ") || "unknown"}`, "hint"));
     } else {
@@ -314,7 +330,7 @@ function drawEmptyRecovery(result) {
   explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
   explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
   if (sparseSeeds.length) {
-    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "Wikidata genre evidence for the pilot"}. Comparisons must abstain.`));
+    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "recorded genre evidence for this pilot"}. Comparisons must abstain.`));
   }
   if (!list.children.length) list.append(element("li", "No catalog profiles remain outside your basket."));
   empty.append(list);

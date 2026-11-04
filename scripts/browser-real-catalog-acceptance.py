@@ -54,6 +54,51 @@ try:
                   and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # A real favorite without source-backed genre labels must not
+            # look equivalent to a richly tagged seed: disclose the gap before
+            # selection, keep the warning while weights change, then clear it.
+            check(label + ": sourced sample favorites have no missing-genre warning",
+                  page.locator("#seeds .seed-evidence-warning").count() == 0)
+            gap = ctx.new_page()
+            gap.set_content(HTML, wait_until="load")
+            gap.locator("#clear").click()
+            gap.locator("#search").fill("DevMatch")
+            missing_hint = gap.locator("#search-results .seed-evidence-warning")
+            add_devmatch = gap.get_by_role("button", name="Add DevMatch")
+            check(label + ": missing genre evidence is visible before selection and described to AT",
+                  missing_hint.count() == 1
+                  and "No recorded genres" in missing_hint.inner_text()
+                  and add_devmatch.get_attribute("aria-describedby") == missing_hint.get_attribute("id"))
+            add_devmatch.click()
+            gap.locator("#search").fill("Stardew")
+            gap.get_by_role("button", name="Add Stardew Valley").click()
+            check(label + ": only the genre-sparse selected favorite is flagged",
+                  gap.locator("#seeds > li").count() == 2
+                  and gap.locator("#seeds .seed-evidence-warning").count() == 1
+                  and "Its weight cannot create source-backed genre similarity"
+                      in gap.locator("#seeds .seed-evidence-warning").inner_text())
+            check(label + ": sparse owner-game explanation does not claim missing Wikidata data",
+                  gap.locator("#empty").is_visible()
+                  and "DevMatch has no recorded genre evidence for this pilot"
+                      in gap.locator("#empty").inner_text()
+                  and "DevMatch has no Wikidata" not in gap.locator("#empty").inner_text())
+            gap.locator("#seeds input[type=range]").first.evaluate(
+                "(slider) => { slider.value = '9'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
+            gap.locator("#share").click()
+            shared = json.loads(unquote(gap.locator("#share-link").input_value().split("#basket=", 1)[1]))
+            check(label + ": missing-genre warning survives weight edits and shares exact favorites",
+                  gap.locator("#seeds .seed-evidence-warning").count() == 1
+                  and shared["catalog"] == SNAPSHOT
+                  and shared["seeds"] == [
+                      {"id": "dreven:devmatch", "weight": 9},
+                      {"id": "wikidata:q23013817", "weight": 1}])
+            gap.screenshot(path=str(ARTIFACTS / f"real-catalog-seed-evidence-gap-{label}.png"),
+                           full_page=True)
+            gap.get_by_role("button", name="Remove DevMatch", exact=True).click()
+            check(label + ": removing the sparse favorite clears its warning",
+                  gap.locator("#seeds > li").count() == 1
+                  and gap.locator("#seeds .seed-evidence-warning").count() == 0)
+            gap.close()
             # Mobile section navigation must not change the state-bearing URL fragment.
             nav = page.get_by_role("navigation", name="Page sections")
             check(label + ": section shortcuts are shown only on narrow screens",
