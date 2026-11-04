@@ -1,34 +1,50 @@
 # EXECUTION_ORDER — Playmancer
 
-## Closing-first gate — reconciled 2026-10-23
+## Native discovery, not a frozen PR queue
 
-1. Read current native PRs/issues, reviews, rules, exact heads and master before any
-   action. PRs #2/#3/#4/#5/#11/#12/#20 are merged; issues #6/#9/#13/#18/#19/#21/#23
-   are closed. Historical review claims must not resurrect them.
-2. The only open PR at reconciliation is #22, a focused #17 control update on
-   `docs/reconcile-delivery-controls`. Its refreshed code/doc head is newly authored
-   in this transaction: wait for new exact-head CI and a **later independent** review
-   before an expected-head merge. Never merge this same semantic change now.
-3. After #22 is merged, verify the master SHA and updated control files and confirm
-   issue #17 closed. Do not create another reconciliation PR or stale queue.
-4. Issue #7 GitHub Pages remains unprovisioned: the reviewed `master` verify
-   workflow succeeds, but publishing fails on Pages configuration. Actual enabling
-   requires administrator capability; offline artifact/build success is NOT live.
-5. While #7 or real-data rights #8 are externally gated, take the strongest
-   independent functional weakness: #14 cross-browser/assistive-tech acceptance,
-   #15 Bridge responsiveness, or #16 focused regression adoption. Evaluate #10
-   only when its catalog/hosted-player prerequisites exist. See `docs/ROADMAP.md`.
-6. Preserve existing shared branches until all unique work and dependencies are
-   proved safe; never force-push shared history or bypass protected master.
+This is a stable selection algorithm. Current Issues/PRs, branch heads, reviews,
+checks, merge rules and publication facts must be read from GitHub on every
+selection. Historical references in other control files never acquire a claim.
 
-No stale #12 → #20 retarget is necessary: both merged and #20 synchronized before
-its merge. Native GitHub facts supersede these dated examples. Current CI is never
-a PASS for a future head. No fabricated reviewer or self-approval is required when
-real rules need zero approvals; all actual checks and rules remain mandatory.
+1. Reconcile ambiguous partial writes or a demonstrated live regression. Read back
+   the actual effect before retrying a mutation; preserve newer work and claims.
+2. Inspect ALL open PRs. Repair changed findings, failing applicable checks,
+   conflicts or stale bases on the suitable existing branch before new work.
+3. Independently accept an eligible earlier PR at its exact current head/base.
+   Inspect the full diff/context, Issue criteria, comments/review threads, actual
+   jobs and relevant UX/provenance. Missing/skipped/pending is not PASS. Merge
+   with expected-head protection where available, then read back master/files.
+4. Immediately repair stacked dependencies after a base merge: retarget to master,
+   safely synchronize, refresh the exact head and continue the closing loop.
+   Never author/materially change and merge the same semantic change in one wake.
+5. Finish useful existing branch code into its intended PR. Enumerate branch/PR
+   dependencies before creating or deleting refs; preserve unique unmerged work.
+6. Select the strongest ready functional or visible player slice from native
+   Issues and `docs/ROADMAP.md`. Tests, accessibility and reliability are useful
+   deliverables, not an excuse to leave eligible older PRs unmerged.
+7. Research only a genuinely blocking decision, ending in an actionable result.
+   Do not spend more than two consecutive wakes on process/research while
+   executable product work exists. An empty queue is not proof of completion.
 
-## Operating-model boundary
+## Acceptance and publication
 
-Issue #1 remains the product/evidence epic. Control format remains 2; complete
-ownership/exclusion controls, external receipt replay, independent liveness and
-finite total bounds are not claimed. EndlessZen is read-only. No Drive queue, wake
-ledger, parallel worker, new automation or scheduler mutation is authorized.
+Do not wait for a fictitious reviewer when the actual rules require zero
+approvals; do not bypass real approval/check requirements. Authorship/profile
+lookup is not authenticated identity proof. Unknown or mismatched login means
+read-only/local work until a real capability change.
+
+A successful PR build is not public delivery. Check the publication workflow,
+served revision and actual browser journey; inspect desktop/mobile screenshots
+when available. Keep COMMITTED, PR_OPENED, MERGED, BUILT, DEPLOYED and
+LIVE_VERIFIED distinct. Report NOT_RUN/VISUAL_NOT_VERIFIED gaps explicitly.
+
+## Blockers and scope
+
+A blocker affects dependent work only. Do not retry an unchanged failed mutation
+or duplicate its branch. Prefer exact-blob local verification if clone/network
+access fails; use ACTUAL_EXECUTION_SAFETY_DENIAL only for an explicit tool safety
+denial. Never change browser policy, protections or identity to evade a denial.
+
+Issue #1 remains the product anchor. Format 2, run-separated judgement and the
+owner-controlled perpetual schedule are unchanged. EndlessZen is read-only.
+No shadow Drive queue, audit ledger, parallel worker or scheduler mutation.

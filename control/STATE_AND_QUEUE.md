@@ -1,61 +1,69 @@
 # STATE_AND_QUEUE — Playmancer
 
-Reconciled: 2026-10-23. These are dated navigation facts, not live PR/check authority.
-Read GitHub for current claims, exact heads, CI, reviews, merges and publication.
+Navigation reconciled: 2026-11-04. This file is not a live queue or a wake ledger.
+Native GitHub is authoritative for current claims, open/closed Issues/PRs, exact
+heads, checks, reviews, merge effects and publication. Refresh it before selection.
 
 ```text
 PROJECT_STATUS:          ACTIVE
 CONTROL_FORMAT_VERSION:  2
 CURRENT_PHASE:           PRODUCT_DELIVERY
 CURRENT_MODE:            OWNER_DIRECTED
-STATE_REVISION:          14
-LAST_INDEXED_REVISION:   14
-CURRENT_UNIT:            PLAY-CONTROL-001
-CURRENT_SCOPE:           issue #17 — reconcile Bridge and Preview 0.3 delivery controls
-CURRENT_UNIT_STATUS:     REVIEW
-WORKING_BRANCH:          docs/reconcile-delivery-controls
-LAST_VERIFIED_MASTER:    e065a02bb988e6a6fc31cb36475fdeeca1629f22
+STATE_REVISION:          15
+LAST_INDEXED_REVISION:   15
+CURRENT_UNIT:            none
+CURRENT_SCOPE:           native GitHub closing-first discovery
+CURRENT_UNIT_STATUS:     DISCOVER
+WORKING_BRANCH:          none
+REFERENCE_MASTER:        c211d97bec82578a17af63705e4b81f34e36ffcb
 WORKER_SCHEDULE_MUTATION: none
 ```
 
-## Delivered and explicitly not delivered
+`none` means no persisted control-file claim, NOT no work. Record a bounded claim
+on the relevant native Issue/PR after checking existing claims. Do not rewrite
+this file every hour or leave the just-authored documentation PR as the next
+permanent REVIEW pointer. Its review/merge state belongs to GitHub.
 
-PRs #2/#3/#4/#5/#11 were merged before this reconciliation; #6 is DONE.
-PR #12 (explained Bridge, precision and first-screen accessibility) was independently
-accepted and merged as `e6d585084fc1edee412003cae04b96c8d555d0de`,
-closing issues #9/#18/#19. Its delivered runtime changes reached master, not Pages.
-PR #20 (validated snapshot adapter, safe build and repaired large-basket share
-restoration) was independently accepted and merged as
-`e065a02bb988e6a6fc31cb36475fdeeca1629f22`, closing #13/#21/#23. A 250-game fixture remains **fictional**;
-rights-cleared real-game data have not been published.
+## Historical delivery checkpoints
 
-Verify run 39931904927 on the exact new master completed SUCCESS. Pages publish
-run 39931904881 failed at the Pages-configuration step; publishing was skipped.
-Repository metadata still reports `has_pages=false`. This is BUILT and MERGED
-source, **not DEPLOYED or LIVE_VERIFIED**.
+- PR #22 merged on 2026-10-23 as `1baabbae6a84f3293fd6f2941c96fef0d9ac2630`.
+  `PLAY-CONTROL-001` is DONE; do not re-open its old #17/#22 closing loop.
+- The reference master above includes merged PR #117 and the 30-game real
+  catalog. See README, `docs/STOREFRONTS.md` and `docs/REAL_EXPANSION_30.md`.
+  The initial synthetic-only and unprovisioned-Pages descriptions are historical,
+  retained in CHANGELOG rather than used as current work selection.
+- Publication evidence for that reference is [Publish Pages #41837252723](https://github.com/drevendev/Playmancer/actions/runs/41837252723).
+  This is a dated evidence link, NOT a new live inspection or a PASS for later heads.
+  Query the current publication and independently verify its served revision.
 
-## Closing-first queue
+## Closing-first selection
 
-1. Finish this existing #17 documentation PR #22: its refreshed branch must undergo
-   a later independent exact-head review, applicable CI and provider-rule check before
-   merge; then verify master and issue #17. Do not self-merge this new revision.
-2. For #7 Pages, require authorized administration to enable GitHub Actions Pages.
-   Until enabled, prepare/test a static artifact but do not claim an actual live URL.
-3. Advance independently executable #14 cross-browser/accessibility or #15 measured
-   Bridge responsiveness while Pages administration and #8 real-data rights are gated.
-   #16 is selective, nonduplicate adoption of useful archived basket/benchmark tests.
-4. Keep #10 usefulness evaluation behind suitable catalog and hosted experience.
-   Preserve issue #1 as the broader product/evidence anchor.
+Use `EXECUTION_ORDER.md`: recover ambiguous effects/live regressions, repair or
+accept eligible earlier PRs, finish existing branches, then select ready product
+work. Query ALL current open PRs, not only the authenticated user's PRs. A stored
+PR number or archived branch never overrides native state or an active claim.
 
-## Scope and operating boundaries
+Issue #1 remains the product/evidence anchor. #76 owns the unfinished v2 release
+gates; #118 owns the separate observation explorer and does not close #76.
+#119 tracks this navigation repair. Broader source-backed data work, including
+#121, is independently executable after dependent closing work is settled.
+See `docs/ROADMAP.md`; issue numbers identify scopes, not asserted live statuses.
 
-Interactive GitHub identity `andy-zen-dev` was verified for this reconciliation;
-repository permissions include push/triage/pull and exclude admin/maintain.
-Permissions and checks can change; re-read before future mutations. An actual denial
-blocks its operation, not independent product work. No alternative endpoints, bypass,
-new branches, parallel projects, Drive queue or extra scheduler.
+## Evidence and authority boundaries
 
-Control format 2 remains unchanged. Ownership/exclusion migration, external receipt
-replay, independent liveness and finite operating/maintenance bounds remain unproven;
-no full EndlessZen unattended-compliance claim is made. The existing owner-controlled
-hourly job remains unchanged.
+The public ranking baseline at the reference revision is `feature-overlap-2`.
+The frozen twelve-profile annotation study has 12 partial/18 unknown profiles,
+zero complete vectors and abstention in all 150 v2 scenarios. Its exact inputs
+and limitations are in `docs/REVIEWED_TAG_READINESS_12.md`. An explorer or a
+passing software test does not establish a complete v2 release or human utility.
+
+Recheck authenticated `andy-zen-dev` and current permissions before writes.
+Production and acceptance remain separate wakes; required provider rules/checks
+must pass. No direct master writes, no fabricated approvals, no force-pushing
+shared history. Record changed blocker facts only and continue independent work.
+
+The stable PROJECT_MANIFEST and REPOSITORY_CONTRACT remain in force. Format 2
+is unchanged; complete ownership/exclusion, external receipt replay, independent
+liveness and finite total bounds are not claimed. Do not create a Drive queue,
+parallel project or new automation. Preserve the existing owner-controlled
+hourly schedule, title and cadence; `WORKER_SCHEDULE_MUTATION` remains `none`.
