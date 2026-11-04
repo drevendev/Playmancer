@@ -69,7 +69,7 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('48 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('54 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 check(explore.locator('.game-card').count() == 30, f'{engine}/{width}: complete catalog with unknowns')
                 explore.locator('#sample').click()
                 check(explore.locator('#comparison-title').evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: sample focus')
@@ -126,6 +126,17 @@ try:
                 explore.locator('#query').fill('Celeste')
                 explore.get_by_text('Inspect sources for Celeste', exact=True).click()
                 check(explore.locator('.game-card a[href="https://www.celestegame.com/changelog.html"]').count() == 2, f'{engine}/{width}: per-field Celeste URLs')
+                explore.locator('#query').fill('Idle Fantasy Shop')
+                owned = explore.locator('.game-card[data-game-id="dreven:idle-fantasy-shop"]')
+                check(owned.count() == 1, f'{engine}/{width}: canonical owner game searchable')
+                owned.get_by_text('Inspect sources for Idle Fantasy Shop', exact=True).click()
+                check(owned.locator('.fact-list a').count() == 6, f'{engine}/{width}: six dated owner-game source receipts')
+                check(owned.locator('.fact-list a[href*="/devlog/"]').count() == 6,
+                      f'{engine}/{width}: first-party field-specific devlogs')
+                check(owned.get_by_text('Stocking shop shelves', exact=True).count() == 1,
+                      f'{engine}/{width}: confirmed shelf stocking fact')
+                check(owned.get_by_text('Automating production', exact=True).count() == 0,
+                      f'{engine}/{width}: no speculative factory-automation tag')
                 for locator in ('#query', '#tag', '#left', '#right', '#sample', '#show-link'):
                     check(explore.locator(locator).bounding_box()['height'] >= 44, f'{engine}/{width}: touch size {locator}')
                 explore.locator('#left').focus()
