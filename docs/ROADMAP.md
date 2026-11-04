@@ -1,50 +1,59 @@
 # Playmancer delivery roadmap
 
-Reconciled 2026-10-23. This is a product plan, not an hourly log.
-Native GitHub facts supersede dated snapshots. Epic #1 stays open until rights-cleared
-real data, public hosted experience and usefulness gates are evidenced.
+Reconciled 2026-11-04. This is a product plan, not an hourly log or live status
+board. Query native GitHub before selection. Issue #1 remains the product/evidence
+anchor; software delivery is not proof of real-player recommendation quality.
 
-## Delivered foundation (not a public launch)
+## Delivered foundation
 
-At reconciliation, `master` `e065a02bb988e6a6fc31cb36475fdeeca1629f22` contains Preview 0.2 (#11),
-the explained Bridge journey (#12, issues #9/#18/#19), and Preview 0.3 validated
-catalog adapter/build recovery/share capacity (#20, issues #13/#21/#23).
-Earlier PRs #2–#5 were already delivered. Verify run 39931904927 succeeded on
-this exact master; Publish run 39931904881 failed Pages configuration. The
-repository reports `has_pages=false`. No public HTTP/desktop/mobile live flow
-is verified. Catalog data are fictional/synthetic; no real-data rights are asserted.
+The reference `master@c211d97bec82578a17af63705e4b81f34e36ffcb` includes the
+validated catalog adapter, a 30-game real snapshot, basket search/weights/strict
+filters, explanations, sharing/restoration and a separately explained Bridge.
+PR #117 adds selected-favorite evidence inspection. The older #17/#22 control
+reconciliation was merged; do not treat its leftover branch as unfinished work.
 
-Bridge remains distinct from Intersection and Blend. Preview 0.3 shares a single
-validated catalog projection across search, ranking, Bridge and share restoration,
-with strict exclusions, versioned links and explicit missing metadata. Software tests
-and benchmark reproducibility do not establish recommendation usefulness.
+[Publish Pages #41837252723](https://github.com/drevendev/Playmancer/actions/runs/41837252723)
+is historical publication evidence for that reference. It does not certify
+later heads or replace a fresh served-revision/browser check. Pages provisioning
+and synthetic-only data are no longer blanket reasons to defer all product work.
 
-## Closing-first delivery
+The frozen genre player remains `feature-overlap-2`. Genres, documented platform
+facts and source provenance are limited evidence, not a complete taste model.
+The twelve-profile non-genre fixture records 48 selected facts: 12 partial and
+18 unknown profiles, zero complete vectors. See `REVIEWED_TAG_READINESS_12.md`.
+Do not convert these selected annotations into a complete weight distribution.
 
-| Priority | Task | Dated state | Acceptance |
-| --- | --- | --- | --- |
-| P1 | #17 reconcile control navigation | PR #22 OPEN, existing branch being refreshed to current master | Later independent exact-head review/CI, merge, and readback of state/index/registry/changelog/roadmap; do not mix runtime changes |
+## Closing first
 
-## Independent remaining gates
+Before any row below, reconcile ambiguous effects/regressions and inspect all
+open PRs. Repair or accept eligible earlier work, finish existing branches, then
+select a new bounded slice. Follow `../control/EXECUTION_ORDER.md` and current
+provider rules. No fixed PR number or stale control-field claim determines order.
 
-| Priority | Issue | Completion evidence | Scoped dependency |
-| --- | --- | --- | --- |
-| P0 | #7 — Pages delivery | Admin-enabled Pages, successful deployment, public HTTP response, served master revision, hosted desktop/mobile navigation/share-restoration proof | Current GitHub connection lacks admin; publish workflow fails configuration |
-| P1 | #8 — rights-cleared real catalog | 30–50 varied identifiable actual games with per-source/field receipts, identity/alias/edition counterexamples and publishable versioned snapshot | Data redistribution rights; API availability alone is insufficient |
-| P1 | #14 — accessibility/cross-browser | Firefox/WebKit plus assistive-tech/keyboard tests, real HTTP navigation, errors, focus and readable list-first results | Chromium offline checks do not certify hosted usability |
-| P2 | #15 — Bridge responsiveness | Dense/sparse/disconnected 12/50/250 synthetic fixtures, median/p95 and input responsiveness; bounded worker/deferred route if justified | Prior heap/cache work is partial, not mobile performance evidence |
-| P2 | #16 — archived regression adoption | Focused unique basket/benchmark tests checked against current contracts, fail-before/pass-after where relevant | Avoid obsolete control patches and duplicate oracle campaigns |
-| P2 | #10 — usefulness/comparison | Frozen identical-catalog baselines, negative results and authorized consented player observations | Real catalog and usable published experience; no unapproved outreach |
+## Remaining outcomes, not asserted live Issue statuses
 
-Proposed sample sizes are research targets, not completed metrics. Source, Pages,
-network and runtime blockers affect dependent work only. Preserve truthful
-`PR_OPENED`, `MERGED`, `BUILT`, `DEPLOYED`, `LIVE_VERIFIED` distinctions.
+| Scope | Player outcome / acceptance | Independent limits |
+| --- | --- | --- |
+| #118 observation explorer | Search and compare source-backed facts, preserve unknowns, versioned shares and keyboard/mobile flow; later merge and hosted verification | A separate fact inventory, not recommender v2 or a quality improvement claim |
+| #76 richer recommendation evidence | Broader per-field known-present/known-absent/unknown observations; identical catalog/eligibility/top-k evaluation, explicit method/share migration and separate Bridge acceptance | Complete profiles and useful ranking are not established by the current partial annotations |
+| #121 owner-game evidence slice | Verify a bounded set of Idle Fantasy Shop gameplay facts against public receipts, without importing acquisition tags as mechanics | No private analytics, inferred tags, owner boosts or silent frozen-snapshot edits |
+| #119 navigation reliability | Consistent control counters, preserved history/identifiers, native discovery and automatic regressions against stale claims | Documentation does not create permissions or schedule authority |
+| #14 accessibility acceptance | Preserve multi-engine HTTP/keyboard/mobile regressions and explicitly track actual screen-reader/browser pairs not yet tested | Automated geometry or accessibility trees are not speech certification |
+| #10 usefulness | Compare frozen identical-catalog baselines and report losses; conduct consented player studies only after outreach authorization | Offline proxies are not preference or adoption measurements |
+| #15/#16 reliability follow-up | Preserve proven responsiveness and high-signal regressions; adopt only genuinely uncovered counterexamples from archives | Do not reopen completed scopes or duplicate earlier tests merely from old filenames |
 
-## Branch, acceptance and scope discipline
+Inspect the current Issue/PR state before using any row: a closed issue is a
+historical scope unless a remaining gap is independently demonstrated. Do not
+close broad #76 or #1 merely because a bounded child ships. Maintain dated public
+source receipts; no unauthorized bulk scraping, paid APIs or visitor tracking.
 
-Finish or repair existing PRs before opening new work. Do not create shadow branches,
-duplicate issues, process ceremonies or a parallel scheduler. Later-run exact-head
-acceptance and actual provider rules govern merge. Preserve unique stale work until
-safely adopted. No accounts, paid inference, tracking, external outreach, runtime
-backend, vector database or alternative host is authorized by this roadmap.
-Format 2 and the owner-controlled perpetual schedule are unchanged.
+## Delivery boundaries
+
+Keep COMMITTED, PR_OPENED, MERGED, BUILT, DEPLOYED and LIVE_VERIFIED distinct.
+A newly authored semantic change receives later independent exact-head acceptance.
+Publication must verify the actual served revision and player flow. Missing metadata
+never satisfies hard constraints; unsupported features stay unknown.
+
+Preserve the existing hourly task, title and cadence. No parallel Drive queue,
+new scheduler, external outreach, backend or cross-repository development is
+introduced by this roadmap. Scoped blockers never stop independent useful work.

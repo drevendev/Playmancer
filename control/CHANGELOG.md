@@ -46,3 +46,13 @@ Append-only semantic/navigation history for repository-canonical project control
                       recorded successful master CI and blocked Pages provisioning
                       updated navigation, registry and roadmap without runtime changes
                       preserved format 2 and owner-controlled scheduler lifecycle
+
+2026-11-04 | rev 15 | reconciled: native delivery navigation under issue #119
+                      independently confirmed #22 merged; PLAY-CONTROL-001 is DONE
+                      replaced obsolete PR/branch claims with neutral native discovery
+                      separated dated c211d97 publication evidence from current live status
+                      recognized the real catalog and unfinished v2 evidence gates
+                      aligned state/index/registry/roadmap without changing the manifest
+                      added automated counter/history/claim/dependency regressions
+                      preserved all earlier changelog bytes and permanent unit IDs
+                      no runtime data or scheduler mutation; later PR acceptance required
