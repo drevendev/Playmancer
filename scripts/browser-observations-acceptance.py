@@ -110,7 +110,19 @@ try:
                 explore.screenshot(path=str(OUT / f'observations-{engine}-{width}.png'), full_page=True)
                 for scale in (200, 400):
                     explore.evaluate('(scale)=>document.documentElement.style.fontSize=scale+"%"', scale)
-                    check(explore.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), f'{engine}/{width}: {scale}% reflow')
+                    layout = explore.evaluate("""() => ({
+                        viewport: innerWidth,
+                        document: document.documentElement.scrollWidth,
+                        offenders: [...document.querySelectorAll('body *')].map(node => ({
+                            node, rect: node.getBoundingClientRect()
+                        })).filter(({rect}) => rect.width > 0 && rect.right > innerWidth + 1)
+                            .slice(0, 8).map(({node, rect}) => ({
+                                tag: node.tagName, id: node.id, className: typeof node.className === 'string' ? node.className.slice(0, 80) : '',
+                                right: Math.round(rect.right), width: Math.round(rect.width)
+                            }))
+                    })""")
+                    check(layout['document'] <= layout['viewport'] + 1,
+                          f'{engine}/{width}: {scale}% reflow; layout={layout}')
                     if scale == 400:
                         # A page can have no horizontal overflow while tearing a heading
                         # into single-letter fragments. Assert actual rendered geometry.
