@@ -461,7 +461,24 @@ function drawResults() {
       : item.reason === "hard-constraint-fail" ? hardFilterExplanation(BY_ID.get(item.id))
       : item.reason === "hard-constraint-unknown" ? hardUnknownExplanation(BY_ID.get(item.id))
       : reasons[item.reason] ?? item.reason;
-    $("partition-list").append(element("li", `${BY_ID.get(item.id).name}: ${reason}.`));
+    const row = element("li", `${BY_ID.get(item.id).name}: ${reason}.`);
+    // A mistaken hide must be reversible without also restoring every other
+    // exclusion. This is an explicit player action, never a filter fallback.
+    if (state.excluded.includes(item.id)) {
+      const restoreOne = element("button", "Restore this game");
+      restoreOne.type = "button";
+      restoreOne.setAttribute("aria-label", `Restore ${BY_ID.get(item.id).name}`);
+      restoreOne.addEventListener("click", () => {
+        state.excluded = state.excluded.filter((id) => id !== item.id);
+        commit(false);
+        // The clicked row is rebuilt; leave focus on a persistent, visible
+        // native summary rather than dropping keyboard users into the body.
+        $("uncertainty-title").focus();
+        $("status").textContent = `${BY_ID.get(item.id).name} restored from hidden games. Required filters are unchanged. ${$("status").textContent}`;
+      });
+      row.append(" ", restoreOne);
+    }
+    $("partition-list").append(row);
   }
 }
 function render(rebuildSeeds) {
