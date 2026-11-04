@@ -144,5 +144,12 @@ observationById('show-link').addEventListener('click', () => {
   observationById('share-url').focus(); observationById('share-url').select();
   observationById('action-status').textContent = 'Comparison link ready to copy. It includes the ordered pair, filters and evidence version.';
 });
+// The fragment owns the versioned comparison state, not section navigation.
+document.querySelector('.skip').addEventListener('click', event => {
+  event.preventDefault();
+  const target = observationById('comparison-title');
+  target.focus({ preventScroll: true });
+  target.scrollIntoView({ block: 'start', behavior: 'auto' });
+});
 window.addEventListener('hashchange', restoreObservationState);
 restoreObservationState();

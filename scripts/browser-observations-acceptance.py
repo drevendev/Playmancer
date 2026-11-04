@@ -88,6 +88,31 @@ try:
                 explore.goto(link, wait_until='networkidle')
                 check(explore.locator('#left').input_value() == 'wikidata:q16972008' and explore.locator('#right').input_value() == 'wikidata:q332697', f'{engine}/{width}: ordered pair restored')
                 check(explore.locator('#tag').input_value() == 'mechanic:building', f'{engine}/{width}: filter restored')
+                # The skip link must not replace the versioned state fragment.
+                explore.locator('#query').fill('building')
+                explore.locator('#show-link').click()
+                navigation_state = """() => ({
+                    hash: location.hash,
+                    controls: ['left','right','query','tag','share-url'].map(id => document.getElementById(id).value),
+                    comparison: document.getElementById('comparison').textContent,
+                    results: [...document.querySelectorAll('.game-card')].map(el => el.dataset.gameId)
+                })"""
+                before_skip = explore.evaluate(navigation_state)
+                for activation in ('keyboard', 'pointer'):
+                    skip = explore.get_by_role('link', name='Skip to game comparison')
+                    skip.focus()
+                    if activation == 'keyboard':
+                        skip.press('Enter')
+                    else:
+                        skip.click()
+                    # Observe after queued hashchange/focus work, not the transient anchor focus.
+                    explore.evaluate('() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))')
+                    check(explore.evaluate(navigation_state) == before_skip, f'{engine}/{width}: {activation} skip preserves pair, filters and share')
+                    check(explore.locator('#comparison-title').evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: {activation} skip focus')
+                    check(not explore.locator('#link-error').is_visible(), f'{engine}/{width}: {activation} skip has no link error')
+                    check(explore.locator('#share-box').is_visible(), f'{engine}/{width}: {activation} skip retains share controls')
+                explore.screenshot(path=str(OUT / f'observations-{engine}-{width}-skip.png'), full_page=False)
+                explore.locator('#query').fill('')
                 explore.locator('#right').select_option('dreven:devmatch')
                 check('not a zero match' in explore.locator('#comparison').inner_text(), f'{engine}/{width}: unknown comparison')
                 explore.locator('#left').select_option('dreven:devmatch')
