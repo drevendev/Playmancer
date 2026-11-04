@@ -111,6 +111,21 @@ try:
                 for scale in (200, 400):
                     explore.evaluate('(scale)=>document.documentElement.style.fontSize=scale+"%"', scale)
                     check(explore.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), f'{engine}/{width}: {scale}% reflow')
+                    if scale == 400:
+                        # A page can have no horizontal overflow while tearing a heading
+                        # into single-letter fragments. Assert actual rendered geometry.
+                        for heading in ('h1', '#comparison-title', '#explore-title'):
+                            words_whole = explore.locator(heading).evaluate("""el => {
+                                const node = el.firstChild;
+                                if (!node || node.nodeType !== Node.TEXT_NODE) return false;
+                                return [...node.textContent.matchAll(/\\S+/gu)].every(word => {
+                                    const range = document.createRange();
+                                    range.setStart(node, word.index);
+                                    range.setEnd(node, word.index + word[0].length);
+                                    return range.getClientRects().length === 1;
+                                });
+                            }""")
+                            check(words_whole, f'{engine}/{width}: 400% {heading} words remain whole')
                 explore.locator('#comparison-title').scroll_into_view_if_needed()
                 explore.screenshot(path=str(OUT / f'observations-{engine}-{width}-400.png'), full_page=False)
                 check(not errors, f'{engine}/{width}: no JS errors {errors}')
