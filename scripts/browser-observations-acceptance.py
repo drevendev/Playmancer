@@ -113,6 +113,14 @@ try:
                     layout = explore.evaluate("""() => ({
                         viewport: innerWidth,
                         document: document.documentElement.scrollWidth,
+                        intrinsic: [...document.querySelectorAll('body, body *')].map(node => ({
+                            node, excess: node.scrollWidth - node.clientWidth
+                        })).filter(({node, excess}) => excess > 1 && node.clientWidth > 0)
+                            .sort((a,b)=>b.excess-a.excess).slice(0, 12)
+                            .map(({node, excess})=>({tag:node.tagName,id:node.id,
+                                className: typeof node.className === 'string' ? node.className.slice(0,60):'',
+                                scroll:node.scrollWidth,client:node.clientWidth,
+                                text:node.textContent.slice(0,60)})),
                         offenders: [...document.querySelectorAll('body *')].map(node => ({
                             node, rect: node.getBoundingClientRect()
                         })).filter(({rect}) => rect.width > 0 && rect.right > innerWidth + 1)
