@@ -35,7 +35,7 @@ else:
     SITE = Path(OVERRIDE).resolve() if OVERRIDE else ROOT / "_site"
     if not OVERRIDE:
         subprocess.run(["npm", "run", "build"], cwd=ROOT, check=True)
-        subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(SITE)], cwd=ROOT, check=True)
     if not (SITE / "index.html").is_file():
         raise FileNotFoundError(f"No built site at {SITE}")
 
