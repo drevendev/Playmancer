@@ -54,6 +54,17 @@ try:
                   and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # Let players inspect original per-favorite evidence before assigning
+            # more weight; browsing to source receipts is not a ranking feature.
+            check(label + ": selected real favorites have on-demand source disclosures",
+                  page.locator("#seeds .basket-evidence").count() == 2
+                  and not page.locator("#seeds .basket-evidence").first.evaluate("node => node.open"))
+            page.locator("#seeds .basket-evidence summary").first.click()
+            check(label + ": inspected favorite distinguishes genres, unknowns and exact QID",
+                  "farming simulation game" in page.locator("#seeds .basket-evidence").first.inner_text()
+                  and "Mechanics: unknown. Co-op: unknown." in page.locator("#seeds .basket-evidence").first.inner_text()
+                  and "not an exhaustive support list" in page.locator("#seeds .basket-evidence").first.inner_text()
+                  and page.locator('#seeds .basket-evidence a[href="https://www.wikidata.org/wiki/Q23013817"]').count() == 1)
             # A real favorite without source-backed genre labels must not
             # look equivalent to a richly tagged seed: disclose the gap before
             # selection, keep the warning while weights change, then clear it.
@@ -82,6 +93,11 @@ try:
                   and "DevMatch has no recorded genre evidence for this pilot"
                       in gap.locator("#empty").inner_text()
                   and "DevMatch has no Wikidata" not in gap.locator("#empty").inner_text())
+            gap.locator("#seeds .basket-evidence summary").first.click()
+            check(label + ": sparse owner game explicitly exposes unknown evidence and publisher receipts",
+                  "Recorded genres (publisher-authored tags): unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
+                  and "Mechanics: unknown. Co-op: unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
+                  and gap.locator('#seeds .basket-evidence a[href$="docs/STOREFRONTS.md"]').count() == 1)
             gap.locator("#seeds input[type=range]").first.evaluate(
                 "(slider) => { slider.value = '9'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
             gap.locator("#share").click()
