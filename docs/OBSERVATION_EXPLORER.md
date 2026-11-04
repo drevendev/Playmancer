@@ -7,10 +7,11 @@ retain both per-field source URLs and review dates. One-sided records mean
 **unreviewed for the other game**, never a proven mismatch. Games without
 records remain selectable and explicitly unknown.
 
-This ships the existing 48 independently authored observations for 12 games,
-reviewed on 31 October 2026. It does not acquire new source data, increase the
-30-game catalog, improve measured recommendation quality, or enable v2.
-The 18 unreviewed profiles are not treated as negative examples. Editorial
+This release ships 54 independently authored observations for 13 of the existing
+30 real games: the original 48 facts / 12 profiles reviewed on 31 October 2026,
+plus six public first-party facts for Idle Fantasy Shop reviewed on 4 November 2026.
+It does not enlarge the 30-game catalog, improve measured recommendation quality,
+or enable v2. The remaining 17 unreviewed profiles are not negative examples. Editorial
 normalization weights are deliberately omitted from the public projection:
 they are neither importance nor confidence. No publisher text, artwork or
 store/community tags are copied. The original source-review and rights scope
@@ -35,13 +36,13 @@ four-file lower-level/synthetic contract; use **release-preflight.py** after
 bytes. The observation page has a separate 100 kB limit and no remote assets.
 
 Catalog blob `0570fd610b14fb336c0de65e6cc3062892abe301` and observation blob
-`cd79f729d960f5c495c2d1e16448ff8058f582dd` are checked before touching output.
+`426fa34e432bcb10fc96dd48462f0b6d7dc62c9d` are checked before touching output.
 Changing historical inputs fails closed. Updating evidence requires explicit
 review and a new fingerprint, not an automatic refresh or a new review date.
 The existing frozen readiness studies remain byte-identical.
 
 `#facts=` links preserve ordered game IDs, search query, selected fact, catalog
-ID, observation digest and `observations-1` view version. Unsupported versions,
+ID, observation digest and `observations-2` view version. Unsupported versions,
 unknown IDs, duplicate pairs and malformed links fail visibly. No basket or
 Bridge link is reinterpreted. Fact searches do not apply basket hard filters;
 this is an evidence inventory, **not a recommendation mode**.
@@ -53,4 +54,4 @@ and 320 px. Screenshots and JSON are retained by Verify. Screenshot inspection
 and hosted publication are distinct from passing unit tests. Screen-reader
 speech and human recommendation usefulness are not certified here.
 
-Delivery issue: #118. Remaining recommendation release gates: #76.
+Delivery issues: #118 (explorer), #121 (the one-game source expansion). Remaining recommendation release gates: #76. The 12-game baseline in `semantic-tags-reviewed-12.v1.json` is frozen and unchanged; the 13-game revision and per-field receipts are documented in `SEMANTIC_TAGS_REVIEWED_13.md`.
