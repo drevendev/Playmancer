@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtemp, readFile, writeFile, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { linkObservationExplorer } from '../scripts/build-observations.mjs';
+const root = fileURLToPath(new URL('../', import.meta.url));
+test('production adds the explorer without changing player scoring bytes; all assets remain strictly validated', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'playmancer-release-test-'));
+  t.after(() => rm(dir, { recursive:true, force:true }));
+  const base = join(dir,'base'), release = join(dir,'release');
+  const run = args => execFileSync(process.execPath,args,{cwd:root,stdio:'pipe'});
+  run(['scripts/build-demo.mjs',base,'--catalog','examples/catalog.multistore-30.real.json']);
+  run(['scripts/build-release.mjs',release]);
+  assert.deepEqual((await readdir(release)).sort(), ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css']);
+  for (const file of ['.nojekyll','bridge-worker.js','player.css'])
+    assert.deepEqual(await readFile(join(release,file)), await readFile(join(base,file)));
+  assert.equal(await readFile(join(release,'index.html'),'utf8'),linkObservationExplorer(await readFile(join(base,'index.html'),'utf8')));
+  const first = await readFile(join(release,'observations.html'),'utf8');
+  run(['scripts/build-release.mjs',release]);
+  assert.equal(await readFile(join(release,'observations.html'),'utf8'), first);
+  const check = () => spawnSync('python3',['scripts/release-preflight.py',release],{cwd:root,encoding:'utf8'});
+  const valid = check(); assert.equal(valid.status,0,valid.stdout+valid.stderr);
+  await writeFile(join(release,'observations.html'),first.replace('name="playmancer-revision"','name="incorrect-revision"'));
+  assert.notEqual(check().status,0,'mismatched explorer revision must reject publication');
+  await writeFile(join(release,'observations.html'),first);
+  await writeFile(join(release,'unapproved.json'),'{}');
+  assert.notEqual(check().status,0,'unapproved public assets must reject publication');
+});

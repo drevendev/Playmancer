@@ -36,17 +36,19 @@ jobs:
       - name: Build static player
         run: npm run build
       - name: Check public static payload
-        run: python3 scripts/pages-preflight.py _site
+        run: python3 scripts/release-preflight.py _site
       - name: Compare two independently built payloads
         run: |
-          node scripts/build-demo.mjs /tmp/playmancer-pages-a --catalog examples/catalog.multistore-30.real.json
-          node scripts/build-demo.mjs /tmp/playmancer-pages-b --catalog examples/catalog.multistore-30.real.json
+          node scripts/build-release.mjs /tmp/playmancer-pages-a
+          node scripts/build-release.mjs /tmp/playmancer-pages-b
           cmp _site/index.html /tmp/playmancer-pages-a/index.html
           cmp _site/index.html /tmp/playmancer-pages-b/index.html
           cmp _site/player.css /tmp/playmancer-pages-a/player.css
           cmp _site/player.css /tmp/playmancer-pages-b/player.css
           cmp _site/bridge-worker.js /tmp/playmancer-pages-a/bridge-worker.js
           cmp _site/bridge-worker.js /tmp/playmancer-pages-b/bridge-worker.js
+          cmp _site/observations.html /tmp/playmancer-pages-a/observations.html
+          cmp _site/observations.html /tmp/playmancer-pages-b/observations.html
           cmp _site/.nojekyll /tmp/playmancer-pages-a/.nojekyll
           cmp _site/.nojekyll /tmp/playmancer-pages-b/.nojekyll
       # The container's Python has working SSL and its Chromium binary is
@@ -61,7 +63,7 @@ jobs:
       - name: Restore and verify the real-game Pages payload after synthetic smoke
         run: |
           npm run build
-          python3 scripts/pages-preflight.py _site
+          python3 scripts/release-preflight.py _site
       - name: Upload verified Pages payload
         uses: actions/upload-pages-artifact@v4
         with:
@@ -155,7 +157,9 @@ jobs:
           HOME: /root
           PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
           PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
-        run: python scripts/browser-http-acceptance.py
+        run: |
+          python scripts/browser-http-acceptance.py
+          python scripts/browser-observations-acceptance.py --engine all
       - name: Require retained 400% Chromium viewport screenshot after successful hosted acceptance
         if: success()
         run: test -s .test-artifacts/http-chromium-mobile-page-scale400.png
@@ -167,6 +171,8 @@ jobs:
           path: |
             .test-artifacts/http-cross-browser.json
             .test-artifacts/http-*.png
+            .test-artifacts/observations-browser.json
+            .test-artifacts/observations-*.png
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
