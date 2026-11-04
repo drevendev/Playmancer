@@ -102,6 +102,38 @@ try:
                       not heading["broken"]
                       and heading["headingSize"] >= heading["copySize"]
                       and heading["scrollWidth"] <= heading["viewport"])
+                # Text-only 400% zoom used to fracture the real-catalog eyebrow
+                # and supporting prose, even though document overflow stayed zero.
+                # Inspect actual character line positions for the known static copy.
+                copy = page.locator("#bridge-lab").evaluate("""panel => {
+                    const broken = {};
+                    const parts = {
+                        eyebrow: ":scope > .eyebrow",
+                        intro: ":scope > .hint",
+                        warning: ":scope > .bridge-warning"
+                    };
+                    for (const [name, selector] of Object.entries(parts)) {
+                        const text = panel.querySelector(selector).firstChild;
+                        const value = text.textContent, range = document.createRange();
+                        const fragments = [];
+                        let cursor = 0;
+                        for (const word of value.match(/\\S+/g) || []) {
+                            const start = value.indexOf(word, cursor), tops = new Set();
+                            for (let i = 0; i < word.length; i++) {
+                                range.setStart(text, start + i);
+                                range.setEnd(text, start + i + 1);
+                                tops.add(Math.round(range.getBoundingClientRect().top));
+                            }
+                            if (tops.size > 1) fragments.push(word);
+                            cursor = start + word.length;
+                        }
+                        broken[name] = fragments;
+                    }
+                    return {broken, noOverflow: document.documentElement.scrollWidth <= innerWidth};
+                }""")
+                check(label + ": 400% Bridge label and explanatory copy keep whole words",
+                      all(not words for words in copy["broken"].values())
+                      and copy["noOverflow"])
             page.screenshot(path=str(ARTIFACTS / ("bridge-route-" + label + ".png")))
             button.click()
             check(label + ": pointer navigation preserves URL and focus", page.evaluate("location.href") == href_before and page.evaluate("document.activeElement.id") == "bridge-title")
