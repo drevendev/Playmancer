@@ -330,7 +330,7 @@ function drawEmptyRecovery(result) {
   explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
   explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
   if (sparseSeeds.length) {
-    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "Wikidata genre evidence for the pilot"}. Comparisons must abstain.`));
+    list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "recorded genre evidence for this pilot"}. Comparisons must abstain.`));
   }
   if (!list.children.length) list.append(element("li", "No catalog profiles remain outside your basket."));
   empty.append(list);
