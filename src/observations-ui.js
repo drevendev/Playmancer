@@ -91,9 +91,20 @@ function saveObservationState() {
   try { history.replaceState(null, '', encodeObservationState(observationModel, observationState)); }
   catch { observationById('action-status').textContent = 'Automatic URL update is unavailable. Use Show comparison link to save this state.'; }
 }
+// Native selects can ellipsize long game names at 400% text zoom. Keep a
+// wrapping visual readout in sync without duplicating the accessible select name.
+function updateSelectedGameLabels() {
+  for (const side of ['left', 'right']) {
+    const select = observationById(side);
+    const readout = observationById(side + '-current');
+    readout.hidden = !select.value;
+    readout.textContent = select.value ? 'Selected: ' + select.selectedOptions[0].textContent : '';
+  }
+}
 function chooseObservationPair() {
   const left = observationById('left').value, right = observationById('right').value;
   observationState.pair = left && right && left !== right ? [left, right] : [];
+  updateSelectedGameLabels();
   saveObservationState(); drawObservationComparison();
   observationById('action-status').textContent = left && left === right ? 'Choose two different games.' : 'Comparison updated.';
 }
@@ -108,6 +119,7 @@ function restoreObservationState() {
   }
   observationById('left').value = observationState.pair[0] ?? '';
   observationById('right').value = observationState.pair[1] ?? '';
+  updateSelectedGameLabels();
   observationById('query').value = observationState.query;
   observationById('tag').value = observationState.tag;
   observationById('share-box').hidden = true;
