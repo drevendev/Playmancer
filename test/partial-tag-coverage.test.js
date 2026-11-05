@@ -11,7 +11,7 @@ const vocabulary = prepareTagTaxonomy({ version: 'tag-taxonomy-1', tags: [
   { id: 'structure:repeatable-runs', label: 'Repeatable runs', aliases: [] },
 ] });
 const fixtures = () => [
-  { id: 'demo:complete', tags: [tag('mechanic:farming')] },
+  { id: 'demo:complete', tagCoverage: 'complete', tags: [tag('mechanic:farming')] },
   { id: 'demo:partial-shared', tagCoverage: 'partial', tags: [
     tag('mechanic:farming', 0.5), tag('mechanic:fishing', 0.5),
   ] },
