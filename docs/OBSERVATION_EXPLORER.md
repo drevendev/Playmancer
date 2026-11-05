@@ -7,11 +7,12 @@ retain both per-field source URLs and review dates. One-sided records mean
 **unreviewed for the other game**, never a proven mismatch. Games without
 records remain selectable and explicitly unknown.
 
-This release ships 54 independently authored observations for 13 of the existing
+This release ships 58 independently authored observations for 14 of the existing
 30 real games: the original 48 facts / 12 profiles reviewed on 31 October 2026,
-plus six public first-party facts for Idle Fantasy Shop reviewed on 4 November 2026.
+six public first-party facts for Idle Fantasy Shop reviewed on 4 November 2026,
+and four short first-party-sourced facts for Into the Breach reviewed on 5 November 2026.
 It does not enlarge the 30-game catalog, improve measured recommendation quality,
-or enable v2. The remaining 17 unreviewed profiles are not negative examples. Editorial
+or enable v2. The remaining 16 unreviewed profiles are not negative examples. Editorial
 normalization weights are deliberately omitted from the public projection:
 they are neither importance nor confidence. No publisher text, artwork or
 store/community tags are copied. The original source-review and rights scope
@@ -36,7 +37,7 @@ four-file lower-level/synthetic contract; use **release-preflight.py** after
 bytes. The observation page has a separate 100 kB limit and no remote assets.
 
 Catalog blob `0570fd610b14fb336c0de65e6cc3062892abe301` and observation blob
-`426fa34e432bcb10fc96dd48462f0b6d7dc62c9d` are checked before touching output.
+`c2b94e8a9770261f07ba586bdb025c4d7afac049` are checked before touching output.
 Changing historical inputs fails closed. Updating evidence requires explicit
 review and a new fingerprint, not an automatic refresh or a new review date.
 The existing frozen readiness studies remain byte-identical.
@@ -54,4 +55,4 @@ and 320 px. Screenshots and JSON are retained by Verify. Screenshot inspection
 and hosted publication are distinct from passing unit tests. Screen-reader
 speech and human recommendation usefulness are not certified here.
 
-Delivery issues: #118 (explorer), #121 (the one-game source expansion). Remaining recommendation release gates: #76. The 12-game baseline in `semantic-tags-reviewed-12.v1.json` is frozen and unchanged; the 13-game revision and per-field receipts are documented in `SEMANTIC_TAGS_REVIEWED_13.md`.
+Delivery issues: #118 (explorer), #121 (the one-game source expansion). Remaining recommendation release gates: #76. The 12-game baseline in `semantic-tags-reviewed-12.v1.json` is frozen and unchanged; the 13-game revision remains frozen in `SEMANTIC_TAGS_REVIEWED_13.md`, and the active 14-game revision is documented in `SEMANTIC_TAGS_REVIEWED_14.md`.

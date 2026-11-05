@@ -19,7 +19,7 @@ test('immutable source revisions and existing game identity remain exact', () =>
   assert.equal(blob(oldBytes), oldSHA);
   assert.equal(blob(newBytes), newSHA);
   assert.equal(blob(catalogBytes), '0570fd610b14fb336c0de65e6cc3062892abe301');
-  assert.equal(REVIEWED_OBSERVATIONS_SHA, newSHA);
+  assert.notEqual(REVIEWED_OBSERVATIONS_SHA, newSHA);
   assert.equal(reviewed.supersedes, 'semantic-tags-reviewed-12.v1.json');
   assert.equal(reviewed.games.length, 13);
   assert.equal(reviewed.receipts.length, 13);
