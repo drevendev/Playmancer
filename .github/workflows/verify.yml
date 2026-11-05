@@ -25,6 +25,8 @@ jobs:
       - run: npm test
       - name: Reject noncanonical hosted URLs and redirected workers
         run: python3 -m unittest discover -s test -p 'test_hosted_validation.py' -v
+      - name: Test public Pages diagnostic probe and bounded retry
+        run: python3 -m unittest discover -s test -p 'test_pages_live_probe.py' -v
       - run: npm run validate:catalog
       - name: Verify reproducible five-method benchmark
         run: |
