@@ -72,6 +72,10 @@ try:
                 check('54 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 check(explore.locator('.game-card').count() == 30, f'{engine}/{width}: complete catalog with unknowns')
                 explore.locator('#sample').click()
+                for side, expected in (('left', 'Factorio'), ('right', 'Terraria')):
+                    current = explore.locator(f'#{side}-current')
+                    check(current.is_visible() and expected in current.inner_text(),
+                          f'{engine}/{width}: sample selected value shown outside truncated select')
                 check(explore.locator('#comparison-title').evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: sample focus')
                 shared = explore.locator('#comparison > section')
                 check(shared.get_by_text('Constructing structures', exact=True).count() == 1, f'{engine}/{width}: shared fact')
@@ -88,6 +92,10 @@ try:
                 explore.goto(link, wait_until='networkidle')
                 check(explore.locator('#left').input_value() == 'wikidata:q16972008' and explore.locator('#right').input_value() == 'wikidata:q332697', f'{engine}/{width}: ordered pair restored')
                 check(explore.locator('#tag').input_value() == 'mechanic:building', f'{engine}/{width}: filter restored')
+                for side in ('left', 'right'):
+                    check(explore.locator(f'#{side}-current').evaluate("""el => el.textContent ===
+                        'Selected: ' + document.getElementById(el.id.replace('-current', '')).selectedOptions[0].textContent"""),
+                        f'{engine}/{width}: selected readout follows share restoration')
                 # The skip link must not replace the versioned state fragment.
                 explore.locator('#query').fill('building')
                 explore.locator('#show-link').click()
@@ -121,6 +129,8 @@ try:
                 explore.locator('#link-error').wait_for(state='visible')
                 check(explore.locator('#link-error').is_visible(), f'{engine}/{width}: incompatible link visible')
                 check(explore.locator('#left').input_value() == '', f'{engine}/{width}: no silent substitute')
+                check(not explore.locator('#left-current').is_visible() and not explore.locator('#right-current').is_visible(),
+                      f'{engine}/{width}: invalid share leaves no stale selected readouts')
                 explore.locator('#reset').click()
                 explore.locator('#sample').click()
                 explore.locator('#query').fill('Celeste')
@@ -144,6 +154,9 @@ try:
                 check(explore.locator('#right').evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: keyboard flow')
                 explore.locator('#query').fill('')
                 explore.screenshot(path=str(OUT / f'observations-{engine}-{width}.png'), full_page=True)
+                # An unknown game's long native option is intentionally truncated at
+                # extreme zoom; the external, fully wrapping readout must not be.
+                explore.locator('#right').select_option('dreven:devmatch')
                 for scale in (200, 400):
                     explore.evaluate('(scale)=>document.documentElement.style.fontSize=scale+"%"', scale)
                     layout = explore.evaluate("""() => ({
@@ -168,6 +181,15 @@ try:
                     check(layout['document'] <= layout['viewport'] + 1,
                           f'{engine}/{width}: {scale}% reflow; layout={layout}')
                     if scale == 400:
+                        for side in ('left', 'right'):
+                            readout = explore.locator(f'#{side}-current')
+                            check(readout.is_visible() and readout.evaluate("""el => {
+                                const side = el.id.replace('-current', '');
+                                const select = document.getElementById(side);
+                                return el.textContent === 'Selected: ' + select.selectedOptions[0].textContent
+                                    && el.scrollWidth <= el.clientWidth + 1
+                                    && getComputedStyle(el).whiteSpace === 'normal';
+                            }"""), f'{engine}/{width}: 400% full wrapping {side} selected game')
                         # A page can have no horizontal overflow while tearing a heading
                         # into single-letter fragments. Assert actual rendered geometry.
                         for heading in ('h1', '#comparison-title', '#explore-title'):
