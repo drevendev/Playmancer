@@ -53,7 +53,7 @@ for (const [index, path] of modules.entries()) {
     const end = source.indexOf("function showCatalogIdentity() {", start);
     if (start < 0 || end <= start) throw new Error("Unexpected observation deep-link boundary");
     source = source.slice(0, start) +
-      "function recommendationFactComparison() { return null; }\\n" +
+      "function recommendationFactComparison() { return null; }\n" +
       source.slice(end);
   }
   if (path === "src/demo.js") {
