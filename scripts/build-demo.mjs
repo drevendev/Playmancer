@@ -45,6 +45,17 @@ const inlineJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
+  // Fictional/alternative synthetic previews have no publication-bound
+  // observation explorer. Omit the real-only deep-link implementation from
+  // their strict <95 kB self-contained bundle, keeping an inert call site.
+  if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    const start = source.indexOf("function recommendationFactComparison(game) {");
+    const end = source.indexOf("function showCatalogIdentity() {", start);
+    if (start < 0 || end <= start) throw new Error("Unexpected observation deep-link boundary");
+    source = source.slice(0, start) +
+      "function recommendationFactComparison() { return null; }\\n" +
+      source.slice(end);
+  }
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
     if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
