@@ -76,6 +76,7 @@ jobs:
     needs: verify-and-package
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -84,6 +85,11 @@ jobs:
     outputs:
       page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # This is an independent job: packaging checkout is not shared with deploy.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
       # Requires Pages to have been provisioned with GitHub Actions as source.
       # Intentionally does NOT attempt to bypass missing repository admin rights.
       - name: Verify Pages configuration
