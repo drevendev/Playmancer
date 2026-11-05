@@ -119,5 +119,37 @@ class PagesHostedRuntimeTests(unittest.TestCase):
         self.assertIn('HOME: /root', hosted)
 
 
+class PagesPublishCheckoutTests(unittest.TestCase):
+    """Publish jobs do not inherit the package job's checked-out workspace."""
+    def setUp(self):
+        workflow = (Path(__file__).resolve().parents[1] / '.github' / 'workflows' / 'pages.yml').read_text()
+        _, marker, remaining = workflow.partition('\n  publish:\n')
+        self.assertTrue(marker, 'the publish job must exist')
+        self.publish, marker, _ = remaining.partition('\n  hosted-player-acceptance:\n')
+        self.assertTrue(marker, 'the hosted acceptance job must remain separate')
+
+    def test_publish_checks_out_exact_master_before_probe_and_deploy(self):
+        publish = self.publish
+        self.assertIn("if: github.ref == 'refs/heads/master'", publish)
+        steps = publish.split('    steps:\n', 1)[1]
+        checkout = steps.index('      - uses: actions/checkout@v4\n')
+        configure = steps.index('      - name: Verify Pages configuration\n')
+        deploy = steps.index('      - name: Publish reviewed static artifact\n')
+        probe = steps.index('          python3 scripts/pages_live_probe.py')
+        self.assertLess(checkout, configure)
+        self.assertLess(checkout, deploy)
+        self.assertLess(checkout, probe)
+        checkout_block = steps[checkout:configure]
+        self.assertIn('          ref: ${{ github.sha }}\n', checkout_block)
+        self.assertIn('          persist-credentials: false\n', checkout_block)
+
+    def test_publish_checkout_has_read_only_source_access(self):
+        before_steps = self.publish.split('    steps:\n', 1)[0]
+        permissions = before_steps.split('    permissions:\n', 1)[1]
+        self.assertIn('      contents: read\n', permissions)
+        self.assertIn('      pages: write\n', permissions)
+        self.assertIn('      id-token: write\n', permissions)
+
+
 if __name__ == '__main__':
     unittest.main()
