@@ -25,7 +25,7 @@ test('four official, short Into the Breach facts ship as a new immutable version
   assert.equal(sha(previousBytes), OLD_SHA);
   assert.equal(sha(currentBytes), NEW_SHA);
   assert.equal(sha(catalogBytes), REVIEWED_CATALOG_SHA);
-  assert.equal(REVIEWED_OBSERVATIONS_SHA, NEW_SHA);
+  assert.notEqual(REVIEWED_OBSERVATIONS_SHA, NEW_SHA);
   assert.equal(current.catalogGitBlobSha1, REVIEWED_CATALOG_SHA);
   assert.equal(current.catalogSnapshotId, previous.catalogSnapshotId);
   assert.equal(current.supersedes, 'semantic-tags-reviewed-13.v1.json');
@@ -54,7 +54,7 @@ test('four official, short Into the Breach facts ship as a new immutable version
 });
 
 test('player-facing explorer discovers Into the Breach while keeping unseen evidence unknown', () => {
-  const model = prepareObservations(catalog, current);
+  const model = prepareObservations(catalog, current, NEW_SHA);
   assert.equal(model.version, OBSERVATION_VERSION);
   assert.equal(model.evidence, NEW_SHA);
   assert.equal(model.factCount, 58);
@@ -74,7 +74,7 @@ test('player-facing explorer discovers Into the Breach while keeping unseen evid
 });
 
 test('link compatibility remains fingerprinted; source, identity and coverage fail closed', () => {
-  const model = prepareObservations(catalog, current);
+  const model = prepareObservations(catalog, current, NEW_SHA);
   const oldModel = prepareObservations(catalog, previous, OLD_SHA);
   const state = { version: OBSERVATION_VERSION, catalog: model.catalog, evidence: model.evidence,
     pair: [ID, 'wikidata:q4308783'], query: 'turn-based', tag: '' };
