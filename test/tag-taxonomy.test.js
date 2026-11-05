@@ -10,12 +10,12 @@ const vocabulary = () => ({ version: TAG_TAXONOMY_VERSION, tags: [
   { id: 'visual:pixel-art', label: 'Pixel art', aliases: [] },
 ] });
 const samples = () => [
-  { id: 'demo:a', tags: [
+  { id: 'demo:a', tagCoverage: 'complete', tags: [
     { id: 'mechanic:branching-dialogue', weight: .4, source },
     { id: 'genre:rpg', weight: .3, source },
     { id: 'mood:cozy', weight: .3, source },
   ], metadata: {}, coop: null },
-  { id: 'demo:b', tags: [
+  { id: 'demo:b', tagCoverage: 'complete', tags: [
     { id: 'genre:role-playing', weight: .5, source },
     { id: 'visual:pixel-art', weight: .5, source },
   ] },
@@ -93,4 +93,17 @@ test('rejects version drift and duplicate games without mutating source objects'
   projectWeightedTagProfiles(taxonomy, original);
   assert.deepEqual(original, frozen);
   assert.throws(() => projectWeightedTagProfiles({ ...taxonomy }, original), /prepare a validated taxonomy first/);
+});
+
+test('observed tag profiles must explicitly declare completeness before scoring', () => {
+  const taxonomy = prepareTagTaxonomy(vocabulary());
+  const omitted = samples();
+  delete omitted[0].tagCoverage;
+  assert.throws(() => projectWeightedTagProfiles(taxonomy, omitted), /tagCoverage must explicitly/);
+  const partial = samples();
+  partial[0].tagCoverage = 'partial';
+  const projected = projectWeightedTagProfiles(taxonomy, partial);
+  assert.equal(projected.games.find(game => game.id === 'demo:a').tagCoverage, 'partial');
+  assert.equal(projected.games.find(game => game.id === 'demo:b').tagCoverage, 'complete');
+  assert.ok(!Object.hasOwn(projected.games.find(game => game.id === 'demo:unknown'), 'tagCoverage'));
 });

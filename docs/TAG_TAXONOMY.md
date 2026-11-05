@@ -32,7 +32,7 @@ const dictionary = prepareTagTaxonomy({
   ],
 });
 const projected = projectWeightedTagProfiles(dictionary, [
-  { id: 'demo:fictional', tags: [
+  { id: 'demo:fictional', tagCoverage: 'complete', tags: [
     { id: 'genre:rpg', weight: 0.4, source: 'authored-fictional-fixture' },
     { id: 'mechanic:branching-dialogue', weight: 0.6,
       source: 'authored-fictional-fixture' },
@@ -43,7 +43,12 @@ const model = prepareEvidenceModel({ games: projected.games, relations: [] });
 ```
 
 Every game must explicitly provide either `tags: null` (unknown) or a positive
-list with *supplied* weights summing to 1. Only already-recorded per-game
+list with *supplied* weights summing to 1 **and an explicit `tagCoverage` of
+`complete` or `partial`**. Omitting the marker for observed tags is an error,
+not permission to treat selected positive facts as a complete vector. Use
+`complete` only for a truly exhaustive, independently supported distribution;
+selected-fact inventories must use `partial` and abstain from full-game fit.
+ Only already-recorded per-game
 receipts may populate `source`. Aliases preserve the original observation's
 receipt but do not multiply its influence. A source's rights attestation must
 be verified independently before exporting real tags to the public catalog.
