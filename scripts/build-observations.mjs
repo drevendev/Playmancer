@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { Script } from 'node:vm';
-import { prepareObservations, REVIEWED_OBSERVATIONS_SHA, REVIEWED_CATALOG_SHA } from '../src/observations.js';
+import { prepareObservations, REVIEWED_OBSERVATIONS_SHA, REVIEWED_CATALOG_SHA, OBSERVATION_VERSION } from '../src/observations.js';
 
 export const OBSERVATION_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 export const gitObservationBlob = bytes => createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
@@ -39,6 +39,6 @@ export async function buildObservationPage(root, catalog, catalogBytes, revision
 export function linkObservationExplorer(template) {
   const marker = '<div class="section"><label for="mode">';
   if (template.split(marker).length !== 2) throw new Error('Observation entry anchor missing or ambiguous');
-  const entry = '<p class="storefront-links"><a href="./observations.html" target="_blank" rel="noopener noreferrer">Explore gameplay facts (new tab)</a></p>';
+  const entry = `<p class="storefront-links"><a id="observation-explorer-entry" data-observation-version="${OBSERVATION_VERSION}" data-observation-catalog="${OBSERVATION_CATALOG_ID}" data-observation-evidence="${REVIEWED_OBSERVATIONS_SHA}" href="./observations.html" target="_blank" rel="noopener noreferrer">Explore gameplay facts (new tab)</a></p>`;
   return template.replace(marker, entry + '\n' + marker);
 }

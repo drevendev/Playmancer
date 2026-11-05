@@ -100,6 +100,7 @@ of silently substituting games from a different snapshot.
   arithmetic baseline. Union is an evaluation baseline, not an Intersection label.
 - Require platform/co-op support. Missing required evidence is unknown, never a pass.
 - Inspect per-seed affinities, evidence coverage, shared features and mismatches.
+- From each real-catalog recommendation, open **Compare recorded facts with [first favorite]** in a separate tab. The linked Gameplay Facts comparison pins catalog and observation revisions, preserves the original basket, and shows unknown evidence explicitly; it does **not** alter rankings or filters.
 - On real-game result cards, expand the **Why [game] matches your basket** / **Why [game] appears in this list** explanation for an additional equal-weight, source-recorded genre-mass proxy per favorite. It reports residual genre emphasis, including shared labels with unequal shares, but **does not change ranking** and does not claim that uniform tag weights are source-supplied importance.
 - Hide/restore results and recover explicitly from empty results without silent
   filter relaxation.

@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 import subprocess
 import threading
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +59,37 @@ try:
                 original = page.url
                 entry = page.get_by_role('link', name='Explore gameplay facts (new tab)')
                 check(entry.get_attribute('target') == '_blank', f'{engine}/{width}: basket remains in original tab')
+                # The player links each result to a pinned comparison with the
+                # first favorite. It must not mutate basket or ranking state.
+                first_result = page.locator('#results .card').first
+                check(first_result.count() == 1, f'{engine}/{width}: sample has a recommendation')
+                compare = first_result.locator('a.fact-compare-link')
+                check(compare.count() == 1 and compare.get_attribute('target') == '_blank',
+                      f'{engine}/{width}: recommendation offers a source-backed comparison')
+                href = compare.get_attribute('href')
+                fragment = urlsplit(href).fragment
+                check(fragment.startswith('facts='), f'{engine}/{width}: explicit versioned deep link')
+                pinned = json.loads(unquote(fragment[len('facts='):]))
+                check(pinned['catalog'] == entry.get_attribute('data-observation-catalog') and
+                      pinned['version'] == entry.get_attribute('data-observation-version') and
+                      pinned['evidence'] == entry.get_attribute('data-observation-evidence') and
+                      pinned['pair'][1] == first_result.get_attribute('data-game-id') and
+                      pinned['pair'][0] != pinned['pair'][1] and
+                      pinned['query'] == '' and pinned['tag'] == '',
+                      f'{engine}/{width}: linked pair retains exact evidence revision and candidate')
+                with page.expect_popup() as paired_popup:
+                    compare.click()
+                paired = paired_popup.value
+                paired.wait_for_load_state('networkidle')
+                check(paired.locator('#left').input_value() == pinned['pair'][0] and
+                      paired.locator('#right').input_value() == pinned['pair'][1] and
+                      not paired.locator('#link-error').is_visible(),
+                      f'{engine}/{width}: compared favorite and result restored without substitution')
+                check('partial observations' in paired.locator('#comparison').inner_text() or
+                      'comparison is incomplete' in paired.locator('#comparison').inner_text(),
+                      f'{engine}/{width}: incomplete evidence disclosed, not called fit')
+                check(page.url == original, f'{engine}/{width}: comparison does not mutate basket')
+                paired.close()
                 with page.expect_popup() as popup:
                     entry.click()
                 explore = popup.value
