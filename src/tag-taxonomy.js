@@ -86,6 +86,11 @@ export function projectWeightedTagProfiles(taxonomy, games) {
     if (seenGames.has(id)) throw new TypeError(`duplicate game: ${id}`);
     seenGames.add(id);
     if (!Object.hasOwn(game, 'tags')) throw new TypeError(`missing observed/unknown tags marker: ${id}`);
+    // No observed tag distribution may become a 'complete' ranking vector by
+    // omitting its coverage marker. Selected positive facts must stay partial.
+    if (game.tags !== null && !Object.hasOwn(game, 'tagCoverage')) {
+      throw new TypeError(`${id}.tagCoverage must explicitly be complete or partial for observed tags`);
+    }
     let tags = null;
     if (game.tags !== null) {
       if (!Array.isArray(game.tags) || game.tags.length < 1 || game.tags.length > 128) {
