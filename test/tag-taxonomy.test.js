@@ -107,3 +107,28 @@ test('observed tag profiles must explicitly declare completeness before scoring'
   assert.equal(projected.games.find(game => game.id === 'demo:b').tagCoverage, 'complete');
   assert.ok(!Object.hasOwn(projected.games.find(game => game.id === 'demo:unknown'), 'tagCoverage'));
 });
+
+test('taxonomy normalization orders punctuation-bearing canonical IDs without locale collation', () => {
+  // ICU can order underscores before hyphens, unlike the locale-free ID
+  // comparator used by the ranking and sharing contract.
+  const ids = ['genre:craft_smith', 'genre:craft-smith', 'genre:craft.smith'];
+  const expected = ['genre:craft-smith', 'genre:craft.smith', 'genre:craft_smith'];
+  const weights = new Map([
+    ['genre:craft_smith', .2],
+    ['genre:craft-smith', .3],
+    ['genre:craft.smith', .5],
+  ]);
+  for (const order of [ids, [...ids].reverse()]) {
+    const taxonomy = prepareTagTaxonomy({ version: TAG_TAXONOMY_VERSION,
+      tags: order.map(id => ({ id, label: id, aliases: [] })) });
+    assert.deepEqual(taxonomy.tags.map(entry => entry.id), expected);
+    const games = [{ id: 'demo:z', tagCoverage: 'complete',
+      tags: order.map(id => ({ id, weight: weights.get(id), source })) },
+      { id: 'demo:a', tags: null }];
+    const projected = projectWeightedTagProfiles(taxonomy, games);
+    assert.deepEqual(projected.games.map(game => game.id), ['demo:a', 'demo:z']);
+    assert.deepEqual(projected.games[1].tags.map(entry => entry.id), expected);
+    assert.deepEqual(projected.games[1].tags.map(entry => entry.weight),
+      expected.map(id => weights.get(id)));
+  }
+});

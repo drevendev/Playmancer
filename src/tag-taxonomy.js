@@ -61,7 +61,8 @@ export function prepareTagTaxonomy(input) {
     }
     entries.push(Object.freeze({ id, label, aliases: Object.freeze([...ids.slice(1)].sort()) }));
   }
-  entries.sort((a, b) => a.id.localeCompare(b.id, 'en'));
+  // Canonical IDs use code-unit order, not locale-dependent ICU collation.
+  entries.sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
   const result = Object.freeze({
     version: TAG_TAXONOMY_VERSION,
     tags: Object.freeze(entries),
