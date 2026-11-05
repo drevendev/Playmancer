@@ -171,6 +171,11 @@ explicit seed weights, exclusion and hard-constraint states. Keep the separate
 Bridge route experience conceptually distinct; do not relabel its routing cost
 as candidate fit.
 
+For the latest source-backed *selected-fact* cohort, see the pinned
+[fourteen-game readiness audit](REVIEWED_TAG_READINESS_14.md). Its 14 partial
+profiles give **zero complete pairs** and abstain on all 150 frozen scenarios;
+this negative eligibility result is not a recommendation-quality improvement.
+
 Before switching the public player, freeze a licensed/authorized tag snapshot,
 record taxonomy aliases and per-field receipts, compare the old method and v2
 on **identical** candidates, constraints and top-k, and report where v2 loses.
