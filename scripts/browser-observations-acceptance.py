@@ -78,7 +78,7 @@ try:
                 check(explore.locator('.game-card').count() == 1 and
                       'Papers, Please' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: officially sourced document inspection searchable')
-                explore.locator('#query').fill('card drafting')
+                explore.locator('#query').fill('drafting')
                 check(explore.locator('.game-card').count() == 1 and
                       'Inscryption' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: officially sourced card drafting searchable')

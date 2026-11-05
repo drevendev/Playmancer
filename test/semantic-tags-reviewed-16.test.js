@@ -60,7 +60,7 @@ test('new source-backed search and cross-game facts preserve unknowns and refrai
   assert.equal(model.observedGames, 16);
   assert.equal(model.games.filter(g=>g.coverage==='unknown').length,14);
   assert.deepEqual(searchObservations(model,'fingerprints').map(g=>g.name),['Papers, Please']);
-  assert.deepEqual(searchObservations(model,'card drafting').map(g=>g.name),['Inscryption']);
+  assert.deepEqual(searchObservations(model,'drafting').map(g=>g.name),['Inscryption']);
   assert.deepEqual(searchObservations(model,'','mechanic:deck-building').map(g=>g.name),
     ['Inscryption','Slay the Spire']);
   const comparison=compareObservations(model,'wikidata:q109051201','wikidata:q48078440');
