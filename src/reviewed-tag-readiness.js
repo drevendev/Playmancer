@@ -1,4 +1,4 @@
-// Frozen, offline release-gate audit for eight- and twelve-game selected-fact profiles.
+// Frozen, offline release-gate audit for eight-, twelve- and fourteen-game selected-fact profiles.
 // This measures abstention/eligibility, not recommendation quality.
 import { createHash } from 'node:crypto';
 import { validateCatalogSnapshot } from './catalog.js';
@@ -13,6 +13,8 @@ export const REVIEWED_TAG_READINESS_PROTOCOL = 'p76-reviewed-eight-readiness-1';
 export const REVIEWED_EIGHT_TAGS_BLOB = '4c480de60b6d09f465cdd29f942ecdf17a6684c9';
 export const REVIEWED_TWELVE_TAG_READINESS_PROTOCOL = 'p76-reviewed-twelve-readiness-1';
 export const REVIEWED_TWELVE_TAGS_BLOB = 'cd79f729d960f5c495c2d1e16448ff8058f582dd';
+export const REVIEWED_FOURTEEN_TAG_READINESS_PROTOCOL = 'p76-reviewed-fourteen-readiness-1';
+export const REVIEWED_FOURTEEN_TAGS_BLOB = 'c2b94e8a9770261f07ba586bdb025c4d7afac049';
 
 function assert(condition, message) {
   if (!condition) throw new TypeError(message);
@@ -66,7 +68,9 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
     ? { count: 8, blob: REVIEWED_EIGHT_TAGS_BLOB, protocol: REVIEWED_TAG_READINESS_PROTOCOL }
     : cohort === 'twelve'
       ? { count: 12, blob: REVIEWED_TWELVE_TAGS_BLOB, protocol: REVIEWED_TWELVE_TAG_READINESS_PROTOCOL }
-      : null;
+      : cohort === 'fourteen'
+        ? { count: 14, blob: REVIEWED_FOURTEEN_TAGS_BLOB, protocol: REVIEWED_FOURTEEN_TAG_READINESS_PROTOCOL }
+        : null;
   assert(fixture !== null, 'unsupported reviewed-tag audit cohort');
   assert(typeof catalogText === 'string' && blobSha(catalogText) === FROZEN_CATALOG_BLOB,
     'catalog blob changed: use a new versioned audit');
