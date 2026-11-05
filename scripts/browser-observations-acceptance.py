@@ -69,11 +69,26 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('58 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('66 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 explore.locator('#query').fill('telegraphed')
                 check(explore.locator('.game-card').count() == 1 and
                       'Into the Breach' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: official new gameplay fact searchable')
+                explore.locator('#query').fill('fingerprints')
+                check(explore.locator('.game-card').count() == 1 and
+                      'Papers, Please' in explore.locator('.game-card').first.inner_text(),
+                      f'{engine}/{width}: officially sourced document inspection searchable')
+                explore.locator('#query').fill('drafting')
+                check(explore.locator('.game-card').count() == 1 and
+                      'Inscryption' in explore.locator('.game-card').first.inner_text(),
+                      f'{engine}/{width}: officially sourced card drafting searchable')
+                explore.locator('#query').fill('')
+                explore.locator('#left').select_option('wikidata:q109051201')
+                explore.locator('#right').select_option('wikidata:q48078440')
+                check(explore.locator('#comparison').get_by_text('Deck building', exact=True).count() == 1,
+                      f'{engine}/{width}: Inscryption and Slay the Spire share sourced deck building')
+                check(explore.locator('#comparison a[href="https://www.inscryption.com/steam"]').count() >= 1,
+                      f'{engine}/{width}: official Inscryption field receipt linked')
                 explore.locator('#query').fill('')
                 check(explore.locator('.game-card').count() == 30, f'{engine}/{width}: complete catalog with unknowns')
                 explore.locator('#sample').click()
