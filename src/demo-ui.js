@@ -99,6 +99,27 @@ function renderBasketEvidence(game) {
   details.append(source);
   return details;
 }
+// Link a recommendation to a versioned, source-backed pair comparison with
+// the basket's first favorite. This is navigation only: the reviewed facts
+// never enter the published genre-only ranking score or hard filters.
+function recommendationFactComparison(game) {
+  const entry = $("observation-explorer-entry");
+  if (syntheticCatalog || !entry || !state.seeds.length ||
+      entry.dataset.observationCatalog !== CATALOG_VERSION) return null;
+  const favorite = state.seeds[0];
+  if (favorite.id === game.id || !BY_ID.has(favorite.id)) return null;
+  const evidenceState = {
+    version: entry.dataset.observationVersion,
+    catalog: entry.dataset.observationCatalog,
+    evidence: entry.dataset.observationEvidence,
+    pair: [favorite.id, game.id], query: "", tag: ""
+  };
+  const link = element("a", `Compare recorded facts with ${BY_ID.get(favorite.id).name} (new tab)`, "fact-compare-link");
+  link.href = "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  return link;
+}
 function showCatalogIdentity() {
   const stores = ["steam", "googleplay", "itch"]
     .filter(store => CATALOG.some(game => game.storeLinks?.some(link => link.store === store)));
@@ -466,6 +487,8 @@ function drawResults() {
     card.append(why);
     const footer = element("div", undefined, "card-footer");
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
+    const factsLink = recommendationFactComparison(game);
+    if (factsLink) footer.append(factsLink);
     const hide = element("button", "Hide result"); hide.type = "button";
     hide.setAttribute("aria-label", `Hide ${game.name}`);
     hide.addEventListener("click", () => {
