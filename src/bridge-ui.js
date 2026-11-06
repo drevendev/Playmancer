@@ -14,15 +14,18 @@ const DEFAULT_BRIDGE = Object.freeze({
   startId: null, endId: null, maxHops: 3, minSimilarity: 0.31
 });
 const bridgeSettings = (state) => state.bridge ?? DEFAULT_BRIDGE;
-// Native selects may ellipsize long game names at narrow/400% text zoom.
-// Provide a visual, wrap-capable readback without replacing native controls
-// or adding redundant text to their screen-reader accessible names.
+// Keep the full selected option visible if the native select ellipsizes at zoom.
 const BRIDGE_CONTROL_IDS = ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"];
 function updateBridgeControlReadback(id) {
-  const control = bridgeEl(id);
-  const readback = bridgeEl(id + "-readback");
-  if (readback) readback.textContent =
-    "Selected: " + (control.selectedOptions[0]?.textContent?.trim() ?? "unknown");
+  const control = bridgeEl(id), name = id + "-readback";
+  let label = bridgeEl(name);
+  if (!label) {
+    label = bridgeNode("span", undefined, "bridge-choice-readback");
+    label.id = name;
+    label.setAttribute("aria-hidden", "true");
+    control.after(label);
+  }
+  label.textContent = "Selected: " + (control.selectedOptions[0]?.textContent?.trim() ?? "unknown");
 }
 
 // One-entry cache for the complete JSON route input. Ranking weights/mode are
@@ -235,16 +238,7 @@ export function bindBridgeControls(getState, updateBridge) {
     });
   }
   for (const key of BRIDGE_CONTROL_IDS) {
-    const control = bridgeEl(key);
-    if (!bridgeEl(key + "-readback")) {
-      const readback = bridgeNode("span", undefined, "bridge-choice-readback");
-      readback.id = key + "-readback";
-      // Option text is already exposed by the native select to assistive technology.
-      readback.setAttribute("aria-hidden", "true");
-      control.after(readback);
-    }
-    updateBridgeControlReadback(key);
-    control.addEventListener("change", () => {
+    bridgeEl(key).addEventListener("change", () => {
       const next = { ...bridgeSettings(getState()),
         startId: bridgeEl("bridge-start").value || null,
         endId: bridgeEl("bridge-end").value || null,
