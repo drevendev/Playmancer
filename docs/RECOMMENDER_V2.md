@@ -171,12 +171,13 @@ explicit seed weights, exclusion and hard-constraint states. Keep the separate
 Bridge route experience conceptually distinct; do not relabel its routing cost
 as candidate fit.
 
-For the last frozen *selected-fact* eligibility study, see the pinned
-[fourteen-game readiness audit](REVIEWED_TAG_READINESS_14.md). Its 14 partial
-profiles give **zero complete pairs** and abstain on all 150 frozen scenarios.
-The [current 16-game observation snapshot](SEMANTIC_TAGS_REVIEWED_16.md) remains
-partial (14 unknown games) and **has not undergone that frozen 150-scenario study**;
-it is not a recommendation-quality improvement or a release gate pass.
+For the latest frozen *selected-fact* eligibility study, see the pinned
+[sixteen-game readiness audit](REVIEWED_TAG_READINESS_16.md), which extends the
+[historical fourteen-game audit](REVIEWED_TAG_READINESS_14.md) without changing
+its inputs. There are 16 partial and 14 unknown profiles, **zero complete
+pairs**, and abstention in all 150 frozen scenarios. The additional observed
+deck-building overlap is a factual shared feature, not a complete similarity
+score or a v2 release gate pass.
 
 Before switching the public player, freeze a licensed/authorized tag snapshot,
 record taxonomy aliases and per-field receipts, compare the old method and v2
