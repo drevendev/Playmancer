@@ -1,8 +1,10 @@
+import os
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from pages_live_probe import Response, probe, verify, served_revision
+from pages_live_probe import Response, probe, verify, served_revision, main
 
 BASE = 'https://drevendev.github.io/Playmancer/'
 SHA = 'a' * 40
@@ -92,6 +94,20 @@ class PagesProbeTests(unittest.TestCase):
             verify(BASE, SHA, attempts=13)
         with self.assertRaises(ValueError):
             verify('http://drevendev.github.io/Playmancer/', SHA)
+
+    def test_once_flag_is_single_strict_observation_and_default_keeps_bounded_retry(self):
+        with patch.dict(os.environ, {'DEPLOY_URL': BASE, 'EXPECTED_SHA': SHA}):
+            with patch('pages_live_probe.verify', return_value=True) as check:
+                self.assertEqual(main(['--once']), 0)
+                check.assert_called_once_with(BASE, SHA, attempts=1)
+            with patch('pages_live_probe.verify', return_value=True) as check:
+                self.assertEqual(main([]), 0)
+                check.assert_called_once_with(BASE, SHA, attempts=12)
+            with patch('pages_live_probe.verify', return_value=True) as check:
+                self.assertEqual(main(['--unknown']), 2)
+                check.assert_not_called()
+            with patch('pages_live_probe.verify', return_value=False):
+                self.assertEqual(main(['--once']), 1)
 
     def test_marker_invalid_never_prints_untrusted_value(self):
         self.assertIsNone(served_revision('<meta name="playmancer-revision" content="<SECRET>">'))
