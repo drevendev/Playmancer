@@ -110,6 +110,77 @@ try:
                       f'{engine}/{width}: incomplete evidence disclosed, not called fit')
                 check(page.url == original, f'{engine}/{width}: comparison does not mutate basket')
                 paired.close()
+                # Basket pairs are separately navigable: all ordered selections
+                # generate n*(n-1)/2 version-pinned, non-ranking comparisons.
+                basket_box = page.locator('#basket-fact-comparisons')
+                check(basket_box.is_visible(), f'{engine}/{width}: favorite-pair comparison visible for two seeds')
+                basket_summary = basket_box.locator('summary')
+                basket_summary.click()
+                check(basket_summary.bounding_box()['height'] >= 44,
+                      f'{engine}/{width}: basket pair disclosure has a touch-sized target')
+                basket_link = basket_box.locator('a.basket-fact-link')
+                check(basket_link.count() == 1 and
+                      basket_link.first.inner_text() == f'{seed_names[0]} ↔ {seed_names[1]} (new tab)' and
+                      basket_link.first.bounding_box()['height'] >= 44 and
+                      basket_link.first.get_attribute('target') == '_blank' and
+                      basket_link.first.get_attribute('rel') == 'noopener noreferrer',
+                      f'{engine}/{width}: exactly one safe, readable pair link')
+                pair_fragment = urlsplit(basket_link.first.get_attribute('href')).fragment
+                check(pair_fragment.startswith('facts='), f'{engine}/{width}: basket pair has versioned state')
+                pair_state = json.loads(unquote(pair_fragment[len('facts='):]))
+                check(pair_state == {
+                    'version': entry.get_attribute('data-observation-version'),
+                    'catalog': entry.get_attribute('data-observation-catalog'),
+                    'evidence': entry.get_attribute('data-observation-evidence'),
+                    'pair': pairs[:2], 'query': '', 'tag': ''
+                }, f'{engine}/{width}: basket pair preserves exact favorite IDs and source versions')
+                with page.expect_popup() as favorites_popup:
+                    basket_link.first.click()
+                favorites_view = favorites_popup.value
+                favorites_view.wait_for_load_state('networkidle')
+                check(favorites_view.locator('#left').input_value() == pairs[0] and
+                      favorites_view.locator('#right').input_value() == pairs[1] and
+                      not favorites_view.locator('#link-error').is_visible(),
+                      f'{engine}/{width}: pair restores correct favorite IDs')
+                favorites_view.close()
+                check(page.url == original, f'{engine}/{width}: pair comparison leaves basket URL unchanged')
+
+                # Isolate basket mutations from the primary recommendation flow.
+                expanded = context.new_page()
+                expanded.goto(base, wait_until='networkidle')
+                for name in ('Inscryption', 'Dwarf Fortress', 'FTL: Faster Than Light'):
+                    expanded.locator('#search').fill(name)
+                    expanded.get_by_role('button', name=f'Add {name}').click()
+                five_names = expanded.locator('#seeds .seed-name').all_inner_texts()
+                expanded_box = expanded.locator('#basket-fact-comparisons')
+                expanded_box.locator('summary').click()
+                five_links = expanded_box.locator('a.basket-fact-link')
+                expected_labels = [
+                    f'{five_names[i]} ↔ {five_names[j]} (new tab)'
+                    for i in range(len(five_names)) for j in range(i + 1, len(five_names))
+                ]
+                check(len(five_names) == 5 and five_links.count() == 10 and
+                      five_links.all_inner_texts() == expected_labels,
+                      f'{engine}/{width}: five favorites show all ten ordered pairs')
+                # Weight edits rerank but must not close an open pair chooser.
+                expanded.locator('#seeds input[type=range]').first.focus()
+                expanded.locator('#seeds input[type=range]').first.press('ArrowRight')
+                check(expanded_box.locator('details').get_attribute('open') is not None and
+                      expanded_box.locator('a.basket-fact-link').count() == 10 and
+                      expanded.locator('#seeds input[type=range]').first.evaluate(
+                          'el => document.activeElement === el'),
+                      f'{engine}/{width}: reranking preserves pair disclosure and keyboard focus')
+                for name in ('FTL: Faster Than Light', 'Dwarf Fortress'):
+                    expanded.get_by_role('button', name=f'Remove {name}').click()
+                check(expanded_box.is_visible() and expanded_box.locator('a.basket-fact-link').count() == 3,
+                      f'{engine}/{width}: removing two favorites leaves three current pairs')
+                expanded.get_by_role('button', name='Remove Inscryption').click()
+                check(expanded_box.is_visible() and expanded_box.locator('a.basket-fact-link').count() == 1,
+                      f'{engine}/{width}: two favorites retain one pair')
+                expanded.get_by_role('button', name=f'Remove {seed_names[1]}').click()
+                check(not expanded_box.is_visible() and expanded_box.locator('a.basket-fact-link').count() == 0,
+                      f'{engine}/{width}: one-seed basket hides fact comparison')
+                expanded.close()
                 with page.expect_popup() as popup:
                     entry.click()
                 explore = popup.value
