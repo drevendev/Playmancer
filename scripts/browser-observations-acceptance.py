@@ -238,7 +238,9 @@ try:
                 explore.locator('#query').fill('farming')
                 check(explore.locator('.game-card').count() == 3, f'{engine}/{width}: gameplay search')
                 explore.locator('#tag').select_option('mechanic:building')
-                check(explore.locator('.game-card').count() == 0, f'{engine}/{width}: combined search empty state')
+                check(explore.locator('.game-card').count() == 1 and
+                      'Dwarf Fortress' in explore.locator('.game-card').first.inner_text(),
+                      f'{engine}/{width}: combined farming/building search isolates sourced Dwarf Fortress facts')
                 explore.locator('#query').fill('')
                 check(explore.locator('.game-card').count() == 4, f'{engine}/{width}: positive fact filter')
                 explore.locator('#show-link').click()
