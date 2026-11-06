@@ -199,7 +199,7 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "compact result keeps visible seed support, fit and coverage",
               first_card.locator(".affinity").count() >= 2
               and first_card.locator(".fit strong").is_visible()
-              and first_card.locator(".card-footer .hint").is_visible()
+              and first_card.locator(".card-footer > span.hint").is_visible()
               and technical.count() == 1
               and not technical.is_visible())
         why_summary.focus()

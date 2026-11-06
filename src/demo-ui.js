@@ -99,26 +99,36 @@ function renderBasketEvidence(game) {
   details.append(source);
   return details;
 }
-// Link a recommendation to a versioned, source-backed pair comparison with
-// the basket's first favorite. This is navigation only: the reviewed facts
-// never enter the published genre-only ranking score or hard filters.
+// Choose which favorite to compare with a recommendation rather than
+// arbitrarily comparing only the first basket seed. This only navigates to
+// source-backed observations; partial facts never enter ranking or filters.
 function recommendationFactComparison(game) {
   const entry = $("observation-explorer-entry");
-  if (syntheticCatalog || !entry || !state.seeds.length ||
+  if (syntheticCatalog || !entry ||
       entry.dataset.observationCatalog !== CATALOG_VERSION) return null;
-  const favorite = state.seeds[0];
-  if (favorite.id === game.id || !BY_ID.has(favorite.id)) return null;
-  const evidenceState = {
-    version: entry.dataset.observationVersion,
-    catalog: entry.dataset.observationCatalog,
-    evidence: entry.dataset.observationEvidence,
-    pair: [favorite.id, game.id], query: "", tag: ""
-  };
-  const link = element("a", `Compare recorded facts with ${BY_ID.get(favorite.id).name} (new tab)`, "fact-compare-link");
-  link.href = "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
-  link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  return link;
+  const favorites = state.seeds.filter(seed => seed.id !== game.id && BY_ID.has(seed.id));
+  if (!favorites.length) return null;
+  const chooser = element("details", undefined, "fact-compare-menu");
+  chooser.append(element("summary", "Compare recorded facts with your favorites"));
+  chooser.append(element("p", "Selected observations are partial; unrecorded is unknown, not a mismatch.", "hint"));
+  const list = element("ul");
+  for (const favorite of favorites) {
+    const evidenceState = {
+      version: entry.dataset.observationVersion,
+      catalog: entry.dataset.observationCatalog,
+      evidence: entry.dataset.observationEvidence,
+      pair: [favorite.id, game.id], query: "", tag: ""
+    };
+    const link = element("a", `With ${BY_ID.get(favorite.id).name} (new tab)`, "fact-compare-link");
+    link.href = "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const row = element("li");
+    row.append(link);
+    list.append(row);
+  }
+  chooser.append(list);
+  return chooser;
 }
 function showCatalogIdentity() {
   const stores = ["steam", "googleplay", "itch"]
