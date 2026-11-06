@@ -59,32 +59,52 @@ try:
                 original = page.url
                 entry = page.get_by_role('link', name='Explore gameplay facts (new tab)')
                 check(entry.get_attribute('target') == '_blank', f'{engine}/{width}: basket remains in original tab')
-                # The player links each result to a pinned comparison with the
-                # first favorite. It must not mutate basket or ranking state.
+                # Each recommendation must expose an ordered, individually
+                # versioned comparison for every selected favorite, not just
+                # the first basket item. Expanding links never changes ranking.
                 first_result = page.locator('#results .card').first
                 check(first_result.count() == 1, f'{engine}/{width}: sample has a recommendation')
-                compare = first_result.locator('a.fact-compare-link')
-                check(compare.count() == 1 and compare.get_attribute('target') == '_blank',
-                      f'{engine}/{width}: recommendation offers a source-backed comparison')
-                href = compare.get_attribute('href')
-                fragment = urlsplit(href).fragment
-                check(fragment.startswith('facts='), f'{engine}/{width}: explicit versioned deep link')
-                pinned = json.loads(unquote(fragment[len('facts='):]))
-                check(pinned['catalog'] == entry.get_attribute('data-observation-catalog') and
-                      pinned['version'] == entry.get_attribute('data-observation-version') and
-                      pinned['evidence'] == entry.get_attribute('data-observation-evidence') and
-                      pinned['pair'][1] == first_result.get_attribute('data-game-id') and
-                      pinned['pair'][0] != pinned['pair'][1] and
-                      pinned['query'] == '' and pinned['tag'] == '',
-                      f'{engine}/{width}: linked pair retains exact evidence revision and candidate')
+                seed_names = page.locator('#seeds .seed-name').all_inner_texts()
+                check(len(seed_names) >= 2, f'{engine}/{width}: sample contains multiple favorites')
+                chooser = first_result.locator('details.fact-compare-menu')
+                check(chooser.count() == 1, f'{engine}/{width}: per-favorite comparison disclosure')
+                chooser.locator('summary').click()
+                check(chooser.locator('summary').bounding_box()['height'] >= 44,
+                      f'{engine}/{width}: comparison disclosure is touch accessible')
+                compare = chooser.locator('a.fact-compare-link')
+                check(compare.count() == len(seed_names),
+                      f'{engine}/{width}: one comparison link per ordered favorite')
+                pairs = []
+                for index, favorite_name in enumerate(seed_names):
+                    link = compare.nth(index)
+                    check(link.inner_text() == f'With {favorite_name} (new tab)' and
+                          link.get_attribute('target') == '_blank' and
+                          link.get_attribute('rel') == 'noopener noreferrer' and
+                          link.bounding_box()['height'] >= 44,
+                          f'{engine}/{width}: favorite {index} has a keyboard/touch link')
+                    fragment = urlsplit(link.get_attribute('href')).fragment
+                    check(fragment.startswith('facts='), f'{engine}/{width}: pinned comparison deep link')
+                    pinned = json.loads(unquote(fragment[len('facts='):]))
+                    check(pinned['catalog'] == entry.get_attribute('data-observation-catalog') and
+                          pinned['version'] == entry.get_attribute('data-observation-version') and
+                          pinned['evidence'] == entry.get_attribute('data-observation-evidence') and
+                          pinned['pair'][1] == first_result.get_attribute('data-game-id') and
+                          pinned['pair'][0] != pinned['pair'][1] and
+                          pinned['query'] == '' and pinned['tag'] == '',
+                          f'{engine}/{width}: favorite {index} retains exact source revisions and candidate')
+                    pairs.append(pinned['pair'][0])
+                check(len(set(pairs)) == len(seed_names),
+                      f'{engine}/{width}: distinct favorites are not silently substituted')
+                # Choose the last favorite so a regression to the former
+                # first-only link fails even if the initial pair still works.
                 with page.expect_popup() as paired_popup:
-                    compare.click()
+                    compare.last.click()
                 paired = paired_popup.value
                 paired.wait_for_load_state('networkidle')
-                check(paired.locator('#left').input_value() == pinned['pair'][0] and
-                      paired.locator('#right').input_value() == pinned['pair'][1] and
+                check(paired.locator('#left').input_value() == pairs[-1] and
+                      paired.locator('#right').input_value() == first_result.get_attribute('data-game-id') and
                       not paired.locator('#link-error').is_visible(),
-                      f'{engine}/{width}: compared favorite and result restored without substitution')
+                      f'{engine}/{width}: selected non-first favorite and result restored')
                 check('partial observations' in paired.locator('#comparison').inner_text() or
                       'comparison is incomplete' in paired.locator('#comparison').inner_text(),
                       f'{engine}/{width}: incomplete evidence disclosed, not called fit')
