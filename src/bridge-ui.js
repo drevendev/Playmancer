@@ -14,6 +14,19 @@ const DEFAULT_BRIDGE = Object.freeze({
   startId: null, endId: null, maxHops: 3, minSimilarity: 0.31
 });
 const bridgeSettings = (state) => state.bridge ?? DEFAULT_BRIDGE;
+// Keep the full selected option visible if the native select ellipsizes at zoom.
+const BRIDGE_CONTROL_IDS = ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"];
+function updateBridgeControlReadback(id) {
+  const control = bridgeEl(id), name = id + "-readback";
+  let label = bridgeEl(name);
+  if (!label) {
+    label = bridgeNode("span", undefined, "bridge-choice-readback");
+    label.id = name;
+    label.setAttribute("aria-hidden", "true");
+    control.after(label);
+  }
+  label.textContent = "Selected: " + (control.selectedOptions[0]?.textContent?.trim() ?? "unknown");
+}
 
 // One-entry cache for the complete JSON route input. Ranking weights/mode are
 // deliberately absent from that input; filters, exclusions, endpoints, policy
@@ -134,6 +147,7 @@ export function renderBridge(state) {
   }
   bridgeEl("bridge-hops").value = String(form.maxHops);
   bridgeEl("bridge-threshold").value = String(form.minSimilarity);
+  for (const id of BRIDGE_CONTROL_IDS) updateBridgeControlReadback(id);
   const status = bridgeEl("bridge-status"), steps = bridgeEl("bridge-steps");
   // Disclose detailed counts on demand rather than announcing a long paragraph
   // through the polite live region after every route-control change.
@@ -223,7 +237,7 @@ export function bindBridgeControls(getState, updateBridge) {
       title.focus({ preventScroll: true });
     });
   }
-  for (const key of ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"]) {
+  for (const key of BRIDGE_CONTROL_IDS) {
     bridgeEl(key).addEventListener("change", () => {
       const next = { ...bridgeSettings(getState()),
         startId: bridgeEl("bridge-start").value || null,
