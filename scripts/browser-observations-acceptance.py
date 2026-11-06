@@ -162,6 +162,14 @@ try:
                 check(len(five_names) == 5 and five_links.count() == 10 and
                       five_links.all_inner_texts() == expected_labels,
                       f'{engine}/{width}: five favorites show all ten ordered pairs')
+                # Weight edits rerank but must not close an open pair chooser.
+                expanded.locator('#seeds input[type=range]').first.focus()
+                expanded.locator('#seeds input[type=range]').first.press('ArrowRight')
+                check(expanded_box.locator('details').get_attribute('open') is not None and
+                      expanded_box.locator('a.basket-fact-link').count() == 10 and
+                      expanded.locator('#seeds input[type=range]').first.evaluate(
+                          'el => document.activeElement === el'),
+                      f'{engine}/{width}: reranking preserves pair disclosure and keyboard focus')
                 for name in ('FTL: Faster Than Light', 'Dwarf Fortress'):
                     expanded.get_by_role('button', name=f'Remove {name}').click()
                 check(expanded_box.is_visible() and expanded_box.locator('a.basket-fact-link').count() == 3,

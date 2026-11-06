@@ -597,8 +597,13 @@ function render(rebuildSeeds) {
   $("blend-control").hidden = state.mode !== "blend";
   $("mode-note").textContent = notes[state.mode];
   $("restore").hidden = state.excluded.length === 0;
-  if (rebuildSeeds) drawSeeds();
-  renderFavoriteFactComparisons();
+  // Changes to weights, ranking mode and hard filters must not close the
+  // favorite-pair disclosure or drop keyboard focus: pair identities only
+  // change when the seed list is rebuilt.
+  if (rebuildSeeds) {
+    drawSeeds();
+    renderFavoriteFactComparisons();
+  }
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", () => {
