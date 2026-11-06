@@ -44,8 +44,9 @@ licensed community-tag collections or downloaded store metadata are published.
   Spire's `mechanic:deck-building`. An empty or one-sided comparison is
   never asserted as evidence of dissimilarity.
 - Production remains `feature-overlap-2`; the 14-profile frozen readiness
-  study is historical, and **no** 16-profile readiness/quality benchmark
-  is claimed. Old `#facts=` share links are explicitly rejected on digest mismatch.
+  study is historical. The [16-profile offline readiness audit](REVIEWED_TAG_READINESS_16.md)
+  checks exact-catalog eligibility and abstention, **not recommendation quality**.
+  Old `#facts=` share links are explicitly rejected on digest mismatch.
 
 ## Acceptance gates (not claims until run)
 
