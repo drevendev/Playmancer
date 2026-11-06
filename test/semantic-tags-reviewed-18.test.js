@@ -22,8 +22,8 @@ const added=new Map([
 ]);
 test('immutable new inventory preserves all earlier observed identities and fields',()=>{
   assert.equal(sha(originalBytes),'2e189156ebd7a2185bb5eb29c04c5ce9813a5c01');
-  assert.equal(sha(latestBytes),REVIEWED_OBSERVATIONS_SHA);
-  assert.equal(REVIEWED_OBSERVATIONS_SHA,'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
+  assert.equal(sha(latestBytes),'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
+  assert.notEqual(REVIEWED_OBSERVATIONS_SHA,'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
   assert.equal(sha(catalogBytes),REVIEWED_CATALOG_SHA);
   assert.equal(now.supersedes,'semantic-tags-reviewed-16.v1.json');
   assert.equal(now.catalogSnapshotId,old.catalogSnapshotId);
@@ -51,7 +51,7 @@ test('source-bound Dwarf Fortress and Sekiro facts are dated and independently i
     assert.equal(now.taxonomy.tags.filter(t=>t.id===id).length,1);
 });
 test('facts search, shared positive observations and unknowns never fabricate fit',()=>{
-  const model=prepareObservations(catalog,now);
+  const model=prepareObservations(catalog,now,'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
   assert.equal(model.observedGames,18);assert.equal(model.factCount,74);
   assert.equal(model.games.filter(g=>g.coverage==='unknown').length,12);
   assert.deepEqual(searchObservations(model,'vertical traversal').map(g=>g.name),['Sekiro: Shadows Die Twice']);
@@ -68,7 +68,7 @@ test('facts search, shared positive observations and unknowns never fabricate fi
 });
 test('versioned comparisons restore exact IDs and reject incompatible source digests',()=>{
   const oldModel=prepareObservations(catalog,old,'2e189156ebd7a2185bb5eb29c04c5ce9813a5c01');
-  const current=prepareObservations(catalog,now);
+  const current=prepareObservations(catalog,now,'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
   const state={version:OBSERVATION_VERSION,catalog:current.catalog,evidence:current.evidence,
     pair:[dwarf,terra],query:'digging',tag:'mechanic:building'};
   assert.deepEqual(decodeObservationState(current,encodeObservationState(current,state)),state);

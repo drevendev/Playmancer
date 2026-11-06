@@ -179,8 +179,8 @@ pairs**, and abstention in all 150 frozen scenarios. The additional observed
 deck-building overlap is a factual shared feature, not a complete similarity
 score or a v2 release gate pass.
 
-The newer [18-game selected-fact inventory](SEMANTIC_TAGS_REVIEWED_18.md)
-adds Dwarf Fortress and Sekiro facts but **does not** establish complete
+The newer [20-game selected-fact inventory](SEMANTIC_TAGS_REVIEWED_20.md)
+adds Portal 2 and The Witness to the 18-game inventory but **does not** establish complete
 weights or a new frozen v2 benchmark. The 16-game gate remains the latest
 identical-catalog readiness evaluation until a separate audit is pinned.
 

@@ -1,6 +1,6 @@
 /** Positive, partial observations: deliberately independent of taste scoring. */
 export const OBSERVATION_VERSION = 'observations-2';
-export const REVIEWED_OBSERVATIONS_SHA = 'fb69cf0c834812509fe979e4a8f2380bd7930e0b';
+export const REVIEWED_OBSERVATIONS_SHA = '8d667a7c67b028e0f4f550ce22f8e333eb93c58a';
 export const REVIEWED_CATALOG_SHA = '0570fd610b14fb336c0de65e6cc3062892abe301';
 const observationOrder = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function observationText(value, name, max = 160) {
