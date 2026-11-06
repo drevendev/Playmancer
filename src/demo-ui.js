@@ -102,6 +102,15 @@ function renderBasketEvidence(game) {
 // Choose which favorite to compare with a recommendation rather than
 // arbitrarily comparing only the first basket seed. This only navigates to
 // source-backed observations; partial facts never enter ranking or filters.
+function pinnedFactsLink(firstId, secondId, entry) {
+  const evidenceState = {
+    version: entry.dataset.observationVersion,
+    catalog: entry.dataset.observationCatalog,
+    evidence: entry.dataset.observationEvidence,
+    pair: [firstId, secondId], query: "", tag: ""
+  };
+  return "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
+}
 function recommendationFactComparison(game) {
   const entry = $("observation-explorer-entry");
   if (syntheticCatalog || !entry ||
@@ -113,14 +122,8 @@ function recommendationFactComparison(game) {
   chooser.append(element("p", "Selected observations are partial; unrecorded is unknown, not a mismatch.", "hint"));
   const list = element("ul");
   for (const favorite of favorites) {
-    const evidenceState = {
-      version: entry.dataset.observationVersion,
-      catalog: entry.dataset.observationCatalog,
-      evidence: entry.dataset.observationEvidence,
-      pair: [favorite.id, game.id], query: "", tag: ""
-    };
     const link = element("a", `With ${BY_ID.get(favorite.id).name} (new tab)`, "fact-compare-link");
-    link.href = "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
+    link.href = pinnedFactsLink(favorite.id, game.id, entry);
     link.target = "_blank";
     link.rel = "noopener noreferrer";
     const row = element("li");
@@ -129,6 +132,39 @@ function recommendationFactComparison(game) {
   }
   chooser.append(list);
   return chooser;
+}
+// Offer all unordered basket pairs (at most 10), preserving selection order.
+// This is an evidence explorer, not a source of ranking weights or inferred fit.
+function renderFavoriteFactComparisons() {
+  const container = $("basket-fact-comparisons");
+  container.replaceChildren();
+  const entry = $("observation-explorer-entry");
+  if (syntheticCatalog || !entry ||
+      entry.dataset.observationCatalog !== CATALOG_VERSION || state.seeds.length < 2) {
+    container.hidden = true;
+    return;
+  }
+  const disclosure = element("details");
+  disclosure.append(element("summary", "Compare recorded facts between favorites"));
+  disclosure.append(element("p", "Observations are partial; unrecorded means unknown, not a mismatch. These comparisons do not change ranking.", "hint"));
+  const list = element("ul");
+  for (let i = 0; i < state.seeds.length; i++) {
+    for (let j = i + 1; j < state.seeds.length; j++) {
+      const first = BY_ID.get(state.seeds[i].id);
+      const second = BY_ID.get(state.seeds[j].id);
+      if (!first || !second) continue;
+      const link = element("a", `${first.name} ↔ ${second.name} (new tab)`, "basket-fact-link");
+      link.href = pinnedFactsLink(first.id, second.id, entry);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      const row = element("li");
+      row.append(link);
+      list.append(row);
+    }
+  }
+  disclosure.append(list);
+  container.append(disclosure);
+  container.hidden = list.children.length === 0;
 }
 function showCatalogIdentity() {
   const stores = ["steam", "googleplay", "itch"]
@@ -562,6 +598,7 @@ function render(rebuildSeeds) {
   $("mode-note").textContent = notes[state.mode];
   $("restore").hidden = state.excluded.length === 0;
   if (rebuildSeeds) drawSeeds();
+  renderFavoriteFactComparisons();
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", () => {
