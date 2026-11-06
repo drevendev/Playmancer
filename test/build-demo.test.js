@@ -27,6 +27,11 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     assert.doesNotMatch(html, /<style>/);
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);
     assert.match(html, /id="results-view"/);
+    // The fictional bundle must keep basket comparisons inert and must not
+    // leak or invoke the real-only, version-bound observation deep-link code.
+    assert.match(html, /function renderFavoriteFactComparisons\(\)/);
+    assert.doesNotMatch(html, /function pinnedFactsLink/);
+    assert.doesNotMatch(html, /Compare recorded facts between favorites/);
     assert.doesNotMatch(html, /\/\* Compact mobile cards retain match evidence\. \*\//);
     assert.ok(firstWorker.byteLength > 0 && firstWorker.byteLength < 40_000);
     assert.match(firstWorker.toString("utf8"), /self\.onmessage =/);
