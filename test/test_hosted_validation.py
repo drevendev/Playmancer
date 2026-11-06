@@ -125,11 +125,12 @@ class PostJourneyRevisionGateTests(unittest.TestCase):
         _, separator, hosted = workflow.partition('\n  hosted-player-acceptance:\n')
         self.assertTrue(separator)
         browser = hosted.index('python scripts/browser-observations-acceptance.py --engine all')
-        verify = hosted.index('python3 scripts/pages_live_probe.py --once')
+        command = 'python3 scripts/pages_live_probe.py --once'
+        verify = hosted.index(command)
         screenshots = hosted.index('- name: Require retained 400% Chromium viewport screenshot')
         self.assertLess(browser, verify)
         self.assertLess(verify, screenshots)
-        step = hosted[hosted.rfind('      - name:', 0, verify):verify]
+        step = hosted[hosted.rfind('      - name:', 0, verify):verify + len(command)]
         self.assertIn('DEPLOY_URL: ${{ needs.publish.outputs.page_url }}', step)
         self.assertIn('EXPECTED_SHA: ${{ github.sha }}', step)
         self.assertIn('run: python3 scripts/pages_live_probe.py --once', step)
