@@ -179,6 +179,11 @@ pairs**, and abstention in all 150 frozen scenarios. The additional observed
 deck-building overlap is a factual shared feature, not a complete similarity
 score or a v2 release gate pass.
 
+The newer [18-game selected-fact inventory](SEMANTIC_TAGS_REVIEWED_18.md)
+adds Dwarf Fortress and Sekiro facts but **does not** establish complete
+weights or a new frozen v2 benchmark. The 16-game gate remains the latest
+identical-catalog readiness evaluation until a separate audit is pinned.
+
 Before switching the public player, freeze a licensed/authorized tag snapshot,
 record taxonomy aliases and per-field receipts, compare the old method and v2
 on **identical** candidates, constraints and top-k, and report where v2 loses.
