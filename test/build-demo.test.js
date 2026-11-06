@@ -35,6 +35,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     assert.doesNotMatch(html, /\/\* Compact mobile cards retain match evidence\. \*\//);
     assert.ok(firstWorker.byteLength > 0 && firstWorker.byteLength < 40_000);
     assert.match(firstWorker.toString("utf8"), /self\.onmessage =/);
+    const expectedRevision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
+    assert.ok(firstWorker.toString("utf8").startsWith(`// playmancer-revision:${expectedRevision}\n`));
     assert.match(html, /new Worker\(new URL\("\.\/bridge-worker\.js"/);
     assert.equal(await readFile(join(out, ".nojekyll"), "utf8"), "");
   } finally { await rm(out, { recursive: true, force: true }); }

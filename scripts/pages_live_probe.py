@@ -59,6 +59,12 @@ def served_revision(html):
     return value if value is not None and re.fullmatch('[0-9a-f]{40}', value) else None
 
 
+def served_worker_revision(js):
+    """Read a validated revision prefix; never emit untrusted worker content."""
+    marker = re.match(r"// playmancer-revision:([0-9a-f]{40})\r?\n", js)
+    return marker.group(1) if marker else None
+
+
 def observation(response, url, expected, kind):
     if response.fault:
         return 'NETWORK_OR_TIMEOUT'
@@ -71,7 +77,14 @@ def observation(response, url, expected, kind):
     if len(response.body) > 1_000_000:
         return 'OVERSIZED_RESPONSE'
     if kind == 'worker':
-        return 'OK' if 'self.onmessage =' in response.body else 'MISSING_WORKER_ENTRY'
+        if 'self.onmessage =' not in response.body:
+            return 'MISSING_WORKER_ENTRY'
+        actual = served_worker_revision(response.body)
+        if actual == expected:
+            return 'OK'
+        if actual:
+            return f'STALE_WORKER_REVISION:{actual}'
+        return 'MISSING_OR_INVALID_WORKER_REVISION'
     actual = served_revision(response.body)
     if actual == expected:
         return 'OK'

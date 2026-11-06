@@ -15,7 +15,7 @@ def index(sha=SHA):
 
 class FakeFetch:
     def __init__(self, index_body=None, index_status=200, worker_status=200,
-                 worker_body='self.onmessage =', explorer_body=None, explorer_status=200, redirect=False):
+                 worker_body='// playmancer-revision:' + SHA + '\nself.onmessage =', explorer_body=None, explorer_status=200, redirect=False):
         self.body = index() if index_body is None else index_body
         self.index_status = index_status
         self.worker_status = worker_status
@@ -63,6 +63,21 @@ class PagesProbeTests(unittest.TestCase):
     def test_http_redirect_status_is_not_a_valid_worker(self):
         self.assertIn('worker=REDIRECT_OR_WRONG_ORIGIN',
             probe(BASE, SHA, FakeFetch(worker_status=302))[1])
+
+    def test_worker_revision_must_match_index_before_explorer_is_checked(self):
+        for body, label in [
+            ('// playmancer-revision:' + OLD + '\nself.onmessage =', 'STALE_WORKER_REVISION:' + OLD),
+            ('self.onmessage =', 'MISSING_OR_INVALID_WORKER_REVISION'),
+            ('// playmancer-revision:PRIVATE\nself.onmessage =', 'MISSING_OR_INVALID_WORKER_REVISION'),
+        ]:
+            with self.subTest(label=label):
+                client = FakeFetch(worker_body=body)
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('worker=' + label, detail)
+                self.assertIn('explorer=NOT_CHECKED', detail)
+                self.assertEqual(len(client.calls), 2)
+                self.assertNotIn('PRIVATE', detail)
 
     def test_explorer_must_match_revision(self):
         self.assertIn('explorer=STALE_REVISION:'+OLD, probe(BASE, SHA, FakeFetch(explorer_body=index(OLD)))[1])
