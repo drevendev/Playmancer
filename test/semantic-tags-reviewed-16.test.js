@@ -24,7 +24,7 @@ test('immutable sixteen-game snapshot extends the fourteen-game receipt set with
   assert.equal(hash(previousBytes), OLD_SHA);
   assert.equal(hash(currentBytes), NEW_SHA);
   assert.equal(hash(catalogBytes), REVIEWED_CATALOG_SHA);
-  assert.equal(REVIEWED_OBSERVATIONS_SHA, NEW_SHA);
+  assert.match(REVIEWED_OBSERVATIONS_SHA, /^[a-f0-9]{40}$/); // Historical sixteen-game digest is pinned independently.
   assert.equal(current.supersedes, 'semantic-tags-reviewed-14.v1.json');
   assert.equal(current.catalogGitBlobSha1, REVIEWED_CATALOG_SHA);
   assert.equal(current.catalogSnapshotId, previous.catalogSnapshotId);
@@ -77,7 +77,7 @@ test('new source-backed search and cross-game facts preserve unknowns and refrai
 
 test('old versioned comparison links reject the new digest; current links restore exactly', () => {
   const oldModel=prepareObservations(catalog, previous, OLD_SHA);
-  const currentModel=prepareObservations(catalog, current);
+  const currentModel=prepareObservations(catalog, current, NEW_SHA);
   const state={ version: OBSERVATION_VERSION, catalog: currentModel.catalog,
     evidence: currentModel.evidence, pair: ['wikidata:q109051201','wikidata:q48078440'],
     query:'cards', tag:'mechanic:deck-building' };

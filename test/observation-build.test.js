@@ -12,7 +12,7 @@ const catalog = JSON.parse(raw);
 const revision = 'a'.repeat(40);
 test('exact source fingerprints bind the dated projection to the unchanged catalog', async () => {
   assert.equal(gitObservationBlob(raw), REVIEWED_CATALOG_SHA);
-  assert.equal(gitObservationBlob(await readFile(join(root, 'examples/semantic-tags-reviewed-16.v1.json'))), REVIEWED_OBSERVATIONS_SHA);
+  assert.equal(gitObservationBlob(await readFile(join(root, 'examples/semantic-tags-reviewed-18.v1.json'))), REVIEWED_OBSERVATIONS_SHA);
 });
 test('page is deterministic, compiled, versioned, bounded and self-contained', async () => {
   const a = await buildObservationPage(root, catalog, raw, revision);
@@ -37,8 +37,8 @@ test('changed current observations fail closed', async t => {
   const path = await mkdtemp(join(tmpdir(), 'playmancer-observation-test-'));
   t.after(() => rm(path, {recursive:true,force:true}));
   await mkdir(join(path,'examples'));
-  const data = await readFile(join(root,'examples/semantic-tags-reviewed-16.v1.json'));
-  await writeFile(join(path,'examples/semantic-tags-reviewed-16.v1.json'), Buffer.concat([data,Buffer.from(' ')]));
+  const data = await readFile(join(root,'examples/semantic-tags-reviewed-18.v1.json'));
+  await writeFile(join(path,'examples/semantic-tags-reviewed-18.v1.json'), Buffer.concat([data,Buffer.from(' ')]));
   await assert.rejects(buildObservationPage(path,catalog,raw,revision), /observation blob mismatch/);
 });
 test('main entry is explicit, isolated and does not replace basket share state', () => {

@@ -191,7 +191,7 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('66 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('74 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 explore.locator('#query').fill('telegraphed')
                 check(explore.locator('.game-card').count() == 1 and
                       'Into the Breach' in explore.locator('.game-card').first.inner_text(),
@@ -204,6 +204,13 @@ try:
                 check(explore.locator('.game-card').count() == 1 and
                       'Inscryption' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: officially sourced card drafting searchable')
+                explore.locator('#query').fill('vertical traversal')
+                check(explore.locator('.game-card').count() == 1 and
+                      'Sekiro: Shadows Die Twice' in explore.locator('.game-card').first.inner_text(),
+                      f'{engine}/{width}: official Sekiro vertical traversal fact searchable')
+                explore.locator('#query').fill('digging')
+                check(explore.locator('.game-card').count() == 2,
+                      f'{engine}/{width}: Dwarf Fortress and Terraria have sourced digging observations')
                 explore.locator('#query').fill('')
                 explore.locator('#left').select_option('wikidata:q109051201')
                 explore.locator('#right').select_option('wikidata:q48078440')
@@ -211,6 +218,11 @@ try:
                       f'{engine}/{width}: Inscryption and Slay the Spire share sourced deck building')
                 check(explore.locator('#comparison a[href="https://www.inscryption.com/steam"]').count() >= 1,
                       f'{engine}/{width}: official Inscryption field receipt linked')
+                explore.locator('#left').select_option('wikidata:q248810')
+                explore.locator('#right').select_option('wikidata:q332697')
+                check(explore.locator('#comparison').get_by_text('Digging into terrain', exact=True).count() == 1 and
+                      explore.locator('#comparison a[href="https://www.bay12games.com/dwarves/features.html"]').count() >= 1,
+                      f'{engine}/{width}: Dwarf Fortress / Terraria shared digging retains source receipt')
                 explore.locator('#query').fill('')
                 check(explore.locator('.game-card').count() == 30, f'{engine}/{width}: complete catalog with unknowns')
                 explore.locator('#sample').click()
@@ -224,11 +236,11 @@ try:
                 check(shared.locator('a').count() == 2, f'{engine}/{width}: both field receipts')
                 check('not a verified difference' in explore.locator('#comparison').inner_text(), f'{engine}/{width}: no fabricated mismatch')
                 explore.locator('#query').fill('farming')
-                check(explore.locator('.game-card').count() == 2, f'{engine}/{width}: gameplay search')
+                check(explore.locator('.game-card').count() == 3, f'{engine}/{width}: gameplay search')
                 explore.locator('#tag').select_option('mechanic:building')
                 check(explore.locator('.game-card').count() == 0, f'{engine}/{width}: combined search empty state')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == 3, f'{engine}/{width}: positive fact filter')
+                check(explore.locator('.game-card').count() == 4, f'{engine}/{width}: positive fact filter')
                 explore.locator('#show-link').click()
                 link = explore.locator('#share-url').input_value()
                 explore.goto(link, wait_until='networkidle')
