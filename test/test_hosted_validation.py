@@ -119,6 +119,23 @@ class PagesHostedRuntimeTests(unittest.TestCase):
         self.assertIn('HOME: /root', hosted)
 
 
+class PostJourneyRevisionGateTests(unittest.TestCase):
+    def test_hosted_browser_success_requires_fresh_single_attempt_public_readback(self):
+        workflow = (Path(__file__).resolve().parents[1] / '.github' / 'workflows' / 'pages.yml').read_text()
+        _, separator, hosted = workflow.partition('\n  hosted-player-acceptance:\n')
+        self.assertTrue(separator)
+        browser = hosted.index('python scripts/browser-observations-acceptance.py --engine all')
+        command = 'python3 scripts/pages_live_probe.py --once'
+        verify = hosted.index(command)
+        screenshots = hosted.index('- name: Require retained 400% Chromium viewport screenshot')
+        self.assertLess(browser, verify)
+        self.assertLess(verify, screenshots)
+        step = hosted[hosted.rfind('      - name:', 0, verify):verify + len(command)]
+        self.assertIn('DEPLOY_URL: ${{ needs.publish.outputs.page_url }}', step)
+        self.assertIn('EXPECTED_SHA: ${{ github.sha }}', step)
+        self.assertIn('run: python3 scripts/pages_live_probe.py --once', step)
+
+
 class PagesPublishCheckoutTests(unittest.TestCase):
     """Publish jobs do not inherit the package job's checked-out workspace."""
     def setUp(self):

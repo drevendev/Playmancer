@@ -151,6 +151,14 @@ jobs:
         run: |
           python scripts/browser-http-acceptance.py
           python scripts/browser-observations-acceptance.py --engine all
+      # A second exact-revision check catches a native branch/Jekyll publisher
+      # overwriting the validated bundle while multi-engine browser tests run.
+      # Do not retry away this post-journey regression: fail on the first mismatch.
+      - name: Recheck public revision after desktop and mobile journeys
+        env:
+          DEPLOY_URL: ${{ needs.publish.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: python3 scripts/pages_live_probe.py --once
       - name: Require retained 400% Chromium viewport screenshot after successful hosted acceptance
         if: success()
         run: test -s .test-artifacts/http-chromium-mobile-page-scale400.png
