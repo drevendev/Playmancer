@@ -58,7 +58,7 @@ test('version-pinned links reject old snapshots and borrowed source credentials'
  const state={version:OBSERVATION_VERSION,catalog:current.catalog,evidence:current.evidence,
  pair:[portal,witness],query:'puzzle',tag:'mechanic:puzzle-solving'};
  assert.deepEqual(decodeObservationState(current,encodeObservationState(current,state)),state);
- const oldState={...state,evidence:old.evidence,pair:['wikidata:q248810','wikidata:q54906424']};
+ const oldState={...state,evidence:old.evidence,pair:['wikidata:q248810','wikidata:q54906424'],tag:''};
  assert.throws(()=>decodeObservationState(current,encodeObservationState(old,oldState)),/Incompatible/);
  const tampered=JSON.parse(JSON.stringify(now));
  tampered.games.find(g=>g.id===portal).tags[0].source='https://example.invalid/';
