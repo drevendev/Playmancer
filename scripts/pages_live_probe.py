@@ -116,11 +116,18 @@ def verify(base_url, expected_sha, fetch=fetch_public, attempts=12, sleep=time.s
     return False
 
 
-def main():
+def main(argv=None):
+    args = sys.argv[1:] if argv is None else argv
+    # Deployment waits for normal CDN propagation; final post-browser verification
+    # is a single strict observation so a competing publisher cannot be masked
+    # by a later retry within this specific regression gate.
+    if args not in ([], ['--once']):
+        print('Usage: pages_live_probe.py [--once]', file=sys.stderr)
+        return 2
     url = os.environ.get('DEPLOY_URL', '')
     sha = os.environ.get('EXPECTED_SHA', '')
     try:
-        return 0 if verify(url, sha) else 1
+        return 0 if verify(url, sha, attempts=1 if args else 12) else 1
     except ValueError as exc:
         print(f'Invalid Pages probe input: {exc}', file=sys.stderr)
         return 2
