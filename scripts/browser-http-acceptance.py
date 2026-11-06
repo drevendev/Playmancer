@@ -408,6 +408,14 @@ def exercise(browser, base_url, engine, label, width, height):
         page.locator("#bridge-start").select_option(ids[0])
         page.locator("#bridge-end").select_option(ids[1])
         page.locator("#bridge-threshold").select_option("0.05")
+        # Native selects may truncate a label; the full selected option must
+        # remain visible without duplicating its accessible name.
+        bridge_controls = ("bridge-start", "bridge-end", "bridge-hops", "bridge-threshold")
+        check(case, "Bridge selections show full wrap-capable text readback",
+              all(page.locator(f"#{control}-readback").inner_text() ==
+                  "Selected: " + (page.locator(f"#{control} option:checked").text_content() or "").strip()
+                  and page.locator(f"#{control}-readback").get_attribute("aria-hidden") == "true"
+                  for control in bridge_controls))
         check(case, "sample Bridge exposes supported steps and evidence",
               page.locator("#bridge-steps li").count() > 0
               and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
@@ -761,6 +769,24 @@ def exercise(browser, base_url, engine, label, width, height):
                               and item["interiorOverflow"] <= 8
                               for item in bridge_geometry),
                       details=bridge_geometry)
+                readback_geometry = restored.locator("#bridge-lab .bridge-choice-readback").evaluate_all("""nodes =>
+                    nodes.map(node => {
+                        const box = node.getBoundingClientRect();
+                        const parent = node.closest("label").getBoundingClientRect();
+                        return {
+                            text: node.textContent, left: box.left, right: box.right,
+                            labelLeft: parent.left, labelRight: parent.right,
+                            overflow: node.scrollWidth - node.clientWidth
+                        };
+                    })""")
+                check(case, "400% Bridge shows unclipped selected labels, not just ellipsized options",
+                      len(readback_geometry) == 4
+                      and all(item["text"].startswith("Selected: ")
+                              and item["left"] >= item["labelLeft"] - 1
+                              and item["right"] <= item["labelRight"] + 1
+                              and item["overflow"] <= 1
+                              for item in readback_geometry),
+                      details=readback_geometry)
                 return_geometry = restored.locator("#bridge-back-to-basket").evaluate("""button => {
                     const bounds = button.getBoundingClientRect();
                     const panel = button.closest("#bridge-lab").getBoundingClientRect();
