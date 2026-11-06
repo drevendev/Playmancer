@@ -54,6 +54,8 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 #bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
 #bridge-lab .bridge-controls label{margin:0;min-width:0}
 #bridge-lab .bridge-controls select{margin-top:7px;width:100%}
+/* Full selected labels remain visible when native select text is ellipsized at zoom. */
+#bridge-lab .bridge-choice-readback{display:block;max-width:100%;min-width:0;overflow-wrap:anywhere;line-height:1.45;font-size:min(.8125rem,8vw);color:var(--muted);margin-top:4px}
 /* The fixed warning may reflow at spaces; long dynamic status IDs retain emergency wraps. */
 #bridge-lab .bridge-warning{border-left:3px solid var(--warn);padding:8px 12px;margin-top:12px;color:var(--muted);font-size:min(.8125rem,9vw);overflow-wrap:normal}
 #bridge-lab .bridge-status{margin-top:16px}
