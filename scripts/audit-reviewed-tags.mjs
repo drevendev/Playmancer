@@ -5,9 +5,10 @@ import { auditReviewedTagReadiness } from '../src/reviewed-tag-readiness.js';
 
 const cohort = process.argv.length === 2 ? 'eight'
   : process.argv.length === 3 && process.argv[2] === '--twelve' ? 'twelve'
-    : process.argv.length === 3 && process.argv[2] === '--fourteen' ? 'fourteen' : null;
+    : process.argv.length === 3 && process.argv[2] === '--fourteen' ? 'fourteen'
+      : process.argv.length === 3 && process.argv[2] === '--sixteen' ? 'sixteen' : null;
 if (cohort === null) {
-  console.error('Usage: node scripts/audit-reviewed-tags.mjs [--twelve|--fourteen] > report.json');
+  console.error('Usage: node scripts/audit-reviewed-tags.mjs [--twelve|--fourteen|--sixteen] > report.json');
   process.exitCode = 2;
 } else {
   try {
@@ -15,7 +16,8 @@ if (cohort === null) {
     const plan = JSON.parse(readFileSync(new URL('../examples/evaluation-baskets-30.real.json', import.meta.url), 'utf8'));
     const name = cohort === 'eight' ? 'semantic-tags-reviewed-8.v1.json'
       : cohort === 'twelve' ? 'semantic-tags-reviewed-12.v1.json'
-        : 'semantic-tags-reviewed-14.v1.json';
+        : cohort === 'fourteen' ? 'semantic-tags-reviewed-14.v1.json'
+          : 'semantic-tags-reviewed-16.v1.json';
     const reviewed = readFileSync(new URL('../examples/' + name, import.meta.url), 'utf8');
     process.stdout.write(JSON.stringify(auditReviewedTagReadiness(catalog, plan, reviewed, cohort), null, 2) + '\n');
   } catch (error) {
