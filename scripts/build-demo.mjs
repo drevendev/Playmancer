@@ -108,9 +108,11 @@ for (const [index, path] of modules.entries()) {
   }
   parts.push(`// ${path}\n${source}`);
 }
+const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
+if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
 // Build one same-origin static worker asset from the exact same reviewed route
 // source modules. There is no duplicated routing algorithm or runtime API.
-const workerScript = [parts[2], parts[3], `
+const workerScript = `// playmancer-revision:${revision}\n` + [parts[2], parts[3], `
 self.onmessage = ({ data }) => {
   try {
     self.postMessage({ route: buildBridgePreview(data.input) });
@@ -136,8 +138,6 @@ if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
 }
 const template = sourceHtml.replace(sourceStyles[0], '<link rel="stylesheet" href="./player.css">');
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
-const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? "unpublished";
-if (revision !== "unpublished" && !/^[0-9a-f]{40}$/.test(revision)) throw new Error("Invalid publication revision");
 if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
 const escapeAttribute = value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const html = template.replace(entry, () => `<script type="module">\n${script}\n</script>`)
