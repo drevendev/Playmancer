@@ -59,6 +59,9 @@ def main() -> int:
     css_text = css.read_text(encoding="utf-8")
     parser = AssetLinks()
     parser.feed(text)
+    revision_match = re.search(r'<meta name="playmancer-revision" content="([^"]+)">', text)
+    assert revision_match and re.fullmatch(r"[0-9a-f]{40}|unpublished", revision_match.group(1)), "Invalid player publication revision"
+    assert worker_text.startswith(f"// playmancer-revision:{revision_match.group(1)}\n"), "Bridge worker revision differs from player"
     assert parser.has_title and parser.has_viewport, "Missing title or responsive viewport"
     assert parser.script_count >= 1 and parser.script_modules == 1, "Expected exactly one inline module"
     assert parser.assets == ["link[href]=./player.css"], f"Unexpected or remote assets: {parser.assets}"
