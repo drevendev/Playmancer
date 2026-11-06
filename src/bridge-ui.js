@@ -14,6 +14,16 @@ const DEFAULT_BRIDGE = Object.freeze({
   startId: null, endId: null, maxHops: 3, minSimilarity: 0.31
 });
 const bridgeSettings = (state) => state.bridge ?? DEFAULT_BRIDGE;
+// Native selects may ellipsize long game names at narrow/400% text zoom.
+// Provide a visual, wrap-capable readback without replacing native controls
+// or adding redundant text to their screen-reader accessible names.
+const BRIDGE_CONTROL_IDS = ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"];
+function updateBridgeControlReadback(id) {
+  const control = bridgeEl(id);
+  const readback = bridgeEl(id + "-readback");
+  if (readback) readback.textContent =
+    "Selected: " + (control.selectedOptions[0]?.textContent?.trim() ?? "unknown");
+}
 
 // One-entry cache for the complete JSON route input. Ranking weights/mode are
 // deliberately absent from that input; filters, exclusions, endpoints, policy
@@ -134,6 +144,7 @@ export function renderBridge(state) {
   }
   bridgeEl("bridge-hops").value = String(form.maxHops);
   bridgeEl("bridge-threshold").value = String(form.minSimilarity);
+  for (const id of BRIDGE_CONTROL_IDS) updateBridgeControlReadback(id);
   const status = bridgeEl("bridge-status"), steps = bridgeEl("bridge-steps");
   // Disclose detailed counts on demand rather than announcing a long paragraph
   // through the polite live region after every route-control change.
@@ -223,8 +234,17 @@ export function bindBridgeControls(getState, updateBridge) {
       title.focus({ preventScroll: true });
     });
   }
-  for (const key of ["bridge-start", "bridge-end", "bridge-hops", "bridge-threshold"]) {
-    bridgeEl(key).addEventListener("change", () => {
+  for (const key of BRIDGE_CONTROL_IDS) {
+    const control = bridgeEl(key);
+    if (!bridgeEl(key + "-readback")) {
+      const readback = bridgeNode("span", undefined, "bridge-choice-readback");
+      readback.id = key + "-readback";
+      // Option text is already exposed by the native select to assistive technology.
+      readback.setAttribute("aria-hidden", "true");
+      control.after(readback);
+    }
+    updateBridgeControlReadback(key);
+    control.addEventListener("change", () => {
       const next = { ...bridgeSettings(getState()),
         startId: bridgeEl("bridge-start").value || null,
         endId: bridgeEl("bridge-end").value || null,
