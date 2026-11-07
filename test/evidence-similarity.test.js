@@ -97,8 +97,13 @@ test("metadata is secondary: same common platform is a weak match", () => {
   const pair = compareEvidenceGames(model(), a.id, c.id);
   assert.equal(pair.tags.similarity, 0);
   assert.equal(pair.metadata.similarity, 0);
-  const platformOnly = compareEvidenceGames(model(), a.id, b.id);
-  assert.ok(platformOnly.metadata.similarity < 0.35);
+  const supported = compareEvidenceGames(model(), a.id, b.id);
+  // Creator and shared platform are both independently observed; the platform
+  // subweight remains only 0.08 inside the bounded 0.13 metadata lane.
+  assert.ok(Math.abs(supported.metadata.similarity - .35) < 1e-12);
+  assert.ok(Math.abs(supported.metadata.matches.find(item =>
+    item.field === "platforms").contribution - .08) < 1e-12);
+  assert.ok(.13 * supported.metadata.similarity < .76 * supported.tags.similarity);
 });
 test("positive platform receipts do not penalize additional documented platforms", () => {
   const seed = { ...a, metadata: { platforms: field(["windows"]) } };
