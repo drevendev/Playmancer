@@ -242,7 +242,11 @@ try:
                       'Dwarf Fortress' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: combined farming/building search isolates sourced Dwarf Fortress facts')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == 4, f'{engine}/{width}: positive fact filter')
+                building_cards = explore.locator('.game-card').all_inner_texts()
+                check(len(building_cards) == 5 and
+                      all(sum(name in card for card in building_cards) == 1 for name in
+                          ('Factorio', 'RimWorld', 'Dwarf Fortress', 'Terraria', 'Minecraft Legends')),
+                      f'{engine}/{width}: five source-backed building fact matches')
                 explore.locator('#show-link').click()
                 link = explore.locator('#share-url').input_value()
                 explore.goto(link, wait_until='networkidle')
