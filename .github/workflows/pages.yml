@@ -72,11 +72,13 @@ jobs:
   publish:
     if: github.ref == 'refs/heads/master'
     name: Deploy verified master to Pages
-    timeout-minutes: 10
+    # Allow a bounded wait for the native Jekyll publisher before custom deploy.
+    timeout-minutes: 15
     needs: verify-and-package
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
     environment:
@@ -111,6 +113,13 @@ jobs:
             echo "Do not claim a live URL until the publish and public HTTP checks pass."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::error title=Pages configuration required::Inspect the configure-pages error; for HTTP 404 enable GitHub Actions in repository Settings > Pages, then rerun."
+      # Pages branch source also schedules an independent dynamic Jekyll run for
+      # the same SHA. Fence the custom publish behind that native run while the
+      # admin-only Pages Source fix remains outstanding (Issue #124).
+      - name: Wait for competing native Pages publisher on exact master SHA
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/pages_native_publisher_gate.py
       - name: Publish reviewed static artifact
         id: deployment
         uses: actions/deploy-pages@v4
