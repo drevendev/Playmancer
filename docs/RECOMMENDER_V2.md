@@ -48,7 +48,7 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-7` retains the v3 ranking tie-break
+Version `weighted-tags-graph-experiment-8` retains the v3 ranking tie-break
 guard: factual references/inspirations may raise observed route coverage but
 cannot raise taste-comparable coverage or win a score tie. It additionally
 prevents a factual direct edge from concealing an independent all-`similar`
@@ -79,7 +79,16 @@ the version-6 Jaccard ratio, which penalized a game for more complete
 platform documentation. The player method and strict platform filter
 are unchanged.
 
-Prior v1/v2/v3/v4/v5/v6 reports are not interchangeable. The public
+Version 8 fixes a **ranking tie-break**: two non-exhaustive positive
+platform lists without a recorded shared platform still increase **observed**
+metadata coverage, but no longer increase **taste-comparable** coverage.
+Neither missing nor disjoint platform receipts receive a taste advantage when
+their tag/metadata scores tie. A documented shared platform still contributes
+the same bounded match and taste coverage. Strict required-platform filters,
+source receipts, and the public player do not change. Version 7 is historical;
+its reports cannot be treated as v8 results.
+
+Prior v1/v2/v3/v4/v5/v6/v7 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is

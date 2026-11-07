@@ -135,6 +135,46 @@ test("positive platform receipts do not penalize additional documented platforms
   assert.deepEqual(ranked(narrow).ranked.map(item => [item.id, item.scores.intersection]),
     ranked(expanded).ranked.map(item => [item.id, item.scores.intersection]));
 });
+test("disjoint positive platforms cannot win a taste-evidence tie", () => {
+  const seed = { id: "demo:seed", tags: [tag("genre:rpg", 1)],
+    metadata: { platforms: field(["windows"]) }, coop: null };
+  const unknown = { ...seed, id: "demo:a-unknown", metadata: {} };
+  const disjoint = { ...seed, id: "demo:z-disjoint",
+    metadata: { platforms: field(["linux"]) } };
+  const shared = { ...seed, id: "demo:shared",
+    metadata: { platforms: field(["windows", "linux"]) } };
+  const m = model([seed, unknown, disjoint]);
+  const observed = compareEvidenceGames(m, seed.id, disjoint.id);
+  const absent = compareEvidenceGames(m, seed.id, unknown.id);
+  assert.equal(observed.status, "rankable");
+  assert.equal(observed.metadata.coverage, .08);
+  assert.equal(observed.metadata.tasteCoverage, 0);
+  assert.equal(observed.metadata.similarity, 0);
+  assert.ok(Math.abs(observed.evidenceCoverageByLane.metadata - .13 * .08) < 1e-12);
+  assert.equal(observed.tasteEvidenceCoverageByLane.metadata, 0);
+  assert.ok(observed.evidenceCoverage > absent.evidenceCoverage);
+  assert.equal(observed.tasteEvidenceCoverage, absent.tasteEvidenceCoverage);
+  assert.equal(observed.affinity, absent.affinity);
+  const positive = compareEvidenceGames(model([seed, shared]), seed.id, shared.id);
+  assert.equal(positive.metadata.tasteCoverage, .08);
+  assert.equal(positive.metadata.coverage, .08);
+  assert.ok(positive.affinity > observed.affinity);
+  for (const mode of ["intersection", "arithmetic", "blend"]) {
+    const ranked = rankEvidenceBasket(m, { seeds: [{ id: seed.id }], mode });
+    assert.deepEqual(ranked.ranked.map(item => item.id),
+      ["demo:a-unknown", "demo:z-disjoint"], mode);
+    assert.equal(ranked.ranked[0].scores.intersection,
+      ranked.ranked[1].scores.intersection);
+  }
+  // Strict platform eligibility is unaffected: missing support is unknown,
+  // and a non-matching recorded list never passes a mandatory filter.
+  const strict = rankEvidenceBasket(m, {
+    seeds: [{ id: seed.id }], platform: "windows",
+  });
+  assert.ok(strict.uncertain.some(item => item.id === unknown.id));
+  assert.ok(strict.excluded.some(item => item.id === disjoint.id));
+});
+
 test("sourced direct influence is symmetric as affinity but keeps its arrow", () => {
   const m = model(undefined, [relation("demo:c", "demo:a", .8, "inspired-by")]);
   const ac = compareEvidenceGames(m, a.id, c.id);

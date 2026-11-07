@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-7";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-8";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -169,7 +169,7 @@ function tagEvidence(a, b) {
   };
 }
 function secondaryEvidence(a, b) {
-  let score = 0, coverage = 0;
+  let score = 0, coverage = 0, tasteCoverage = 0;
   const matches = [];
   for (const [key, weight] of Object.entries(METADATA_WEIGHTS)) {
     const left = a.metadata[key], right = b.metadata[key];
@@ -188,8 +188,11 @@ function secondaryEvidence(a, b) {
     else match = Number(left.value.trim().toLowerCase() === right.value.trim().toLowerCase());
     if (match > 0) matches.push({ field: key, contribution: match * weight, sources: [left.source, right.source] });
     score += match * weight;
+    // Disjoint positive platform receipts are observed, not confirmed taste
+    // mismatches. Do not let receipt density win a ranking score tie.
+    if (key !== "platforms" || match > 0) tasteCoverage += weight;
   }
-  return { similarity: coverage ? score : null, coverage, matches };
+  return { similarity: coverage ? score : null, coverage, tasteCoverage, matches };
 }
 function relationEvidence(model, a, b, fitEligibleVia = null) {
   const direct = model.edges.get(a.id).get(b.id) ?? null;
@@ -237,6 +240,7 @@ function observedLaneCoverage(tags, metadata, relations) {
   // identical candidates merely because a crossover receipt exists.
   const tasteLanes = {
     ...lanes,
+    metadata: EVIDENCE_LANES.metadata * metadata.tasteCoverage,
     direct: relations.direct?.type === "similar" ? EVIDENCE_LANES.direct : 0,
     twoHop: relations.fitTwoHop ? EVIDENCE_LANES.twoHop : 0,
   };
