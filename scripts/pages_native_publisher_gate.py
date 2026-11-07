@@ -73,7 +73,7 @@ def classify(pages, listing, sha):
            for run in runs):
         raise GateError('Workflow listing contains malformed run entries')
     native = [run for run in runs
-              and run.get('head_sha') == sha
+              if run.get('head_sha') == sha
               and run.get('event') == 'dynamic'
               and run.get('path') == NATIVE_PATH]
     if not native:
