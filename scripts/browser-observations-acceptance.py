@@ -191,7 +191,7 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('90 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('114 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 explore.locator('#query').fill('telegraphed')
                 check(explore.locator('.game-card').count() == 1 and
                       'Into the Breach' in explore.locator('.game-card').first.inner_text(),
@@ -242,7 +242,11 @@ try:
                       'Dwarf Fortress' in explore.locator('.game-card').first.inner_text(),
                       f'{engine}/{width}: combined farming/building search isolates sourced Dwarf Fortress facts')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == 4, f'{engine}/{width}: positive fact filter')
+                building_cards = explore.locator('.game-card').all_inner_texts()
+                check(len(building_cards) == 5 and
+                      all(sum(name in card for card in building_cards) == 1 for name in
+                          ('Factorio', 'RimWorld', 'Dwarf Fortress', 'Terraria', 'Minecraft Legends')),
+                      f'{engine}/{width}: five source-backed building fact matches')
                 explore.locator('#show-link').click()
                 link = explore.locator('#share-url').input_value()
                 explore.goto(link, wait_until='networkidle')
