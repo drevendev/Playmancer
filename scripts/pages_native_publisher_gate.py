@@ -56,10 +56,23 @@ def classify(pages, listing, sha):
         raise GateError('Pages source is unknown; cannot safely publish')
     if not isinstance(listing, dict) or not isinstance(listing.get('workflow_runs'), list):
         raise GateError('Workflow listing response is invalid')
+    runs = listing['workflow_runs']
     count = listing.get('total_count')
-    if not isinstance(count, int) or count > 100 or count < 0:
+    # An incomplete first page could omit a still-running native publisher.
+    if type(count) is not int or count < 0 or count > 100 or len(runs) != count:
         raise GateError('Workflow listing is incomplete')
-    native = [run for run in listing['workflow_runs'] if isinstance(run, dict)
+    # Do not silently discard malformed entries, even when they look unrelated.
+    if any(not isinstance(run, dict)
+           or type(run.get('id')) is not int
+           or not isinstance(run.get('head_sha'), str)
+           or not isinstance(run.get('event'), str)
+           or not isinstance(run.get('path'), str)
+           or not isinstance(run.get('status'), str)
+           or 'conclusion' not in run
+           or (run['conclusion'] is not None and not isinstance(run['conclusion'], str))
+           for run in runs):
+        raise GateError('Workflow listing contains malformed run entries')
+    native = [run for run in runs
               and run.get('head_sha') == sha
               and run.get('event') == 'dynamic'
               and run.get('path') == NATIVE_PATH]
