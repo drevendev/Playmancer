@@ -100,6 +100,36 @@ test("metadata is secondary: same common platform is a weak match", () => {
   const platformOnly = compareEvidenceGames(model(), a.id, b.id);
   assert.ok(platformOnly.metadata.similarity < 0.35);
 });
+test("positive platform receipts do not penalize additional documented platforms", () => {
+  const seed = { ...a, metadata: { platforms: field(["windows"]) } };
+  const narrow = { ...b, metadata: { platforms: field(["windows"]) } };
+  const expanded = { ...b, metadata: { platforms: field(["linux", "windows"]) } };
+  const extra = { ...b, metadata: { platforms: field(["linux"]) } };
+  const missing = { ...b, metadata: {} };
+  const compare = candidate => compareEvidenceGames(model([seed, candidate]), a.id, b.id);
+  const shared = compare(narrow);
+  const withExtraReceipts = compare(expanded);
+  assert.equal(shared.metadata.similarity, .08);
+  assert.equal(withExtraReceipts.metadata.similarity, shared.metadata.similarity);
+  assert.equal(withExtraReceipts.metadata.coverage, .08);
+  assert.deepEqual(withExtraReceipts.metadata.matches.map(item => item.field), ["platforms"]);
+  assert.equal(withExtraReceipts.affinity, shared.affinity);
+  assert.equal(compareEvidenceGames(model([seed, expanded]), b.id, a.id).affinity, shared.affinity);
+
+  // No recorded common platform is not proof of incompatible hardware; this
+  // secondary lane contributes no positive signal, not a strict-filter failure.
+  const noRecordedOverlap = compare(extra);
+  assert.equal(noRecordedOverlap.metadata.similarity, 0);
+  assert.equal(noRecordedOverlap.metadata.coverage, .08);
+  assert.deepEqual(noRecordedOverlap.metadata.matches, []);
+  const noObservation = compare(missing);
+  assert.equal(noObservation.metadata.similarity, null);
+  assert.equal(noObservation.metadata.coverage, 0);
+  assert.equal(noObservation.tags.similarity, withExtraReceipts.tags.similarity);
+  const ranked = candidate => rankEvidenceBasket(model([seed, candidate]), { seeds: [{ id: a.id }] });
+  assert.deepEqual(ranked(narrow).ranked.map(item => [item.id, item.scores.intersection]),
+    ranked(expanded).ranked.map(item => [item.id, item.scores.intersection]));
+});
 test("sourced direct influence is symmetric as affinity but keeps its arrow", () => {
   const m = model(undefined, [relation("demo:c", "demo:a", .8, "inspired-by")]);
   const ac = compareEvidenceGames(m, a.id, c.id);
