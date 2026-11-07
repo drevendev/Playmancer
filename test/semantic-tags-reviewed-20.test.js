@@ -13,8 +13,8 @@ const portal='wikidata:q279446',witness='wikidata:q1711359';
 const purl='https://store.steampowered.com/app/620/Portal_2/',wurl='https://www.playstation.com/en-us/games/the-witness/';
 test('source revisions are immutable and all older records are preserved',()=>{
  assert.equal(sha(prevBytes),'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
- assert.equal(sha(nowBytes),REVIEWED_OBSERVATIONS_SHA);
- assert.equal(REVIEWED_OBSERVATIONS_SHA,'8d667a7c67b028e0f4f550ce22f8e333eb93c58a');
+ assert.equal(sha(nowBytes),'8d667a7c67b028e0f4f550ce22f8e333eb93c58a');
+ assert.notEqual(REVIEWED_OBSERVATIONS_SHA,'8d667a7c67b028e0f4f550ce22f8e333eb93c58a');
  assert.equal(sha(catBytes),REVIEWED_CATALOG_SHA);
  assert.equal(now.supersedes,'semantic-tags-reviewed-18.v1.json');
  assert.equal(now.games.length,20);assert.equal(now.receipts.length,20);
@@ -40,7 +40,7 @@ test('Portal 2 and The Witness have own dated receipts and selected positive fac
  }
 });
 test('independent shared positive evidence is not fabricated taste or negative metadata',()=>{
- const m=prepareObservations(catalog,now);
+ const m=prepareObservations(catalog,now,'8d667a7c67b028e0f4f550ce22f8e333eb93c58a');
  assert.equal(m.observedGames,20);assert.equal(m.factCount,82);
  assert.equal(m.games.filter(g=>g.coverage==='unknown').length,10);
  assert.deepEqual(searchObservations(m,'','mechanic:puzzle-solving').map(x=>x.name),['Portal 2','The Witness']);
@@ -54,7 +54,7 @@ test('independent shared positive evidence is not fabricated taste or negative m
 });
 test('version-pinned links reject old snapshots and borrowed source credentials',()=>{
  const old=prepareObservations(catalog,prev,'fb69cf0c834812509fe979e4a8f2380bd7930e0b');
- const current=prepareObservations(catalog,now);
+ const current=prepareObservations(catalog,now,'8d667a7c67b028e0f4f550ce22f8e333eb93c58a');
  const state={version:OBSERVATION_VERSION,catalog:current.catalog,evidence:current.evidence,
  pair:[portal,witness],query:'puzzle',tag:'mechanic:puzzle-solving'};
  assert.deepEqual(decodeObservationState(current,encodeObservationState(current,state)),state);
