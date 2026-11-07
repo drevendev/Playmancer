@@ -56,6 +56,23 @@ class FenceTests(unittest.TestCase):
                 with self.assertRaises(GateError):
                     classify(pages, runs, SHA)
 
+    def test_incomplete_first_page_cannot_release_finished_native_gate(self):
+        # GitHub says two same-SHA runs exist but returns only the completed one.
+        truncated = {'total_count': 2, 'workflow_runs': [native(run_id=321)]}
+        with self.assertRaisesRegex(GateError, 'incomplete'):
+            classify({'build_type': 'legacy'}, truncated, SHA)
+        # Extra runs and bool-as-int counts must also fail closed.
+        for payload in ({'total_count': 0, 'workflow_runs': [native()]},
+                        {'total_count': True, 'workflow_runs': [native()]}):
+            with self.subTest(payload=payload), self.assertRaisesRegex(GateError, 'incomplete'):
+                classify({'build_type': 'legacy'}, payload, SHA)
+
+    def test_malformed_unrelated_run_cannot_be_silently_skipped(self):
+        for bad in (None, {}, {'head_sha': OTHER, 'event': 'push'},
+                    native(sha=OTHER, run_id=True)):
+            with self.subTest(bad=bad), self.assertRaisesRegex(GateError, 'malformed'):
+                classify({'build_type': 'legacy'}, listing(native(), bad), SHA)
+
     def test_polling_holds_custom_deploy_until_legacy_native_completed(self):
         replies = iter([{'build_type': 'legacy'}, listing(),
                         {'build_type': 'legacy'}, listing(native('queued', conclusion=None)),
