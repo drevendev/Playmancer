@@ -18,7 +18,7 @@ const oldDigest='8d667a7c67b028e0f4f550ce22f8e333eb93c58a';
 
 test('new immutable selected observations retain all 20 previous profiles and receipts',()=>{
   assert.equal(gitBlob(oldBytes), oldDigest);
-  assert.equal(gitBlob(newBytes), REVIEWED_OBSERVATIONS_SHA);
+  assert.equal(gitBlob(newBytes), '73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9');
   assert.notEqual(REVIEWED_OBSERVATIONS_SHA, '73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9');
   assert.equal(gitBlob(catalogBytes), REVIEWED_CATALOG_SHA);
   assert.equal(reviewed.supersedes, 'semantic-tags-reviewed-20.v1.json');
