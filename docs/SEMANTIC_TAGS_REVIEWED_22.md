@@ -44,6 +44,6 @@ python3 scripts/browser-observations-acceptance.py --engine all
 ```
 
 The first-party descriptions only establish the selected facts, not redistribution
-rights to art, store rankings or community tags. See [Issue #76](../issues/76)
+rights to art, store rankings or community tags. See [Issue #76](https://github.com/drevendev/Playmancer/issues/76)
 for the unfulfilled offline and player-ranking release gates. Source URLs and
 dated receipts are retained in the input.
