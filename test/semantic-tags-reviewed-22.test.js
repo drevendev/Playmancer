@@ -10,7 +10,7 @@ const oldBytes=bytes('semantic-tags-reviewed-20.v1.json');
 const newBytes=bytes('semantic-tags-reviewed-22.v1.json');
 const catalogBytes=bytes('catalog.multistore-30.real.json');
 const old=JSON.parse(oldBytes), reviewed=JSON.parse(newBytes), catalog=JSON.parse(catalogBytes);
-const gitBlob=bytes=>createHash('sha1').update('blob '+bytes.length+'\\0').update(bytes).digest('hex');
+const gitBlob=bytes=>createHash('sha1').update('blob '+bytes.length+'\0').update(bytes).digest('hex');
 const meat='wikidata:q1784048', moon='wikidata:q1711379';
 const meatUrl='https://www.eastasiasoft.com/games/Super-Meat-Boy';
 const moonUrl='https://freebirdgames.com/games/to-the-moon/';
