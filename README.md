@@ -49,7 +49,8 @@ carefully normalized publisher-authored tags; mechanics and co-op remain unknown
 in its scoring snapshot. A **separate source-backed gameplay fact explorer**
 (`observations.html`) exposes 114 independently written, dated non-genre facts for
 28 real games. DevMatch and Circlanoid remain unreviewed, never verified lacking
-those features. [Latest dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_28.md).
+those features. [Latest dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_28.md) and
+[28-profile v2 release-gate audit](docs/REVIEWED_TAG_READINESS_28.md).
 This inventory is not a new recommendation mode or a claim of
 improved ranking quality. Artwork and third-party descriptions are not copied.
 Genre-only matches have at most **30% comparable feature-group coverage**, not
