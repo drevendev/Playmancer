@@ -47,8 +47,8 @@ Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**. See
 The **ranking interface** uses source-backed genres, selected platform facts and
 carefully normalized publisher-authored tags; mechanics and co-op remain unknown
 in its scoring snapshot. A **separate source-backed gameplay fact explorer**
-(`observations.html`) exposes 82 independently written, dated non-genre facts for
-20 real games. The other 10 games remain unreviewed, never verified lacking
+(`observations.html`) exposes 90 independently written, dated non-genre facts for
+22 real games. The other 10 games remain unreviewed, never verified lacking
 those features. [Latest dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_20.md).
 This inventory is not a new recommendation mode or a claim of
 improved ranking quality. Artwork and third-party descriptions are not copied.

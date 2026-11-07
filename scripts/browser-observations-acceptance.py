@@ -191,7 +191,7 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('82 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('90 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 explore.locator('#query').fill('telegraphed')
                 check(explore.locator('.game-card').count() == 1 and
                       'Into the Breach' in explore.locator('.game-card').first.inner_text(),
