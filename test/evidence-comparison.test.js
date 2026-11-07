@@ -10,7 +10,7 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
   const report = runEvidenceComparison(clone());
   assert.equal(report.report_schema, 'p76-synthetic-paired-4');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
-  assert.equal(report.new_method, 'weighted-tags-graph-experiment-6');
+  assert.equal(report.new_method, 'weighted-tags-graph-experiment-7');
   assert.equal(report.game_count, 12);
   assert.equal(report.rows.length, fixture.baskets.length * 5);
   for (const row of report.rows) {

@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-6";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-7";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -177,10 +177,13 @@ function secondaryEvidence(a, b) {
     coverage += weight;
     let match = 0;
     if (key === "platforms") {
-      const leftSet = new Set(left.value), rightSet = new Set(right.value);
-      const both = [...leftSet].filter(v => rightSet.has(v));
-      const unionSize = new Set([...leftSet, ...rightSet]).size;
-      match = unionSize ? both.length / unionSize : 0;
+      // Storefront/platform records are positive observations, not exhaustive
+      // compatibility lists. Jaccard penalized a game merely for having more
+      // documented platforms, inventing negative evidence from absent receipts.
+      // One observed shared platform is a bounded secondary match; zero only
+      // means no shared platform was recorded, never proven incompatibility.
+      const rightPlatforms = new Set(right.value);
+      match = Number(left.value.some(value => rightPlatforms.has(value)));
     } else if (key === "releaseYear") match = Number(left.value === right.value);
     else match = Number(left.value.trim().toLowerCase() === right.value.trim().toLowerCase());
     if (match > 0) matches.push({ field: key, contribution: match * weight, sources: [left.source, right.source] });

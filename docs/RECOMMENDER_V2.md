@@ -48,7 +48,7 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
-Version `weighted-tags-graph-experiment-6` retains the v3 ranking tie-break
+Version `weighted-tags-graph-experiment-7` retains the v3 ranking tie-break
 guard: factual references/inspirations may raise observed route coverage but
 cannot raise taste-comparable coverage or win a score tie. It additionally
 prevents a factual direct edge from concealing an independent all-`similar`
@@ -68,14 +68,25 @@ intermediate. Context-free pair comparisons still show sourced paths, and
 traverse them; `relations.fitTwoHop` is the constrained scoring path. Observed
 route coverage is not playable route availability. This is an offline v6
 correctness guard, not evidence of higher player relevance.
-Prior v1/v2/v3/v4/v5 reports are not interchangeable. The public
+Version 7 also changes the **experimental** platform part of metadata
+similarity: source-recorded platform lists are positive, non-exhaustive
+observations, so a pair earns the same bounded 0.08 metadata-platform
+match if **any** platform is recorded for both games. Adding another
+recorded platform to either game never decreases that match. No common
+recorded platform yields no positive match, **not** proof of
+incompatibility; a missing list is separately unknown. This replaces
+the version-6 Jaccard ratio, which penalized a game for more complete
+platform documentation. The player method and strict platform filter
+are unchanged.
+
+Prior v1/v2/v3/v4/v5/v6 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is
 `0.76 T + 0.13 M + 0.08 D + 0.03 G` where:
 - `M` is the **bounded, not missing-field-renormalized** secondary match
   (franchise 0.30, creator 0.27, developer 0.18, publisher 0.12,
-  release year 0.05, platform Jaccard 0.08). If no comparable metadata exists,
+  release year 0.05, positive recorded platform overlap 0.08). If no comparable metadata exists,
   `M` is *unknown*, and its score contribution is omitted rather than falsely
   labeled a confirmed mismatch.
 - `D` is a direct sourced `similar` relation's strength; `inspired-by`
