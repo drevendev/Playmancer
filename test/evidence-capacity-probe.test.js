@@ -38,7 +38,7 @@ test("capacity probe verifies deterministic eligibility and both distinct modes"
   const first = benchmarkEvidenceCapacity(options);
   const second = benchmarkEvidenceCapacity(options);
   assert.equal(first.method, "weighted-tags-graph-experiment-8");
-  assert.equal(first.protocol, "p76-fictional-v2-capacity-node-1");
+  assert.equal(first.protocol, "p76-fictional-v2-capacity-node-2");
   assert.equal(first.basket_seed_count, 5);
   assert.equal(first.filters.platform, "windows");
   assert.equal(first.filters.coopOnly, true);
@@ -58,6 +58,8 @@ test("capacity probe verifies deterministic eligibility and both distinct modes"
 
 test("capacity fixture rejects impossible workloads rather than shrinking them silently", () => {
   assert.throws(() => makeEvidenceCapacityFixture({ gameCount: 251 }), /gameCount/);
+  assert.throws(() => makeEvidenceCapacityFixture({ partialTagEvery: -1 }), /partialTagEvery/);
+  assert.throws(() => makeEvidenceCapacityFixture({ partialTagEvery: 251 }), /partialTagEvery/);
   assert.throws(() => makeEvidenceCapacityFixture({ tagsPerGame: 129 }), /tagsPerGame/);
   assert.throws(() => makeEvidenceCapacityFixture({ gameCount: 5, edgeCount: 11 }), /edgeCount/);
   assert.throws(() => benchmarkEvidenceCapacity({ samples: 0 }), /samples/);
@@ -89,4 +91,38 @@ test("full capacity result serialization catches score and evidence drift with u
   const changedReceipt = structuredClone(result);
   changedReceipt.ranked[0].hardConstraintEvidence.platform.source = "fictional:edited-source";
   assert.notEqual(evidenceCapacitySignature(changedReceipt), expected);
+});
+
+
+test("mixed sparse facts at 250-game capacity preserve abstentions and strict filters", () => {
+  // Keep the fixed five seeds complete while 41 non-seed profiles have only
+  // selected observations. This tests a mixed evidence partition, not relevance.
+  const report = benchmarkEvidenceCapacity({ partialTagEvery: 6, warmups: 0, samples: 1 });
+  assert.equal(report.partial_tag_every, 6);
+  assert.equal(report.partial_profiles, 41);
+  for (const mode of ["intersection", "blend"]) {
+    const row = report.modes[mode];
+    assert.ok(row.rankable_returned > 0, mode);
+    assert.ok(row.uncertain_evidence_count > 0, mode);
+    assert.ok(row.uncertain_hard_constraint_count > 0, mode);
+    assert.equal(row.unknown_count,
+      row.uncertain_evidence_count + row.uncertain_hard_constraint_count);
+    assert.ok(!row.ranked_ids.some(id => report.filters.excluded.includes(id)));
+  }
+});
+
+test("all selected-fact vectors abstain rather than inventing a complete affinity", () => {
+  const report = benchmarkEvidenceCapacity({
+    gameCount: 12, tagsPerGame: 7, edgeCount: 32,
+    partialTagEvery: 1, warmups: 0, samples: 1,
+  });
+  assert.equal(report.partial_profiles, 12);
+  for (const mode of ["intersection", "blend"]) {
+    const row = report.modes[mode];
+    assert.deepEqual(row.ranked_ids, []);
+    assert.equal(row.rankable_returned, 0);
+    assert.ok(row.uncertain_evidence_count > 0);
+    assert.equal(row.unknown_count,
+      row.uncertain_evidence_count + row.uncertain_hard_constraint_count);
+  }
 });
