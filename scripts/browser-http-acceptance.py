@@ -866,12 +866,23 @@ def exercise(browser, base_url, engine, label, width, height):
         # pinch-like magnification. It is *not* browser-menu zoom or a screen
         # reader test; those independent issue #14 gates remain open.
         if engine == "chromium" and label == "mobile":
-            magnified = context.new_page()
+            # A narrow desktop viewport is not a touchscreen. Use a separate
+            # mobile-emulated context so this 4x probe can test actual touch
+            # panning, not merely capture a clipped visual viewport.
+            magnified_context = browser.new_context(
+                viewport={"width": width, "height": height},
+                reduced_motion="reduce", is_mobile=True, has_touch=True)
+            magnified_context.on("page", lambda pg: pg.on(
+                "pageerror", lambda error: errors.append(str(error))))
+            magnified_context.on(
+                "request", lambda request: external_requests.append(request.url)
+                if (urlsplit(request.url).scheme, urlsplit(request.url).netloc) != origin else None)
+            magnified = magnified_context.new_page()
             scale_session = None
             try:
                 magnified.goto(base_url + "/", wait_until="load")
                 magnified.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
-                scale_session = context.new_cdp_session(magnified)
+                scale_session = magnified_context.new_cdp_session(magnified)
                 scale_session.send("Emulation.setPageScaleFactor", {"pageScaleFactor": 4})
                 magnified.evaluate("() => new Promise(done => requestAnimationFrame(done))")
                 metrics = magnified.evaluate("""() => ({
@@ -924,10 +935,48 @@ def exercise(browser, base_url, engine, label, width, height):
                 magnified.screenshot(
                     path=str(ARTIFACTS / "http-chromium-mobile-page-scale400.png"),
                     animations="disabled")
+                # A 4x pinch-like view intentionally shows only a quarter of
+                # the layout width. Verify touch panning reveals the remainder;
+                # clipping in this screenshot alone is not CSS overflow.
+                pan_before = magnified.evaluate("""() => ({
+                    left: visualViewport.offsetLeft,
+                    width: visualViewport.width,
+                    height: visualViewport.height
+                })""")
+                swipe_y = min(150, pan_before["height"] - 15)
+                swipe_start = min(85, pan_before["width"] - 8)
+                swipe_end = max(8, swipe_start - 76)
+                for index in range(8):
+                    swipe_x = swipe_start + (swipe_end - swipe_start) * index / 7
+                    scale_session.send("Input.dispatchTouchEvent", {
+                        "type": "touchStart" if index == 0 else "touchMove",
+                        "touchPoints": [{"x": round(swipe_x), "y": round(swipe_y), "id": 1}],
+                    })
+                scale_session.send("Input.dispatchTouchEvent", {
+                    "type": "touchEnd", "touchPoints": [],
+                })
+                magnified.wait_for_function(
+                    "(left) => visualViewport.offsetLeft > left + 20",
+                    arg=pan_before["left"], timeout=4000)
+                pan_after = magnified.evaluate("""() => ({
+                    left: visualViewport.offsetLeft,
+                    scale: visualViewport.scale,
+                    layoutOverflow: document.documentElement.scrollWidth - innerWidth,
+                    layoutScrollX: scrollX
+                })""")
+                check(case, "400% mobile pinch view pans horizontally without page overflow",
+                      pan_after["left"] > pan_before["left"] + 20
+                      and abs(pan_after["scale"] - 4) < 0.05
+                      and pan_after["layoutOverflow"] <= 1
+                      and pan_after["layoutScrollX"] == 0,
+                      details={"before": pan_before, "after": pan_after})
+                magnified.screenshot(
+                    path=str(ARTIFACTS / "http-chromium-mobile-page-scale400-panned.png"),
+                    animations="disabled")
             finally:
                 if scale_session is not None:
                     scale_session.detach()
-                magnified.close()
+                magnified_context.close()
         check(case, "no external requests or JavaScript exceptions",
               not errors and not external_requests)
     finally:
