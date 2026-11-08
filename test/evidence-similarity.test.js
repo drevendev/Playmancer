@@ -105,6 +105,49 @@ test("metadata is secondary: same common platform is a weak match", () => {
     item.field === "platforms").contribution - .08) < 1e-12);
   assert.ok(.13 * supported.metadata.similarity < .76 * supported.tags.similarity);
 });
+test("sourced scalar metadata differences are evidence, never invented platform incompatibility", () => {
+  const left = { ...a, metadata: {
+    creator: { value: "A", source: "fixture:left-creator" },
+    publisher: field("Left Publisher"), releaseYear: field(2020),
+    platforms: field(["windows"]),
+  } };
+  const right = { ...c, metadata: {
+    creator: { value: "B", source: "fixture:right-creator" },
+    publisher: field("Right Publisher"), releaseYear: field(2021),
+    platforms: field(["linux"]),
+  } };
+  const m = model([left, right]);
+  const result = compareEvidenceGames(m, left.id, right.id);
+  assert.deepEqual(result.metadata.matches, []);
+  assert.equal(result.metadata.similarity, 0);
+  assert.deepEqual(result.metadata.recordedDifferences.map(item => item.field),
+    ["creator", "publisher", "releaseYear"]);
+  assert.deepEqual(result.metadata.recordedDifferences[0], {
+    field: "creator",
+    left: { value: "A", source: "fixture:left-creator" },
+    right: { value: "B", source: "fixture:right-creator" },
+  });
+  assert.deepEqual(result.metadata.recordedDifferences[2], {
+    field: "releaseYear",
+    left: { value: 2020, source: "authored-fixture" },
+    right: { value: 2021, source: "authored-fixture" },
+  });
+  const reversed = compareEvidenceGames(m, right.id, left.id);
+  assert.deepEqual(reversed.metadata.recordedDifferences[0], {
+    field: "creator",
+    left: { value: "B", source: "fixture:right-creator" },
+    right: { value: "A", source: "fixture:left-creator" },
+  });
+  assert.equal(reversed.affinity, result.affinity);
+  // A pair of positive-only platform lists is NOT a proved difference.
+  assert.ok(!result.metadata.recordedDifferences.some(item => item.field === "platforms"));
+  // Missing fields must not be reported as observed differences.
+  const missing = compareEvidenceGames(model([left, { ...right, metadata: {} }]), left.id, right.id);
+  assert.deepEqual(missing.metadata.recordedDifferences, []);
+  assert.equal(missing.metadata.similarity, null);
+  assert.equal(compareEvidenceGames(model([a,b]), a.id, b.id).metadata.recordedDifferences.length, 0);
+});
+
 test("positive platform receipts do not penalize additional documented platforms", () => {
   const seed = { ...a, metadata: { platforms: field(["windows"]) } };
   const narrow = { ...b, metadata: { platforms: field(["windows"]) } };
