@@ -118,8 +118,8 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "real navigation serves HTTP 200 over the required protocol",
               response is not None and response.status == 200
               and page.evaluate("location.protocol") == expected_scheme)
+        served_sha = page.locator('meta[name="playmancer-revision"]').get_attribute("content")
         if HOSTED_URL:
-            served_sha = page.locator('meta[name="playmancer-revision"]').get_attribute("content")
             check(case, "hosted HTML matches the exact deployed master SHA",
                   served_sha == EXPECTED_SHA, details=served_sha)
             check(case, "same-origin hosted Bridge worker is served over HTTPS",
@@ -140,7 +140,10 @@ def exercise(browser, base_url, engine, label, width, height):
             "docs/REAL_EXPANSION_30.md",
             "docs/STOREFRONTS.md",
         )
-        receipt_prefix = "https://github.com/drevendev/Playmancer/blob/master/"
+        # A published player's receipts must not drift when master advances.
+        # Unpublished local fixture builds intentionally retain master navigation.
+        receipt_ref = served_sha if served_sha and re.fullmatch(r"[0-9a-f]{40}", served_sha) else "master"
+        receipt_prefix = "https://github.com/drevendev/Playmancer/blob/" + receipt_ref + "/"
         check(case, "30-game footer links all three Wikidata batches and publisher receipts",
               receipts.count() == len(expected_receipt_paths)
               and all(
