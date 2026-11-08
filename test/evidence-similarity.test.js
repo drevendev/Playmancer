@@ -218,6 +218,35 @@ test("disjoint positive platforms cannot win a taste-evidence tie", () => {
   assert.ok(strict.excluded.some(item => item.id === disjoint.id));
 });
 
+test("editorial graph receipts require public HTTPS or an unmistakably fictional marker", () => {
+  const base = relation("demo:a", "demo:b");
+  const accepted = [
+    "https://studio.example.org/games/relation",
+    "https://www.example.org/story?section=gameplay",
+    "playmancer:authored-fictional-fixture",
+  ];
+  for (const source of accepted) {
+    const m = model(undefined, [{ ...base, source }]);
+    assert.equal(m.edges.get("demo:a").get("demo:b").source, source);
+  }
+  const rejected = [
+    "notes-only", "authored-fixture", "http://example.org/claim",
+    "javascript:alert(1)", "file:///tmp/receipt",
+    "https://localhost/receipt", "https://127.0.0.1/receipt",
+    "https://internal.local/receipt", "https://internal.internal/receipt",
+    "https://someone:password@example.org/claim",
+    "https://example.org/claim with whitespace",
+  ];
+  for (const source of rejected) {
+    assert.throws(() => model(undefined, [{ ...base, source }]),
+      /relation.source must be a public HTTPS URL or an authored fictional fixture/,
+      `unexpectedly accepted ${source}`);
+  }
+  // Non-graph synthetic tag/metadata receipts remain supported, and cannot
+  // themselves be promoted to a public source-backed editorial relation.
+  assert.equal(model().profiles.get("demo:a").tags[0].source, "authored-fixture");
+});
+
 test("sourced direct influence is symmetric as affinity but keeps its arrow", () => {
   const m = model(undefined, [relation("demo:c", "demo:a", .8, "inspired-by")]);
   const ac = compareEvidenceGames(m, a.id, c.id);
