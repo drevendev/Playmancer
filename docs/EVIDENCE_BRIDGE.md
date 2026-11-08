@@ -20,6 +20,15 @@ retains both travel direction and the original source's authored direction for
 each hop; `evidenceStrength` is graph evidence, **not confidence or player fit**.
 No traversal longer than two edges is performed.
 
+Hard required-platform selectors follow the experimental ranking contract: exact
+lowercase canonical IDs containing letters, digits and hyphens (maximum 32
+characters); `any` is the only wildcard. Whitespace, case-shifted, overlong
+or punctuation-bearing selectors are rejected rather than silently treated as
+new platform IDs. A syntactically valid but unrecorded platform still cannot
+pass a mandatory filter without positive support. This only tightens offline
+input validation; curated route semantics, the experimental method version,
+the public player and Pages output are unchanged.
+
 Statuses are `route`, `no-route`, `uncertain`, and `excluded`. A route
 includes its ordered nodes and sourced hops. There is no automatic recovery
 through excluded games, and no fabricated edge for an otherwise similar pair.
