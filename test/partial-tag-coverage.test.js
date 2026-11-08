@@ -78,7 +78,7 @@ test('graph edges and matching metadata cannot override partial-tag abstention',
     creator: { value: 'Same', source },
   } }));
   const m = model(games, [{ from: 'demo:complete', to: 'demo:partial-shared',
-    type: 'similar', strength: 1, source }]);
+    type: 'similar', strength: 1, source: 'fixture:partial-tag-graph' }]);
   const pair = compareEvidenceGames(m, 'demo:complete', 'demo:partial-shared');
   assert.equal(pair.status, 'uncertain');
   assert.equal(pair.affinity, null);
