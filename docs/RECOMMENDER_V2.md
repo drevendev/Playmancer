@@ -174,6 +174,27 @@ A future rights-reviewed snapshot could record a directed
 `inspired-by: Esoteric Ebb → Disco Elysium` edge with that receipt; neither
 game is added to the current 30-game snapshot by this experiment.
 
+### Sourced hard-filter diagnostics (offline only)
+
+Each `rankEvidenceBasket` entry in `ranked`, `uncertain` and `excluded`
+now exposes `hardConstraintEvidence`: whether the player explicitly excluded
+the game, the requested platform and co-op rule, the recorded platform values
+and receipt, and the separate co-op observation receipt when one exists.
+Platform statuses are `not-required`, `unknown`, `recorded-support` and
+`no-matching-receipt`; the last means **not verified to support the requested
+platform**, never a sourced assertion of incompatibility. Co-op statuses are
+`not-required`, `unknown`, `recorded-yes` and `recorded-no`. Known
+negative co-op evidence retains its receipt instead of being reduced to a
+generic filter failure. Excluded favorites still have a `seed` reason; explicit
+player exclusions remain visible independently. Rejected candidates also
+retain per-seed evidence for offline inspection.
+
+This is additive **explanation data**, not a relaxed filter: candidates without
+required positive support still cannot rank; excluded or unknown intermediates
+still cannot inflate two-hop fit. Scores, ordered baskets, tie-breaks, the
+version-8 experimental method ID, public player and share schema are unchanged.
+No real-game sources or complete tag-weight profiles were added.
+
 ## Canonical platform evidence
 
 In the offline v2 model, a **recorded** platform list must be nonempty,

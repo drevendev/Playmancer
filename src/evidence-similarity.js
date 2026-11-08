@@ -99,8 +99,8 @@ function normalizeProfile(input) {
   const metadata = normalizeMetadata(game.metadata, id);
   const coop = game.coop === undefined ? null : game.coop;
   if (coop !== null && typeof coop !== "boolean") throw new TypeError(`${id}.coop must be boolean or null`);
-  if (coop !== null) text(game.coopSource, `${id}.coopSource`);
-  return { id, tags, tagCoverage, metadata, coop };
+  const coopSource = coop !== null ? text(game.coopSource, `${id}.coopSource`) : null;
+  return { id, tags, tagCoverage, metadata, coop, coopSource };
 }
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
 
@@ -287,6 +287,25 @@ export function compareEvidenceGames(model, leftId, rightId, { fitEligibleVia = 
     tasteEvidenceCoverage: observedCoverage.tasteTotal,
     tasteEvidenceCoverageByLane: observedCoverage.tasteLanes };
 }
+// Separate recorded receipts from hard-filter eligibility. In particular,
+// a positive-only platform list without the requested value is NOT evidence
+// that the game cannot run there, even though it cannot satisfy the filter.
+function explainHardConstraints(game, { platform, coopOnly, excluded }) {
+  const platforms = game.metadata.platforms;
+  const platformEvidence = platform === "any"
+    ? { requested: null, status: "not-required", recorded: null, source: null }
+    : platforms === null
+      ? { requested: platform, status: "unknown", recorded: null, source: null }
+      : { requested: platform,
+        status: platforms.value.includes(platform) ? "recorded-support" : "no-matching-receipt",
+        recorded: [...platforms.value], source: platforms.source };
+  const coopEvidence = !coopOnly
+    ? { requested: false, status: "not-required", source: null }
+    : { requested: true,
+      status: game.coop === null ? "unknown" : game.coop ? "recorded-yes" : "recorded-no",
+      source: game.coopSource };
+  return { excludedByUser: excluded.has(game.id), platform: platformEvidence, coop: coopEvidence };
+}
 function eligible(game, { platform, coopOnly, excluded }) {
   if (excluded.has(game.id)) return "fail";
   let unknown = false;
@@ -322,6 +341,8 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
     eligible(game, { platform, coopOnly, excluded: hidden })]));
   const fitEligibleVia = new Set([...eligibility].filter(([, state]) => state === "pass")
     .map(([id]) => id));
+  const filterEvidence = new Map([...model.profiles.values()].map(game =>
+    [game.id, explainHardConstraints(game, { platform, coopOnly, excluded: hidden })]));
   const evidence = new Map();
   const candidates = [...model.profiles.values()].map(game => {
     const pairs = activeSeeds.map(seed => ({ seedId: seed.id,
@@ -339,7 +360,10 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   // same per-seed receipts and lane coverage as ranked candidates so callers
   // can distinguish observed overlap, missing tags, and unknown hard filters
   // without promoting selected facts into a fabricated affinity.
+  const withEvidence = item => ({ ...item, evidence: evidence.get(item.id),
+    hardConstraintEvidence: filterEvidence.get(item.id) });
   return { ...result, method: EVIDENCE_METHOD_VERSION,
-    ranked: result.ranked.slice(0, limit).map(item => ({ ...item, evidence: evidence.get(item.id) })),
-    uncertain: result.uncertain.map(item => ({ ...item, evidence: evidence.get(item.id) })) };
+    ranked: result.ranked.slice(0, limit).map(withEvidence),
+    uncertain: result.uncertain.map(withEvidence),
+    excluded: result.excluded.map(withEvidence) };
 }
