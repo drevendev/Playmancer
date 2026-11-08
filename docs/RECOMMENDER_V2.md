@@ -28,6 +28,9 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
    URLs with no embedded credentials, not local/private-looking hosts or
    opaque labels. The explicit `playmancer:authored-fictional-fixture` marker
    remains valid only as a deliberately **fictional** experiment input.
+   Existing `fixture:[a-z0-9-]+` and `playmancer:fictional-capacity-fixture`
+   receipts are also allowed exclusively as explicitly marked offline test
+   fixtures, never as verified real-game sources.
    This parser gate checks URL shape, **not** the page's existence, legal
    reuse rights, attribution, factual accuracy or endorsement: an independent
    receipt review remains required before any real-catalog adoption.
