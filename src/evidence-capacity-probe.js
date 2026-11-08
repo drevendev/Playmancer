@@ -13,14 +13,18 @@ function integer(value, min, max, label) {
 function gameId(index) { return `bench:game-${String(index).padStart(3, "0")}`; }
 
 export function makeEvidenceCapacityFixture({
-  gameCount = 250, tagsPerGame = 128, edgeCount = 4096,
+  gameCount = 250, tagsPerGame = 128, edgeCount = 4096, partialTagEvery = 0,
 } = {}) {
   integer(gameCount, 5, 250, "gameCount");
+  integer(partialTagEvery, 0, 250, "partialTagEvery");
   integer(tagsPerGame, 1, 128, "tagsPerGame");
   integer(edgeCount, 0, Math.min(4096, gameCount * (gameCount - 1) / 2), "edgeCount");
   const games = Array.from({ length: gameCount }, (_, index) => ({
     id: gameId(index),
-    // Artificial, complete vectors let us measure scoring at maximum capacity;
+    // Mark selected facts as incomplete without inventing missing tag mass.
+    // The normalized observed entries are deliberately NOT a full-game affinity.
+    ...(partialTagEvery > 0 && (index + 1) % partialTagEvery === 0 ? { tagCoverage: "partial" } : {}),
+    // Artificial, complete-by-default vectors let us measure scoring at maximum capacity;
     // unlike the real partial-fact catalog they are NOT evidence of readiness.
     tags: Array.from({ length: tagsPerGame }, (_, offset) => ({
       id: `mechanic:fictional-${String((index * 17 + offset) % 256).padStart(3, "0")}`,
@@ -76,11 +80,11 @@ export function evidenceCapacitySignature(result) {
 // JSON serialization, browser UI, loading, hydration, or network requests.
 export function benchmarkEvidenceCapacity({
   gameCount = 250, tagsPerGame = 128, edgeCount = 4096,
-  warmups = 3, samples = 24,
+  partialTagEvery = 0, warmups = 3, samples = 24,
 } = {}) {
   integer(warmups, 0, 100, "warmups");
   integer(samples, 1, 1000, "samples");
-  const fixture = makeEvidenceCapacityFixture({ gameCount, tagsPerGame, edgeCount });
+  const fixture = makeEvidenceCapacityFixture({ gameCount, tagsPerGame, edgeCount, partialTagEvery });
   const model = prepareEvidenceModel(fixture);
   const input = scenario(fixture.games);
   const reports = {};
@@ -106,15 +110,19 @@ export function benchmarkEvidenceCapacity({
       ranked_ids: observed.ranked.map(row => row.id),
       rankable_returned: observed.ranked.length,
       unknown_count: observed.uncertain.length,
+      uncertain_evidence_count: observed.uncertain.filter(item => item.reason === "missing-seed-affinity").length,
+      uncertain_hard_constraint_count: observed.uncertain.filter(item => item.reason === "hard-constraint-unknown").length,
       excluded_count: observed.excluded.length,
     };
   }
   return {
-    protocol: "p76-fictional-v2-capacity-node-1",
+    protocol: "p76-fictional-v2-capacity-node-2",
     method: EVIDENCE_METHOD_VERSION,
     runtime: `node ${process.version}`,
     scope: "Node scorer only; NOT browser p95, player relevance, or real catalog",
     game_count: gameCount, tags_per_game: tagsPerGame, relation_count: edgeCount,
+    partial_tag_every: partialTagEvery,
+    partial_profiles: fixture.games.filter(game => game.tagCoverage === "partial").length,
     basket_seed_count: input.seeds.length,
     filters: { platform: input.platform, coopOnly: input.coopOnly, excluded: input.excluded },
     top_k: input.limit, warmups, samples, modes: reports,
