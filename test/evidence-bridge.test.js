@@ -120,5 +120,14 @@ test("invalid endpoints and constraints fail visibly", () => {
   assert.throws(() => route(m, { excluded: ["demo:missing"] }), /invalid Bridge/);
   assert.throws(() => route(m, { excluded: ["demo:b", "demo:b"] }), /invalid Bridge/);
   assert.throws(() => route(m, { platform: "" }), /invalid Bridge/);
+  for (const platform of ["Windows", " windows", "windows ", "any ", "linux/windows",
+    "2linux", "wíndows", "x".repeat(33)]) {
+    assert.throws(() => route(m, { platform }), /invalid Bridge/, platform);
+  }
+  // Canonical future keys may be filtered, but must not bypass positive support.
+  const linked = model([edge("demo:a", "demo:d")]);
+  assert.equal(route(linked, { platform: "any" }).status, "route");
+  assert.equal(route(linked, { platform: "windows" }).status, "route");
+  assert.equal(route(linked, { platform: "future-console" }).status, "excluded");
   assert.throws(() => route(m, { coopOnly: "yes" }), /invalid Bridge/);
 });
