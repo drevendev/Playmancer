@@ -7,6 +7,7 @@ Run on Node.js 22 or later:
 ```sh
 node --test test/evidence-capacity-probe.test.js
 node scripts/benchmark-evidence-250.mjs 24
+node scripts/benchmark-evidence-250.mjs 24 6  # selected partial facts every sixth profile
 ```
 
 The program prepares the versioned offline v2 model **before** recording elapsed time. It exercises both Intersection and Blend over the same five weighted seeds, strict Windows + co-op requirements, explicit exclusion and top-k 5. Synthetic data includes unknown platform/co-op fields, disjoint documented platforms, negative co-op observations, and all three authored relation types. The **full JSON-serializable scoring output** (ordered ranked/uncertain/excluded partitions, affinities, per-seed evidence, coverage, reasons, receipts and hard-filter explanations) must stay byte-for-byte stable across warmups and repeated calls. Serialization is checked **after** each measured scoring call and is excluded from the reported Node timings; it is not a claim about browser performance. P50, P95, and max are empirical **Node scoring durations for that particular machine**; the report retains the runtime version, method ID, workload size, eligible/unknown/excluded partition and per-mode top IDs. It does not claim a universal latency budget or accuracy.
@@ -14,3 +15,21 @@ The program prepares the versioned offline v2 model **before** recording elapsed
 **Release gate remains open.** These timings do not measure browser p95, rendering, memory, worker/message overhead, catalog loading, real-catalog data, or a player's experience. The actual player still uses `feature-overlap-2`; the frozen 28-game selected-fact audit has zero complete vectors and continues to abstain. Do **not** treat a passing benchmark or fast fictional score as permission to integrate v2. A later browser trial must use a versioned rights-cleared, sufficiently complete catalog and compare methods on identical eligibility/constraints/top-k with explicit negative findings. The separate curated Bridge has a route task, not an interchangeable scoring timing.
 
 This is a capacity **regression probe** (unlike a non-deterministic CI speed threshold). Timing figures must be collected and labelled by environment; tests assert semantic invariants but do not fail on noisy wall-clock thresholds.
+
+## Sparse-evidence regression regime (protocol v2)
+
+The optional second CLI argument, `partialTagEvery`, leaves the same fictional
+catalog, tags, relations, five weighted seeds and strict filters intact, but marks
+every Nth profile's tags as **partial observations**. Zero (default) retains the
+complete-vector capacity ceiling; `6` yields 41 partial profiles at 250-game
+capacity without marking any of the five benchmark seeds partial. This probes
+mixed rankable/abstaining partitions; `1` marks every profile partial and must
+yield **no ranked recommendations**, because no full-game affinity is known.
+
+The machine-readable report separates `uncertain_evidence_count` (missing
+complete per-seed similarity) from `uncertain_hard_constraint_count` (unknown
+mandatory platform/co-op support). These sum to `unknown_count`; explicitly
+excluded and hard-failed games stay excluded. The fixture's selected tags still
+sum to one for validation but **do not** claim complete source-backed mass.
+All partial tagging is invented for testing and cannot justify enabling v2 on
+the actual 30-game player snapshot. No wall-clock CI threshold is asserted.
