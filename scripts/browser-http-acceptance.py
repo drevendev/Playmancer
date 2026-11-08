@@ -882,7 +882,7 @@ def exercise(browser, base_url, engine, label, width, height):
             try:
                 magnified.goto(base_url + "/", wait_until="load")
                 magnified.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
-                scale_session = context.new_cdp_session(magnified)
+                scale_session = magnified_context.new_cdp_session(magnified)
                 scale_session.send("Emulation.setPageScaleFactor", {"pageScaleFactor": 4})
                 magnified.evaluate("() => new Promise(done => requestAnimationFrame(done))")
                 metrics = magnified.evaluate("""() => ({
