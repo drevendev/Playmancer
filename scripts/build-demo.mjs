@@ -49,6 +49,13 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // The release-pinned catalog receipt helper is unreachable for invented profiles.
+    // Keep a tiny inert stub in the strict-size fictional bundle rather than
+    // shipping release-only revision parsing. Real snapshots retain the full helper.
+    const receiptStart = source.indexOf("function catalogReceiptBase() {");
+    const receiptEnd = source.indexOf("// This exact snapshot has three separately documented data-source receipts.", receiptStart);
+    if (receiptStart < 0 || receiptEnd <= receiptStart) throw new Error("Unexpected receipt helper boundary");
+    source = source.slice(0, receiptStart) + 'function catalogReceiptBase() { return ""; }\n' + source.slice(receiptEnd);
     const start = source.indexOf("function pinnedFactsLink(firstId, secondId, entry) {");
     const end = source.indexOf("function showCatalogIdentity() {", start);
     if (start < 0 || end <= start) throw new Error("Unexpected observation deep-link boundary");
