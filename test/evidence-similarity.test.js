@@ -358,6 +358,58 @@ test("duplicate, dangling and self referential connections are rejected", () => 
   assert.throws(() => model(undefined, [relation("demo:a", "demo:b"), relation("demo:b", "demo:a")]), /duplicate pair/);
   assert.throws(() => model(undefined, [{ ...relation("demo:a", "demo:b"), source: "" }]), /source/);
 });
+test("offline hard-filter evidence carries sourced co-op and positive-only platform receipts", () => {
+  const m = model();
+  assert.equal(m.profiles.get("demo:a").coopSource, "authored-fixture");
+  assert.equal(m.profiles.get("demo:c").coopSource, "authored-fixture");
+  assert.equal(m.profiles.get("demo:b").coopSource, null);
+
+  for (const mode of ["intersection", "arithmetic", "blend"]) {
+    const result = rankEvidenceBasket(m, {
+      seeds: [{ id: "demo:a", weight: 1 }], platform: "windows", coopOnly: true, mode,
+    });
+    assert.deepEqual(result.ranked.map(item => item.id), [], mode);
+    const b = result.uncertain.find(item => item.id === "demo:b");
+    assert.equal(b.reason, "hard-constraint-unknown", mode);
+    assert.deepEqual(b.hardConstraintEvidence, {
+      excludedByUser: false,
+      platform: { requested: "windows", status: "recorded-support",
+        recorded: ["linux", "windows"], source: "authored-fixture" },
+      coop: { requested: true, status: "unknown", source: null },
+    });
+    const c = result.excluded.find(item => item.id === "demo:c");
+    assert.equal(c.reason, "hard-constraint-fail", mode);
+    assert.equal(c.hardConstraintEvidence.platform.status, "no-matching-receipt");
+    assert.deepEqual(c.hardConstraintEvidence.platform.recorded, ["linux"]);
+    assert.equal(c.hardConstraintEvidence.platform.source, "authored-fixture");
+    assert.deepEqual(c.hardConstraintEvidence.coop,
+      { requested: true, status: "recorded-no", source: "authored-fixture" });
+    assert.equal(c.evidence.length, 1, "excluded candidates retain provenance for inspection");
+    const d = result.uncertain.find(item => item.id === "demo:d");
+    assert.equal(d.hardConstraintEvidence.platform.status, "unknown");
+    assert.equal(d.hardConstraintEvidence.platform.source, null);
+    assert.equal(d.hardConstraintEvidence.coop.status, "unknown");
+    const seed = result.excluded.find(item => item.id === "demo:a");
+    assert.equal(seed.reason, "seed");
+    assert.equal(seed.hardConstraintEvidence.coop.status, "recorded-yes");
+  }
+
+  const unconstrained = rankEvidenceBasket(m, { seeds: [{ id: "demo:a" }] });
+  const included = unconstrained.ranked.find(item => item.id === "demo:b");
+  assert.equal(included.hardConstraintEvidence.platform.status, "not-required");
+  assert.equal(included.hardConstraintEvidence.coop.status, "not-required");
+  const userExcluded = rankEvidenceBasket(m, {
+    seeds: [{ id: "demo:a" }], excluded: ["demo:b"],
+  }).excluded.find(item => item.id === "demo:b");
+  assert.equal(userExcluded.hardConstraintEvidence.excludedByUser, true);
+  // Returned evidence is not a mutable alias of the catalog's recorded metadata.
+  const filtered = rankEvidenceBasket(m, {
+    seeds: [{ id: "demo:a" }], platform: "windows",
+  }).ranked.find(item => item.id === "demo:b");
+  filtered.hardConstraintEvidence.platform.recorded.push("extra");
+  assert.deepEqual(m.profiles.get("demo:b").metadata.platforms.value, ["linux", "windows"]);
+});
+
 test("hard filters remain strict for unknown platforms and cooperative support", () => {
   const result = rankEvidenceBasket(model(), { seeds: [{ id: "demo:a", weight: 1 }], platform: "windows", coopOnly: true });
   assert.deepEqual(result.ranked.map(item => item.id), []);
