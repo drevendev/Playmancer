@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeEvidenceCapacityFixture, benchmarkEvidenceCapacity } from "../src/evidence-capacity-probe.js";
+import { makeEvidenceCapacityFixture, benchmarkEvidenceCapacity, evidenceCapacitySignature } from "../src/evidence-capacity-probe.js";
 import { prepareEvidenceModel, rankEvidenceBasket } from "../src/evidence-similarity.js";
 
 test("fictional workload fits the exact v2 capacity ceiling without duplicates", () => {
@@ -67,4 +67,26 @@ test("capacity fixture rejects impossible workloads rather than shrinking them s
   const model = prepareEvidenceModel(small);
   const result = rankEvidenceBasket(model, { seeds: [{ id: small.games[0].id }], platform: "windows" });
   assert.ok(result.ranked.length + result.uncertain.length + result.excluded.length === 5);
+});
+
+test("full capacity result serialization catches score and evidence drift with unchanged IDs", () => {
+  const fixture = makeEvidenceCapacityFixture({ gameCount: 12, tagsPerGame: 7, edgeCount: 32 });
+  const model = prepareEvidenceModel(fixture);
+  const result = rankEvidenceBasket(model, { seeds: [{ id: fixture.games[0].id, weight: 1 }], limit: 5 });
+  assert.ok(result.ranked.length > 0);
+  assert.ok(result.ranked[0].evidence.length > 0);
+  const expected = evidenceCapacitySignature(result);
+  assert.equal(evidenceCapacitySignature(structuredClone(result)), expected);
+
+  const changedAffinity = structuredClone(result);
+  changedAffinity.ranked[0].evidence[0].affinity += 0.001;
+  assert.notEqual(evidenceCapacitySignature(changedAffinity), expected);
+
+  const changedCoverage = structuredClone(result);
+  changedCoverage.ranked[0].evidence[0].evidenceCoverage += 0.001;
+  assert.notEqual(evidenceCapacitySignature(changedCoverage), expected);
+
+  const changedReceipt = structuredClone(result);
+  changedReceipt.ranked[0].hardConstraintEvidence.platform.source = "fictional:edited-source";
+  assert.notEqual(evidenceCapacitySignature(changedReceipt), expected);
 });
