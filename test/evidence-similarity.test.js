@@ -224,6 +224,8 @@ test("editorial graph receipts require public HTTPS or an unmistakably fictional
     "https://studio.example.org/games/relation",
     "https://www.example.org/story?section=gameplay",
     "playmancer:authored-fictional-fixture",
+    "playmancer:fictional-capacity-fixture",
+    "fixture:curated-receipt",
   ];
   for (const source of accepted) {
     const m = model(undefined, [{ ...base, source }]);
@@ -236,6 +238,7 @@ test("editorial graph receipts require public HTTPS or an unmistakably fictional
     "https://internal.local/receipt", "https://internal.internal/receipt",
     "https://someone:password@example.org/claim",
     "https://example.org/claim with whitespace",
+    "fixture:", "fixture:unknown synthetic marker", "playmancer:unverified-source",
   ];
   for (const source of rejected) {
     assert.throws(() => model(undefined, [{ ...base, source }]),
