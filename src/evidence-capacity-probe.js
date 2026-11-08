@@ -65,12 +65,11 @@ function scenario(games) {
 function percentile(sorted, percent) {
   return sorted[Math.max(0, Math.ceil(percent * sorted.length) - 1)];
 }
-function signature(result) {
-  return JSON.stringify({
-    ranked: result.ranked.map(row => row.id),
-    uncertain: result.uncertain.map(row => row.id),
-    excluded: result.excluded.map(row => row.id),
-  });
+// The entire JSON-serializable scoring result is the reproducibility contract:
+// ordered partitions, per-seed affinities, coverage, sourced explanations and
+// hard-filter receipts. Never silently reduce this to ordered IDs.
+export function evidenceCapacitySignature(result) {
+  return JSON.stringify(result);
 }
 
 // Times ONLY Node scoring, not fixture construction, model preparation,
@@ -87,16 +86,16 @@ export function benchmarkEvidenceCapacity({
   const reports = {};
   for (const mode of MODES) {
     const run = () => rankEvidenceBasket(model, { ...input, mode });
-    const expected = signature(run());
+    const expected = evidenceCapacitySignature(run());
     for (let n = 0; n < warmups; n++) {
-      if (signature(run()) !== expected) throw new Error(`unstable ${mode} warmup`);
+      if (evidenceCapacitySignature(run()) !== expected) throw new Error(`unstable ${mode} warmup`);
     }
     const ms = [];
     for (let n = 0; n < samples; n++) {
       const start = performance.now();
       const result = run();
       ms.push(performance.now() - start);
-      if (signature(result) !== expected) throw new Error(`unstable ${mode} ranking`);
+      if (evidenceCapacitySignature(result) !== expected) throw new Error(`unstable ${mode} ranking`);
     }
     ms.sort((a, b) => a - b);
     const observed = run();
