@@ -31,6 +31,9 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     // leak or invoke the real-only, version-bound observation deep-link code.
     assert.match(html, /function renderFavoriteFactComparisons\(\)/);
     assert.doesNotMatch(html, /function pinnedFactsLink/);
+    assert.doesNotMatch(html, /function catalogReceiptBase/);
+    assert.match(html, /function renderCatalogReceipts\(\) \{ return null; \}/);
+    assert.match(html, /function renderBasketEvidence\(\) \{ return null; \}/);
     assert.doesNotMatch(html, /Compare recorded facts between favorites/);
     assert.doesNotMatch(html, /\/\* Compact mobile cards retain match evidence\. \*\//);
     assert.ok(firstWorker.byteLength > 0 && firstWorker.byteLength < 40_000);
