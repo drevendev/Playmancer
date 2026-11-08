@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import os
+import re
 import subprocess
 from urllib.parse import unquote, urlsplit
 from playwright.sync_api import sync_playwright
@@ -94,10 +95,13 @@ try:
                       in gap.locator("#empty").inner_text()
                   and "DevMatch has no Wikidata" not in gap.locator("#empty").inner_text())
             gap.locator("#seeds .basket-evidence summary").first.click()
+            built_revision = gap.locator('meta[name="playmancer-revision"]').get_attribute("content")
+            expected_ref = built_revision if built_revision and re.fullmatch(r"[0-9a-f]{40}", built_revision) else "master"
+            publisher_receipt = f"https://github.com/drevendev/Playmancer/blob/{expected_ref}/docs/STOREFRONTS.md"
             check(label + ": sparse owner game explicitly exposes unknown evidence and publisher receipts",
                   "Recorded genres (publisher-authored tags): unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
                   and "Mechanics: unknown. Co-op: unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
-                  and gap.locator('#seeds .basket-evidence a[href$="docs/STOREFRONTS.md"]').count() == 1)
+                  and gap.locator("#seeds .basket-evidence a").first.get_attribute("href") == publisher_receipt)
             gap.locator("#seeds input[type=range]").first.evaluate(
                 "(slider) => { slider.value = '9'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
             gap.locator("#share").click()
