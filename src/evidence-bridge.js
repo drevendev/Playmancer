@@ -2,6 +2,8 @@
 // Not integrated with the live player or the legacy Bridge scorer.
 export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-1";
 const TWO_HOP_DECAY = 0.5;
+// The same platform-key contract as the experimental candidate ranker.
+const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
 
 function requireModel(model) {
   if (!(model?.profiles instanceof Map) || !(model.edges instanceof Map)) {
@@ -48,7 +50,8 @@ export function findCuratedBridge(model, {
       !model.profiles.has(from) || !model.profiles.has(to) || from === to) {
     throw new TypeError("Bridge endpoints must be two distinct catalog IDs");
   }
-  if (typeof platform !== "string" || !platform.trim() ||
+  if (typeof platform !== "string" || (platform !== "any" &&
+      (platform.length > 32 || !PLATFORM_ID.test(platform))) ||
       typeof coopOnly !== "boolean" || !Array.isArray(excluded) ||
       new Set(excluded).size !== excluded.length ||
       excluded.some(id => !model.profiles.has(id))) {
