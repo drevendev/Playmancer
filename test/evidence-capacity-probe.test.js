@@ -17,6 +17,22 @@ test("fictional workload fits the exact v2 capacity ceiling without duplicates",
   assert.ok(prepareEvidenceModel(fixture).profiles.size === 250);
 });
 
+test("the exact 250/128/4096 scorer executes under strict filters", () => {
+  // Smoke the true ceiling (not just validation/preparation). No timing
+  // assertion: CI hosts vary, and this is not browser p95 certification.
+  const report = benchmarkEvidenceCapacity({ warmups: 0, samples: 1 });
+  assert.equal(report.game_count, 250);
+  assert.equal(report.tags_per_game, 128);
+  assert.equal(report.relation_count, 4096);
+  for (const mode of ["intersection", "blend"]) {
+    const result = report.modes[mode];
+    assert.ok(result.rankable_returned <= 5);
+    assert.ok(result.unknown_count > 0);
+    assert.ok(result.excluded_count > 0);
+    assert.ok(!result.ranked_ids.some(id => report.filters.excluded.includes(id)));
+  }
+});
+
 test("capacity probe verifies deterministic eligibility and both distinct modes", () => {
   const options = { gameCount: 12, tagsPerGame: 7, edgeCount: 32, warmups: 1, samples: 2 };
   const first = benchmarkEvidenceCapacity(options);
