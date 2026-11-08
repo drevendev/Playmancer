@@ -53,12 +53,19 @@ function renderStoreLinks(game) {
   }
   return row;
 }
+// Bind player-facing provenance documents to the exact built release, not the
+// moving master branch. Local unpublished previews use master as navigation only.
+function catalogReceiptBase() {
+  const revision = document.querySelector('meta[name="playmancer-revision"]')?.getAttribute("content") ?? "";
+  const ref = /^[0-9a-f]{40}$/.test(revision) ? revision : "master";
+  return `https://github.com/drevendev/Playmancer/blob/${ref}/`;
+}
 // This exact snapshot has three separately documented data-source receipts.
 // Keep the three receipt documents explicit so the original twelve Wikidata
 // entries are not misrepresented as evidence for the seven later additions.
 function renderCatalogReceipts() {
   if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28"].includes(CATALOG_VERSION)) return null;
-  const base = "https://github.com/drevendev/Playmancer/blob/master/";
+  const base = catalogReceiptBase();
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
@@ -93,7 +100,7 @@ function renderBasketEvidence(game) {
   const source = element("a", wikidataQid ? "Inspect Wikidata item" : "Inspect publisher/storefront receipts");
   source.href = wikidataQid && /^Q[1-9][0-9]*$/.test(wikidataQid)
     ? `https://www.wikidata.org/wiki/${wikidataQid}`
-    : "https://github.com/drevendev/Playmancer/blob/master/docs/STOREFRONTS.md";
+    : catalogReceiptBase() + "docs/STOREFRONTS.md";
   source.target = "_blank";
   source.rel = "noopener noreferrer";
   details.append(source);
