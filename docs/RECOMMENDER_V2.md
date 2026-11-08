@@ -48,6 +48,15 @@ with the original authored direction, type, strength and receipt even
 when a similarity query traverses it backward. These fields do not
 add new ranking boosts.
 
+For an actually observed pair, `metadata.recordedDifferences` lists sourced
+**scalar** differences (creator, developer, publisher, franchise or release
+year) with both recorded values and their separate receipts. A field missing
+on either side is not a difference. Positive, non-exhaustive platform lists
+without an observed common platform are **not** reported as a proven
+incompatibility. This additive offline explanation distinguishes known
+differences from unknowns without changing the composite score, rank
+coverage, hard-filter behavior, version-8 method ID, or public player.
+
 Version `weighted-tags-graph-experiment-8` retains the v3 ranking tie-break
 guard: factual references/inspirations may raise observed route coverage but
 cannot raise taste-comparable coverage or win a score tie. It additionally
