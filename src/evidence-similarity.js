@@ -102,6 +102,25 @@ function normalizeProfile(input) {
   const coopSource = coop !== null ? text(game.coopSource, `${id}.coopSource`) : null;
   return { id, tags, tagCoverage, metadata, coop, coopSource };
 }
+// A public editorial graph edge needs an inspectable HTTPS receipt. The only
+// non-web marker is explicitly fictional, so test relations cannot be mistaken
+// for independently verified real-game links. Syntax is not rights verification.
+const FICTIONAL_RELATION_RECEIPT = "playmancer:authored-fictional-fixture";
+function relationReceipt(value) {
+  const source = text(value, "relation.source");
+  if (source === FICTIONAL_RELATION_RECEIPT) return source;
+  let url;
+  try { url = new URL(source); } catch {
+    throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
+  }
+  const host = url.hostname.toLowerCase();
+  if (url.protocol !== "https:" || url.username || url.password ||
+      !host.includes(".") || host.endsWith(".local") || host.endsWith(".internal") ||
+      /^[0-9.]+$/.test(host) || host.startsWith("[") || /\s/.test(source)) {
+    throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
+  }
+  return source;
+}
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
 
 export function prepareEvidenceModel({ games, relations = [] } = {}) {
@@ -123,7 +142,7 @@ export function prepareEvidenceModel({ games, relations = [] } = {}) {
       throw new TypeError(`relation endpoints must be distinct catalog games: ${from} -> ${to}`);
     if (!EDGE_TYPES.has(relation.type)) throw new TypeError(`unsupported relation type: ${relation.type}`);
     const strength = unit(relation.strength, "relation.strength");
-    const source = text(relation.source, "relation.source");
+    const source = relationReceipt(relation.source);
     const key = pairKey(from, to);
     if (seen.has(key)) throw new TypeError(`duplicate pair relation: ${key}`);
     seen.add(key);
