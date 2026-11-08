@@ -170,7 +170,7 @@ function tagEvidence(a, b) {
 }
 function secondaryEvidence(a, b) {
   let score = 0, coverage = 0, tasteCoverage = 0;
-  const matches = [];
+  const matches = [], recordedDifferences = [];
   for (const [key, weight] of Object.entries(METADATA_WEIGHTS)) {
     const left = a.metadata[key], right = b.metadata[key];
     if (left === null || right === null) continue;
@@ -186,13 +186,22 @@ function secondaryEvidence(a, b) {
       match = Number(left.value.some(value => rightPlatforms.has(value)));
     } else if (key === "releaseYear") match = Number(left.value === right.value);
     else match = Number(left.value.trim().toLowerCase() === right.value.trim().toLowerCase());
-    if (match > 0) matches.push({ field: key, contribution: match * weight, sources: [left.source, right.source] });
+    if (match > 0) {
+      matches.push({ field: key, contribution: match * weight, sources: [left.source, right.source] });
+    } else if (key !== "platforms") {
+      // Scalar metadata differs on two sourced observations. Unlike positive-only
+      // platform lists, these values can be compared without inventing a missing
+      // platform incompatibility. A difference is evidence, not a taste penalty.
+      recordedDifferences.push({ field: key,
+        left: { value: left.value, source: left.source },
+        right: { value: right.value, source: right.source } });
+    }
     score += match * weight;
     // Disjoint positive platform receipts are observed, not confirmed taste
     // mismatches. Do not let receipt density win a ranking score tie.
     if (key !== "platforms" || match > 0) tasteCoverage += weight;
   }
-  return { similarity: coverage ? score : null, coverage, tasteCoverage, matches };
+  return { similarity: coverage ? score : null, coverage, tasteCoverage, matches, recordedDifferences };
 }
 function relationEvidence(model, a, b, fitEligibleVia = null) {
   const direct = model.edges.get(a.id).get(b.id) ?? null;
