@@ -34,7 +34,7 @@ test("capacity probe verifies deterministic eligibility and both distinct modes"
     assert.ok(row.p50_node_ms <= row.p95_node_ms);
     assert.equal(new Set(row.ranked_ids).size, row.ranked_ids.length);
     assert.ok(row.ranked_ids.length <= first.top_k);
-    assert.equal(row.unknown_count + row.excluded_count + row.rankable_returned <= 12);
+    assert.ok(row.unknown_count + row.excluded_count + row.rankable_returned <= 12);
     assert.ok(!row.ranked_ids.includes(first.filters.excluded[0]));
   }
   assert.match(first.scope, /NOT browser p95/);
