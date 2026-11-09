@@ -8,14 +8,17 @@ const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-4');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-5');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
   assert.equal(report.rows.length, fixture.baskets.length * 5);
   for (const row of report.rows) {
     assert.ok(row.old.top.length <= report.top_k && row.v2.top.length <= report.top_k);
-    assert.deepEqual(row.old.excluded, row.v2.excluded);
+    assert.deepEqual([...row.v2.excluded, ...row.platform_support_reclassified_to_unknown].sort(),
+      row.old.excluded);
+    assert.ok(row.platform_support_reclassified_to_unknown.every(id =>
+      row.v2.uncertain.includes(id) && !row.v2.top.includes(id)));
     assert.ok(row.old.top.every(id => !row.excluded_ids.includes(id)));
     assert.ok(row.v2.top.every(id => !row.excluded_ids.includes(id)));
     assert.ok(row.old.top.every(id => !row.seeds.some(seed => seed.id === id)));
@@ -43,6 +46,8 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
       && ['rankable', 'abstained'].includes(item.v2) && (item.old === 'abstained' || item.v2 === 'abstained')));
     assert.equal(row.eligible_candidates + row.hard_unknown_candidates +
       row.hard_excluded_candidates, report.game_count);
+    assert.equal(row.eligible_candidates + row.v2_hard_unknown_candidates +
+      row.v2_hard_excluded_candidates, report.game_count);
     assert.ok(row.rankable_opportunities_old >= 0 &&
       row.rankable_opportunities_old <= row.eligible_candidates);
     assert.ok(row.rankable_opportunities_v2 >= 0 &&
@@ -126,7 +131,10 @@ test('sparse tag evidence abstains, while strict unknown platform and coop filte
   for (const row of report.rows.filter(row => row.basket_id === 'linux-coop-puzzles')) {
     assert.ok(row.old.excluded.includes('demo:ember'));
     assert.ok(row.old.uncertain.includes('demo:echo'));
-    assert.deepEqual(row.old.excluded, row.v2.excluded);
+    assert.deepEqual([...row.v2.excluded, ...row.platform_support_reclassified_to_unknown].sort(),
+      row.old.excluded);
+    assert.ok(row.platform_support_reclassified_to_unknown.every(id =>
+      row.v2.uncertain.includes(id) && !row.v2.top.includes(id)));
   }
 });
 
