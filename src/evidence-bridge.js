@@ -1,6 +1,6 @@
 // Offline v2 Bridge primitive: traverses only authored, sourced graph edges.
 // Not integrated with the live player or the legacy Bridge scorer.
-export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-1";
+export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-2";
 const TWO_HOP_DECAY = 0.5;
 // The same platform-key contract as the experimental candidate ranker.
 const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
@@ -15,8 +15,8 @@ function constraintState(profile, platform, coopOnly, excluded) {
   let unknown = false;
   if (platform !== "any") {
     const observed = profile.metadata.platforms?.value;
-    if (observed == null) unknown = true;
-    else if (!observed.includes(platform)) return "fail";
+    // Recorded platforms are non-exhaustive positive receipts: absence is unknown.
+    if (observed == null || !observed.includes(platform)) unknown = true;
   }
   if (coopOnly) {
     if (profile.coop === false) return "fail";
