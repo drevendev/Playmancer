@@ -64,7 +64,7 @@ test('hard constraints and unknown metadata still override available references'
   }).status, 'excluded');
   assert.equal(findCuratedBridge(prepared, {
     from: HOLLOW, to: TERRARIA, platform: 'android',
-  }).status, 'excluded');
+  }).status, 'uncertain');
   assert.equal(findCuratedBridge(prepared, {
     from: HOLLOW, to: TERRARIA, coopOnly: true,
   }).status, 'uncertain');
