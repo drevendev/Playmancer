@@ -5,7 +5,7 @@ import { validateCatalogSnapshot } from './catalog.js';
 import { prepareEvidenceModel, rankEvidenceBasket, EVIDENCE_METHOD_VERSION } from './evidence-similarity.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 
-export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-2';
+export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-3';
 export const FROZEN_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 export const FROZEN_CATALOG_BLOB = '0570fd610b14fb336c0de65e6cc3062892abe301';
 // The immutable, predeclared 30-basket plan (Git blob of 2-space JSON + LF).
@@ -122,8 +122,21 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
       });
       const excludedOld = ids(old.excluded, 'candidate_id');
       const excludedV2 = ids(v2.excluded);
-      assert(equalIds(excludedOld, excludedV2),
-        'changed hard constraint/seed/exclusion eligibility: ' + basket.id + '/' + mode);
+      // v9 retains the same positive-support rankable pool, but reclassifies
+      // absent positive-only platform receipts as UNKNOWN, not proven failures.
+      const reclassified = excludedOld.filter(id => !excludedV2.includes(id));
+      const reclassifiable = v2.uncertain.filter(item =>
+        item.reason === 'hard-constraint-unknown' &&
+        item.hardConstraintEvidence.platform.status === 'no-matching-receipt');
+      assert(excludedV2.every(id => excludedOld.includes(id)) &&
+        reclassified.every(id => reclassifiable.some(item => item.id === id)) &&
+        equalIds([...excludedV2, ...reclassified], excludedOld),
+        'changed rankable eligibility or unaccounted hard-filter outcome: ' +
+        basket.id + '/' + mode);
+      const protectedIds = new Set([...basket.seeds.map(seed => seed.id),
+        ...basket.excludedCandidateIds]);
+      assert([...protectedIds].every(id => excludedV2.includes(id)),
+        'seed or explicit exclusion was weakened: ' + basket.id + '/' + mode);
       const oldTop = ids(old.ranked, 'candidate_id');
       const newTop = ids(v2.ranked);
       const seedIds = basket.seeds.map(seed => seed.id);
@@ -137,6 +150,7 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
         constraints: { ...basket.constraints },
         explicit_exclusions: [...basket.excludedCandidateIds],
         excluded_old: sortedIds(excludedOld), excluded_v2: sortedIds(excludedV2),
+        reclassified_platform_support_to_unknown: sortedIds(reclassified),
         old_top: oldTop, v2_top: newTop,
         v2_top_observed_evidence: v2.ranked.map(detail),
         unknown_old: ids(old.uncertain, 'candidate_id'),
@@ -163,9 +177,11 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
     weight_policy: 'Equal authorship-only mass among each game\'s observed CC0/owner-published genres; not source-ranked tag importance.',
     observed_lanes: ['genre', 'platforms'], curated_relation_count: 0,
     unobserved_lanes: ['mechanics', 'visual-style', 'characters', 'mood', 'creator', 'franchise', 'release-year', 'curated-links', 'coop'],
-    warning: 'Offline same-eligibility real-identity genre-only PROXY; no human labels, measured uplift or complete semantic tag vectors. v2 metadata contributes known platform overlap only; Bridge not evaluated.',
+    warning: 'Offline same-rankable-pool real-identity genre-only PROXY; exclusion vs unknown labels can differ because platform lists are positive-only. No human labels, measured uplift or complete semantic tag vectors. Bridge not evaluated.',
     summary: {
       paired_rows: rows.length,
+      platform_support_reclassified_rows: rows.filter(row =>
+        row.reclassified_platform_support_to_unknown.length > 0).length,
       changed_rank_orders: rows.filter(row => row.changed_order).length,
       decreased_observed_genre_support_rows: rows.filter(row => row.lost_observed_genre_support)
         .map(row => ({ basket_id: row.basket_id, mode: row.mode })),
