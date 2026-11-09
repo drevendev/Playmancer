@@ -50,10 +50,8 @@ function hardFilterPartition(games, basket) {
     const requiredPlatform = basket.constraints.platform;
     if (requiredPlatform && requiredPlatform !== 'any') {
       if (game.platforms === null) unknown = true;
-      else if (!game.platforms.includes(requiredPlatform)) {
-        excluded.push(game.id);
-        continue;
-      }
+      // Platform receipts list confirmed positives, not all supported devices.
+      else if (!game.platforms.includes(requiredPlatform)) unknown = true;
     }
     if (basket.constraints.coopOnly) {
       if (game.coop === false) {
@@ -158,12 +156,18 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
     const hardUnknown = sortedIds(result.uncertain.filter(item =>
       item.reason === 'hard-constraint-unknown'));
     const expected = hardFilterPartition(snapshot.games, basket);
+    // Legacy and v9 share a strict positive-support pool, but missing
+    // platform receipts previously counted as excluded can now abstain.
+    const oldExcluded = new Set(old.excluded_old);
     assert(JSON.stringify(excluded) === JSON.stringify(expected.excluded) &&
-      JSON.stringify(old.excluded_old) === JSON.stringify(expected.excluded),
-    'hard-filter/seed/exclusion parity changed: ' + old.basket_id + '/' + old.mode);
+      expected.excluded.every(id => oldExcluded.has(id)) &&
+      old.excluded_old.every(id => expected.excluded.includes(id) ||
+        expected.hardUnknown.includes(id)),
+    'rankable-pool/seed/exclusion parity changed: ' + old.basket_id + '/' + old.mode);
     assert(JSON.stringify(hardUnknown) === JSON.stringify(expected.hardUnknown) &&
-      expected.hardUnknown.every(id => old.unknown_old.includes(id)),
-    'unknown required platform/co-op parity changed: ' + old.basket_id + '/' + old.mode);
+      expected.hardUnknown.every(id => old.unknown_old.includes(id) ||
+        old.excluded_old.includes(id)),
+    'required metadata abstention parity changed: ' + old.basket_id + '/' + old.mode);
     return {
       basket_id: old.basket_id, mode: old.mode,
       legacy_top: old.old_top, reviewed_top: result.ranked.map(item => item.id),
@@ -195,6 +199,7 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
     reviewed_nonempty_scenarios: rows.filter(row => row.reviewed_top.length > 0).length,
     empty_with_legacy_results: rows.filter(row => row.legacy_top.length > 0 &&
       row.reviewed_top.length === 0).length,
+    // Positive-support eligible pool, not identical excluded-vs-unknown labels.
     eligibility_parity: true,
     conclusion: 'NOT READY: selected facts are partial, so v2 abstains rather than manufacturing full-game similarity. A zero reviewed_top is not a zero player-fit score.',
     bridge_evaluated: false,
