@@ -24,7 +24,16 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
    original sourced claim direction is retained. **Only `similar` is a taste
    affinity assertion.** Inspiration and crossover/reference receipts remain
    visible route evidence, not automatic recommendations or fit boosts.
-   Rights/source review is mandatory.
+   Rights/source review is mandatory. Relation receipts must be public HTTPS
+   URLs with no embedded credentials, not local/private-looking hosts or
+   opaque labels. The explicit `playmancer:authored-fictional-fixture` marker
+   remains valid only as a deliberately **fictional** experiment input.
+   Existing `fixture:[a-z0-9-]+` and `playmancer:fictional-capacity-fixture`
+   receipts are also allowed exclusively as explicitly marked offline test
+   fixtures, never as verified real-game sources.
+   This parser gate checks URL shape, **not** the page's existence, legal
+   reuse rights, attribution, factual accuracy or endorsement: an independent
+   receipt review remains required before any real-catalog adoption.
 4. **Transitive similarity** can only traverse two sourced explicit edges,
    never a broad common platform or an automatically inferred neighbor.
    For A—B—C, its maximum strength is `0.5 × strength(A,B) × strength(B,C)`.
