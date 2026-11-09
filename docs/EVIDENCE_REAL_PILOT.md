@@ -56,13 +56,21 @@ overlap, experimental composite fit, coverage, abstentions, hard exclusions
 and count of top recommendations supported by **all** seeds' known genres.
 The report records changed orders and both increases **and decreases** in
 observed genre support; none are proof of human preference or uplift.
-Protocol `p76-frozen-real-genre-proxy-2` adds
+Protocol `p76-frozen-real-genre-proxy-3` retains
 `v2_top_observed_evidence[].observed_genre_gaps_by_seed`: each
 candidate/favorite pair retains source-backed `candidate_only` and
 `favorite_only` genre mass, including unequal emphasis on shared tags.
 Known overlap plus either residual mass sums to 1; unobserved vectors
-remain `null`, not zero overlap. The frozen catalog/plan, ranking,
-eligibility and live-player method are unchanged.
+remain `null`, not zero overlap. The frozen catalog/plan and
+public-player method are unchanged. Version 9 preserves the exact
+**positive-support rankable pool** but now classifies a game missing
+a requested platform receipt as `uncertain`, not `excluded`: positive-only
+platform lists are not exhaustive incompatibility claims. The report
+exposes `reclassified_platform_support_to_unknown` for each row and
+`summary.platform_support_reclassified_rows` rather than hiding the
+difference from historical legacy hard-filter partitions. No game
+enters top-k because of this change; no unverified Bridge route becomes
+eligible. Method versions and report schema are distinct from v8.
 The v2 coefficient vector remains experimental and does not become a
 confidence percentage. A pair of records with matching platforms but no
 matching genre can have a small positive composite fit: consult

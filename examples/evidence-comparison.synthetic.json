@@ -1,5 +1,5 @@
 {
-  "protocolVersion": "p76-synthetic-paired-4",
+  "protocolVersion": "p76-synthetic-paired-5",
   "catalogSnapshotId": "synthetic-demo-1",
   "topK": 3,
   "lambda": 0.3,

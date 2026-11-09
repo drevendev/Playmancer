@@ -37,7 +37,7 @@ test("capacity probe verifies deterministic eligibility and both distinct modes"
   const options = { gameCount: 12, tagsPerGame: 7, edgeCount: 32, warmups: 1, samples: 2 };
   const first = benchmarkEvidenceCapacity(options);
   const second = benchmarkEvidenceCapacity(options);
-  assert.equal(first.method, "weighted-tags-graph-experiment-8");
+  assert.equal(first.method, "weighted-tags-graph-experiment-9");
   assert.equal(first.protocol, "p76-fictional-v2-capacity-node-2");
   assert.equal(first.basket_seed_count, 5);
   assert.equal(first.filters.platform, "windows");

@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-4';
+const VERSION = 'p76-synthetic-paired-5';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 function knownId(id, ids, label) {
@@ -161,16 +161,29 @@ export function runEvidenceComparison(input) {
       // features. Unknown *hard-filter* states may not differ or become passes.
       const universe = eligibleUniverse(basket);
       const eligibleSet = new Set(universe.eligible);
-      const expectedUnknown = JSON.stringify(universe.hardUnknown);
-      const expectedExcluded = JSON.stringify(universe.hardExcluded);
+      // The legacy filter treats absence from a positive-only platform list as
+      // failure. Experimental v9 instead abstains. Both require positive support
+      // for the identical rankable pool; expose the different partitions.
+      const seeds = new Set(basket.seeds.map(seed => seed.id));
+      const blocked = new Set(basket.excluded);
+      const platformUnverified = CATALOG.filter(game =>
+        !seeds.has(game.id) && !blocked.has(game.id) &&
+        basket.platform !== 'any' && Array.isArray(game.platforms) &&
+        !game.platforms.includes(basket.platform) &&
+        (!basket.coopOnly || game.coop !== false)).map(game => game.id).sort();
+      const reclassified = new Set(platformUnverified);
+      const v2Unknown = [...universe.hardUnknown, ...platformUnverified].sort();
+      const v2Excluded = universe.hardExcluded.filter(id => !reclassified.has(id));
       const oldAbstained = evidenceAbstentions(legacyResult);
       const v2Abstained = evidenceAbstentions(experimentalResult);
       for (const [method, partition, abstained] of [
         ['old', legacyResult, oldAbstained], ['v2', experimentalResult, v2Abstained],
       ]) {
-        check(JSON.stringify(hardUnknownIds(partition)) === expectedUnknown,
+        const expectedUnknown = method === 'old' ? universe.hardUnknown : v2Unknown;
+        const expectedExcluded = method === 'old' ? universe.hardExcluded : v2Excluded;
+        check(JSON.stringify(hardUnknownIds(partition)) === JSON.stringify(expectedUnknown),
           `hard constraint unknown drift for ${basket.id}/${mode}/${method}`);
-        check(JSON.stringify(idsOf(partition.excluded).sort()) === expectedExcluded,
+        check(JSON.stringify(idsOf(partition.excluded).sort()) === JSON.stringify(expectedExcluded),
           `hard exclusion drift for ${basket.id}/${mode}/${method}`);
         check(abstained.every(id => eligibleSet.has(id)) &&
           partition.ranked.every(item => eligibleSet.has(item.id) && !abstained.includes(item.id)),
@@ -194,6 +207,9 @@ export function runEvidenceComparison(input) {
         eligible_candidates: universe.eligible.length,
         hard_unknown_candidates: universe.hardUnknown.length,
         hard_excluded_candidates: universe.hardExcluded.length,
+        v2_hard_unknown_candidates: v2Unknown.length,
+        v2_hard_excluded_candidates: v2Excluded.length,
+        platform_support_reclassified_to_unknown: platformUnverified,
         rankable_opportunities_old: universe.eligible.length - oldAbstained.length,
         rankable_opportunities_v2: universe.eligible.length - v2Abstained.length,
         probe_evidence_unknown_old: basket.probeIds.filter(id => oldAbstained.includes(id)),
@@ -207,7 +223,7 @@ export function runEvidenceComparison(input) {
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
     old_method: METHOD_VERSION, new_method: EVIDENCE_METHOD_VERSION,
     evidence_source: 'authored-fictional-only',
-    warning: 'Offline synthetic probes, NOT real-catalog tags, human labels or measured uplift; Bridge route quality is not evaluated.',
+    warning: 'Offline synthetic probes, NOT real-catalog tags, human labels or measured uplift; identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
     game_count: CATALOG.length, basket_count: input.baskets.length,
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),

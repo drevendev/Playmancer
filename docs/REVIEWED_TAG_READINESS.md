@@ -37,13 +37,19 @@ counts eligible, uncertain and excluded candidates, comparing v2's
 The test asserts that all 150 v2 scenarios currently return **no rankable
 recommendations**. Baseline results are retained to expose the cost of
 switching now; this is not a win/loss judgment about recommendation quality.
-All hard constraints and explicit exclusions must match the shipped baseline.
+All required filters and explicit exclusions preserve the same
+positive-support eligible pool as the shipped baseline, but the
+experimental v9 report distinguishes **unknown platform support** from
+proven exclusions; historical baseline reports may classify those games
+as excluded. They remain unrankable in both methods.
 
 The report does **not** evaluate Bridge routing, human preferences, calibrated
 weights, tag completeness, recommendation accuracy or publisher/source
 priority. It does not change Pages, the shipping scorer, the public catalog
-or share-state versions. The `eligibility_parity` flag means strict
-hard-filter/exclusion partitions agree, not that results have equal quality.
+or share-state versions. The `eligibility_parity` flag now means
+**identical rankable eligibility under the same filters**, not identical
+excluded-versus-unknown partitions and not equal recommendation quality.
+The offline method ID is versioned; historical v8 reports are not v9 results.
 
 ## Promotion criteria
 

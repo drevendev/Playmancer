@@ -78,9 +78,12 @@ test("missing mandatory intermediary facts abstain; failed facts cannot pass", (
   assert.equal(missingPlatform.reason, "intermediate-required-metadata-unknown");
   assert.deepEqual(missingPlatform.unknownIntermediates, ["demo:b"]);
   assert.equal(missingPlatform.evidenceStrength, null);
-  assert.equal(route(model(relations, {
+  const unverified = route(model(relations, {
     "demo:b": { platforms: ["linux"] },
-  }), { platform: "windows" }).status, "no-route");
+  }), { platform: "windows" });
+  assert.equal(unverified.status, "uncertain");
+  assert.equal(unverified.reason, "intermediate-required-metadata-unknown");
+  assert.deepEqual(unverified.unknownIntermediates, ["demo:b"]);
   assert.equal(route(model(relations, {
     "demo:b": { coop: null },
   }), { coopOnly: true }).status, "uncertain");
@@ -96,7 +99,7 @@ test("endpoint unknowns and failures never fabricate a usable Bridge", () => {
   assert.equal(route(m, { platform: "windows" }).reason,
     "endpoint-required-metadata-unknown");
   assert.equal(route(m, { platform: "windows" }).status, "uncertain");
-  assert.equal(route(m, { platform: "linux" }).status, "excluded");
+  assert.equal(route(m, { platform: "linux" }).status, "uncertain");
   assert.equal(route(model([edge("demo:a", "demo:d")], {
     "demo:d": { coop: false },
   }), { coopOnly: true }).status, "excluded");
@@ -128,6 +131,6 @@ test("invalid endpoints and constraints fail visibly", () => {
   const linked = model([edge("demo:a", "demo:d")]);
   assert.equal(route(linked, { platform: "any" }).status, "route");
   assert.equal(route(linked, { platform: "windows" }).status, "route");
-  assert.equal(route(linked, { platform: "future-console" }).status, "excluded");
+  assert.equal(route(linked, { platform: "future-console" }).status, "uncertain");
   assert.throws(() => route(m, { coopOnly: "yes" }), /invalid Bridge/);
 });

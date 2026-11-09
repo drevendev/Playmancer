@@ -106,7 +106,19 @@ the same bounded match and taste coverage. Strict required-platform filters,
 source receipts, and the public player do not change. Version 7 is historical;
 its reports cannot be treated as v8 results.
 
-Prior v1/v2/v3/v4/v5/v6/v7 reports are not interchangeable. The public
+Version 9 fixes hard-filter classification of positive, non-exhaustive
+platform records. A list without the requested platform is **unknown
+support**, not proof that the platform cannot run the game: it stays in
+`uncertain`, never `ranked`. The same rule holds for endpoints and
+two-hop intermediates in offline curated Bridge version
+`curated-bridge-routes-2`: unknown support cannot create a route or
+inflate similarity; its blocked route is reported as uncertain, not a
+proven impossibility. Explicit user exclusions and observed
+`coop=false` are still known failures even alongside unknown platform
+support. The frozen real-catalog player and method/share schema do not
+change. Version-8 reports do not compare directly to version 9.
+
+Prior v1/v2/v3/v4/v5/v6/v7/v8 reports are not interchangeable. The public
 `feature-overlap-2` method and live player are unchanged.
 
 The trial composite score is
@@ -198,11 +210,14 @@ generic filter failure. Excluded favorites still have a `seed` reason; explicit
 player exclusions remain visible independently. Rejected candidates also
 retain per-seed evidence for offline inspection.
 
-This is additive **explanation data**, not a relaxed filter: candidates without
-required positive support still cannot rank; excluded or unknown intermediates
-still cannot inflate two-hop fit. Scores, ordered baskets, tie-breaks, the
-version-8 experimental method ID, public player and share schema are unchanged.
-No real-game sources or complete tag-weight profiles were added.
+These source receipts remain **explanation data**, not permission to
+relax required filters: games without positive platform support cannot
+rank, and unverified intermediates cannot increase two-hop fit. In
+version 9, nonmatching positive-only platform receipts enter the
+uncertain partition instead of the excluded partition; sourced negative
+co-op and explicit exclusions remain failures. The experimental
+version-9 method ID changes, but the public player and share schema do
+not. No new real-game sources or complete tag-weight profiles were added.
 
 ## Canonical platform evidence
 
@@ -211,7 +226,7 @@ lowercase, hyphenated canonical tokens (maximum 32 characters), with no
 duplicates. The `any` wildcard belongs only to basket filters and never to
 a game's source-backed platform list. Empty arrays and misspelled/case-shifted
 platform names are rejected during snapshot validation rather than being
-treated as evidence that a game fails a hard constraint. A **missing** platform
+treated as evidence that a game fails a hard constraint. A **missing or nonmatching positive-only** platform
 observation remains unknown, and a required platform filter must abstain;
 the validator never invents or normalizes source claims. Unrecognized but
 canonical filter tokens remain valid strict filters, not a relaxed fallback.
