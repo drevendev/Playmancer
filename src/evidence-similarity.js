@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-8";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-9";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -336,8 +336,9 @@ function eligible(game, { platform, coopOnly, excluded }) {
   let unknown = false;
   if (platform !== "any") {
     const value = game.metadata.platforms?.value;
-    if (value === undefined) unknown = true;
-    else if (!value.includes(platform)) return "fail";
+    // Platform lists document positive support, not exhaustive availability.
+    // A missing requested receipt must abstain, never assert incompatibility.
+    if (value === undefined || !value.includes(platform)) unknown = true;
   }
   if (coopOnly) {
     if (game.coop === false) return "fail";
