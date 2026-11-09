@@ -223,6 +223,7 @@ test("editorial graph receipts require public HTTPS or an unmistakably fictional
   const accepted = [
     "https://studio.example.org/games/relation",
     "https://www.example.org/story?section=gameplay",
+    "https://studio.example.org./games/relation",
     "playmancer:authored-fictional-fixture",
     "playmancer:fictional-capacity-fixture",
     "fixture:curated-receipt",
@@ -234,7 +235,12 @@ test("editorial graph receipts require public HTTPS or an unmistakably fictional
   const rejected = [
     "notes-only", "authored-fixture", "http://example.org/claim",
     "javascript:alert(1)", "file:///tmp/receipt",
-    "https://localhost/receipt", "https://127.0.0.1/receipt",
+    "https://localhost/receipt", "https://localhost./receipt",
+    "https://foo.localhost/receipt", "https://foo.localhost./receipt",
+    "https://127.0.0.1/receipt",
+    "https://service.local/receipt", "https://service.local./receipt",
+    "https://service.local../receipt",
+    "https://service.internal/receipt", "https://service.internal./receipt",
     "https://internal.local/receipt", "https://internal.internal/receipt",
     "https://someone:password@example.org/claim",
     "https://example.org/claim with whitespace",
