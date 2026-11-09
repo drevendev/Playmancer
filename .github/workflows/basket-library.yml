@@ -1,0 +1,44 @@
+name: Basket library acceptance
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: basket-library-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  basket_library:
+    name: Saved baskets across Chromium Firefox WebKit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - name: Verify named saves, atomic imports, isolation and exact restore
+        env:
+          HOME: /root
+        run: python scripts/browser-basket-library-acceptance.py
+      - name: Retain actual screenshots, results and the tested static preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: basket-library-${{ github.sha }}
+          path: |
+            .test-artifacts/library-*.png
+            .test-artifacts/library-browser.json
+            .test-artifacts/library-site/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
