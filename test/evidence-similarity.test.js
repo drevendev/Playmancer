@@ -56,6 +56,30 @@ test("platform source observations must not disguise missing or noncanonical eli
     item.id === b.id && item.reason === "hard-constraint-unknown"));
 });
 
+test("nonmatching positive-only platform receipts abstain without weakening strict filters", () => {
+  const m = model();
+  const basket = { seeds: [{ id: a.id, weight: 1 }], platform: "windows" };
+  for (const mode of ["intersection", "arithmetic", "blend"]) {
+    const result = rankEvidenceBasket(m, { ...basket, mode });
+    const uncertain = result.uncertain.find(item => item.id === c.id);
+    assert.equal(uncertain?.reason, "hard-constraint-unknown", mode);
+    assert.deepEqual(uncertain.hardConstraintEvidence.platform, {
+      requested: "windows", status: "no-matching-receipt",
+      recorded: ["linux"], source: "authored-fixture",
+    });
+    assert.ok(!result.ranked.some(item => item.id === c.id), mode);
+    const explicitlyExcluded = rankEvidenceBasket(m, {
+      ...basket, mode, excluded: [c.id],
+    });
+    assert.equal(explicitlyExcluded.excluded.find(item => item.id === c.id)?.reason,
+      "hard-constraint-fail", mode);
+    // Independently sourced negative co-op remains a known failure.
+    const coop = rankEvidenceBasket(m, { ...basket, mode, coopOnly: true });
+    assert.equal(coop.excluded.find(item => item.id === c.id)?.reason,
+      "hard-constraint-fail", mode);
+  }
+});
+
 test("weighted mass intersection respects unequal tag weights, not set size", () => {
   const ab = compareEvidenceGames(model(), a.id, b.id);
   assert.equal(ab.status, "rankable");
@@ -215,7 +239,9 @@ test("disjoint positive platforms cannot win a taste-evidence tie", () => {
     seeds: [{ id: seed.id }], platform: "windows",
   });
   assert.ok(strict.uncertain.some(item => item.id === unknown.id));
-  assert.ok(strict.excluded.some(item => item.id === disjoint.id));
+  assert.ok(strict.uncertain.some(item => item.id === disjoint.id &&
+    item.reason === "hard-constraint-unknown"));
+  assert.ok(!strict.ranked.some(item => item.id === disjoint.id));
 });
 
 test("editorial graph receipts require public HTTPS or an unmistakably fictional marker", () => {
