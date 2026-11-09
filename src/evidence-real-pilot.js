@@ -177,7 +177,7 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
     weight_policy: 'Equal authorship-only mass among each game\'s observed CC0/owner-published genres; not source-ranked tag importance.',
     observed_lanes: ['genre', 'platforms'], curated_relation_count: 0,
     unobserved_lanes: ['mechanics', 'visual-style', 'characters', 'mood', 'creator', 'franchise', 'release-year', 'curated-links', 'coop'],
-    warning: 'Offline same-rankable-pool real-identity genre-only PROXY; exclusion vs unknown labels can differ because platform lists are positive-only. No human labels, measured uplift or complete semantic tag vectors. Bridge not evaluated.',
+    warning: 'Offline same-rankable-pool real-identity genre-only PROXY; exclusion vs unknown labels can differ because platform lists are positive-only. no human labels, measured uplift or complete semantic tag vectors. Bridge not evaluated.',
     summary: {
       paired_rows: rows.length,
       platform_support_reclassified_rows: rows.filter(row =>
