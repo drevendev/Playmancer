@@ -117,9 +117,11 @@ function relationReceipt(value) {
   try { url = new URL(source); } catch {
     throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
   }
-  const host = url.hostname.toLowerCase();
+  // DNS root dots survive URL.hostname; normalize before checking local hosts.
+  const host = url.hostname.toLowerCase().replace(/\.+$/, "");
   if (url.protocol !== "https:" || url.username || url.password ||
-      !host.includes(".") || host.endsWith(".local") || host.endsWith(".internal") ||
+      !host.includes(".") || host === "localhost" || host.endsWith(".localhost") ||
+      host.endsWith(".local") || host.endsWith(".internal") ||
       /^[0-9.]+$/.test(host) || host.startsWith("[") || /\s/.test(source)) {
     throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
   }
