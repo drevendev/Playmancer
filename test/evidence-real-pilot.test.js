@@ -45,7 +45,10 @@ test('frozen 30-basket real-identity comparison shares exact catalog, filters an
   assert.deepEqual(report.observed_lanes, ['genre', 'platforms']);
   assert.equal(report.curated_relation_count, 0);
   for (const row of report.rows) {
-    assert.deepEqual(row.excluded_v2, row.excluded_old);
+    assert.deepEqual([...row.excluded_v2, ...row.reclassified_platform_support_to_unknown].sort(),
+      row.excluded_old);
+    assert.ok(row.reclassified_platform_support_to_unknown.every(id =>
+      row.unknown_v2.includes(id) && !row.v2_top.includes(id)));
     assert.ok(row.old_top.length <= 5 && row.v2_top.length <= 5);
     assert.ok(row.v2_top.every(id => !row.seeds.some(s => s.id === id)));
     assert.ok(row.v2_top.every(id => !row.explicit_exclusions.includes(id)));
