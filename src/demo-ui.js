@@ -557,7 +557,7 @@ function drawResults() {
     if (factsLink) footer.append(factsLink);
     const add = element("button", "Add to favorites", "add-result");
     add.type = "button";
-    add.setAttribute("aria-label", `Add ${game.name} to favorites`);
+    add.setAttribute("aria-label", `Add to favorites: ${game.name}`);
     add.disabled = state.seeds.length >= 5;
     if (add.disabled) add.title = "Remove a favorite to add another game";
     add.addEventListener("click", () => addFavorite(game, index));
