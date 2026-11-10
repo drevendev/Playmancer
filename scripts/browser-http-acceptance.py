@@ -390,6 +390,30 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#seeds > li").count() == 2
               and page.locator(f'[data-game-id="{candidate_id}"]').count() == 1
               and page.evaluate("document.activeElement.id") == "search")
+        # At capacity, suggestions remain inspectable/hideable but cannot
+        # exceed the five-favorite limit or silently replace another favorite.
+        original = json.loads(unquote(page.url.split("#basket=", 1)[1]))
+        extra_ids = page.locator("#results > li").evaluate_all(
+            "nodes => nodes.slice(0, 3).map(node => node.dataset.gameId)")
+        check(case, "catalog has three distinct suggestions for the capacity regression",
+              len(extra_ids) == 3 and len(set(extra_ids)) == 3)
+        full = {**original, "seeds": original["seeds"] +
+                [{"id": game_id, "weight": 1} for game_id in extra_ids]}
+        page.evaluate("""s => {
+            history.replaceState(null, '', '#basket=' + encodeURIComponent(JSON.stringify(s)));
+            window.dispatchEvent(new Event('hashchange'));
+        }""", full)
+        check(case, "five-favorite basket disables all result promotions without hiding explanations",
+              page.locator("#seeds > li").count() == 5
+              and page.locator("#results > li").count() > 0
+              and all(page.locator(".add-result").evaluate_all("nodes => nodes.map(n => n.disabled)"))
+              and page.locator("#results > li .explanation summary").first.is_visible())
+        page.evaluate("""s => {
+            history.replaceState(null, '', '#basket=' + encodeURIComponent(JSON.stringify(s)));
+            window.dispatchEvent(new Event('hashchange'));
+        }""", original)
+        check(case, "capacity test restores original weighted basket without a fallback",
+              page.locator("#seeds > li").count() == 2)
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
               hint.inner_text() == "Search names, IDs, aliases or recorded genres to find catalog profiles."
