@@ -365,7 +365,7 @@ def exercise(browser, base_url, engine, label, width, height):
         candidate = page.locator("#results > li").first
         candidate_id = candidate.get_attribute("data-game-id")
         candidate_name = candidate.locator("h3").inner_text()
-        add_result = candidate.get_by_role("button", name=f"Add {candidate_name} to favorites")
+        add_result = candidate.get_by_role("button", name=f"Add to favorites: {candidate_name}")
         check(case, "ranked result exposes a touch-sized named add-to-favorites action",
               add_result.is_visible() and add_result.is_enabled()
               and add_result.evaluate("node => node.getBoundingClientRect().height >= 44"))
