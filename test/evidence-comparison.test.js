@@ -102,6 +102,26 @@ test('unrankable evidence cannot masquerade as a paired probe ranking loss or ga
   assert.equal(bothAbsent.paired_probe_delta, 0);
 });
 
+test('rejects mistyped paired-benchmark controls rather than silently relaxing filters', () => {
+  const cases = [
+    ['top-k', data => { data.topk = 1; }, /unknown comparison input field: topk/],
+    ['co-op filter', data => { data.baskets[0].cooponly = true; }, /unknown basket field: cooponly/],
+    ['exclusions', data => { data.baskets[0].excldued = ['demo:tide']; }, /unknown basket field: excldued/],
+    ['probe list', data => { data.baskets[0].probeIDs = []; }, /unknown basket field: probeIDs/],
+    ['seed weight', data => { data.baskets[0].seeds[0].weigth = 99; }, /unknown seed field: weigth/],
+    ['relations', data => { data.relatons = []; }, /unknown comparison input field: relatons/],
+    ['injected JSON field', data => {
+      Object.defineProperty(data.baskets[0], '__proto__', { value: {}, enumerable: true });
+    }, /unknown basket field: __proto__/],
+  ];
+  for (const [label, mutate, pattern] of cases) {
+    const data = clone();
+    mutate(data);
+    assert.throws(() => runEvidenceComparison(data), pattern, label);
+  }
+  assert.deepEqual(runEvidenceComparison(clone()), runEvidenceComparison(clone()));
+});
+
 test('rejects incompatible catalog, invalid baskets and hidden filter changes', () => {
   const wrong = clone(); wrong.catalogSnapshotId = 'other';
   assert.throws(() => runEvidenceComparison(wrong), /catalog revision mismatch/);
