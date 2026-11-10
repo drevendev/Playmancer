@@ -39,7 +39,7 @@ export function mountBasketLibrary({ host, getState, encode, decode, restore, na
   const importActions = make('div', undefined, 'actions'); importActions.append(importButton, download);
   transfer.append(transferActions, jsonLabel, json, note, fileLabel, file, importActions);
   panel.append(privacy, nameLabel, name, actions, status, list, transfer); host.append(panel);
-  let store = null, busy = false, rows = [], generation = 0;
+  let store = null, busy = false, rows = [], generation = 0, reconnectWhenIdle = false;
   const controls = [save, refresh, currentExport, libraryExport, importButton, download, file];
   const say = message => { status.textContent = message; };
   const updateControls = () => {
@@ -53,7 +53,12 @@ export function mountBasketLibrary({ host, getState, encode, decode, restore, na
     for (const control of list.querySelectorAll('button')) control.disabled = true;
     try { await action(); }
     catch (error) { say(`${error.message || 'Operation failed.'} Your current basket and existing saves were not replaced.`); }
-    finally { busy = false; updateControls(); draw(); }
+    finally {
+      busy = false; updateControls(); draw();
+      // A bfcache return can race a suspended IndexedDB transaction. Reopen
+      // after it settles rather than silently dropping the pageshow recovery.
+      if (reconnectWhenIdle) { reconnectWhenIdle = false; void run(connect); }
+    }
   };
   const currentEntry = () => ({ name: basketName(name.value || 'Current basket'), hash: encode(getState()) });
   const exportText = entries => {
@@ -155,7 +160,15 @@ export function mountBasketLibrary({ host, getState, encode, decode, restore, na
   const shortcut = button('Saved baskets', 'intro-library');
   shortcut.onclick = () => { panel.open = true; heading.scrollIntoView(); heading.focus({ preventScroll: true }); };
   document.querySelector('.intro-actions')?.append(shortcut);
-  window.addEventListener('pagehide', () => store?.close());
-  // Explicit refresh reopens a closed/bfcache connection; no automatic writes.
+  window.addEventListener('pagehide', () => {
+    // A bfcache snapshot must never retain a live or apparently writable handle.
+    store?.close(); store = null; updateControls(); draw();
+  });
+  window.addEventListener('pageshow', event => {
+    if (!event.persisted) return;
+    // Read-only reconnection keeps the current basket, share hash and form intact.
+    if (busy) reconnectWhenIdle = true;
+    else void run(connect);
+  });
   void run(connect);
 }
