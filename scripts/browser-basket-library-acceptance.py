@@ -138,7 +138,7 @@ def main():
                         page.locator('#lambda').focus(); page.keyboard.press('Home')
                         for _ in range(7): page.keyboard.press('ArrowRight')
                         page.locator('#seeds input[type=range]').first.focus(); page.keyboard.press('End')
-                        hide = page.locator('#results .card-footer button').first
+                        hide = page.locator('#results .card-footer button[aria-label^="Hide "]').first
                         expect(hide).to_be_visible(); hide.click()
                         page.select_option('#platform', 'windows'); page.check('#coop')
                         endpoints = page.locator('#bridge-start option').evaluate_all('(nodes) => nodes.map(n => n.value).filter(Boolean)')
