@@ -25,6 +25,9 @@ function record(value, label) {
 // complete affinity vectors (notably misspelled tagCoverage).
 const GAME_FIELDS = new Set(["id", "tags", "tagCoverage", "metadata", "coop", "coopSource"]);
 const TAG_FIELDS = new Set(["id", "weight", "source"]);
+const MODEL_FIELDS = new Set(["games", "relations"]);
+const FIELD_RECEIPT_FIELDS = new Set(["value", "source"]);
+const RELATION_FIELDS = new Set(["from", "to", "type", "strength", "source"]);
 function rejectUnknownFields(input, allowed, label) {
   for (const field of Object.keys(input)) {
     if (!allowed.has(field)) throw new TypeError(`unknown ${label} field: ${field}`);
@@ -49,6 +52,7 @@ function canonicalId(value) {
 function property(value, label) {
   if (value === undefined || value === null) return null;
   const entry = record(value, label);
+  rejectUnknownFields(entry, FIELD_RECEIPT_FIELDS, label);
   const source = text(entry.source, `${label}.source`);
   if (!Object.hasOwn(entry, "value")) throw new TypeError(`${label}.value is required`);
   return { value: entry.value, source };
@@ -140,7 +144,10 @@ function relationReceipt(value) {
 }
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
 
-export function prepareEvidenceModel({ games, relations = [] } = {}) {
+export function prepareEvidenceModel(input = {}) {
+  const modelInput = record(input, "evidence model");
+  rejectUnknownFields(modelInput, MODEL_FIELDS, "evidence model");
+  const { games, relations = [] } = modelInput;
   if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
     throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
@@ -154,6 +161,7 @@ export function prepareEvidenceModel({ games, relations = [] } = {}) {
   const seen = new Set();
   for (const input of relations) {
     const relation = record(input, "relation");
+    rejectUnknownFields(relation, RELATION_FIELDS, "relation");
     const from = canonicalId(relation.from), to = canonicalId(relation.to);
     if (!profiles.has(from) || !profiles.has(to) || from === to)
       throw new TypeError(`relation endpoints must be distinct catalog games: ${from} -> ${to}`);
