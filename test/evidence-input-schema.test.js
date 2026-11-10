@@ -56,3 +56,39 @@ test("existing explicit and legacy fictional vectors keep their scoring behavior
   assert.equal(pair.status, "rankable");
   assert.equal(pair.tags.similarity, 1);
 });
+
+test("unexpected model or relation fields cannot silently drop sourced graph evidence", () => {
+  const a = profile("fixture:source");
+  const b = profile("fixture:target");
+  const receipt = { from: a.id, to: b.id, type: "inspired-by", strength: 0.8,
+    source: "https://example.org/relations/1" };
+  assert.throws(() => prepareEvidenceModel({ games: [a, b], relatons: [receipt] }),
+    /unknown evidence model field: relatons/);
+  assert.throws(() => prepareEvidenceModel({ games: [a, b], relations: [
+    { ...receipt, direction: "reverse" },
+  ] }), /unknown relation field: direction/);
+  const valid = prepareEvidenceModel({ games: [a, b], relations: [receipt] });
+  const pair = compareEvidenceGames(valid, a.id, b.id);
+  assert.equal(pair.relations.direct.from, a.id);
+  assert.equal(pair.relations.direct.to, b.id);
+  assert.equal(pair.relations.direct.type, "inspired-by");
+  assert.equal(pair.relations.direct.source, receipt.source);
+  assert.equal(pair.affinity, compareEvidenceGames(
+    prepareEvidenceModel({ games: [a, b] }), a.id, b.id).affinity,
+    "a factual relation must not boost taste similarity");
+});
+
+test("unknown fields inside metadata receipts fail closed instead of asserting coverage", () => {
+  const game = profile("fixture:fields");
+  const platforms = { value: ["windows"], source };
+  assert.throws(() => prepareEvidenceModel({ games: [
+    { ...game, metadata: { platforms: { ...platforms, exhaustive: true } } },
+  ] }), /unknown fixture:fields.platforms field: exhaustive/);
+  assert.throws(() => prepareEvidenceModel({ games: [
+    { ...game, metadata: { platforms: { ...platforms, tagCoverage: "complete" } } },
+  ] }), /unknown fixture:fields.platforms field: tagCoverage/);
+  const valid = prepareEvidenceModel({ games: [
+    { ...game, metadata: { platforms } }, profile("fixture:other"),
+  ] });
+  assert.deepEqual(valid.profiles.get(game.id).metadata.platforms, platforms);
+});
