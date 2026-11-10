@@ -571,9 +571,9 @@ function drawResults() {
       // clicked card is replaced; use the results heading when none remain.
       const status = $("status");
       status.textContent = `${game.name} hidden. ${status.textContent}`;
-      const buttons = $("results").querySelectorAll(".card-footer button");
-      if (buttons.length) buttons[Math.min(index, buttons.length - 1)].focus();
-      else $("recommendations").focus();
+      const cards = [...$("results").querySelectorAll(".card")];
+      const nextCard = cards[Math.min(index, cards.length - 1)];
+      (nextCard?.querySelector(".card-footer button:not(:disabled)") ?? $("recommendations")).focus();
     });
     footer.append(hide); card.append(footer); $("results").append(card);
   });
