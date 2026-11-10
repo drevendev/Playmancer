@@ -184,3 +184,43 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
+
+  hosted-basket-library-acceptance:
+    if: github.ref == 'refs/heads/master'
+    name: Verify saved baskets on public Pages across three engines
+    needs: publish
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    # Independently exercise the deployed player; never rebuild a local fixture.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.55.0-noble
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install matching Playwright Python client
+        run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - name: Exercise hosted saved baskets and exact-state restoration
+        env:
+          HOME: /root
+          PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
+          PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
+        run: python scripts/browser-basket-library-acceptance.py --engine all
+      # Native Pages can still race the reviewed deployment (issue #124).
+      # Detect a wrong served revision even after the browser journey passes.
+      - name: Recheck public revision after saved-basket journeys
+        env:
+          DEPLOY_URL: ${{ needs.publish.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: python3 scripts/pages_live_probe.py --once
+      - name: Retain hosted library results and real desktop/mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hosted-library-${{ github.sha }}
+          path: |
+            .test-artifacts/library-browser.json
+            .test-artifacts/library-*.png
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
