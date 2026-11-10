@@ -11,6 +11,15 @@ const RECEIPT = 'playmancer:authored-fictional-fixture';
 const VERSION = 'p76-synthetic-paired-5';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
+// A mistyped benchmark control must never silently change the comparison cohort.
+function assertShape(value, permitted, label) {
+  check(value && typeof value === 'object' && !Array.isArray(value) &&
+    (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null),
+    `${label} must be a plain record`);
+  for (const key of Object.keys(value)) {
+    check(permitted.includes(key), `unknown ${label} field: ${key}`);
+  }
+}
 function knownId(id, ids, label) {
   check(typeof id === 'string' && ids.has(id), `${label} references an unknown game: ${String(id)}`);
   return id;
@@ -24,7 +33,7 @@ function profile(game) {
     coop: game.coop, ...(game.coop == null ? {} : { coopSource: RECEIPT }) };
 }
 function prepareFixture(input) {
-  check(input && typeof input === 'object' && !Array.isArray(input), 'comparison input must be an object');
+  assertShape(input, ['protocolVersion', 'catalogSnapshotId', 'topK', 'lambda', 'relations', 'baskets'], 'comparison input');
   check(input.protocolVersion === VERSION, `unsupported comparison protocol: ${String(input.protocolVersion)}`);
   check(input.catalogSnapshotId === CATALOG_VERSION, 'comparison catalog revision mismatch');
   check(Number.isInteger(input.topK) && input.topK >= 1 && input.topK <= CATALOG.length, 'topK out of range');
@@ -35,13 +44,14 @@ function prepareFixture(input) {
   const ids = new Set(gameById.keys());
   const baskets = new Set();
   for (const basket of input.baskets) {
-    check(basket && typeof basket === 'object' && typeof basket.id === 'string' && basket.id.trim(), 'invalid basket id');
+    assertShape(basket, ['id', 'seeds', 'platform', 'coopOnly', 'excluded', 'probeIds'], 'basket');
+    check(typeof basket.id === 'string' && basket.id.trim(), 'invalid basket id');
     check(!baskets.has(basket.id), `duplicate basket id: ${basket.id}`);
     baskets.add(basket.id);
     check(Array.isArray(basket.seeds) && basket.seeds.length >= 2 && basket.seeds.length <= 5, 'expected 2-5 seeds');
     const seeds = new Set();
     for (const seed of basket.seeds) {
-      check(seed && typeof seed === 'object', 'invalid seed');
+      assertShape(seed, ['id', 'weight'], 'seed');
       knownId(seed.id, ids, 'seed');
       check(!seeds.has(seed.id), `duplicate seed: ${seed.id}`);
       seeds.add(seed.id);
