@@ -1,10 +1,11 @@
-/** Production package: keep the genre ranker intact; add a separate fact explorer. */
+/** Production package: keep the genre ranker intact; add independent player tools. */
 import { readFile, writeFile, mkdir, mkdtemp, rename, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { buildObservationPage, linkObservationExplorer } from './build-observations.mjs';
+import { addBasketLibrary, BASKET_LIBRARY_CSS } from './build-basket-library.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 if (process.argv.length > 3 || process.argv[2]?.startsWith('--')) throw new Error('Usage: node scripts/build-release.mjs [output-directory]');
 const output = resolve(process.argv[2] ?? join(root, '_site'));
@@ -18,8 +19,9 @@ const stage = await mkdtemp(join(tmpdir(), 'playmancer-release-'));
 const pending = [];
 try {
   execFileSync(process.execPath, [join(root, 'scripts/build-demo.mjs'), stage, '--catalog', catalogPath], { stdio: 'inherit' });
-  const index = linkObservationExplorer(await readFile(join(stage, 'index.html'), 'utf8'));
+  const index = await addBasketLibrary(root, linkObservationExplorer(await readFile(join(stage, 'index.html'), 'utf8')));
   await writeFile(join(stage, 'index.html'), index);
+  await writeFile(join(stage, 'player.css'), await readFile(join(stage, 'player.css'), 'utf8') + BASKET_LIBRARY_CSS);
   await writeFile(join(stage, 'observations.html'), explorer);
   await mkdir(output, { recursive: true });
   // Write every pending file first; replace the entry document last.
@@ -29,7 +31,7 @@ try {
     await writeFile(temporary, await readFile(join(stage, name)));
   }
   for (let i = 0; i < files.length; i++) await rename(pending[i], join(output, files[i]));
-  console.log(`Production release includes ${Buffer.byteLength(explorer)} bytes of independently versioned observation UI`);
+  console.log(`Production release includes ${Buffer.byteLength(explorer)} bytes of independently versioned observation UI and a local basket library`);
 } finally {
   for (const path of pending) await rm(path, { force: true });
   await rm(stage, { recursive: true, force: true });
