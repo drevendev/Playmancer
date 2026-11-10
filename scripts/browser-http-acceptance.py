@@ -634,7 +634,7 @@ def exercise(browser, base_url, engine, label, width, height):
                     })(),
                     actions: Array.from(document.querySelectorAll('.intro-actions button')).map(node => {
                         const box = node.getBoundingClientRect();
-                        return {left: box.left, right: box.right,
+                        return {id: node.id, left: box.left, right: box.right,
                                 inner: node.scrollWidth, width: node.clientWidth};
                     })
                 };
@@ -736,7 +736,9 @@ def exercise(browser, base_url, engine, label, width, height):
                       all(not words for words in broken.values()), details=broken)
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
-                  and len(enlarged["actions"]) == 3
+                  and len(enlarged["actions"]) == 4
+                  and {action["id"] for action in enlarged["actions"]} ==
+                      {"intro-sample", "intro-browse", "intro-bridge", "intro-library"}
                   and all(action["left"] >= -1
                           and action["right"] <= enlarged["viewport"] + 1
                           and action["inner"] <= action["width"] + 1
