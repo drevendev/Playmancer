@@ -21,6 +21,15 @@ function record(value, label) {
   }
   return value;
 }
+// Typos in observation keys must not silently upgrade selected facts to
+// complete affinity vectors (notably misspelled tagCoverage).
+const GAME_FIELDS = new Set(["id", "tags", "tagCoverage", "metadata", "coop", "coopSource"]);
+const TAG_FIELDS = new Set(["id", "weight", "source"]);
+function rejectUnknownFields(input, allowed, label) {
+  for (const field of Object.keys(input)) {
+    if (!allowed.has(field)) throw new TypeError(`unknown ${label} field: ${field}`);
+  }
+}
 function text(value, label) {
   if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} must be nonempty text`);
   return value;
@@ -72,6 +81,7 @@ function normalizeMetadata(input, id) {
 }
 function normalizeProfile(input) {
   const game = record(input, "game");
+  rejectUnknownFields(game, GAME_FIELDS, "game");
   const id = canonicalId(game.id);
   let tags = null;
   if (game.tags !== undefined && game.tags !== null) {
@@ -80,6 +90,7 @@ function normalizeProfile(input) {
     const seen = new Set();
     tags = game.tags.map((item) => {
       const tag = record(item, `${id}.tag`);
+      rejectUnknownFields(tag, TAG_FIELDS, `${id}.tag`);
       const key = text(tag.id, `${id}.tag.id`);
       if (!TAG_ID.test(key) || key.length > 96) throw new TypeError(`invalid tag ID: ${key}`);
       if (seen.has(key)) throw new TypeError(`duplicate tag: ${id}/${key}`);
