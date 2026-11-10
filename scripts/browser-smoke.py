@@ -65,7 +65,7 @@ with sync_playwright() as p:
     reopened.close()
     page.bring_to_front()
     while page.locator('#results > li').count():
-        page.locator('#results button').first.click()
+        page.locator('#results .card-footer button[aria-label^="Hide "]').first.click()
     check('last hidden result returns focus to recommendations with a status update',
           page.evaluate('document.activeElement.id')=='recommendations'
           and 'hidden.' in page.locator('#status').inner_text())
@@ -113,7 +113,7 @@ with sync_playwright() as p:
     page.locator('#platform').select_option('mac')
     page.locator('#coop').check()
     while page.locator('#results > li').count():
-        page.locator('#results button').first.click()
+        page.locator('#results .card-footer button[aria-label^="Hide "]').first.click()
     check('zero-results panel states filters were not relaxed',
           'Hard filters and hidden results have not been relaxed' in page.locator('#empty').inner_text()
           and page.locator('#platform').input_value()=='mac' and page.locator('#coop').is_checked())

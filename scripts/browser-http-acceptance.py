@@ -360,6 +360,60 @@ def exercise(browser, base_url, engine, label, width, height):
         if engine == "chromium":
             check(case, "Chromium accessibility tree exposes the named removed-game status",
                   chromium_status_in_accessibility_tree(page, "basket-feedback", f"Removed {added_name}"))
+        # A suggested game can become a new favorite without retyping its
+        # name. The clicked card disappears, but focus remains in the results.
+        candidate = page.locator("#results > li").first
+        candidate_id = candidate.get_attribute("data-game-id")
+        candidate_name = candidate.locator("h3").inner_text()
+        add_result = candidate.get_by_role("button", name=f"Add to favorites: {candidate_name}")
+        check(case, "ranked result exposes a touch-sized named add-to-favorites action",
+              add_result.is_visible() and add_result.is_enabled()
+              and add_result.evaluate("node => node.getBoundingClientRect().height >= 44"))
+        add_result.focus()
+        add_result.press("Enter")
+        refreshed = page.locator("#results > li").first
+        refreshed_id = refreshed.get_attribute("data-game-id")
+        check(case, "recommendation becomes a weighted favorite and retains keyboard focus",
+              page.locator("#seeds > li").count() == 3
+              and candidate_id not in page.locator("#results > li").evaluate_all(
+                  "nodes => nodes.map(node => node.dataset.gameId)")
+              and feedback.inner_text().startswith(f"Added {candidate_name}. 3 of 5 games selected.")
+              and refreshed_id != candidate_id
+              and page.evaluate("document.activeElement.closest('[data-game-id]')?.dataset.gameId") == refreshed_id)
+        promoted = json.loads(unquote(page.url.split("#basket=", 1)[1]))
+        check(case, "promoted favorite is appended once with weight one and unchanged filters",
+              promoted["seeds"][-1] == {"id": candidate_id, "weight": 1}
+              and promoted["platform"] == "any" and not promoted["coopOnly"]
+              and candidate_id not in promoted["excluded"])
+        page.get_by_role("button", name=f"Remove {candidate_name}").click()
+        check(case, "removing promoted favorite restores the suggestion and search focus",
+              page.locator("#seeds > li").count() == 2
+              and page.locator(f'[data-game-id="{candidate_id}"]').count() == 1
+              and page.evaluate("document.activeElement.id") == "search")
+        # At capacity, suggestions remain inspectable/hideable but cannot
+        # exceed the five-favorite limit or silently replace another favorite.
+        original = json.loads(unquote(page.url.split("#basket=", 1)[1]))
+        extra_ids = page.locator("#results > li").evaluate_all(
+            "nodes => nodes.slice(0, 3).map(node => node.dataset.gameId)")
+        check(case, "catalog has three distinct suggestions for the capacity regression",
+              len(extra_ids) == 3 and len(set(extra_ids)) == 3)
+        full = {**original, "seeds": original["seeds"] +
+                [{"id": game_id, "weight": 1} for game_id in extra_ids]}
+        page.evaluate("""s => {
+            history.replaceState(null, '', '#basket=' + encodeURIComponent(JSON.stringify(s)));
+            window.dispatchEvent(new Event('hashchange'));
+        }""", full)
+        check(case, "five-favorite basket disables all result promotions without hiding explanations",
+              page.locator("#seeds > li").count() == 5
+              and page.locator("#results > li").count() > 0
+              and all(page.locator(".add-result").evaluate_all("nodes => nodes.map(n => n.disabled)"))
+              and page.locator("#results > li .explanation summary").first.is_visible())
+        page.evaluate("""s => {
+            history.replaceState(null, '', '#basket=' + encodeURIComponent(JSON.stringify(s)));
+            window.dispatchEvent(new Event('hashchange'));
+        }""", original)
+        check(case, "capacity test restores original weighted basket without a fallback",
+              page.locator("#seeds > li").count() == 2)
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
               hint.inner_text() == "Search names, IDs, aliases or recorded genres to find catalog profiles."

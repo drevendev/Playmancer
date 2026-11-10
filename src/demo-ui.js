@@ -309,6 +309,27 @@ function drawSeeds() {
     $("seeds").append(row);
   }
 }
+// A recommendation is also a discovery entry point: promote it to a weighted
+// favorite without losing the current filters, browse context or share state.
+function addFavorite(game, resultIndex = null) {
+  if (state.seeds.length >= 5 || state.seeds.some(seed => seed.id === game.id)) return;
+  state.seeds.push({ id: game.id, weight: 1 });
+  state.excluded = state.excluded.filter(id => id !== game.id);
+  if (resultIndex === null) {
+    $("search").value = "";
+    if ($("store-filter").value !== "all") browseAll = true;
+  }
+  commit(true);
+  if (resultIndex === null) {
+    $("search").focus();
+  } else {
+    // The clicked card has disappeared. Move focus to the next actionable
+    // result, or the stable heading when the basket reaches its five-game cap.
+    const next = [...$("results").querySelectorAll(".add-result:not(:disabled)")];
+    (next[Math.min(resultIndex, next.length - 1)] ?? $("recommendations")).focus();
+  }
+  announceBasketAction("Added", game.name);
+}
 function drawSearch() {
   const query = $("search").value.trim().normalize("NFC").toLowerCase();
   const store = $("store-filter").value;
@@ -350,15 +371,7 @@ function drawSearch() {
       if (event.key === "ArrowUp" && index === 0) $("search").focus();
       else choices[(index + (event.key === "ArrowDown" ? 1 : -1) + choices.length) % choices.length].focus();
     });
-    button.addEventListener("click", () => {
-      if (state.seeds.length >= 5 || state.seeds.some((seed) => seed.id === game.id)) return;
-      state.seeds.push({ id: game.id, weight: 1 });
-      state.excluded = state.excluded.filter((id) => id !== game.id);
-      $("search").value = "";
-      if ($("store-filter").value !== "all") browseAll = true;
-      commit(true); $("search").focus();
-      announceBasketAction("Added", game.name);
-    });
+    button.addEventListener("click", () => addFavorite(game));
     if (matchedTag) {
       // Keep the button's stable "Add GAME" accessible name while exposing
       // why a tag-only search matched, also for keyboard/screen-reader users.
@@ -542,6 +555,13 @@ function drawResults() {
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
     const factsLink = recommendationFactComparison(game);
     if (factsLink) footer.append(factsLink);
+    const add = element("button", "Add to favorites", "add-result");
+    add.type = "button";
+    add.setAttribute("aria-label", `Add to favorites: ${game.name}`);
+    add.disabled = state.seeds.length >= 5;
+    if (add.disabled) add.title = "Remove a favorite to add another game";
+    add.addEventListener("click", () => addFavorite(game, index));
+    footer.append(add);
     const hide = element("button", "Hide result"); hide.type = "button";
     hide.setAttribute("aria-label", `Hide ${game.name}`);
     hide.addEventListener("click", () => {
@@ -551,9 +571,9 @@ function drawResults() {
       // clicked card is replaced; use the results heading when none remain.
       const status = $("status");
       status.textContent = `${game.name} hidden. ${status.textContent}`;
-      const buttons = $("results").querySelectorAll(".card-footer button");
-      if (buttons.length) buttons[Math.min(index, buttons.length - 1)].focus();
-      else $("recommendations").focus();
+      const cards = [...$("results").querySelectorAll(".card")];
+      const nextCard = cards[Math.min(index, cards.length - 1)];
+      (nextCard?.querySelector(".card-footer button:not(:disabled)") ?? $("recommendations")).focus();
     });
     footer.append(hide); card.append(footer); $("results").append(card);
   });

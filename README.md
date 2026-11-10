@@ -96,6 +96,7 @@ of silently substituting games from a different snapshot.
 
 - Browse the 30 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time and add them to the basket without losing existing choices. The **Browse by store** selector narrows *catalog discovery* to games with recorded Steam, Google Play or itch.io links; it combines with name/genre search, does not constrain recommendations, and is deliberately not part of shared-basket state.
 - Search names, canonical IDs, declared aliases and source-recorded genre labels (synthetic profiles also support their authored feature tags); genre-only suggestions disclose the matching tag. Add/remove up to five profiles.
+- Promote any visible recommendation directly into a new favorite with **Add to favorites**; it receives weight 1, disappears from the candidate list, and preserves filters, share state and keyboard focus. At five favorites the add action is disabled until one is removed.
 - Edit explicit integer weights with keyboard controls.
 - Compare harmonic **Intersection**, diversified list-level **Blend**, and a weighted
   arithmetic baseline. Union is an evaluation baseline, not an Intersection label.
