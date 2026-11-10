@@ -195,7 +195,7 @@ def main():
                         }""")
                         save(page, 'Must not exist')
                         check(prefix + 'failed write never reports saved', count(page) == 6 and 'Simulated quota failure' in page.locator('#library-status').inner_text())
-                        page.evaluate('IDBObjectStore.prototype.add = window.originalLibraryAdd')
+                        page.evaluate('() => { IDBObjectStore.prototype.add = window.originalLibraryAdd; delete window.originalLibraryAdd; }')
                         page.click('#library-refresh'); settled(page)
                         check(prefix + 'failed transaction preserved prior data', count(page) == 6)
                         fill = {'format': 'playmancer-baskets', 'version': 1, 'baskets': [dict(initial, name=f'Capacity {i}') for i in range(14)]}
