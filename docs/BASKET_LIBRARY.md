@@ -39,11 +39,16 @@ replacing each other's libraries. Successful individual requests are insufficien
 the UI reports a save only after transaction completion. See the [IndexedDB
 transaction model](https://www.w3.org/TR/IndexedDB/#transaction-concept).
 
-Use **Refresh saved baskets** after another tab changes its saves. A rename/delete
-also checks the exact previously read name/hash; stale operations fail instead of
-targeting a newly changed record. Duplicate names never overwrite. The name field
-is case-sensitive and trims outer whitespace on creation; duplicate imported
-names are errors, not implicit updates. There is no silent eviction at capacity.
+Use **Refresh saved baskets** after another tab changes its saves. A tab restored
+from the browser's back/forward cache automatically reopens its previously closed
+IndexedDB connection and re-reads saved rows; writes are disabled until that
+read-only recovery completes. This does not restore or replace the active basket.
+If storage is blocked, saves stay disabled and current-basket export remains
+available. A rename/delete also checks the exact previously read name/hash;
+stale operations fail instead of targeting a newly changed record. Duplicate
+names never overwrite. The name field is case-sensitive and trims outer
+whitespace on creation; duplicate imported names are errors, not implicit
+updates. There is no silent eviction at capacity.
 
 ## Compatibility and failure behavior
 

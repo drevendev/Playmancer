@@ -114,6 +114,25 @@ def main():
                         initial = backup(page)['baskets'][0]
                         page.reload(wait_until='networkidle'); page.click('#intro-library'); settled(page)
                         check(prefix + 'reload retains saved basket', count(page) == 1)
+                        # Simulate a real bfcache lifecycle in every engine, even if
+                        # the test runner disables actual history caching.
+                        preserved_hash = page.evaluate('location.hash')
+                        page.evaluate("window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }))")
+                        check(prefix + 'suspended tab disables local writes', page.locator('#library-save').is_disabled())
+                        page.evaluate("window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }))")
+                        settled(page)
+                        check(prefix + 'bfcache return reopens saved library',
+                              count(page) == 1 and not page.locator('#library-save').is_disabled()
+                              and '1 of 20 saved baskets' in page.locator('#library-status').inner_text())
+                        check(prefix + 'bfcache return does not alter the current basket',
+                              page.evaluate('location.hash') == preserved_hash)
+                        save(page, 'After history')
+                        check(prefix + 'save works after bfcache reconnect', count(page) == 2)
+                        page.once('dialog', lambda dialog: dialog.accept())
+                        page.get_by_role('button', name='Delete saved basket After history', exact=True).click()
+                        settled(page)
+                        check(prefix + 'post-return delete preserves prior saved basket', count(page) == 1
+                              and backup(page)['baskets'][0] == initial)
                         # Real interactions construct a nontrivial versioned basket.
                         page.select_option('#mode', 'blend')
                         page.locator('#lambda').focus(); page.keyboard.press('Home')
