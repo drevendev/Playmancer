@@ -81,8 +81,10 @@ def classify(pages, listing, sha):
     ids = tuple(sorted(run.get('id') for run in native if isinstance(run.get('id'), int)))
     if len(ids) != len(native):
         raise GateError('Native publisher metadata is incomplete')
+    # A native startup_failure is terminal even when GitHub schedules zero jobs.
     if all(run.get('status') == 'completed' and run.get('conclusion') in (
-           'success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required')
+           'success', 'failure', 'cancelled', 'skipped', 'timed_out', 'action_required',
+           'startup_failure')
            for run in native):
         return 'NATIVE_FINISHED', ids
     return 'WAIT_NATIVE_ACTIVE', ids
