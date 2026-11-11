@@ -18,7 +18,7 @@ const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
 const hasDreven = DEMO_SNAPSHOT.sources.some(source => source.id === "dreven-owned");
 const storeNames = { steam: "Steam", itch: "itch.io", googleplay: "Google Play" };
 // The checked-in observation inventory is an independent, partial source.
- // Never feed this positive-only information into scores, hard filters or shares.
+// Never feed this positive-only information into scores, hard filters or shares.
 const inlineGameplayFacts = (() => {
   const entry = $("observation-explorer-entry");
   const payload = $("inline-gameplay-facts");
@@ -44,7 +44,7 @@ function renderObservedOverlap(game) {
   });
   if (!matches.length) return null;
   const count = matches.reduce((sum, match) => sum + match.labels.length, 0);
-  const details = element("details", undefined, "explanation observed-overlap");
+  const details = element("details", undefined, "observed-overlap");
   details.append(element("summary", `Extra recorded gameplay overlap (${count} positive observations)`));
   details.append(element("p",
     "Independently recorded selected facts, not a full feature comparison. Missing or unrecorded facts are unknown, not mismatches. These facts do not change ranking.", "hint"));
