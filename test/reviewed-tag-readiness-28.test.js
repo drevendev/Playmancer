@@ -67,7 +67,7 @@ test('28-profile cohort is deterministic, version-pinned and fails closed on dri
     /catalog blob changed/);
   assert.throws(() => auditReviewedTagReadiness(catalog, { ...plan, topK: 4 }, reviewed, 'twenty-eight'),
     /basket plan changed/);
-  assert.throws(() => auditReviewedTagReadiness(catalog, plan, reviewed, 'twenty-nine'),
+  assert.throws(() => auditReviewedTagReadiness(catalog, plan, reviewed, 'thirty'),
     /unsupported reviewed-tag audit cohort/);
 });
 
