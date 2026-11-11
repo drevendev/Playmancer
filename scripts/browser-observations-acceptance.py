@@ -83,7 +83,7 @@ try:
                     'cards => cards.map(card => card.dataset.gameId)')
                 overlap.locator('summary').click()
                 detail = overlap.inner_text()
-                check('With Terraria:' in detail and 'Building' in detail and
+                check('With Terraria:' in detail and 'Constructing structures' in detail and
                       'not a full feature comparison' in detail and
                       'do not change ranking' in detail,
                       f'{engine}/{width}: Terraria building receipt is explained without fit claims')
