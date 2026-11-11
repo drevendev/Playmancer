@@ -50,7 +50,7 @@ in its scoring snapshot. A **separate source-backed gameplay fact explorer**
 (`observations.html`) exposes 118 independently written, dated non-genre facts for
 29 real games. DevMatch remains unreviewed, never verified lacking
 those features. [Latest dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_29.md) and
-[historical 28-profile v2 release-gate audit](docs/REVIEWED_TAG_READINESS_28.md).
+[latest 29-profile v2 release-gate audit](docs/REVIEWED_TAG_READINESS_29.md).
 This inventory is not a new recommendation mode or a claim of
 improved ranking quality. Artwork and third-party descriptions are not copied.
 Genre-only matches have at most **30% comparable feature-group coverage**, not
@@ -103,6 +103,14 @@ of silently substituting games from a different snapshot.
 - Require platform/co-op support. Missing required evidence is unknown, never a pass.
 - Inspect per-seed affinities, evidence coverage, shared features and mismatches.
 - In a real-catalog basket containing at least two favorites, expand **Compare recorded facts between favorites** to inspect every favorite pair (up to ten pairs for five games) in the separate version-pinned Gameplay Facts explorer. Pair links preserve selection order, source revisions and the original weighted basket; missing observations remain unknown. The fictional preview does not invent comparisons.
+- Recommendation cards now disclose **Extra recorded gameplay overlap** where
+  a candidate shares independently written, positive Gameplay Facts with an
+  explicit favorite. The compact details panel names each supported favorite
+  and trait; 29 partially reviewed profiles are available. Absence of this
+  disclosure is **not** a mismatch: missing facts remain unknown. These facts
+  never enter fit scores, hard filters, rankings, or basket shares. The data
+  are pinned to the same catalog/observation revision as the separate explorer;
+  no runtime data requests are made.
 - From each real-catalog recommendation, expand **Compare recorded facts with your favorites**, then choose **any selected favorite** for an individually pinned Gameplay Facts pair comparison in a new tab. Links keep basket order, catalog and observation revisions, preserve the original basket, and show unknown evidence explicitly; they do **not** alter rankings or filters.
 - On real-game result cards, expand the **Why [game] matches your basket** / **Why [game] appears in this list** explanation for an additional equal-weight, source-recorded genre-mass proxy per favorite. It reports residual genre emphasis, including shared labels with unequal shares, but **does not change ranking** and does not claim that uniform tag weights are source-supplied importance.
 - Hide/restore results and recover explicitly from empty results without silent
