@@ -55,7 +55,7 @@ export function linkObservationExplorer(template, model = null) {
       })) };
     const payload = observationJSON(subset);
     if (Buffer.byteLength(payload) > 20000) throw new Error('Inline observation payload exceeds 20 kB');
-    inline = '<script id="inline-gameplay-facts" type="application/json">' + payload + '</script>\\n';
+    inline = '<script id="inline-gameplay-facts" type="application/json">' + payload + '</script>\n';
   }
-  return template.replace(marker, entry + '\\n' + inline + marker);
+  return template.replace(marker, entry + '\n' + inline + marker);
 }
