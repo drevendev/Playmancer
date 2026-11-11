@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { auditEditorialSelectedWeights, EDITORIAL_WEIGHT_PROTOCOL } from '../src/editorial-weight-pilot.js';
 
 const base = new URL('../examples/', import.meta.url);
@@ -81,4 +82,11 @@ test('offline report remains byte-deterministic across repeats', () => {
   const first = auditEditorialSelectedWeights(catalog, observed, proposal);
   const second = auditEditorialSelectedWeights(catalog, observed, proposal);
   assert.equal(JSON.stringify(first), JSON.stringify(second));
+});
+
+test('offline CLI prints the same report as the imported library', () => {
+  const output = execFileSync(process.execPath,
+    [new URL('../scripts/audit-editorial-weights.mjs', import.meta.url).pathname],
+    { encoding: 'utf8' });
+  assert.deepEqual(JSON.parse(output), auditEditorialSelectedWeights(catalog, observed, proposal));
 });
