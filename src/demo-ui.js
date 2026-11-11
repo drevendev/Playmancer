@@ -559,8 +559,6 @@ function drawResults() {
       affinities.append(row);
     });
     card.append(affinities);
-    const observedOverlap = renderObservedOverlap(game);
-    if (observedOverlap) card.append(observedOverlap);
     const why = element("details", undefined, "explanation");
     why.append(element("summary", noGenreOverlap || noWholeBasketOverlap || zeroBlendGain
       ? `Why ${game.name} appears in this list`
@@ -590,6 +588,9 @@ function drawResults() {
       : `Observed comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}% of the full model (genre labels only, internally held in the themes field). Mechanics are unknown; similarities are exploratory and popularity is not used.`));
     why.append(technicalMetadata);
     card.append(why);
+    // Keep the canonical Why-game explanation as the card's first summary.
+    const observedOverlap = renderObservedOverlap(game);
+    if (observedOverlap) card.append(observedOverlap);
     const footer = element("div", undefined, "card-footer");
     footer.append(element("span", `Evidence coverage: ${Math.round(item.evidenceCoverage * 100)}%`, "hint"));
     const factsLink = recommendationFactComparison(game);
