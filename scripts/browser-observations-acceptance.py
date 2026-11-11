@@ -107,15 +107,33 @@ try:
                     check(fragment.startswith('facts='),
                           f'{engine}/{width}: source comparison is version-pinned')
                     pinned = json.loads(unquote(fragment[len('facts='):]))
-                    check(pinned['pair'] == [favorite_id, 'wikidata:q248810'] and
-                          pinned['catalog'] == entry.get_attribute('data-observation-catalog') and
-                          pinned['version'] == entry.get_attribute('data-observation-version') and
-                          pinned['evidence'] == entry.get_attribute('data-observation-evidence') and
-                          source_link.inner_text() == f'Inspect sources with {favorite_name} (new tab)' and
-                          source_link.get_attribute('target') == '_blank' and
-                          source_link.get_attribute('rel') == 'noopener noreferrer' and
-                          source_link.bounding_box()['height'] >= 44,
-                          f'{engine}/{width}: ordered favorite source link is safe, readable and touch accessible')
+                    expected = {
+                        'pair': [favorite_id, 'wikidata:q248810'],
+                        'catalog': entry.get_attribute('data-observation-catalog'),
+                        'version': entry.get_attribute('data-observation-version'),
+                        'evidence': entry.get_attribute('data-observation-evidence'),
+                        'text': f'Inspect sources with {favorite_name} (new tab)',
+                        'target': '_blank',
+                        'rel': 'noopener noreferrer',
+                    }
+                    actual = {
+                        'pair': pinned.get('pair'),
+                        'catalog': pinned.get('catalog'),
+                        'version': pinned.get('version'),
+                        'evidence': pinned.get('evidence'),
+                        'text': source_link.inner_text(),
+                        'target': source_link.get_attribute('target'),
+                        'rel': source_link.get_attribute('rel'),
+                    }
+                    for field, value in expected.items():
+                        check(actual[field] == value,
+                              f'{engine}/{width}/{favorite_name}: {field}: expected {value!r}, got {actual[field]!r}')
+                    box = source_link.bounding_box()
+                    min_height = source_link.evaluate('link => getComputedStyle(link).minHeight')
+                    check(box is not None and box['height'] >= 44,
+                          f'{engine}/{width}/{favorite_name}: touch target height >=44px, '
+                          f'got {None if box is None else box["height"]!r}px '
+                          f'(computed min-height {min_height!r})')
                 with context.expect_page() as source_tab:
                     source_links.first.click()
                 source_view = source_tab.value
