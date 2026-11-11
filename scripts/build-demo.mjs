@@ -57,7 +57,7 @@ for (const [index, path] of modules.entries()) {
     if (overlapStart < 0 || overlapEnd <= overlapStart)
       throw new Error("Unexpected real-only observed-overlap boundary");
     source = source.slice(0, overlapStart) +
-      "function renderObservedOverlap() { return null; }\\n" +
+      "function renderObservedOverlap() { return null; }\n" +
       source.slice(overlapEnd);
     // Invented profiles never render live-catalog provenance disclosures.
     // Remove the unreachable revision parser and receipt/evidence DOM builders
