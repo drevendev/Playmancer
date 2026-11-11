@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "protocol": "p76-editorial-selected-weights-4",
+  "catalogSnapshotId": "multi-store-genre-pilot-30-2026-10-28",
+  "catalogGitBlobSha1": "0570fd610b14fb336c0de65e6cc3062892abe301",
+  "reviewedFactsGitBlobSha1": "aec15a40ed968916f4120d04aab53731740ee82d",
+  "reviewedOn": "2026-11-11",
+  "weightPolicy": "Independent editorial hypotheses, normalized only among four pre-existing positive observations per game. The source URLs establish observed mechanics, NOT relative weight, completeness, relevance or publisher preference.",
+  "coverage": "partial-selected-positive-facts; all unmentioned tags unknown; no ranked v2 outcomes",
+  "profiles": [
+    {
+      "id": "wikidata:q16972008",
+      "weightByTag": {
+        "activity:resource-extraction": 0.14,
+        "mechanic:automation": 0.38,
+        "mechanic:building": 0.16,
+        "mechanic:logistics": 0.32
+      }
+    },
+    {
+      "id": "wikidata:q19581568",
+      "weightByTag": {
+        "activity:colony-management": 0.36,
+        "mechanic:building": 0.19,
+        "mechanic:combat": 0.16,
+        "structure:storyteller-events": 0.29
+      }
+    },
+    {
+      "id": "wikidata:q248810",
+      "weightByTag": {
+        "activity:colony-management": 0.34,
+        "mechanic:building": 0.27,
+        "mechanic:digging": 0.22,
+        "mechanic:farming": 0.17
+      }
+    },
+    {
+      "id": "wikidata:q332697",
+      "weightByTag": {
+        "activity:exploration": 0.24,
+        "mechanic:building": 0.25,
+        "mechanic:combat": 0.24,
+        "mechanic:digging": 0.27
+      }
+    }
+  ]
+}
