@@ -39,6 +39,37 @@ class FenceTests(unittest.TestCase):
         self.assertEqual(classify({'build_type': 'legacy'}, listing(native(
             conclusion='failure')), SHA)[0], 'NATIVE_FINISHED')
 
+    def test_native_startup_failure_is_terminal_without_jobs(self):
+        # Observed GitHub native Pages run #43095218550 completed with
+        # startup_failure for master f2d06fb, and scheduled no jobs.
+        self.assertEqual(classify({'build_type': 'legacy'}, listing(
+            native(conclusion='startup_failure')), SHA),
+            ('NATIVE_FINISHED', (321,)))
+        self.assertEqual(classify({'build_type': 'legacy'}, listing(
+            native(run_id=321), native(run_id=322, conclusion='startup_failure')), SHA),
+            ('NATIVE_FINISHED', (321, 322)))
+        # A conclusion alone never proves completion; missing/unknown still waits.
+        for unfinished in (native(status='queued', conclusion='startup_failure'),
+                           native(status='completed', conclusion=None),
+                           native(status='completed', conclusion='unknown')):
+            with self.subTest(unfinished=unfinished):
+                self.assertEqual(classify({'build_type': 'legacy'}, listing(unfinished), SHA),
+                                 ('WAIT_NATIVE_ACTIVE', (321,)))
+
+    def test_native_startup_failure_releases_bounded_wait_without_retry(self):
+        requests, emitted = [], []
+        responses = iter([{'build_type': 'legacy'},
+                          listing(native(conclusion='startup_failure'))])
+        def fetch(url, token):
+            requests.append(url)
+            return next(responses)
+        self.assertTrue(wait_for_safe_order(REPO, SHA, 'test-only-token',
+                        fetch=fetch, sleep=lambda _: self.fail('Must not sleep'),
+                        emit=emitted.append, max_polls=1))
+        self.assertEqual(len(requests), 2)
+        self.assertIn('NATIVE_FINISHED', emitted[-1])
+        self.assertNotIn('test-only-token', ''.join(emitted))
+
     def test_actions_only_source_does_not_wait_for_nonexistent_native_run(self):
         self.assertEqual(classify({'build_type': 'workflow'}, {}, SHA),
                          ('ACTIONS_ONLY_SOURCE', ()))
