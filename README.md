@@ -106,7 +106,9 @@ of silently substituting games from a different snapshot.
 - Recommendation cards now disclose **Extra recorded gameplay overlap** where
   a candidate shares independently written, positive Gameplay Facts with an
   explicit favorite. The compact details panel names each supported favorite
-  and trait; 29 partially reviewed profiles are available. Absence of this
+  and trait and offers a direct source-receipt link for that favorite in the
+  revision-pinned Gameplay Facts explorer (new tab); 29 partially reviewed
+  profiles are available. Absence of this
   disclosure is **not** a mismatch: missing facts remain unknown. These facts
   never enter fit scores, hard filters, rankings, or basket shares. The data
   are pinned to the same catalog/observation revision as the separate explorer;

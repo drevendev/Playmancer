@@ -96,6 +96,35 @@ try:
                       'not a full feature comparison' in detail and
                       'do not change ranking' in detail,
                       f'{engine}/{width}: Terraria building receipt is explained without fit claims')
+                source_links = overlap.locator('a.fact-compare-link')
+                check(source_links.count() == 2,
+                      f'{engine}/{width}: each supported favorite has a direct receipt link')
+                for i, (favorite_id, favorite_name) in enumerate((
+                        ('wikidata:q16972008', 'Factorio'),
+                        ('wikidata:q332697', 'Terraria'))):
+                    source_link = source_links.nth(i)
+                    fragment = urlsplit(source_link.get_attribute('href')).fragment
+                    check(fragment.startswith('facts='),
+                          f'{engine}/{width}: source comparison is version-pinned')
+                    pinned = json.loads(unquote(fragment[len('facts='):]))
+                    check(pinned['pair'] == [favorite_id, 'wikidata:q248810'] and
+                          pinned['catalog'] == entry.get_attribute('data-observation-catalog') and
+                          pinned['version'] == entry.get_attribute('data-observation-version') and
+                          pinned['evidence'] == entry.get_attribute('data-observation-evidence') and
+                          source_link.inner_text() == f'Inspect sources with {favorite_name} (new tab)' and
+                          source_link.get_attribute('target') == '_blank' and
+                          source_link.get_attribute('rel') == 'noopener noreferrer' and
+                          source_link.bounding_box()['height'] >= 44,
+                          f'{engine}/{width}: ordered favorite source link is safe, readable and touch accessible')
+                with context.expect_page() as source_tab:
+                    source_links.first.click()
+                source_view = source_tab.value
+                source_view.wait_for_load_state('networkidle')
+                check(source_view.locator('#left').input_value() == 'wikidata:q16972008' and
+                      source_view.locator('#right').input_value() == 'wikidata:q248810' and
+                      source_view.locator('#comparison a[href="https://www.bay12games.com/dwarves/features.html"]').count() >= 1,
+                      f'{engine}/{width}: direct receipt link opens the correct sourced pair')
+                source_view.close()
                 check(probe.locator('#results > li').evaluate_all(
                     'cards => cards.map(card => card.dataset.gameId)') == order_before,
                     f'{engine}/{width}: revealing partial facts never reranks')
