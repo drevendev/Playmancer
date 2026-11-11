@@ -13,7 +13,7 @@ export async function buildObservationPage(root, catalog, catalogBytes, revision
   if (catalog.snapshotId !== OBSERVATION_CATALOG_ID) return null;
   if (!catalogBytes || gitObservationBlob(catalogBytes) !== REVIEWED_CATALOG_SHA)
     throw new Error('Observation catalog blob mismatch');
-  const raw = await readFile(join(root, 'examples/semantic-tags-reviewed-28.v1.json'));
+  const raw = await readFile(join(root, 'examples/semantic-tags-reviewed-29.v1.json'));
   if (gitObservationBlob(raw) !== REVIEWED_OBSERVATIONS_SHA) throw new Error('Reviewed observation blob mismatch');
   if (revision !== 'unpublished' && !/^[a-f0-9]{40}$/.test(revision)) throw new Error('Invalid observation publication revision');
   const model = prepareObservations(catalog, JSON.parse(raw.toString('utf8')));
