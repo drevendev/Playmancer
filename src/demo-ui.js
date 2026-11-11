@@ -17,6 +17,43 @@ const reasons = { seed: "already in your basket", "hard-constraint-fail": "fails
 const syntheticCatalog = DEMO_SNAPSHOT.kind === "synthetic";
 const hasDreven = DEMO_SNAPSHOT.sources.some(source => source.id === "dreven-owned");
 const storeNames = { steam: "Steam", itch: "itch.io", googleplay: "Google Play" };
+// The checked-in observation inventory is an independent, partial source.
+ // Never feed this positive-only information into scores, hard filters or shares.
+const inlineGameplayFacts = (() => {
+  const entry = $("observation-explorer-entry");
+  const payload = $("inline-gameplay-facts");
+  if (!entry || !payload || syntheticCatalog) return null;
+  const data = JSON.parse(payload.textContent);
+  if (data.catalog !== CATALOG_VERSION ||
+      data.version !== entry.dataset.observationVersion ||
+      data.evidence !== entry.dataset.observationEvidence) {
+    throw new Error("Inline Gameplay Facts revision does not match the player");
+  }
+  return new Map(data.games.map(game => [game.id,
+    new Map(game.facts.map(fact => [fact.id, fact.label]))]));
+})();
+function renderObservedOverlap(game) {
+  const candidate = inlineGameplayFacts?.get(game.id);
+  if (!candidate) return null;
+  const matches = state.seeds.flatMap(seed => {
+    const favorite = inlineGameplayFacts.get(seed.id);
+    if (!favorite || seed.id === game.id) return [];
+    const labels = [...candidate].filter(([tag]) => favorite.has(tag))
+      .map(([, label]) => label);
+    return labels.length ? [{ name: BY_ID.get(seed.id).name, labels }] : [];
+  });
+  if (!matches.length) return null;
+  const count = matches.reduce((sum, match) => sum + match.labels.length, 0);
+  const details = element("details", undefined, "explanation observed-overlap");
+  details.append(element("summary", `Extra recorded gameplay overlap (${count} positive observations)`));
+  details.append(element("p",
+    "Independently recorded selected facts, not a full feature comparison. Missing or unrecorded facts are unknown, not mismatches. These facts do not change ranking.", "hint"));
+  for (const match of matches) {
+    details.append(element("p", `With ${match.name}: ${match.labels.join(", ")}.`));
+  }
+  return details;
+}
+
 // A positive platform observation is not an exhaustive compatibility list.
 // Keep strict filtering, but do not tell players that an unlisted platform is
 // known to be unsupported. Explicitly observed non-co-op is different.
@@ -522,6 +559,8 @@ function drawResults() {
       affinities.append(row);
     });
     card.append(affinities);
+    const observedOverlap = renderObservedOverlap(game);
+    if (observedOverlap) card.append(observedOverlap);
     const why = element("details", undefined, "explanation");
     why.append(element("summary", noGenreOverlap || noWholeBasketOverlap || zeroBlendGain
       ? `Why ${game.name} appears in this list`
