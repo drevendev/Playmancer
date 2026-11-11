@@ -46,7 +46,7 @@ test('pinned player teaser includes only positive labels and never upgrades part
   const model = prepareObservations(catalog, reviewed);
   const marker = '<div class="section"><label for="mode">';
   const html = linkObservationExplorer('<main>' + marker + '</main>', model);
-  const match = html.match(/<script id="inline-gameplay-facts" type="application\\/json">([^<]+)<\\/script>/);
+  const match = html.match(/<script id="inline-gameplay-facts" type="application\/json">([^<]+)<\/script>/);
   assert.ok(match, 'one embedded, non-executable JSON source');
   const data = JSON.parse(match[1]);
   assert.equal(data.catalog, catalog.snapshotId);
