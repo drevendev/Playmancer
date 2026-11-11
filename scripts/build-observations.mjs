@@ -36,9 +36,26 @@ export async function buildObservationPage(root, catalog, catalogBytes, revision
   if (Buffer.byteLength(html) > 100000) throw new Error('Observation explorer exceeds 100 kB budget');
   return html;
 }
-export function linkObservationExplorer(template) {
+export function linkObservationExplorer(template, model = null) {
   const marker = '<div class="section"><label for="mode">';
   if (template.split(marker).length !== 2) throw new Error('Observation entry anchor missing or ambiguous');
   const entry = `<p class="storefront-links"><a id="observation-explorer-entry" data-observation-version="${OBSERVATION_VERSION}" data-observation-catalog="${OBSERVATION_CATALOG_ID}" data-observation-evidence="${REVIEWED_OBSERVATIONS_SHA}" href="./observations.html" target="_blank" rel="noopener noreferrer">Explore gameplay facts (new tab)</a></p>`;
-  return template.replace(marker, entry + '\n' + marker);
+  // A compact, version-pinned positive-fact subset helps players inspect
+  // shared recorded mechanics in recommendation cards. It is neither a
+  // ranking input nor a claim of full-game feature coverage.
+  let inline = '';
+  if (model !== null) {
+    if (model.version !== OBSERVATION_VERSION || model.catalog !== OBSERVATION_CATALOG_ID ||
+        model.evidence !== REVIEWED_OBSERVATIONS_SHA) {
+      throw new Error('Inline observation/release revision mismatch');
+    }
+    const subset = { version: model.version, catalog: model.catalog, evidence: model.evidence,
+      games: model.games.filter(game => game.facts.length).map(game => ({
+        id: game.id, facts: game.facts.map(fact => ({ id: fact.id, label: fact.label })),
+      })) };
+    const payload = observationJSON(subset);
+    if (Buffer.byteLength(payload) > 20000) throw new Error('Inline observation payload exceeds 20 kB');
+    inline = '<script id="inline-gameplay-facts" type="application/json">' + payload + '</script>\n';
+  }
+  return template.replace(marker, entry + '\n' + inline + marker);
 }

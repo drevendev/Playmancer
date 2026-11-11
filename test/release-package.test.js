@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { linkObservationExplorer } from '../scripts/build-observations.mjs';
+import { prepareObservations } from '../src/observations.js';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from '../scripts/build-basket-library.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 test('production adds explicit tools without changing player scoring/worker bytes; all assets remain strictly validated', async t => {
@@ -22,8 +23,11 @@ test('production adds explicit tools without changing player scoring/worker byte
   const baseCss = await readFile(join(base,'player.css'),'utf8');
   const baseIndex = await readFile(join(base,'index.html'),'utf8');
   assert.equal(await readFile(join(release,'player.css'),'utf8'), baseCss + BASKET_LIBRARY_CSS);
+  const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-30.real.json'),'utf8'));
+  const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-29.v1.json'),'utf8'));
+  const pinnedPositiveFacts = prepareObservations(catalog, observations);
   assert.equal(await readFile(join(release,'index.html'),'utf8'),
-    await addBasketLibrary(root, linkObservationExplorer(baseIndex)));
+    await addBasketLibrary(root, linkObservationExplorer(baseIndex, pinnedPositiveFacts)));
   const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
   const firstBuild = await Promise.all(files.map(file => readFile(join(release,file))));
   run(['scripts/build-release.mjs',release]);

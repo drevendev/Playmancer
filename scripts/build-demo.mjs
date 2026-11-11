@@ -49,6 +49,16 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // This optional real-only positive-fact overlay has no fictional data.
+    // Remove unreachable JSON map/parsing code rather than relaxing the
+    // established <95 kB synthetic preview budget.
+    const overlapStart = source.indexOf("const inlineGameplayFacts = (() => {");
+    const overlapEnd = source.indexOf("// A positive platform observation", overlapStart);
+    if (overlapStart < 0 || overlapEnd <= overlapStart)
+      throw new Error("Unexpected real-only observed-overlap boundary");
+    source = source.slice(0, overlapStart) +
+      "function renderObservedOverlap() { return null; }\n" +
+      source.slice(overlapEnd);
     // Invented profiles never render live-catalog provenance disclosures.
     // Remove the unreachable revision parser and receipt/evidence DOM builders
     // from only the strict-size fictional bundle. Published real builds retain
