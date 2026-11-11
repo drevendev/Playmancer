@@ -7,11 +7,13 @@ retain both per-field source URLs and review dates. One-sided records mean
 **unreviewed for the other game**, never a proven mismatch. Games without
 records remain selectable and explicitly unknown.
 
-The current 22-game evidence snapshot ships 90 independently authored selected
-facts for 22 of the existing 30 real games. The immutable 20-game predecessor
-contained 82 facts; eight new first-party-source-backed observations describe
-Super Meat Boy and To the Moon, reviewed on 7 November 2026. Eight games remain
-unreviewed, not proven lacking gameplay traits. No game-wide
+The current 29-game selected-fact snapshot has 118 independently authored,
+source-attributed observations across 29 of 30 games. Circlanoid adds four
+selected facts on 11 November 2026; DevMatch remains unreviewed, not proven
+lacking any gameplay trait. The immutable 28-game revision (114 facts) and its
+v2 readiness audit remain historical. The new Circlanoid facts are corroborated
+by a third-party copy; primary listing access was unavailable in this run.
+See [provenance limitations](SEMANTIC_TAGS_REVIEWED_29.md). No game-wide
 weighted vector is complete; selected-fact normalization is not importance,
 confidence or proof of missing attributes. This adds fact search/comparison,
 not a new ranker or demonstrated quality uplift. No descriptions, media or
@@ -35,7 +37,7 @@ four-file lower-level/synthetic contract; use **release-preflight.py** after
 bytes. The observation page has a separate 100 kB limit and no remote assets.
 
 Catalog blob `0570fd610b14fb336c0de65e6cc3062892abe301` and observation blob
-`73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9` are checked before touching output.
+`aec15a40ed968916f4120d04aab53731740ee82d` are checked before touching output.
 Changing historical inputs fails closed. Updating evidence requires explicit
 review and a new fingerprint, not an automatic refresh or a new review date.
 The existing frozen readiness studies remain byte-identical.
@@ -56,4 +58,6 @@ speech and human recommendation usefulness are not certified here.
 Delivery issues: #118 (explorer), #121 (the one-game source expansion). Remaining recommendation release gates: #76. The 12-game baseline in `semantic-tags-reviewed-12.v1.json` is frozen and unchanged; the 13-game revision remains frozen in `SEMANTIC_TAGS_REVIEWED_13.md`, the 14-game revision is documented in `SEMANTIC_TAGS_REVIEWED_14.md`, and the historical 16-game revision is documented in `SEMANTIC_TAGS_REVIEWED_16.md`.
 The historical 18-game revision is documented in `SEMANTIC_TAGS_REVIEWED_18.md`.
 The historical 20-game revision is documented in `SEMANTIC_TAGS_REVIEWED_20.md`.
-The active 22-game revision is documented in `SEMANTIC_TAGS_REVIEWED_22.md`.
+The 22-game revision is documented in `SEMANTIC_TAGS_REVIEWED_22.md`.
+The immutable 28-game predecessor is in `SEMANTIC_TAGS_REVIEWED_28.md`.
+The current selected-fact revision is in `SEMANTIC_TAGS_REVIEWED_29.md`.

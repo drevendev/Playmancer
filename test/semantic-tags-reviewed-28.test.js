@@ -9,7 +9,7 @@ const before=JSON.parse(oldBytes),after=JSON.parse(nowBytes),catalog=JSON.parse(
 const blob=b=>createHash('sha1').update('blob '+b.length+String.fromCharCode(0)).update(b).digest('hex');
 const added=[["wikidata:q96991833","Mortal Shell","Playstack / Cold Symmetry","https://news.xbox.com/en-us/2020/08/18/mortal-shell-is-now-available-for-xbox-one/",["activity:exploration","mechanic:action-combat","mechanic:deliberate-combat","mechanic:shell-possession"]],["wikidata:q24300","Infamous 2","Sony Computer Entertainment / Sucker Punch","https://sony.mediaroom.com/2011-06-07-PlayStation-3-Exclusive-inFAMOUS-2-Powers-Up-North-America-With-Breathtaking-Cinematics-and-Epic-Open-World-Superhero-Adventure",["activity:exploration","mechanic:action-combat","mechanic:elemental-powers","mechanic:karma-choices"]],["wikidata:q75493248","Tell Me Why","DONTNOD Entertainment / Xbox Game Studios","https://www.tellmewhygame.com/about/",["activity:character-stories","activity:memory-exploration","mechanic:branching-choices","structure:story-driven"]],["wikidata:q112430705","Minecraft Legends","Mojang Studios / Xbox Game Studios","https://www.minecraft.net/en-us/about-legends",["activity:strategic-battles","activity:village-defense","mechanic:army-command","mechanic:building"]],["dreven:shadow-runner","Shadow Runner","Dreven Games","https://drevengames.itch.io/shadow-runner",["mechanic:light-magic","mechanic:platforming","mechanic:ranged-attacks","structure:procedural-levels"]],["dreven:hunter-adventure","Hunter Adventure","Dreven Games","https://drevengames.itch.io/hunter-adventure",["activity:exploration","activity:hunting","mechanic:choice-events","mechanic:survival-management"]]];
 test('immutable 28-profile source retains all 22 prior records and tags',()=>{
- assert.equal(blob(oldBytes),'73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9');assert.equal(blob(nowBytes),REVIEWED_OBSERVATIONS_SHA);
+ assert.equal(blob(oldBytes),'73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9');assert.equal(blob(nowBytes),'717eb3689c6eaf82b7f826a9633407e9b259e76e');assert.notEqual(REVIEWED_OBSERVATIONS_SHA,'717eb3689c6eaf82b7f826a9633407e9b259e76e');
  assert.notEqual(REVIEWED_OBSERVATIONS_SHA,'73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9');assert.equal(blob(catalogBytes),REVIEWED_CATALOG_SHA);
  assert.equal(after.supersedes,'semantic-tags-reviewed-22.v1.json');
  assert.equal(after.games.length,28);assert.equal(after.receipts.length,28);
@@ -29,7 +29,7 @@ test('each new canonical profile has four sourced dated positive facts',()=>{
  }
 });
 test('partial factual overlaps are visible, missing profiles are unknown, no fit fabricated',()=>{
- const model=prepareObservations(catalog,after);
+ const model=prepareObservations(catalog,after,'717eb3689c6eaf82b7f826a9633407e9b259e76e');
  assert.equal(model.observedGames,28);assert.equal(model.factCount,114);
  assert.deepEqual(model.games.filter(x=>x.coverage==='unknown').map(x=>x.name),['Circlanoid','DevMatch']);
  for(const [a,b,common] of [
@@ -47,7 +47,7 @@ test('partial factual overlaps are visible, missing profiles are unknown, no fit
  assert.deepEqual(searchObservations(model,'','mechanic:shell-possession').map(x=>x.name),['Mortal Shell']);
 });
 test('old evidence shares, borrowed sources and false complete coverage fail visibly',()=>{
- const previous=prepareObservations(catalog,before,'73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9'),current=prepareObservations(catalog,after);
+ const previous=prepareObservations(catalog,before,'73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9'),current=prepareObservations(catalog,after,'717eb3689c6eaf82b7f826a9633407e9b259e76e');
  const state={version:OBSERVATION_VERSION,catalog:current.catalog,evidence:current.evidence,pair:['dreven:shadow-runner','wikidata:q28451532'],query:'',tag:'mechanic:platforming'};
  assert.deepEqual(decodeObservationState(current,encodeObservationState(current,state)),state);
  const obsolete={...state,evidence:previous.evidence,pair:['wikidata:q1711379','wikidata:q59756366'],tag:'activity:character-stories'};
