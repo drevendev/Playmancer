@@ -21,6 +21,8 @@ export const REVIEWED_TWENTY_TWO_TAG_READINESS_PROTOCOL = 'p76-reviewed-twenty-t
 export const REVIEWED_TWENTY_TWO_TAGS_BLOB = '73a40215d2ad77668a68d7a2aa4c43e2bdcfb4f9';
 export const REVIEWED_TWENTY_EIGHT_TAG_READINESS_PROTOCOL = 'p76-reviewed-twenty-eight-readiness-1';
 export const REVIEWED_TWENTY_EIGHT_TAGS_BLOB = '717eb3689c6eaf82b7f826a9633407e9b259e76e';
+export const REVIEWED_TWENTY_NINE_TAG_READINESS_PROTOCOL = 'p76-reviewed-twenty-nine-readiness-1';
+export const REVIEWED_TWENTY_NINE_TAGS_BLOB = 'aec15a40ed968916f4120d04aab53731740ee82d';
 
 function assert(condition, message) {
   if (!condition) throw new TypeError(message);
@@ -80,7 +82,9 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
             ? { count: 22, blob: REVIEWED_TWENTY_TWO_TAGS_BLOB, protocol: REVIEWED_TWENTY_TWO_TAG_READINESS_PROTOCOL }
             : cohort === 'twenty-eight'
               ? { count: 28, blob: REVIEWED_TWENTY_EIGHT_TAGS_BLOB, protocol: REVIEWED_TWENTY_EIGHT_TAG_READINESS_PROTOCOL }
-              : null;
+              : cohort === 'twenty-nine'
+                ? { count: 29, blob: REVIEWED_TWENTY_NINE_TAGS_BLOB, protocol: REVIEWED_TWENTY_NINE_TAG_READINESS_PROTOCOL }
+                : null;
   assert(fixture !== null, 'unsupported reviewed-tag audit cohort');
   assert(typeof catalogText === 'string' && blobSha(catalogText) === FROZEN_CATALOG_BLOB,
     'catalog blob changed: use a new versioned audit');
