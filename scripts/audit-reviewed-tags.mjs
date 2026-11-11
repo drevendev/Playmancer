@@ -8,9 +8,10 @@ const cohort = process.argv.length === 2 ? 'eight'
     : process.argv.length === 3 && process.argv[2] === '--fourteen' ? 'fourteen'
       : process.argv.length === 3 && process.argv[2] === '--sixteen' ? 'sixteen'
         : process.argv.length === 3 && process.argv[2] === '--twenty-two' ? 'twenty-two'
-          : process.argv.length === 3 && process.argv[2] === '--twenty-eight' ? 'twenty-eight' : null;
+          : process.argv.length === 3 && process.argv[2] === '--twenty-eight' ? 'twenty-eight'
+            : process.argv.length === 3 && process.argv[2] === '--twenty-nine' ? 'twenty-nine' : null;
 if (cohort === null) {
-  console.error('Usage: node scripts/audit-reviewed-tags.mjs [--twelve|--fourteen|--sixteen|--twenty-two|--twenty-eight] > report.json');
+  console.error('Usage: node scripts/audit-reviewed-tags.mjs [--twelve|--fourteen|--sixteen|--twenty-two|--twenty-eight|--twenty-nine] > report.json');
   process.exitCode = 2;
 } else {
   try {
@@ -21,7 +22,8 @@ if (cohort === null) {
         : cohort === 'fourteen' ? 'semantic-tags-reviewed-14.v1.json'
           : cohort === 'sixteen' ? 'semantic-tags-reviewed-16.v1.json'
             : cohort === 'twenty-two' ? 'semantic-tags-reviewed-22.v1.json'
-              : 'semantic-tags-reviewed-28.v1.json';
+              : cohort === 'twenty-eight' ? 'semantic-tags-reviewed-28.v1.json'
+                : 'semantic-tags-reviewed-29.v1.json';
     const reviewed = readFileSync(new URL('../examples/' + name, import.meta.url), 'utf8');
     process.stdout.write(JSON.stringify(auditReviewedTagReadiness(catalog, plan, reviewed, cohort), null, 2) + '\n');
   } catch (error) {
