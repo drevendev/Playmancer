@@ -70,12 +70,20 @@ try:
                 # reviewed facts; opening the disclosure cannot mutate ranking.
                 probe = context.new_page()
                 probe.goto(base, wait_until='networkidle')
+                # Choose source-backed genre-overlapping favorites so the
+                # production ranker independently recommends Dwarf Fortress:
+                # Factorio (survival) + Terraria (sandbox). Selected gameplay
+                # observations are NOT used for eligibility or ranking.
+                probe.locator('#clear').click()
+                for title in ('Factorio', 'Terraria'):
+                    probe.locator('#search').fill(title)
+                    probe.get_by_role('button', name=f'Add {title}', exact=True).click()
                 if probe.locator('#results-view').is_visible():
                     probe.locator('#results-view').click()
-                factorio = probe.locator('#results > li[data-game-id="wikidata:q16972008"]')
-                check(factorio.count() == 1,
-                      f'{engine}/{width}: Factorio remains a discoverable recommendation')
-                overlap = factorio.locator('details.observed-overlap')
+                dwarf = probe.locator('#results > li[data-game-id="wikidata:q248810"]')
+                check(dwarf.count() == 1,
+                      f'{engine}/{width}: genre-supported Dwarf Fortress remains a recommendation')
+                overlap = dwarf.locator('details.observed-overlap')
                 check(overlap.count() == 1 and
                       'positive observations' in overlap.locator('summary').inner_text(),
                       f'{engine}/{width}: shared partial gameplay evidence is discoverable')
@@ -83,7 +91,8 @@ try:
                     'cards => cards.map(card => card.dataset.gameId)')
                 overlap.locator('summary').click()
                 detail = overlap.inner_text()
-                check('With Terraria:' in detail and 'Constructing structures' in detail and
+                check('With Factorio:' in detail and 'With Terraria:' in detail and
+                      'Constructing structures' in detail and
                       'not a full feature comparison' in detail and
                       'do not change ranking' in detail,
                       f'{engine}/{width}: Terraria building receipt is explained without fit claims')
