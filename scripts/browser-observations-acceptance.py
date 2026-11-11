@@ -100,7 +100,7 @@ try:
                     'cards => cards.map(card => card.dataset.gameId)') == order_before,
                     f'{engine}/{width}: revealing partial facts never reranks')
                 if engine == 'chromium' and width in (1280, 390):
-                    probe.screenshot(path=str(OUT / f'inline-gameplay-overlap-{width}.png'),
+                    probe.screenshot(path=str(OUT / f'observations-inline-gameplay-overlap-{width}.png'),
                                      full_page=True)
                 probe.close()
                 chooser = first_result.locator('details.fact-compare-menu')
