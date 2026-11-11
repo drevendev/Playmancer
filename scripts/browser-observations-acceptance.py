@@ -66,6 +66,34 @@ try:
                 check(first_result.count() == 1, f'{engine}/{width}: sample has a recommendation')
                 seed_names = page.locator('#seeds .seed-name').all_inner_texts()
                 check(len(seed_names) >= 2, f'{engine}/{width}: sample contains multiple favorites')
+                # A separate recommendation card exposes only positively shared
+                # reviewed facts; opening the disclosure cannot mutate ranking.
+                probe = context.new_page()
+                probe.goto(base, wait_until='networkidle')
+                if probe.locator('#results-view').is_visible():
+                    probe.locator('#results-view').click()
+                factorio = probe.locator('#results > li[data-game-id="wikidata:q16972008"]')
+                check(factorio.count() == 1,
+                      f'{engine}/{width}: Factorio remains a discoverable recommendation')
+                overlap = factorio.locator('details.observed-overlap')
+                check(overlap.count() == 1 and
+                      'positive observations' in overlap.locator('summary').inner_text(),
+                      f'{engine}/{width}: shared partial gameplay evidence is discoverable')
+                order_before = probe.locator('#results > li').evaluate_all(
+                    'cards => cards.map(card => card.dataset.gameId)')
+                overlap.locator('summary').click()
+                detail = overlap.inner_text()
+                check('With Terraria:' in detail and 'Building' in detail and
+                      'not a full feature comparison' in detail and
+                      'do not change ranking' in detail,
+                      f'{engine}/{width}: Terraria building receipt is explained without fit claims')
+                check(probe.locator('#results > li').evaluate_all(
+                    'cards => cards.map(card => card.dataset.gameId)') == order_before,
+                    f'{engine}/{width}: revealing partial facts never reranks')
+                if engine == 'chromium' and width in (1280, 390):
+                    probe.screenshot(path=str(OUT / f'inline-gameplay-overlap-{width}.png'),
+                                     full_page=True)
+                probe.close()
                 chooser = first_result.locator('details.fact-compare-menu')
                 check(chooser.count() == 1, f'{engine}/{width}: per-favorite comparison disclosure')
                 chooser.locator('summary').click()
