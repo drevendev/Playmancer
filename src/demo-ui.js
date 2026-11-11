@@ -40,7 +40,7 @@ function renderObservedOverlap(game) {
     if (!favorite || seed.id === game.id) return [];
     const labels = [...candidate].filter(([tag]) => favorite.has(tag))
       .map(([, label]) => label);
-    return labels.length ? [{ name: BY_ID.get(seed.id).name, labels }] : [];
+    return labels.length ? [{ id: seed.id, name: BY_ID.get(seed.id).name, labels }] : [];
   });
   if (!matches.length) return null;
   const count = matches.reduce((sum, match) => sum + match.labels.length, 0);
@@ -50,6 +50,13 @@ function renderObservedOverlap(game) {
     "Independently recorded selected facts, not a full feature comparison. Missing or unrecorded facts are unknown, not mismatches. These facts do not change ranking.", "hint"));
   for (const match of matches) {
     details.append(element("p", `With ${match.name}: ${match.labels.join(", ")}.`));
+    // The compact positive summary is not the evidence receipt: open the
+    // separately version-pinned two-game view for inspectable source links.
+    const receipt = element("a", `Inspect sources with ${match.name} (new tab)`, "fact-compare-link");
+    receipt.href = pinnedFactsLink(match.id, game.id, $("observation-explorer-entry"));
+    receipt.target = "_blank";
+    receipt.rel = "noopener noreferrer";
+    details.append(receipt);
   }
   return details;
 }
