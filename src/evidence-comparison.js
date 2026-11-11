@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-5';
+const VERSION = 'p76-synthetic-paired-6';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -105,6 +105,28 @@ export function pairedProbeDiagnostics(probes, oldTop, v2Top, oldAbstained, v2Ab
     paired_probe_hits_old: oldHits, paired_probe_hits_v2: v2Hits,
     paired_probe_delta: v2Hits - oldHits };
 }
+// A numeric zero delta without jointly scoreable probes is NOT evidence of a tie.
+export function pairedProbeEvaluation(probes, comparable, shared) {
+  const status = probes.length === 0 ? 'no-authored-probes'
+    : shared.length === 0 ? 'no-shared-scoreable-candidates'
+      : comparable.length === 0 ? 'no-comparable-probes' : 'comparable';
+  return { status, authored_probe_count: probes.length,
+    comparable_probe_count: comparable.length,
+    unpaired_probe_count: probes.length - comparable.length };
+}
+function summarizeComparability(rows) {
+  return MODES.map(mode => {
+    const group = rows.filter(row => row.mode === mode);
+    const count = status => group.filter(row => row.paired_probe_evaluation.status === status).length;
+    return { mode, scenarios: group.length, comparable_scenarios: count('comparable'),
+      no_authored_probes_scenarios: count('no-authored-probes'),
+      no_shared_scoreable_candidates_scenarios: count('no-shared-scoreable-candidates'),
+      no_comparable_probes_scenarios: count('no-comparable-probes'),
+      authored_probe_opportunities: group.reduce((n, row) => n + row.paired_probe_evaluation.authored_probe_count, 0),
+      comparable_probe_opportunities: group.reduce((n, row) => n + row.paired_probe_evaluation.comparable_probe_count, 0) };
+  });
+}
+
 // A probe-only intersection is insufficient: one-sided rankable background games
 // still consume top-k slots, and Blend's greedy state depends on those choices.
 // Re-run BOTH production rankers on the exact same fully scoreable candidate pool.
@@ -227,7 +249,9 @@ export function runEvidenceComparison(input) {
         shared_top_k: legacy.top.filter(id => experimental.top.includes(id)).length,
         probe_hits_old: legacyHits, probe_hits_v2: experimentalHits,
         probe_delta: experimentalHits - legacyHits,
-        ...paired, ...pairedProbes });
+        ...paired, ...pairedProbes,
+        paired_probe_evaluation: pairedProbeEvaluation(basket.probeIds,
+          pairedProbes.comparable_probe_ids, paired.paired_rankable_ids) });
     }
   }
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
@@ -240,5 +264,5 @@ export function runEvidenceComparison(input) {
     gains: rows.filter(row => row.probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
     paired_losses: rows.filter(row => row.paired_probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
     paired_gains: rows.filter(row => row.paired_probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
-    rows };
+    paired_comparability: summarizeComparability(rows), rows };
 }

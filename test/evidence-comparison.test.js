@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { pairedProbeDiagnostics, pairedRankableCohort, runEvidenceComparison } from '../src/evidence-comparison.js';
+import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-5');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-6');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -73,6 +73,51 @@ test('reports reproducible byte-for-byte rankings and explicit wins/losses witho
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
   assert.deepEqual(first.paired_gains, first.rows.filter(row => row.paired_probe_delta > 0)
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
+});
+
+test('paired benchmark marks non-evaluable zero deltas instead of claiming ties', () => {
+  const interpret = (probes, comparable, shared) =>
+    pairedProbeEvaluation(probes, comparable, shared);
+  assert.deepEqual(interpret([], [], ['shared']), {
+    status: 'no-authored-probes', authored_probe_count: 0,
+    comparable_probe_count: 0, unpaired_probe_count: 0,
+  });
+  assert.equal(interpret(['a'], [], []).status, 'no-shared-scoreable-candidates');
+  assert.equal(interpret(['a'], [], ['other']).status, 'no-comparable-probes');
+  assert.equal(interpret(['a', 'b'], ['b'], ['b']).status, 'comparable');
+
+  const report = runEvidenceComparison(clone());
+  assert.equal(report.paired_comparability.length, report.modes.length);
+  for (const summary of report.paired_comparability) {
+    const group = report.rows.filter(row => row.mode === summary.mode);
+    assert.equal(summary.scenarios, group.length);
+    assert.equal(summary.comparable_scenarios +
+      summary.no_authored_probes_scenarios +
+      summary.no_shared_scoreable_candidates_scenarios +
+      summary.no_comparable_probes_scenarios, group.length);
+    assert.equal(summary.comparable_probe_opportunities,
+      group.reduce((n, row) => n + row.comparable_probe_ids.length, 0));
+    assert.ok(summary.comparable_probe_opportunities <= summary.authored_probe_opportunities);
+    for (const row of group) {
+      assert.equal(row.paired_probe_evaluation.comparable_probe_count, row.comparable_probe_ids.length);
+      assert.equal(row.paired_probe_evaluation.unpaired_probe_count, row.probe_evidence_unpaired.length);
+      if (row.paired_probe_evaluation.status !== 'comparable') {
+        assert.equal(row.paired_probe_delta, 0);
+        assert.equal(row.paired_probe_evaluation.comparable_probe_count, 0);
+      }
+    }
+  }
+  const sparse = report.rows.filter(row => row.basket_id === 'sparse-tag-evidence');
+  assert.ok(sparse.length > 0);
+  assert.ok(sparse.every(row => row.paired_probe_evaluation.status === 'no-shared-scoreable-candidates'));
+
+  const probeFree = clone();
+  probeFree.baskets = [probeFree.baskets[0]];
+  probeFree.baskets[0].probeIds = [];
+  const empty = runEvidenceComparison(probeFree);
+  assert.ok(empty.rows.every(row => row.paired_probe_evaluation.status === 'no-authored-probes'));
+  assert.ok(empty.paired_comparability.every(mode => mode.comparable_scenarios === 0 &&
+    mode.no_authored_probes_scenarios === 1));
 });
 
 test('unrankable evidence cannot masquerade as a paired probe ranking loss or gain', () => {
