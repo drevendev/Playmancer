@@ -45,7 +45,7 @@ assert not parser.assets, 'Observation explorer must be self-contained'
 assert not re.search(r'\bfetch\s*\(|XMLHttpRequest\s*\(|sendBeacon\s*\(|importScripts\s*\(|new\s+WebSocket\s*\(', text), 'Unexpected observation network API'
 styles = re.findall(r'<style>([\s\S]*?)</style>', text)
 assert len(styles) == 1 and not re.search(r'@import\b|url\s*\(', styles[0], re.I), 'Unexpected observation stylesheet assets'
-assert parser.meta.get('playmancer-observations') == '717eb3689c6eaf82b7f826a9633407e9b259e76e', 'Observation fingerprint missing'
+assert parser.meta.get('playmancer-observations') == 'aec15a40ed968916f4120d04aab53731740ee82d', 'Observation fingerprint missing'
 main = ObservationAssets(); main_text = (site / 'index.html').read_text(encoding='utf-8'); main.feed(main_text)
 for key in ('playmancer-revision','playmancer-catalog'):
     assert parser.meta.get(key) and parser.meta[key] == main.meta.get(key), f'Observation {key} differs from player'
