@@ -50,17 +50,26 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
   const weightsById = validateWeights(pilot.profiles);
   const pairs = vettedAudit.pairs;
   requireValid(Array.isArray(pairs) && pairs.length === 4, 'requires four vetted pairs');
+  const seenPairs = new Set();
   for (const pair of pairs) {
     requireValid(weightsById.has(pair.left) && weightsById.has(pair.right) &&
       pair.left !== pair.right && pair.status === 'uncertain' &&
       pair.rankable_affinity === null &&
       Array.isArray(pair.shared_positive_tag_ids) && pair.shared_positive_tag_ids.length > 0,
     'pair must be an uncertain positive-observation comparison');
-    for (const tag of pair.shared_positive_tag_ids) {
-      requireValid(Object.hasOwn(weightsById.get(pair.left).weights, tag) &&
-        Object.hasOwn(weightsById.get(pair.right).weights, tag),
-      'pair references a non-observed tag');
-    }
+    // Neither a repeated/reversed pair nor a duplicated/omitted shared positive
+    // may inflate or selectively suppress the finite uncertainty envelope.
+    const pairKey = [pair.left, pair.right].sort().join('|');
+    requireValid(!seenPairs.has(pairKey), 'duplicate editorial comparison pair');
+    seenPairs.add(pairKey);
+    const left = weightsById.get(pair.left).weights;
+    const right = weightsById.get(pair.right).weights;
+    const expectedShared = Object.keys(left).filter(tag => Object.hasOwn(right, tag));
+    const reported = pair.shared_positive_tag_ids;
+    requireValid(reported.length === expectedShared.length &&
+      new Set(reported).size === expectedShared.length &&
+      reported.every(tag => expectedShared.includes(tag)),
+    'shared positive tags differ from both vetted profile observations');
     requireValid(Math.abs(observedOverlap(weightsById, pair) -
       pair.editorial_observed_overlap) < 1e-6, 'vetted overlap does not match supplied weights');
   }
