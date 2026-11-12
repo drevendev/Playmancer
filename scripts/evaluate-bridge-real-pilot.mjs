@@ -21,7 +21,7 @@ function readPinnedPlan() {
   }
   return JSON.parse(raw);
 }
-const PROTOCOL = 'bridge-real-genre-proxy-v1';
+const PROTOCOL = 'bridge-real-genre-proxy-v2';
 const POLICY = Object.freeze({ maxHops: 3, minSimilarity: 0.31 });
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const emptyCounts = () => Object.fromEntries(STATUSES.map(status => [status, 0]));
@@ -34,7 +34,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
   if (JSON.stringify(plan) !== JSON.stringify(readPinnedPlan())) {
     throw new Error('Frozen basket plan changed (declare a new protocol)');
   }
-  if (BRIDGE_ROUTE_METHOD_VERSION !== 'bridge-features-preview-3') {
+  if (BRIDGE_ROUTE_METHOD_VERSION !== 'bridge-features-preview-4') {
     throw new Error('Bridge method changed: declare and verify a new protocol');
   }
   const catalog = JSON.parse(catalogText);
