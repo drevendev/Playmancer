@@ -1,10 +1,10 @@
 # Frozen Bridge route diagnostic — 30-game genre pilot
 
-**2026-10-28 — offline proxy, not a user study or an accuracy result.** This
+**2026-10-28 catalog/plan; route policy revised 2026-11-12 — offline proxy, not a user study or an accuracy result.** This
 separate protocol evaluates actual Bridge endpoint routing, not the scalar
 Union/Arithmetic/Least Misery/Intersection/Blend leaderboard. The player site's
 Bridge default is **3 hops, similarity threshold 0.31**, with route method
-`bridge-features-preview-3`. These are frozen choices, not tuned to results.
+`bridge-features-preview-4` (`bridge-real-genre-proxy-v2`). The hop and threshold choices remain frozen, not tuned to results. Version 4 treats a requested platform absent from the real pilot's non-exhaustive positive receipts as **unknown**, never a confirmed incompatibility. Unknown support is not eligible for a route; an observed `coop=false` is still a confirmed failure. Older route-version links fail visibly.
 
 ## Reproduce
 
@@ -33,6 +33,11 @@ be placed in its numeric leaderboard.
 
 ## Frozen snapshot diagnostics
 
+The numbers below originated from the version-3 endpoint study on this unchanged
+catalog and basket plan. Version 4 must be independently evaluated using the
+commands above before its own counts are claimed; do not relabel old observations
+as a newly measured result.
+
 On the source and defaults above, **5/50 routes** are supported,
 **44/50 return no route within the threshold/hop policy**, and **1/50 has
 an unavailable endpoint** because required co-op evidence is unknown.
@@ -59,8 +64,8 @@ human preference data or longitudinal evidence.
 ## Decision
 
 **Do not claim Bridge improves discovery on this genre-only pilot.**
-Only five of 50 ordered adjacent pairs have an explained route at the
-actual interface defaults. Do not silently lower thresholds, insert unknown
+The historical version-3 study found five explained routes among 50
+ordered adjacent pairs at the interface defaults. Do not silently lower thresholds, insert unknown
 features, or substitute a synthetic graph to make this rate look better.
 Prioritize rights-cleared evidence enrichment and eventually consented player
 task research over algorithmic complexity. A future catalog or method revision

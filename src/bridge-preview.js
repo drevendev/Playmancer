@@ -3,7 +3,7 @@
 import { findBridgeRoute } from './bridge.js';
 
 const GROUPS = [{ key: 'mechanics', weight: .7 }, { key: 'themes', weight: .3 }];
-export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-3';
+export const BRIDGE_ROUTE_METHOD_VERSION = 'bridge-features-preview-4';
 const VERSION = BRIDGE_ROUTE_METHOD_VERSION;
 function decimalRatio(value) {
   const [mantissa, exponent = '0'] = String(value).split('e');
@@ -60,14 +60,22 @@ function featureEvidence(a,b, includeGroups = true, leftCache = null, rightCache
     : Number(exactSimilarity.numerator) / Number(exactSimilarity.denominator),
     coverage, groups, exactSimilarity };
 }
-function classify(game, {platform, coopOnly}, exclusions) {
+function classify(game, {platform, coopOnly}, exclusions, positiveOnlyPlatforms) {
   if (exclusions.has(game.id)) return 'excluded';
+  let unknown = false;
   if (platform !== 'any') {
-    if (game.platforms !== null && !game.platforms.includes(platform)) return 'fail';
+    if (game.platforms === null) unknown = true;
+    else if (!game.platforms.includes(platform)) {
+      // Source-backed real pilot platform lists are positive observations,
+      // not exhaustive evidence of incompatibility.
+      if (positiveOnlyPlatforms) unknown = true;
+      else return 'fail'; // Authored synthetic profiles are exhaustive.
+    }
   }
+  // A confirmed negative co-op observation still defeats an unknown platform.
   if (coopOnly && game.coop === false) return 'fail';
-  if ((platform !== 'any' && game.platforms===null) || (coopOnly && game.coop===null)) return 'unknown';
-  return 'pass';
+  if (coopOnly && game.coop === null) unknown = true;
+  return unknown ? 'unknown' : 'pass';
 }
 export function buildBridgePreview({catalog, snapshotId, startId, endId,
     platform='any',coopOnly=false,excluded=[],maxHops=4,minSimilarity=.1}={}) {
@@ -94,7 +102,11 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   for(const id of excluded) if(!ids.has(id)) throw new TypeError('Unknown excluded game ID');
   const exclusions=new Set(excluded);
   const constraints={platform,coopOnly};
-  const states=new Map([...ids.values()].map(g=>[g.id,classify(g,constraints,exclusions)]));
+  // Only the declared CC0/owner real-pilot snapshots use non-exhaustive
+  // positive platform receipts. Do not infer that policy for other fixtures.
+  const positiveOnlyPlatforms = snapshotId.startsWith('wikidata-genre-pilot-') ||
+    snapshotId.startsWith('multi-store-genre-pilot-');
+  const states=new Map([...ids.values()].map(g=>[g.id,classify(g,constraints,exclusions,positiveOnlyPlatforms)]));
   const common={catalog_snapshot_id:snapshotId,route_method_version:VERSION,
     start_id:startId,end_id:endId,max_hops:maxHops,min_similarity:minSimilarity,
     constraints, excluded_candidate_ids:[...exclusions].sort(),
@@ -112,7 +124,7 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   const edges=[];
   // An explicitly versioned real pilot can use the 30%-coverage genre signal
   // without asserting absent mechanics. The usual 70%-coverage gate remains.
-  const requiredCoverageUnits = (snapshotId.startsWith('wikidata-genre-pilot-') || snapshotId.startsWith('multi-store-genre-pilot-')) &&
+  const requiredCoverageUnits = positiveOnlyPlatforms &&
     eligible.every(game => game.mechanics === null) ? 3 : 7;
   // Disjoint counts over unordered eligible pairs: unknown evidence is not zero fit.
   const pairEvidence={insufficient:0,zero_support:0,below_threshold:0,connected:0};

@@ -31,7 +31,7 @@ test('pins the licensed 30-game input and all 50 exact frozen endpoint tasks', (
     performance_latency: 'NOT_MEASURED',
   });
   assert.equal(result.experimental_curated_method, 'curated-bridge-routes-2');
-  assert.equal(result.matched_legacy_method, 'bridge-features-preview-3');
+  assert.equal(result.matched_legacy_method, 'bridge-features-preview-4');
   assert.deepEqual(result.summary.published_legacy_three_hop_statuses, {
     route: 5, 'no-route': 44, 'unavailable-endpoint': 1,
   });

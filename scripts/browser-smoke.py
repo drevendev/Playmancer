@@ -177,7 +177,7 @@ with sync_playwright() as p:
     check('Bridge link retains explicit endpoints and algorithm version',
           bridge_link['bridge']['startId']=='demo:ember'
           and bridge_link['bridge']['endId']=='demo:harvest'
-          and bridge_link['bridge']['method']=='bridge-features-preview-3'
+          and bridge_link['bridge']['method']=='bridge-features-preview-4'
           and bridge_link['bridge']['maxHops']==3)
     page.locator('#platform').select_option('linux')
     page.locator('#bridge-end').select_option('demo:harvest')

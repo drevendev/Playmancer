@@ -12,7 +12,7 @@ import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from '../src/bridge-p
 
 const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.meta.url);
 const PLAN = new URL('../examples/evaluation-baskets-30.real.json', import.meta.url);
-export const FROZEN_CURATED_BRIDGE_PROTOCOL = 'p76-frozen-curated-bridge-30-v1';
+export const FROZEN_CURATED_BRIDGE_PROTOCOL = 'p76-frozen-curated-bridge-30-v2';
 const LEGACY_POLICY = Object.freeze({ maxHops: 2, minSimilarity: 0.31 });
 const LEGACY_STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const CURATED_STATUSES = ['route', 'no-route', 'uncertain', 'excluded'];
