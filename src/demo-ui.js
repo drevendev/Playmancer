@@ -470,13 +470,17 @@ function drawEmptyRecovery(result) {
     return;
   }
 
-  empty.append(element("p", "No eligible results. Hard filters and hidden results have not been relaxed."));
+  // No ranked output may mean unavailable comparable evidence, not a denied
+  // platform or hidden candidate. Preserve strict filters without mislabelling
+  // an abstention as ineligibility.
+  empty.append(element("p", "No rankable recommendations for this basket. Hard filters and hidden results have not been relaxed."));
   const list = element("ul", undefined, "empty-reasons");
   const hidden = result.excluded.filter((item) => state.excluded.includes(item.id));
   const failed = result.excluded.filter((item) => item.reason === "hard-constraint-fail" && !state.excluded.includes(item.id));
   const unknown = result.uncertain.filter((item) => item.reason === "hard-constraint-unknown");
   const missing = result.uncertain.filter((item) => item.reason === "missing-seed-affinity");
-  const sparseSeeds = state.seeds.filter((seed) => syntheticCatalog ? BY_ID.get(seed.id)?.mechanics == null : BY_ID.get(seed.id)?.themes == null);
+  const sparseSeeds = state.seeds.filter((seed) => syntheticCatalog
+    ? !BY_ID.get(seed.id)?.mechanics?.length : !BY_ID.get(seed.id)?.themes?.length);
   const explain = (count, singular, plural) => {
     if (count) list.append(element("li", `${count} ${count === 1 ? singular : plural}.`));
   };
@@ -484,6 +488,8 @@ function drawEmptyRecovery(result) {
   explain(failed.length, "profile lacks recorded support for a required filter", "profiles lack recorded support for a required filter");
   explain(unknown.length, "profile has unknown required platform/co-op metadata", "profiles have unknown required platform/co-op metadata");
   explain(missing.length, "profile lacks comparable feature evidence", "profiles lack comparable feature evidence");
+  if (missing.length) empty.append(element("p",
+    "Missing comparable feature evidence means unknown similarity, not a zero match."));
   if (sparseSeeds.length) {
     list.append(element("li", `${sparseSeeds.map((seed) => BY_ID.get(seed.id).name).join(", ")} ${sparseSeeds.length === 1 ? "has" : "have"} no ${syntheticCatalog ? "mechanics metadata for the 70% evidence threshold" : "recorded genre evidence for this pilot"}. Comparisons must abstain.`));
   }
@@ -633,7 +639,7 @@ function drawResults() {
   const zeroFit = !syntheticCatalog ? visible.filter((item) => item.scores.arithmetic === 0).length : 0;
   const partialIntersection = !syntheticCatalog && state.mode === "intersection"
     ? visible.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
-  $("status").textContent = `${visible.length} of ${result.ranked.length} eligible shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
+  $("status").textContent = `${visible.length} of ${result.ranked.length} ranked shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
     (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "") +
     (partialIntersection ? ` ${partialIntersection} lack overlap with at least one favorite; not whole-basket matches.` : "");
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
