@@ -71,9 +71,10 @@ dependency.
 
 The 30-basket [scalar diagnostic](docs/EVALUATION_30.md) and independent
 50-endpoint [Bridge diagnostic](docs/BRIDGE_EVALUATION_30.md) are reproducible
-**offline proxy experiments, not human usefulness studies**. Bridge found
-5 supported routes, 44 no-routes and one unavailable endpoint under its frozen
-three-hop/0.31 settings. These negative results motivate better sourced game
+**offline proxy experiments, not human usefulness studies**. The historical
+Bridge v3 run found 5 supported routes, 44 no-routes and one unavailable
+endpoint under its frozen three-hop/0.31 settings. The v4 route policy needs
+separate acceptance on the same 50 pinned tasks. These negative results motivate better sourced game
 features; do not interpret them as real-player success or failure rates.
 
 ### Historical catalogs and share compatibility
@@ -126,6 +127,11 @@ of silently substituting games from a different snapshot.
 fourth basket-ranking mode. Use **Explore Bridge routes** on the first screen,
 select two distinct basket games, and inspect supported steps and trade-offs.
 Platform/co-op requirements and hidden-game exclusions also apply to routes.
+In the real pilot, missing platform support is an **unknown positive receipt**,
+not demonstrated incompatibility; unknown support remains ineligible for
+Bridge endpoints/intermediates. Confirmed non-co-op remains an actual failure.
+Bridge route semantics are versioned as `bridge-features-preview-4`; old
+route-version links fail visibly rather than silently changing their paths.
 Unsupported endpoints and absent routes are explained without relaxing a filter.
 Graph cost is not a confidence score or evidence of real-player usefulness.
 
