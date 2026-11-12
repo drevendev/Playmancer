@@ -16,8 +16,13 @@ metric, claim of a complete semantic catalog or a new public ranking method.
   `00353c617fba62d1127afcafa72668d4236c013e`
   at the historical and v4 merge commits.
 - Current implementation: `bridge-features-preview-4` from
-  `src/bridge-preview.js`. The existing frozen evaluator runs its real
-  function, not a simulated or separately tuned implementation.
+  `src/bridge-preview.js`, Git blob
+  `f1355c15c5e9f5f61ab420d63cdcf9e3fdd10a04`.
+  The existing frozen evaluator runs its real function, not a simulated
+  or separately tuned implementation. The comparator also verifies the
+  v4 source blob and the shared routing-engine blob at runtime, so a
+  future implementation edit requires a new comparison protocol rather
+  than silently reusing these numbers.
 - Catalog: 30 CC0/owner-published entries, Git blob
   `0570fd610b14fb336c0de65e6cc3062892abe301`.
 - Basket plan: 30 baskets, **50 adjacent explicit-favorite endpoint tasks**,
