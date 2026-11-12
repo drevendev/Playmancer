@@ -61,6 +61,30 @@ test('rejects unvetted rows, false complete coverage, and corrupted normalized w
   assert.throws(() => auditEditorialWeightSensitivity(invalid, baseline), /domain|mass/);
 });
 
+test('rejects duplicated, reversed, missing or spurious shared positive evidence', () => {
+  const duplicatedPair = structuredClone(baseline);
+  duplicatedPair.pairs[1] = { ...duplicatedPair.pairs[0],
+    left: duplicatedPair.pairs[0].right, right: duplicatedPair.pairs[0].left };
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, duplicatedPair),
+    /duplicate editorial comparison pair/);
+
+  const duplicatedTag = structuredClone(baseline);
+  duplicatedTag.pairs[0].shared_positive_tag_ids.push(
+    duplicatedTag.pairs[0].shared_positive_tag_ids[0]);
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, duplicatedTag),
+    /shared positive tags/);
+
+  const omittedTag = structuredClone(baseline);
+  omittedTag.pairs[2].shared_positive_tag_ids.pop();
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, omittedTag),
+    /shared positive tags/);
+
+  const spuriousTag = structuredClone(baseline);
+  spuriousTag.pairs[0].shared_positive_tag_ids[0] = 'mechanic:not-observed';
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, spuriousTag),
+    /shared positive tags/);
+});
+
 test('CLI report matches imported library and retains exact source snapshot ids', () => {
   const output = execFileSync(process.execPath,
     [new URL('../scripts/audit-editorial-weight-sensitivity.mjs', import.meta.url).pathname],
