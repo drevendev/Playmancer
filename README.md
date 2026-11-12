@@ -71,11 +71,15 @@ dependency.
 
 The 30-basket [scalar diagnostic](docs/EVALUATION_30.md) and independent
 50-endpoint [Bridge diagnostic](docs/BRIDGE_EVALUATION_30.md) are reproducible
-**offline proxy experiments, not human usefulness studies**. The historical
-Bridge v3 run found 5 supported routes, 44 no-routes and one unavailable
-endpoint under its frozen three-hop/0.31 settings. The v4 route policy needs
-separate acceptance on the same 50 pinned tasks. These negative results motivate better sourced game
-features; do not interpret them as real-player success or failure rates.
+**offline proxy experiments, not human usefulness studies**. The
+[exact-source v3→v4 comparison](docs/BRIDGE_V3_V4_FROZEN_50.md), accepted in
+[PR #178](https://github.com/drevendev/Playmancer/pull/178), found **5 routes,
+44 no-routes and 1 unavailable endpoint in both versions** on the same 50
+ordered tasks at three hops/0.31. No task status or route path changed. V4
+relabels missing positive-only platform evidence from failure to unknown,
+without allowing that candidate through a hard filter. The negative route
+coverage motivates better sourced features, not a claim of measured
+player usefulness or recommendation improvement.
 
 ### Historical catalogs and share compatibility
 
