@@ -11,7 +11,7 @@ test('routes explicit favorites through shared feature evidence, never UI coordi
   assert.equal(original.steps.length,3);
   assert.deepEqual(original.steps[0].groups.find(g=>g.group==='mechanics').gained,['combat']);
   assert.deepEqual(original.steps[0].groups.find(g=>g.group==='mechanics').lost,['crafting']);
-  assert.equal(original.route_method_version,'bridge-features-preview-3');
+  assert.equal(original.route_method_version,'bridge-features-preview-4');
   const changed=catalog.map((g,i)=>({...g,x:i*1000000,y:-i*7777777}));
   assert.deepEqual(buildBridgePreview({...params(),catalog:changed}),original);
 });
@@ -22,6 +22,35 @@ test('hard filters and exclusions are never silently relaxed',()=>{
   assert.equal(fail.status,'unavailable-endpoint'); assert.equal(fail.reason,'fail');
   const unknown=buildBridgePreview({...params(),startId:'demo:unknown',platform:'linux'});
   assert.equal(unknown.status,'unavailable-endpoint'); assert.equal(unknown.reason,'unknown');
+});
+test('real pilot positive platform receipts abstain, while synthetic exhaustive lists may fail',()=>{
+  const real = buildBridgePreview({...params(),
+    snapshotId:'multi-store-genre-pilot-30-2026-10-28',platform:'mac'});
+  assert.equal(real.status,'unavailable-endpoint');
+  assert.equal(real.reason,'unknown');
+  assert.equal(real.eligibility.unknown,5);
+  assert.equal(real.eligibility.fail,0);
+  const synthetic = buildBridgePreview({...params(),platform:'mac'});
+  assert.equal(synthetic.status,'unavailable-endpoint');
+  assert.equal(synthetic.reason,'fail');
+  const observedNonCoop = catalog.map(game => game.id === 'demo:a' ?
+    {...game,coop:false} : game);
+  const rejected = buildBridgePreview({...params(),catalog:observedNonCoop,
+    snapshotId:'multi-store-genre-pilot-30-2026-10-28',
+    platform:'mac',coopOnly:true});
+  assert.equal(rejected.reason,'fail'); // Confirmed negative overrides unknown.
+  assert.equal(rejected.eligibility.fail,1);
+  assert.equal(rejected.eligibility.unknown,4);
+});
+test('unlisted real-platform intermediates never silently join the route',()=>{
+  const changed = catalog.map(game => game.id === 'demo:b' ?
+    {...game,platforms:['windows']} : game);
+  const result = buildBridgePreview({...params(),catalog:changed,
+    snapshotId:'multi-store-genre-pilot-30-2026-10-28',platform:'linux'});
+  assert.equal(result.status,'no-route');
+  assert.equal(result.eligibility.unknown,2); // b unverified, missing-profile unknown.
+  assert.equal(result.eligibility.fail,0);
+  assert.equal(result.eligibility.pass,3);
 });
 test('hop cap abstains instead of inventing a direct edge',()=>{
   const r=buildBridgePreview({...params(),maxHops:2});
