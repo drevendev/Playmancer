@@ -12,7 +12,7 @@ test('Bridge route diagnostic pins the 30-game source and uses live player defau
   assert.equal(result.catalog_snapshot_id, 'multi-store-genre-pilot-30-2026-10-28');
   assert.equal(result.catalog_git_blob_sha1, '0570fd610b14fb336c0de65e6cc3062892abe301');
   assert.equal(result.basket_plan_git_blob_sha1, 'e28809801448df2f73c604d0349ce71c042d7f53');
-  assert.equal(result.route_method_version, 'bridge-features-preview-3');
+  assert.equal(result.route_method_version, 'bridge-features-preview-4');
   assert.deepEqual(result.route_policy, {
     endpoint_selection: 'adjacent favorites in frozen basket order',
     max_hops: 3, min_similarity: 0.31, weights_used: false
