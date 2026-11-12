@@ -187,6 +187,16 @@ versions, and [the catalog contract](docs/CATALOG.md) for provenance and identit
 
 ## Catalog and evidence boundaries
 
+The public player method `feature-overlap-3` keeps the same genre-only fit
+calculation but corrects required-platform **classification** in real snapshots.
+A platform missing from a non-exhaustive source list is **uncertain**, never a
+confirmed incompatibility or an eligible recommendation. Confirmed negative
+co-op observations still exclude candidates. Fictional fixture platform lists
+remain exhaustive for deterministic tests. The uncertainty/exclusion disclosure
+labels each row independently, and older `feature-overlap-2` share links fail
+visibly rather than silently replaying under revised hard-filter semantics.
+This is not the source-backed weighted-tag recommender v2 (issue #76).
+
 `src/catalog.js` validates schema/snapshot versions, source attribution, recorded
 field rights, canonical game IDs, aliases, external-ID collisions and distinct
 edition/DLC/remake relations. Unknown metadata is `null`; empty lists and `false`
