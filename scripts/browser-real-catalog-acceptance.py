@@ -94,6 +94,12 @@ try:
                   and "DevMatch has no recorded genre evidence for this pilot"
                       in gap.locator("#empty").inner_text()
                   and "DevMatch has no Wikidata" not in gap.locator("#empty").inner_text())
+            check(label + ": no-ranked state explains abstention rather than falsely claiming no eligible games",
+                  "No rankable recommendations for this basket" in gap.locator("#empty").inner_text()
+                  and "Missing comparable feature evidence means unknown similarity" in gap.locator("#empty").inner_text()
+                  and "No eligible results" not in gap.locator("#empty").inner_text()
+                  and "0 of 0 ranked shown" in gap.locator("#status").inner_text()
+                  and gap.get_by_role("button", name="Remove DevMatch from basket").count() == 1)
             gap.locator("#seeds .basket-evidence summary").first.click()
             built_revision = gap.locator('meta[name="playmancer-revision"]').get_attribute("content")
             expected_ref = built_revision if built_revision and re.fullmatch(r"[0-9a-f]{40}", built_revision) else "master"
@@ -117,7 +123,8 @@ try:
             gap.get_by_role("button", name="Remove DevMatch", exact=True).click()
             check(label + ": removing the sparse favorite clears its warning",
                   gap.locator("#seeds > li").count() == 1
-                  and gap.locator("#seeds .seed-evidence-warning").count() == 0)
+                  and gap.locator("#seeds .seed-evidence-warning").count() == 0
+                  and gap.locator("#results .card").count() > 0)
             gap.close()
             # Mobile section navigation must not change the state-bearing URL fragment.
             nav = page.get_by_role("navigation", name="Page sections")
