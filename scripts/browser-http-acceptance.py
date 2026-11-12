@@ -416,7 +416,7 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#seeds > li").count() == 2)
         page.locator("#search").fill("")
         check(case, "clearing search restores the discoverable instruction",
-              hint.inner_text() == "Search names, IDs, aliases or recorded genres to find catalog profiles."
+              hint.inner_text() == "Search names, IDs, aliases or recorded genres and positive gameplay facts to find catalog profiles."
               and page.locator("#search-results li").count() == 0
               and page.locator("#search").input_value() == "")
 

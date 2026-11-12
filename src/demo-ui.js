@@ -396,11 +396,17 @@ function drawSearch() {
         ? [...(game.mechanics ?? []), ...(game.themes ?? [])] : (game.themes ?? []);
       const matchedTag = direct ? null
         : (tags.find((value) => value.normalize("NFC").toLowerCase().includes(query)) ?? null);
-      return direct || matchedTag ? { game, matchedTag } : null;
+      // Independently reviewed positive Gameplay Facts are searchable as
+      // discovery evidence only; unlisted facts never become negative evidence,
+      // similarity scores, hard filters, or share-state fields.
+      const matchedFact = direct || matchedTag || syntheticCatalog ? null :
+        ([...(inlineGameplayFacts?.get(game.id)?.values() ?? [])]
+          .find(label => label.normalize("NFC").toLowerCase().includes(query)) ?? null);
+      return direct || matchedTag || matchedFact ? { game, matchedTag, matchedFact } : null;
     }).filter(Boolean)
     : [];
   const shown = browseAll && !query ? matches.slice(0, browseLimit) : matches;
-  for (const [index, { game, matchedTag }] of shown.entries()) {
+  for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
@@ -420,10 +426,13 @@ function drawSearch() {
       else choices[(index + (event.key === "ArrowDown" ? 1 : -1) + choices.length) % choices.length].focus();
     });
     button.addEventListener("click", () => addFavorite(game));
-    if (matchedTag) {
-      // Keep the button's stable "Add GAME" accessible name while exposing
-      // why a tag-only search matched, also for keyboard/screen-reader users.
-      const evidence = element("span", `${syntheticCatalog ? "Recorded feature tag" : "Recorded genre"}: ${matchedTag}`, "hint");
+    if (matchedTag || matchedFact) {
+      // Keep "Add GAME" as the button name; the matched source evidence is
+      // associated for both sighted and assistive-technology users.
+      const matchDescription = matchedFact
+        ? `Recorded gameplay fact (partial evidence): ${matchedFact}. Other facts may be unrecorded.`
+        : `${syntheticCatalog ? "Recorded feature tag" : "Recorded genre"}: ${matchedTag}`;
+      const evidence = element("span", matchDescription, "hint");
       evidence.id = `search-match-${index}`;
       button.setAttribute("aria-describedby", evidence.id);
       row.append(button, evidence);
@@ -460,9 +469,11 @@ function drawSearch() {
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
     : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
-    : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres"} to find ${noun}.`
+    : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
-    : store === "all" ? "No profiles match. Try another name or recorded tag." : `No ${noun}${fromStore} match this search. Try another name, tag, or store.`;
+    : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
+        "No profiles match. Try another name, genre or gameplay fact; unrecorded facts remain unknown.")
+      : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
