@@ -5,7 +5,7 @@ import { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";
 // The bounded static builder replaces this slot with an already allowlisted
 // JSON snapshot. Direct module use retains the authored default below.
 const BUILD_CATALOG_SNAPSHOT = null;
-export const METHOD_VERSION = "feature-overlap-2";
+export const METHOD_VERSION = "feature-overlap-3";
 export const BRIDGE_STATE_VERSION = "bridge-ui-experiment-1";
 export const DEMO_MODES = ["intersection", "blend", "arithmetic"];
 export const FEATURE_GROUPS = [{ key: "mechanics", weight: 0.7 }, { key: "themes", weight: 0.3 }];
@@ -153,7 +153,12 @@ export function constraintState(game, state) {
   let unknown = false;
   if (state.platform !== "any") {
     if (game.platforms == null) unknown = true;
-    else if (!game.platforms.includes(state.platform)) return "fail";
+    else if (!game.platforms.includes(state.platform)) {
+      // Real catalog platform lists are positive-only source receipts: an
+      // unrecorded platform is unknown support, not proved incompatibility.
+      if (DEMO_SNAPSHOT.kind === "real") unknown = true;
+      else return "fail"; // Authored fictional fixture lists are exhaustive.
+    }
   }
   if (state.coopOnly) {
     if (game.coop === false) return "fail";
