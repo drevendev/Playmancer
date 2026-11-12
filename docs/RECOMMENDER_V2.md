@@ -94,16 +94,17 @@ recorded platform to either game never decreases that match. No common
 recorded platform yields no positive match, **not** proof of
 incompatibility; a missing list is separately unknown. This replaces
 the version-6 Jaccard ratio, which penalized a game for more complete
-platform documentation. The player method and strict platform filter
-are unchanged.
+platform documentation. At that historical checkpoint the genre-only public player and its strict
+platform filter were unaffected by the **offline** metadata experiment;
+the live player subsequently advanced its share identifier to `feature-overlap-3`.
 
 Version 8 fixes a **ranking tie-break**: two non-exhaustive positive
 platform lists without a recorded shared platform still increase **observed**
 metadata coverage, but no longer increase **taste-comparable** coverage.
 Neither missing nor disjoint platform receipts receive a taste advantage when
 their tag/metadata scores tie. A documented shared platform still contributes
-the same bounded match and taste coverage. Strict required-platform filters,
-source receipts, and the public player do not change. Version 7 is historical;
+the same bounded match and taste coverage. At that historical checkpoint, strict required-platform filters, source
+receipts, and the public player were not changed by offline version 8. Version 7 is historical;
 its reports cannot be treated as v8 results.
 
 Version 9 fixes hard-filter classification of positive, non-exhaustive
@@ -115,11 +116,16 @@ two-hop intermediates in offline curated Bridge version
 inflate similarity; its blocked route is reported as uncertain, not a
 proven impossibility. Explicit user exclusions and observed
 `coop=false` are still known failures even alongside unknown platform
-support. The frozen real-catalog player and method/share schema do not
-change. Version-8 reports do not compare directly to version 9.
+support. This **offline v9** change did not itself modify the then-live player or its
+share schema; version-8 reports cannot be compared directly to version 9.
+The public player separately adopted unknown-platform classification in
+`feature-overlap-3`, without adopting weighted-tag ranking.
 
-Prior v1/v2/v3/v4/v5/v6/v7/v8 reports are not interchangeable. The public
-`feature-overlap-2` method and live player are unchanged.
+Prior v1/v2/v3/v4/v5/v6/v7/v8 reports are not interchangeable. The **current
+public** player/share method is `feature-overlap-3`, retaining the genre-only
+fit formula while correcting platform uncertainty. Historical
+`feature-overlap-2` links are rejected rather than silently upgraded; neither
+public method is the weighted-tags experiment.
 
 The trial composite score is
 `0.76 T + 0.13 M + 0.08 D + 0.03 G` where:
@@ -172,11 +178,13 @@ not similarity inputs.
 }
 ```
 
-The existing live schema v1 and `METHOD_VERSION = feature-overlap-2`
-remain unchanged. This separate experiment does **not** reinterpret published
-basket links. If a future edition adopts it, migrate catalog/source contracts,
-method identifiers, share state and Bridge version **explicitly**; incompatible
-links must visibly fail rather than silently change meaning.
+The public catalog schema remains v1, while the **current public player/share
+method** is `feature-overlap-3` (genre-only fit with corrected platform-evidence
+classification). This separate weighted-tags experiment does **not** reinterpret
+published basket links or enable its experimental ranking. A future adoption
+requires explicit catalog/source contracts, method identifiers, share state and
+Bridge version migration; incompatible links must visibly fail rather than
+silently change meaning.
 
 ## Real data and provenance
 
@@ -215,9 +223,10 @@ relax required filters: games without positive platform support cannot
 rank, and unverified intermediates cannot increase two-hop fit. In
 version 9, nonmatching positive-only platform receipts enter the
 uncertain partition instead of the excluded partition; sourced negative
-co-op and explicit exclusions remain failures. The experimental
-version-9 method ID changes, but the public player and share schema do
-not. No new real-game sources or complete tag-weight profiles were added.
+co-op and explicit exclusions remain failures. The offline experimental v9 method identifier changed independently; the
+public player later adopted `feature-overlap-3` for platform-evidence
+classification without adopting weighted tags. No new real-game sources or
+complete tag-weight profiles were added by this experiment.
 
 ## Canonical platform evidence
 

@@ -262,18 +262,19 @@ try:
             # visually exposed to players, nor returned by inner_text().
             page.locator("#uncertainty-title").click()
             partition = page.locator("#partition-list").inner_text()
-            check(label + ": unlisted real platform is not labelled unsupported",
+            check(label + ": unlisted real platform abstains instead of being falsely excluded",
                   page.locator("#uncertainty").evaluate("details => details.open")
-                  and "Hades: no recorded android support in this snapshot" in partition
+                  and "Uncertain · Hades: missing evidence: no recorded android support in this snapshot" in partition
                   and "not proof the game is unavailable there" in partition
+                  and "Excluded · Hades" not in partition
                   and page.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
-            # If two required fields are missing, name both. A nonmatching
-            # *recorded* platform stays a hard failure even when co-op is unknown.
+            # Unknown non-exhaustive platform receipts and unknown required
+            # co-op evidence both abstain; neither is proven incompatible.
             page.locator("#coop").check()
             missing_both = page.locator("#partition-list").inner_text()
             check(label + ": unknown required platform and co-op are both named",
                   "Infamous 2: missing evidence: support for required platform android is unrecorded; required co-op support is unrecorded (not proof of incompatibility)" in missing_both
-                  and "Hades: no recorded android support in this snapshot" in missing_both
+                  and "Uncertain · Hades: missing evidence: no recorded android support in this snapshot" in missing_both
                   and page.locator("#results > li").count() == 0)
             page.locator("#platform").select_option("any")
             coop_only_partition = page.locator("#partition-list").inner_text()

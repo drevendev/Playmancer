@@ -12,10 +12,13 @@ const root = new URL("../", import.meta.url);
 const run = (command, args, env = {}) => spawnSync(command, args, { cwd: root, encoding: "utf8", env: { ...process.env, ...env } });
 
 test("method revision is explicit and older links never silently change ranking", () => {
-  assert.equal(METHOD_VERSION, "feature-overlap-2");
+  assert.equal(METHOD_VERSION, "feature-overlap-3");
   assert.deepEqual(decodeState(encodeState(initialState())), initialState());
-  const old = { ...initialState(), method: "feature-overlap-1" };
-  assert.throws(() => decodeState("#basket=" + encodeURIComponent(JSON.stringify(old))), /not silently upgraded/);
+  for (const prior of ["feature-overlap-1", "feature-overlap-2"]) {
+    const old = { ...initialState(), method: prior };
+    assert.throws(() => decodeState("#basket=" + encodeURIComponent(JSON.stringify(old))),
+      /not silently upgraded/, prior);
+  }
 });
 
 test("standalone scoring, batch ranking and Blend use identical normalized weights", () => {

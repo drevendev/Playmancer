@@ -65,20 +65,24 @@ function renderObservedOverlap(game) {
 // Keep strict filtering, but do not tell players that an unlisted platform is
 // known to be unsupported. Explicitly observed non-co-op is different.
 function hardFilterExplanation(game) {
-  if (state.platform !== "any" && game.platforms !== null &&
-      !game.platforms.includes(state.platform)) {
-    return syntheticCatalog ? `no recorded ${state.platform} support in this fictional profile`
-      : `no recorded ${state.platform} support in this snapshot (not proof the game is unavailable there)`;
-  }
+  // A sourced negative co-op observation is an actual failure. An unlisted
+  // platform in the real catalog is instead a positive-receipt gap (unknown).
   if (state.coopOnly && game.coop === false) return "co-op explicitly recorded as unavailable";
+  if (syntheticCatalog && state.platform !== "any" && game.platforms !== null &&
+      !game.platforms.includes(state.platform))
+    return `no recorded ${state.platform} support in this fictional profile`;
   return reasons["hard-constraint-fail"];
 }
 // A hard-filter unknown is not the same as a documented failure. Explain
 // which required facts are missing without inferring unsupported platforms.
 function hardUnknownExplanation(game) {
   const missing = [];
-  if (state.platform !== "any" && game.platforms === null)
-    missing.push(`support for required platform ${state.platform} is unrecorded`);
+  if (state.platform !== "any") {
+    if (game.platforms === null)
+      missing.push(`support for required platform ${state.platform} is unrecorded`);
+    else if (!syntheticCatalog && !game.platforms.includes(state.platform))
+      missing.push(`no recorded ${state.platform} support in this snapshot (not proof the game is unavailable there)`);
+  }
   if (state.coopOnly && game.coop === null)
     missing.push("required co-op support is unrecorded");
   return missing.length ? `missing evidence: ${missing.join("; ")} (not proof of incompatibility)`
@@ -650,7 +654,9 @@ function drawResults() {
       : item.reason === "hard-constraint-fail" ? hardFilterExplanation(BY_ID.get(item.id))
       : item.reason === "hard-constraint-unknown" ? hardUnknownExplanation(BY_ID.get(item.id))
       : reasons[item.reason] ?? item.reason;
-    const row = element("li", `${BY_ID.get(item.id).name}: ${reason}.`);
+    // The mixed partition must identify each row's status without relying
+    // on its position, color, or the collapsed disclosure heading.
+    const row = element("li", `${item.status === "excluded" ? "Excluded" : "Uncertain"} · ${BY_ID.get(item.id).name}: ${reason}.`);
     // A mistaken hide must be reversible without also restoring every other
     // exclusion. This is an explicit player action, never a filter fallback.
     if (state.excluded.includes(item.id)) {
