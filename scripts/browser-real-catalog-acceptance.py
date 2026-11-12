@@ -16,6 +16,11 @@ subprocess.run(["node", "scripts/build-demo.mjs", str(SITE), "--catalog",
                 "examples/catalog.multistore-30.real.json"], cwd=ROOT, check=True)
 subprocess.run(["python3", "scripts/pages-preflight.py", str(SITE)], cwd=ROOT, check=True)
 HTML = offline_html(SITE)
+# Gameplay Facts are embedded only in the production release; the lightweight
+# optional-catalog preview above deliberately has no observation inventory.
+FACTS_SITE = ARTIFACTS / "real-catalog-facts-release"
+subprocess.run(["node", "scripts/build-release.mjs", str(FACTS_SITE)], cwd=ROOT, check=True)
+FACTS_HTML = offline_html(FACTS_SITE)
 SNAPSHOT = "multi-store-genre-pilot-30-2026-10-28"
 results = []
 
@@ -184,7 +189,7 @@ try:
             # Partial, source-backed gameplay facts assist game discovery but
             # never act as negative evidence or change the recommendation mode.
             fact_lookup = ctx.new_page()
-            fact_lookup.set_content(HTML, wait_until="load")
+            fact_lookup.set_content(FACTS_HTML, wait_until="load")
             fact_lookup.locator("#clear").click()
             fact_lookup.locator("#search").fill("Automating production")
             fact_result = fact_lookup.locator("#search-results li")
