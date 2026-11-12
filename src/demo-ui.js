@@ -472,7 +472,7 @@ function drawSearch() {
     : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
-        "No recorded catalog match. Try another name, genre or gameplay fact; unrecorded facts remain unknown.")
+        "No profiles match. Try another name, genre or gameplay fact; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
 }
 function drawEmptyRecovery(result) {
