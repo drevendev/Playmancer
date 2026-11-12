@@ -9,6 +9,10 @@ test('frozen v3 and v4 compare the same 50 real-catalog route tasks, no silent r
   assert.equal(report.report_schema, BRIDGE_V3_V4_PROTOCOL);
   assert.equal(report.catalog_git_blob_sha1, '0570fd610b14fb336c0de65e6cc3062892abe301');
   assert.equal(report.basket_plan_git_blob_sha1, 'e28809801448df2f73c604d0349ce71c042d7f53');
+  assert.equal(report.shared_routing_engine_blob_sha1,
+    '00353c617fba62d1127afcafa72668d4236c013e');
+  assert.equal(report.v4_implementation_blob_sha1,
+    'f1355c15c5e9f5f61ab420d63cdcf9e3fdd10a04');
   assert.equal(report.summary.basket_count, 30);
   assert.equal(report.summary.compared_endpoint_pairs, 50);
   assert.deepEqual(report.summary.v3_statuses,
