@@ -14,6 +14,10 @@ const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.me
 const ARCHIVED_V3 = new URL('../test/fixtures/bridge-preview-v3.js', import.meta.url);
 const HISTORIC_SOURCE_BLOB = '37643c7b4802a0e26dc3826c7b3c5ace1f5bdf63';
 const HISTORIC_SOURCE_COMMIT = '0b3375bc6ef92f5f58b81e2cacae566d2739c37b';
+const HISTORIC_ROUTING_ENGINE_BLOB = '00353c617fba62d1127afcafa72668d4236c013e';
+const V4_IMPLEMENTATION_BLOB = 'f1355c15c5e9f5f61ab420d63cdcf9e3fdd10a04';
+const ROUTING_ENGINE = new URL('../src/bridge.js', import.meta.url);
+const V4_IMPLEMENTATION = new URL('../src/bridge-preview.js', import.meta.url);
 export const BRIDGE_V3_V4_PROTOCOL = 'bridge-frozen-v3-v4-50-v1';
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const count = () => Object.fromEntries(STATUSES.map(status => [status, 0]));
@@ -34,6 +38,13 @@ function verifyV3Source() {
   const original = copied.replace(relocated, "from './bridge.js'");
   assert(gitBlobSha1(original) === HISTORIC_SOURCE_BLOB,
     'Archived Bridge v3 source drifted from its historical Git blob');
+  // Both versions import the same routing engine. Pin it and the actual v4
+  // implementation as well: a later source edit with an unchanged version
+  // string must not silently inherit this frozen comparison's conclusions.
+  assert(gitBlobSha1(readFileSync(ROUTING_ENGINE, 'utf8')) === HISTORIC_ROUTING_ENGINE_BLOB,
+    'Shared Bridge routing engine drifted: declare a new comparison protocol');
+  assert(gitBlobSha1(readFileSync(V4_IMPLEMENTATION, 'utf8')) === V4_IMPLEMENTATION_BLOB,
+    'Bridge v4 implementation drifted: declare a new comparison protocol');
   assert(V3 === 'bridge-features-preview-3' && V4 === 'bridge-features-preview-4',
     'Bridge version changed: revise the comparison protocol');
 }
@@ -120,6 +131,8 @@ export function compareFrozenBridgeV3V4() {
     basket_plan_git_blob_sha1: current.basket_plan_git_blob_sha1,
     historical_source_commit: HISTORIC_SOURCE_COMMIT,
     historical_source_blob_sha1: HISTORIC_SOURCE_BLOB,
+    shared_routing_engine_blob_sha1: HISTORIC_ROUTING_ENGINE_BLOB,
+    v4_implementation_blob_sha1: V4_IMPLEMENTATION_BLOB,
     v3_method: V3, v4_method: V4,
     policy: {
       same_catalog_ordered_endpoints_hard_constraints_exclusions: true,
