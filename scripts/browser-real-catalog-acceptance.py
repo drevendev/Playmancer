@@ -181,6 +181,28 @@ try:
                   page.locator("#results > li").evaluate_all(
                       "cards => cards.map(card => card.dataset.gameId)") == initial_ranks
                   and page.locator("#restore").is_hidden())
+            # Partial, source-backed gameplay facts assist game discovery but
+            # never act as negative evidence or change the recommendation mode.
+            fact_lookup = ctx.new_page()
+            fact_lookup.set_content(HTML, wait_until="load")
+            fact_lookup.locator("#clear").click()
+            fact_lookup.locator("#search").fill("Automating production")
+            fact_result = fact_lookup.locator("#search-results li")
+            fact_button = fact_lookup.get_by_role("button", name="Add Factorio")
+            check(label + ": main catalog searches reviewed non-genre facts with accessible provenance",
+                  fact_result.count() == 1
+                  and fact_button.count() == 1
+                  and "Recorded gameplay fact (partial evidence): Automating production" in fact_result.inner_text()
+                  and fact_button.get_attribute("aria-describedby") ==
+                      fact_result.locator(".hint").get_attribute("id"))
+            fact_lookup.locator("#search").fill("unrecorded fictitious mechanic")
+            check(label + ": missing gameplay observation is unknown, never evidence of absence",
+                  fact_lookup.locator("#search-results li").count() == 0
+                  and "unrecorded facts remain unknown" in fact_lookup.locator("#search-hint").inner_text())
+            fact_lookup.locator("#search").fill("DevMatch")
+            check(label + ": unreviewed game remains findable by its name",
+                  fact_lookup.get_by_role("button", name="Add DevMatch").count() == 1)
+            fact_lookup.close()
             check(label + ": real catalog exposes only recorded store options",
                   not page.locator("#store-filter-wrap").is_hidden()
                   and page.locator("#store-filter option").evaluate_all(
