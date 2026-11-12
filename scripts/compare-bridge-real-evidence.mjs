@@ -10,7 +10,7 @@ import { findBridgeRoute } from '../src/bridge.js';
 
 const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.meta.url);
 const PLAN = new URL('../examples/evaluation-baskets-30.real.json', import.meta.url);
-export const BRIDGE_EVIDENCE_PROTOCOL = 'p76-frozen-bridge-genre-proxy-1';
+export const BRIDGE_EVIDENCE_PROTOCOL = 'p76-frozen-bridge-genre-proxy-2';
 const POLICY = Object.freeze({ maxHops: 3, minSimilarity: 0.31 });
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const counts = () => Object.fromEntries(STATUSES.map(status => [status, 0]));
