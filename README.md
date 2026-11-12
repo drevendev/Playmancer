@@ -219,8 +219,11 @@ Less than 70% comparable evidence means uncertainty, not zero fit. Evidence cove
 is separate from fit; popularity, ratings and map coordinates are not ranking inputs.
 These are fixture parameters, not validated real-player thresholds.
 
-The unchanged player method is `feature-overlap-2`. Unavailable catalog/method links
-fail visibly rather than silently upgrading. Starting a sample or empty basket is
+The current public player/share method is `feature-overlap-3`: the genre-only
+fit calculation is unchanged, while unlisted platforms in real positive-only
+source lists are now classified as unknown instead of disproven. Links from
+`feature-overlap-1` and `feature-overlap-2` fail visibly rather than silently
+upgrading. Starting a sample or empty basket is
 explicit recovery. Changed catalog records require a new immutable snapshot ID.
 Benchmark report versioning is separate from player shares.
 
