@@ -53,8 +53,13 @@ The regression test requires **5 route / 44 no-route / 1 unavailable endpoint**
 on each side of this *frozen* 50-task catalog, zero changed task statuses and
 zero changed route paths. It additionally requires a positive count of
 `FAIL → UNKNOWN` catalog-eligibility reclassifications under platform filters,
-with unchanged PASS/excluded counts. These are **software assertions** until
-the test is executed at the PR's exact head, not independent human judgments.
+with unchanged PASS/excluded counts. These assertions passed at the exact PR head
+`327c9f1e62deaf25d5038d4d803d35dbfcb126db` in
+[Verify #43219414918](https://github.com/drevendev/Playmancer/actions/runs/43219414918)
+and [Basket library acceptance #43219415011](https://github.com/drevendev/Playmancer/actions/runs/43219415011),
+both completed successfully before [PR #178](https://github.com/drevendev/Playmancer/pull/178)
+was merged on 2026-11-12. These remain reproducible **software assertions**,
+not independent human judgments or evidence of improved player discovery.
 The output counts a candidate repeatedly when it is evaluated in different
 endpoint tasks; it must not be called the number of distinct games.
 
