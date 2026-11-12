@@ -14,7 +14,7 @@ test('real feature-derived rational tie keeps lexicographically first path', () 
   const settings={catalog,snapshotId:'synthetic-rational-regression',
     startId:'test:g6', endId:'test:g2',minSimilarity:.05,maxHops:3};
   const route=buildBridgePreview(settings);
-  assert.equal(route.route_method_version,'bridge-features-preview-3');
+  assert.equal(route.route_method_version,'bridge-features-preview-4');
   assert.deepEqual(route.nodes,['test:g6','test:g1','test:g2']);
   assert.equal(route.total_cost,1.4);
   assert.deepEqual(buildBridgePreview({...settings,catalog:[...catalog].reverse()}).nodes,route.nodes);
