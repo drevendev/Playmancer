@@ -57,12 +57,14 @@ Genre-only matches have at most **30% comparable feature-group coverage**, not
 30% confidence or measured recommendation accuracy. Missing mandatory evidence
 remains unknown: hard platform/co-op constraints are not silently relaxed.
 The real snapshot's recorded platform lists are **positive observations only**:
-an unlisted platform fails the strict support filter, but is **not evidence that
-the game cannot run there**. Exclusion details distinguish that missing receipt
-from explicitly observed non-co-op metadata. For **unknown** required evidence,
-the expanded uncertain partition separately identifies an unrecorded requested
-platform and/or co-op support, without treating either as proven incompatible.
-These are disclosure/UX changes, **not** ranking or method-version changes.
+an unlisted requested platform **cannot qualify a game for ranking**, but this
+missing receipt is **unknown support**, not proof that the game cannot run there.
+The uncertain partition identifies missing required platform and/or co-op evidence;
+confirmed `coop=false` and explicit user exclusions remain actual failures in the
+excluded partition. The **genre-fit calculation** is unchanged, but hard-filter
+classification and the public **share method identifier** changed to
+`feature-overlap-3`; older method-version links fail visibly instead of silently
+replaying under revised eligibility semantics.
 Outbound store links, including owner-associated games, do not affect ranking.
 There is no account, tracking, runtime store API, paid inference or remote asset
 dependency.
