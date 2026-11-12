@@ -33,10 +33,16 @@ be placed in its numeric leaderboard.
 
 ## Frozen snapshot diagnostics
 
-The numbers below originated from the version-3 endpoint study on this unchanged
-catalog and basket plan. Version 4 must be independently evaluated using the
-commands above before its own counts are claimed; do not relabel old observations
-as a newly measured result.
+The counts below originated with the version-3 endpoint study. The separate
+[exact-source v3→v4 paired diagnostic](BRIDGE_V3_V4_FROZEN_50.md), accepted in
+[PR #178](https://github.com/drevendev/Playmancer/pull/178) on 2026-11-12,
+subsequently tested **both actual implementations** on the unchanged catalog,
+basket plan, filters, exclusions, three-hop limit and 0.31 threshold. Both
+versions returned the same 5 routes, 44 no-routes and one unavailable endpoint;
+all 50 task statuses and route paths were unchanged. Some non-exhaustive
+platform omissions became **unknown rather than confirmed failures**, but
+unknown evidence remained ineligible. The test is a reproducible software
+comparison, not an independent measure of game recommendation quality.
 
 On the source and defaults above, **5/50 routes** are supported,
 **44/50 return no route within the threshold/hop policy**, and **1/50 has
