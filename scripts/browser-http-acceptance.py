@@ -286,6 +286,34 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#" + hades_hint_id).inner_text() == "Recorded genre: roguelike"
               and "matching catalog profiles" in hint.inner_text()
               and page.locator("#seeds > li").count() == 2)
+        # Guard the real deployed player, not merely the offline Gameplay Facts
+        # explorer or synthetic fixture. Source-backed positives are partial
+        # discovery evidence; a missing observation must never imply absence.
+        page.locator("#search").fill("Automating production")
+        fact_matches = page.locator("#search-results li")
+        factorio_hit = page.get_by_role("button", name="Add Factorio", exact=True)
+        fact_hint = fact_matches.locator(".hint")
+        fact_id = factorio_hit.get_attribute("aria-describedby") if factorio_hit.count() == 1 else None
+        check(case, "production gameplay-fact search finds Factorio with accessible partial evidence",
+              fact_matches.count() == 1
+              and factorio_hit.count() == 1
+              and fact_hint.count() == 1
+              and fact_hint.inner_text().strip() ==
+                  "Recorded gameplay fact (partial evidence): Automating production"
+              and fact_id is not None
+              and fact_id == fact_hint.get_attribute("id")
+              and "matching catalog profiles" in hint.inner_text()
+              and page.locator("#seeds > li").count() == 2
+              and page.evaluate("document.activeElement.id") == "search")
+        page.locator("#search").fill("unrecorded fictitious mechanic")
+        check(case, "unrecorded gameplay facts remain unknown, not negative evidence",
+              page.locator("#search-results li").count() == 0
+              and "unrecorded facts remain unknown" in hint.inner_text()
+              and page.locator("#seeds > li").count() == 2)
+        page.locator("#search").fill("Factorio")
+        check(case, "direct game-name lookup does not claim a gameplay-fact match",
+              page.get_by_role("button", name="Add Factorio", exact=True).count() == 1
+              and page.get_by_role("button", name="Add Factorio", exact=True).get_attribute("aria-describedby") is None)
         page.locator("#search").fill("co-op")
         check(case, "unknown co-op is not manufactured into searchable genre data",
               page.locator("#search-results button").count() == 0
