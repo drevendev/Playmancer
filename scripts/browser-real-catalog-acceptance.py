@@ -278,8 +278,18 @@ try:
                   and all(score == "0.000" for score in zero_scores)
                   and sparse.locator("#results .fit .fit-warning").count() == len(zero_scores)
                   and "zero demonstrated basket fit" in sparse.locator("#status").inner_text().lower()
-                  and "No shared genres with any favorite" in sparse.locator("#results .fit-warning").first.inner_text()
+                  and "No recorded genre overlap with any favorite" in sparse.locator("#results .fit-warning").first.inner_text()
                   and "appears in this list" in sparse.locator("#results .explanation summary").first.inner_text())
+            # A zero on the positive-only genre snapshot is not proof that
+            # unreviewed mechanics or other gameplay features are disjoint.
+            sparse.locator("#results .explanation summary").first.click()
+            zero_explanation = sparse.locator("#results .explanation").first.inner_text()
+            check(label + ": zero genre overlap is explicitly limited to recorded evidence",
+                  "Recorded genre score vs" in sparse.locator("#results .affinity").first.inner_text()
+                  and "No recorded genre overlap with at least one favorite" in zero_explanation
+                  and "not a demonstrated whole-basket match" in zero_explanation
+                  and "Unrecorded mechanics and other facts remain unknown" in zero_explanation
+                  and "No shared genres with any favorite" not in zero_explanation)
             sparse.screenshot(path=str(ARTIFACTS / f"real-catalog-zero-overlap-{label}.png"), full_page=True)
             sparse.close()
             # Selected P400/platform listings prove observed support, not universal
@@ -329,7 +339,7 @@ try:
                   and len(shell_affinities) == 2
                   and all(value > 0 for value in shell_affinities)
                   and "no additional uncovered-strand gain" in shell_warning
-                  and "no shared genres" not in shell_warning
+                  and "no recorded genre overlap" not in shell_warning
                   and "appears in this list" in shell.locator(".explanation summary").inner_text())
             check(label + ": Blend status counts source-backed zero overlaps, not zero objectives",
                   (f"{zero_overlap_cards} shown with zero demonstrated basket fit" in blend_status
