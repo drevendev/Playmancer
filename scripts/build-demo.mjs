@@ -84,6 +84,21 @@ for (const [index, path] of modules.entries()) {
     if (factSourceStart < 0 || factSourceEnd <= factSourceStart)
       throw new Error("Unexpected real-only search receipt boundary");
     source = source.slice(0, factSourceStart) + source.slice(factSourceEnd);
+    // Synthetic search never receives a positive-only real observation map.
+    // Keep its original name/feature-tag lookup, not the real-only ID/receipt
+    // matching code, to avoid shipping dead logic in the size-limited preview.
+    const factSearchStart = source.indexOf("      const matchedFactEntry = ");
+    const factSearchEnd = source.indexOf("    }).filter(Boolean)", factSearchStart);
+    if (factSearchStart < 0 || factSearchEnd <= factSearchStart)
+      throw new Error("Unexpected real-only fact-search boundary");
+    source = source.slice(0, factSearchStart) +
+      "      return direct || matchedTag ? { game, matchedTag, matchedFact: null } : null;\n" +
+      source.slice(factSearchEnd);
+    const factSearchDestructure = "for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {";
+    if (source.split(factSearchDestructure).length !== 2)
+      throw new Error("Unexpected real-only fact-ID binding");
+    source = source.replace(factSearchDestructure,
+      "for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {");
   }
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
