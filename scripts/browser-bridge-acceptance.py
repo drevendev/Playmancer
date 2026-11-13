@@ -134,6 +134,40 @@ try:
                 check(label + ": 400% Bridge label and explanatory copy keep whole words",
                       all(not words for words in copy["broken"].values())
                       and copy["noOverflow"])
+                # In addition to static labels, protect the actual route/status
+                # text. A no-overflow document can still split normal words
+                # into unreadable fragments when the root font is 400%.
+                dynamic = page.locator("#bridge-lab").evaluate("""panel => {
+                    const nodes = [...panel.querySelectorAll(
+                        ".bridge-status, .bridge-step h3, .bridge-step p")];
+                    const broken = [], sizes = [];
+                    const range = document.createRange();
+                    for (const node of nodes) {
+                        sizes.push(parseFloat(getComputedStyle(node).fontSize));
+                        const text = node.firstChild;
+                        if (!text || text.nodeType !== Node.TEXT_NODE) {
+                            broken.push("missing route text"); continue;
+                        }
+                        for (const match of text.textContent.matchAll(/\\S+/g)) {
+                            const tops = new Set();
+                            for (let i = 0; i < match[0].length; i++) {
+                                range.setStart(text, match.index + i);
+                                range.setEnd(text, match.index + i + 1);
+                                tops.add(Math.round(range.getBoundingClientRect().top));
+                            }
+                            if (tops.size > 1) broken.push(match[0]);
+                        }
+                    }
+                    return {
+                        tested: nodes.length,
+                        broken,
+                        smallest: Math.min(...sizes),
+                        noOverflow: document.documentElement.scrollWidth <= innerWidth
+                    };
+                }""")
+                check(label + ": 400% dynamic Bridge route/status keeps normal words whole",
+                      dynamic["tested"] >= 4 and not dynamic["broken"]
+                      and dynamic["smallest"] >= 18 and dynamic["noOverflow"])
             page.screenshot(path=str(ARTIFACTS / ("bridge-route-" + label + ".png")))
             button.click()
             check(label + ": pointer navigation preserves URL and focus", page.evaluate("location.href") == href_before and page.evaluate("document.activeElement.id") == "bridge-title")
