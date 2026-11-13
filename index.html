@@ -49,8 +49,10 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 /* Cap the long Bridge eyebrow before 400% mobile text breaks its words. */
 /* Preserve the title focus gap, including when the label spans several lines. */
 #bridge-lab .eyebrow{margin-bottom:14px;font-size:min(.75rem,7vw);letter-spacing:.08em;overflow-wrap:normal}
-/* 400% root-text scaling must wrap long Bridge status words on narrow screens. */
-#bridge-lab .bridge-status{overflow-wrap:anywhere}
+/* Scale dynamic route prose to the available viewport at 400% root-text stress.
+   Ordinary words stay whole; long unbreakable game IDs can still wrap. */
+#bridge-lab .bridge-status{overflow-wrap:anywhere;font-size:min(1rem,9vw)}
+#bridge-lab #bridge-diagnostics-text{font-size:min(.8125rem,8vw);overflow-wrap:anywhere}
 #bridge-lab .bridge-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:18px}
 #bridge-lab .bridge-controls label{margin:0;min-width:0}
 #bridge-lab .bridge-controls select{margin-top:7px;width:100%}
@@ -62,9 +64,9 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 #bridge-lab .bridge-steps{list-style:decimal;margin:14px 0 0;padding-left:22px;display:grid;gap:12px}
 #bridge-lab .bridge-steps>li{padding-left:6px}
 #bridge-lab .bridge-step{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:15px;min-width:0;overflow-wrap:anywhere}
-#bridge-lab .bridge-step h3{font-size:1rem}
-#bridge-lab .bridge-step p{font-size:.8125rem}
-#bridge-lab .bridge-key{font-size:.75rem;color:var(--accent)}
+#bridge-lab .bridge-step h3{font-size:min(1rem,9vw)}
+#bridge-lab .bridge-step p{font-size:min(.8125rem,8vw)}
+#bridge-lab .bridge-step p.bridge-key{font-size:min(.75rem,7vw);color:var(--accent)}
 #bridge-back-to-basket{margin-top:16px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 @media(max-width:600px){#bridge-lab .bridge-controls{grid-template-columns:minmax(0,1fr)}#bridge-lab .bridge-steps{padding-left:24px}}
 
