@@ -23,6 +23,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     assert.doesNotMatch(html, /^\s*(?:import|export)\s/m);
     assert.ok(first.byteLength < 100_000);
     assert.ok(first.byteLength < 95_000, "external CSS must restore meaningful HTML headroom");
+    assert.doesNotMatch(html, /No recorded genre overlap|Unrecorded mechanics and other facts remain unknown/,
+      "fictional preview must not ship real-only evidence-gap labels");
     assert.ok(html.includes('<link rel="stylesheet" href="./player.css">'));
     assert.doesNotMatch(html, /<style>/);
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);
