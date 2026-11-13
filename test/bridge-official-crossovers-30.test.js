@@ -13,7 +13,7 @@ const SOURCE = new URL('../examples/curated-relations.official-3.json', import.m
 const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.meta.url);
 const manifest = () => JSON.parse(readFileSync(SOURCE, 'utf8'));
 const graph = () => prepareEvidenceModel({
-  games: projectFrozenGenres(JSON.parse(readFileSync(CATALOG, 'utf8'))),
+  games: projectFrozenGenres(JSON.parse(readFileSync(CATALOG, 'utf8')), { genreProxyComparison: true }),
   relations: validateOfficialCrossoverReceipts(manifest()),
 });
 const DEAD = 'wikidata:q30639210';
