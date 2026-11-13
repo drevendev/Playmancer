@@ -3,6 +3,14 @@
 // similarity, ranking performance, confidence intervals, or source weights.
 export const EDITORIAL_SENSITIVITY_PROTOCOL = 'p76-editorial-one-tag-sensitivity-1';
 export const EDITORIAL_SENSITIVITY_STEP = 0.05;
+// Frozen four-pair cohort from auditEditorialSelectedWeights. An otherwise
+// valid fifth/sixth pair must never silently replace a measured comparison.
+const FROZEN_PAIRS = Object.freeze([
+  ['wikidata:q16972008', 'wikidata:q332697'], // Factorio / Terraria
+  ['wikidata:q16972008', 'wikidata:q248810'],  // Factorio / Dwarf Fortress
+  ['wikidata:q19581568', 'wikidata:q248810'],  // RimWorld / Dwarf Fortress
+  ['wikidata:q332697', 'wikidata:q248810'],    // Terraria / Dwarf Fortress
+]);
 
 function requireValid(ok, message) {
   if (!ok) throw new TypeError(message);
@@ -51,7 +59,7 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
   const pairs = vettedAudit.pairs;
   requireValid(Array.isArray(pairs) && pairs.length === 4, 'requires four vetted pairs');
   const seenPairs = new Set();
-  for (const pair of pairs) {
+  for (const [index, pair] of pairs.entries()) {
     requireValid(weightsById.has(pair.left) && weightsById.has(pair.right) &&
       pair.left !== pair.right && pair.status === 'uncertain' &&
       pair.rankable_affinity === null &&
@@ -62,6 +70,11 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
     const pairKey = [pair.left, pair.right].sort().join('|');
     requireValid(!seenPairs.has(pairKey), 'duplicate editorial comparison pair');
     seenPairs.add(pairKey);
+    // The baseline audit intentionally tests four named comparisons, not any
+    // four pairs with plausible positive intersections and identical overlaps.
+    const expected = FROZEN_PAIRS[index];
+    requireValid(pair.left === expected[0] && pair.right === expected[1],
+      'editorial comparison cohort or order changed');
     const left = weightsById.get(pair.left).weights;
     const right = weightsById.get(pair.right).weights;
     const expectedShared = Object.keys(left).filter(tag => Object.hasOwn(right, tag));
