@@ -289,6 +289,20 @@ def exercise(browser, base_url, engine, label, width, height):
         # Guard the real deployed player, not merely the offline Gameplay Facts
         # explorer or synthetic fixture. Source-backed positives are partial
         # discovery evidence; a missing observation must never imply absence.
+        # A player should find real titles even when omitting their punctuation.
+        # Name matches are not gameplay-fact claims or inferred tag coverage.
+        page.locator("#search").fill("Papers Please")
+        papers = page.get_by_role("button", name="Add Papers, Please", exact=True)
+        check(case, "punctuation-free title finds Papers, Please without fake evidence",
+              papers.count() == 1 and page.locator("#search-results li").count() == 1
+              and papers.get_attribute("aria-describedby") is None
+              and page.locator("#seeds > li").count() == 2)
+        page.locator("#search").fill("FTL Faster Than Light")
+        ftl = page.get_by_role("button", name="Add FTL: Faster Than Light", exact=True)
+        check(case, "colon-free title finds FTL: Faster Than Light without fake evidence",
+              ftl.count() == 1 and page.locator("#search-results li").count() == 1
+              and ftl.get_attribute("aria-describedby") is None
+              and page.evaluate("document.activeElement.id") == "search")
         page.locator("#search").fill("Automating production")
         fact_matches = page.locator("#search-results li")
         factorio_hit = page.get_by_role("button", name="Add Factorio", exact=True)

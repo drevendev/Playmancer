@@ -118,6 +118,10 @@ for (const [index, path] of modules.entries()) {
       return current.startsWith("const BUILD_CATALOG_SNAPSHOT = ") ||
         next.startsWith("const BUILD_CATALOG_SNAPSHOT = ") ? separator : ";";
     });
+    // A comma requires continuation, and a semicolon already ends a statement.
+    // Compact only their line breaks; retain one blank-line separator for ASI.
+    source = source.replace(/,\r?\n/g, ",").replace(/;\r?\n(?=})/g, ";")
+      .replace(/\n{2,}/g, "\n");
   }
   if (path === "src/bridge.js") {
     for (const name of ["assertCanonicalId", "assertUnitInterval", "comparePath", "compareState"]) {
