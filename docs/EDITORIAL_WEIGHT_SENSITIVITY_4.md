@@ -2,7 +2,7 @@
 
 **Release gate: NOT READY.** This is an offline diagnostic of the existing
 selected-positive 4-game weight pilot, not a recommender or calibration of
-similarity. It does not change the public `feature-overlap-2` player, Bridge,
+similarity. It does not change the public `feature-overlap-3` player, Bridge,
 share links, catalog, hard filters, or Pages bundle.
 
 ## Reproducible protocol
@@ -53,6 +53,28 @@ rankable scenarios**. This is unchanged by all the numerical perturbations.
 No independent player preferences, ordered candidate recommendations, human
 judgments, Bridge-route utility or rank-quality improvement were measured.
 No publisher weighting claim or bulk store/community data import is made.
+
+## Relative overlap order — an additional negative stability result
+
+The same **32 finite editorial perturbations** allow six comparisons of the
+four selected-positive overlap values: **192 pair-order observations**.
+The CLI now records each comparison's baseline order, case labels, strict
+reversals and changes into/out of ties. **Two strict reversals** occur when
+comparing *RimWorld ↔ Dwarf Fortress* (0.53 baseline) to
+*Terraria ↔ Dwarf Fortress* (0.47 baseline):
+
+- Decrease Dwarf Fortress's selected colony-management weight by 0.05:
+  the respective observed overlaps become **0.48** and **0.486667**.
+- Increase its selected digging weight by 0.05:
+  the observed overlaps become **0.508205** and **0.52**.
+
+The other five pair-to-pair baseline relationships remain unchanged in all
+32 variants; no comparison enters or leaves a tie. Thus even the **relative
+ordering of two recorded positive overlaps flips** under a single manual
+weight edit. These are *four fixed game-pair observations*, **not four
+candidate recommendations or a basket ranking experiment**. No accuracy
+claim, calibrated fit, statistical uncertainty or real-world ranking result
+follows from the 2/192 count.
 
 ## Decision and next genuine gate
 
