@@ -332,7 +332,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and "noopener" in (fact_source.get_attribute("rel") or "")
               and "noreferrer" in (fact_source.get_attribute("rel") or "")
               and fact_state.get("pair") == []
-              and fact_state.get("query") == "Factorio"
+              and fact_state.get("query") == "wikidata:q16972008"
               and fact_state.get("tag") == "mechanic:automation"
               and fact_state.get("catalog") == catalog_id
               and len(fact_state.get("evidence", "")) == 40)
