@@ -5,7 +5,7 @@ import { validateCatalogSnapshot } from '../src/catalog.js';
 import { canonicalGenreTag, projectFrozenGenres, runFrozenRealEvidenceComparison,
   REAL_EVIDENCE_PROTOCOL, FROZEN_CATALOG_BLOB, FROZEN_PLAN_BLOB } from '../src/evidence-real-pilot.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
-import { prepareEvidenceModel, compareEvidenceGames } from '../src/evidence-similarity.js';
+import { prepareEvidenceModel, compareEvidenceGames, rankEvidenceBasket } from '../src/evidence-similarity.js';
 
 const raw = readFileSync(new URL('../examples/catalog.multistore-30.real.json', import.meta.url), 'utf8');
 const plan = JSON.parse(readFileSync(new URL('../examples/evaluation-baskets-30.real.json', import.meta.url), 'utf8'));
@@ -16,6 +16,9 @@ test('real pilot projection uses only approved frozen genre/platform receipts; u
   const profiles = projectFrozenGenres(snapshot);
   assert.equal(profiles.length, 30);
   assert.equal(profiles.filter(item => item.tags !== null).length, 29);
+  assert.ok(profiles.filter(item => item.tags !== null)
+    .every(item => item.tagCoverage === 'partial'),
+    'genre observations are NOT complete game-wide semantic tag profiles');
   assert.equal(profiles.find(item => item.id === 'dreven:devmatch').tags, null);
   assert.ok(profiles.every(item => item.coop === null && !('releaseYear' in item.metadata)));
   for (const profile of profiles) {
@@ -30,6 +33,26 @@ test('real pilot projection uses only approved frozen genre/platform receipts; u
   const missing = compareEvidenceGames(model, 'dreven:devmatch', 'wikidata:q23013817');
   assert.equal(missing.status, 'uncertain');
   assert.equal(missing.affinity, null);
+  const known = profiles.filter(item => item.tags !== null);
+  const observedPair = compareEvidenceGames(model, known[0].id, known[1].id);
+  assert.equal(observedPair.tags.coverage, 'partial');
+  assert.equal(observedPair.tags.similarity, null);
+  assert.equal(observedPair.affinity, null);
+  const ordinaryBasket = rankEvidenceBasket(model, {
+    seeds: [{ id: known[0].id }, { id: known[1].id }], mode: 'intersection',
+  });
+  assert.equal(ordinaryBasket.ranked.length, 0);
+  assert.equal(ordinaryBasket.uncertain.length, 28);
+  assert.ok(ordinaryBasket.uncertain.every(item =>
+    item.reason === 'partial-weighted-tags' || item.reason === 'missing-weighted-tags'));
+  // Only a deliberately labeled, frozen genre-proxy comparison can get
+  // historical matched-genre rankings; it does NOT certify semantic vectors.
+  const comparatorOnly = projectFrozenGenres(snapshot, { genreProxyComparison: true });
+  assert.equal(comparatorOnly.filter(item => item.tagCoverage === 'complete').length, 29);
+  assert.throws(() => projectFrozenGenres(snapshot, { genreProxyComparison: 'true' }),
+    /genreProxyComparison must be boolean/);
+  assert.throws(() => projectFrozenGenres(snapshot, { tagCoverage: 'complete' }),
+    /invalid genre proxy options/);
   assert.equal(canonicalGenreTag('Metroidvania'), 'genre:metroidvania');
   assert.equal(canonicalGenreTag('2D platform game'), 'genre:2d-platform-game');
 });
@@ -41,6 +64,8 @@ test('frozen 30-basket real-identity comparison shares exact catalog, filters an
   assert.equal(report.frozen_basket_plan_git_blob_sha1, FROZEN_PLAN_BLOB);
   assert.equal(report.catalog_games, 30);
   assert.equal(report.basket_count, 30);
+  assert.match(report.projection_policy, /comparison-only complete genre proxy/);
+  assert.match(report.warning, /Ordinary real-game v2 projection abstains/);
   assert.equal(report.rows.length, 150);
   assert.deepEqual(report.observed_lanes, ['genre', 'platforms']);
   assert.equal(report.curated_relation_count, 0);
