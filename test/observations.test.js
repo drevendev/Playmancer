@@ -47,6 +47,10 @@ test('unreviewed and no common observations never imply supported zero similarit
 test('search discovers mechanics without modifying ranker constraints or treating missing facts as absent', () => {
   assert.equal(searchObservations(model).length, 30);
   assert.deepEqual(searchObservations(model, '', 'mechanic:building').map(g => g.name), ['Factorio','RimWorld','Terraria']);
+  assert.deepEqual(searchObservations(model, a, 'mechanic:automation').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, a.toUpperCase()).map(g => g.id), [a]);
+  const pinnedFact = { ...state(), pair: [], query: a, tag: 'mechanic:automation' };
+  assert.deepEqual(decodeObservationState(model, encodeObservationState(model, pinnedFact)), pinnedFact);
   assert.deepEqual(searchObservations(model, 'FARMING').map(g => g.name), ['Spiritfarer','Stardew Valley']);
   assert.deepEqual(searchObservations(model, '<script>'), []);
   assert.equal(searchObservations(model, 'DevMatch')[0].coverage, 'unknown');
