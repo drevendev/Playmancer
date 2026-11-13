@@ -101,7 +101,7 @@ export function searchObservations(model, query = '', tag = '') {
     throw new Error('Invalid observation search');
   const needle = query.trim().normalize('NFC').toLowerCase();
   return model.games.filter(game => (!tag || game.facts.some(fact => fact.id === tag)) &&
-    (!needle || [game.name, ...game.facts.flatMap(fact => [fact.label, fact.id])]
+    (!needle || [game.id, game.name, ...game.facts.flatMap(fact => [fact.label, fact.id])]
       .some(text => text.normalize('NFC').toLowerCase().includes(needle))));
 }
 export function validateObservationState(model, state) {

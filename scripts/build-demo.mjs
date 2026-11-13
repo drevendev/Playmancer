@@ -64,19 +64,41 @@ for (const [index, path] of modules.entries()) {
     // from only the strict-size fictional bundle. Published real builds retain
     // the complete immutable-SHA links and their interactive explanations.
     const receiptStart = source.indexOf("function catalogReceiptBase() {");
-    const realEvidenceEnd = source.indexOf("function pinnedFactsLink(firstId, secondId, entry) {", receiptStart);
+    const realEvidenceEnd = source.indexOf("function pinnedFactsLink(", receiptStart);
     if (receiptStart < 0 || realEvidenceEnd <= receiptStart) throw new Error("Unexpected receipt/evidence boundary");
     source = source.slice(0, receiptStart) +
       "function renderCatalogReceipts() { return null; }\n" +
       "function renderBasketEvidence() { return null; }\n" +
       source.slice(realEvidenceEnd);
-    const start = source.indexOf("function pinnedFactsLink(firstId, secondId, entry) {");
+    const start = source.indexOf("function pinnedFactsLink(");
     const end = source.indexOf("function showCatalogIdentity() {", start);
     if (start < 0 || end <= start) throw new Error("Unexpected observation deep-link boundary");
     source = source.slice(0, start) +
       "function recommendationFactComparison() { return null; }\n" +
       "function renderFavoriteFactComparisons() { $(\"basket-fact-comparisons\").hidden = true; }\n" +
       source.slice(end);
+    // The searched-fact source link is real-catalog-only. Remove that unreachable
+    // DOM/link builder from fictional bundles to preserve the strict HTML budget.
+    const factSourceStart = source.indexOf("      // Offer the dated source before adding a game;");
+    const factSourceEnd = source.indexOf("    } else if (!syntheticCatalog && !game.themes?.length) {", factSourceStart);
+    if (factSourceStart < 0 || factSourceEnd <= factSourceStart)
+      throw new Error("Unexpected real-only search receipt boundary");
+    source = source.slice(0, factSourceStart) + source.slice(factSourceEnd);
+    // Synthetic search never receives a positive-only real observation map.
+    // Keep its original name/feature-tag lookup, not the real-only ID/receipt
+    // matching code, to avoid shipping dead logic in the size-limited preview.
+    const factSearchStart = source.indexOf("      const matchedFactEntry = ");
+    const factSearchEnd = source.indexOf("    }).filter(Boolean)", factSearchStart);
+    if (factSearchStart < 0 || factSearchEnd <= factSearchStart)
+      throw new Error("Unexpected real-only fact-search boundary");
+    source = source.slice(0, factSearchStart) +
+      "      return direct || matchedTag ? { game, matchedTag, matchedFact: null } : null;\n" +
+      source.slice(factSearchEnd);
+    const factSearchDestructure = "for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {";
+    if (source.split(factSearchDestructure).length !== 2)
+      throw new Error("Unexpected real-only fact-ID binding");
+    source = source.replace(factSearchDestructure,
+      "for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {");
   }
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
