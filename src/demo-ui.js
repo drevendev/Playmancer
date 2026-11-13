@@ -157,12 +157,12 @@ function renderBasketEvidence(game) {
 // Choose which favorite to compare with a recommendation rather than
 // arbitrarily comparing only the first basket seed. This only navigates to
 // source-backed observations; partial facts never enter ranking or filters.
-function pinnedFactsLink(firstId, secondId, entry) {
+function pinnedFactsLink(firstId, secondId, entry, tag = "") {
   const evidenceState = {
     version: entry.dataset.observationVersion,
     catalog: entry.dataset.observationCatalog,
     evidence: entry.dataset.observationEvidence,
-    pair: [firstId, secondId], query: "", tag: ""
+    pair: tag ? [] : [firstId, secondId], query: tag ? BY_ID.get(firstId).name.slice(0, 120) : "", tag
   };
   return "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
 }
@@ -410,14 +410,16 @@ function drawSearch() {
       // Independently reviewed positive Gameplay Facts are searchable as
       // discovery evidence only; unlisted facts never become negative evidence,
       // similarity scores, hard filters, or share-state fields.
-      const matchedFact = direct || matchedTag || syntheticCatalog ? null :
-        ([...(inlineGameplayFacts?.get(game.id)?.values() ?? [])]
-          .find(label => label.normalize("NFC").toLowerCase().includes(query)) ?? null);
-      return direct || matchedTag || matchedFact ? { game, matchedTag, matchedFact } : null;
+      const matchedFactEntry = direct || matchedTag || syntheticCatalog ? null :
+        ([...(inlineGameplayFacts?.get(game.id) ?? [])]
+          .find(([, label]) => label.normalize("NFC").toLowerCase().includes(query)) ?? null);
+      const matchedFact = matchedFactEntry?.[1] ?? null;
+      return direct || matchedTag || matchedFact
+        ? { game, matchedTag, matchedFact, matchedFactId: matchedFactEntry?.[0] } : null;
     }).filter(Boolean)
     : [];
   const shown = browseAll && !query ? matches.slice(0, browseLimit) : matches;
-  for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {
+  for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
@@ -447,6 +449,13 @@ function drawSearch() {
       evidence.id = `search-match-${index}`;
       button.setAttribute("aria-describedby", evidence.id);
       row.append(button, evidence);
+      // Offer the dated source before adding a game; the observed fact does not affect fit.
+      if (matchedFactId && $("observation-explorer-entry")?.dataset.observationCatalog === CATALOG_VERSION) {
+        const receipt = element("a", `Inspect ${game.name} fact source (new tab)`, "fact-compare-link");
+        receipt.href = pinnedFactsLink(game.id, null, $("observation-explorer-entry"), matchedFactId);
+        receipt.target = "_blank"; receipt.rel = "noopener noreferrer";
+        row.append(receipt);
+      }
     } else if (!syntheticCatalog && !game.themes?.length) {
       // Surface the gap during direct name search as well as browsing, before
       // the player spends a basket slot or assigns this game a high weight.
