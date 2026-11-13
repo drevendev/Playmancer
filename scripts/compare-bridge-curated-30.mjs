@@ -29,7 +29,7 @@ export function compareFrozenCuratedBridge(catalogText, plan) {
   }
 
   const catalog = JSON.parse(catalogText);
-  const profiles = projectFrozenGenres(catalog);
+  const profiles = projectFrozenGenres(catalog, { genreProxyComparison: true });
   // No sourced curated relations are present in this catalog. Deliberately
   // passing [] is NOT an assertion that such relationships do not exist.
   const model = prepareEvidenceModel({ games: profiles, relations: [] });
