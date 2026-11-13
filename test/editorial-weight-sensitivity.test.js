@@ -20,6 +20,17 @@ test('exact-blob-vetted 4-game experiment yields 32 normalized sensitivity varia
   assert.equal(report.evaluated_scenarios_including_baseline, 33);
   assert.equal(report.complete_profile_count, 0);
   assert.equal(report.v2_rankable_scenarios, 0);
+  assert.equal(report.pair_order_comparisons, 6 * 32);
+  assert.equal(report.pair_order_reversals, 2);
+  assert.equal(report.pair_order_tie_changes, 0);
+  assert.deepEqual(report.observed_pair_order_sensitivity.map(row => row.reversed_variants),
+    [0, 0, 0, 0, 0, 2]);
+  assert.deepEqual(report.observed_pair_order_sensitivity[5].reversal_cases, [
+    'wikidata:q248810/activity:colony-management/-0.05',
+    'wikidata:q248810/mechanic:digging/+0.05',
+  ]);
+  assert.ok(report.observed_pair_order_sensitivity.every(row =>
+    row.tie_changed_variants === 0 && row.tie_change_cases.length === 0));
   assert.deepEqual(report.observed_pair_envelopes.map(row => row.baseline_selected_overlap),
     [0.16, 0.16, 0.53, 0.47]);
   assert.deepEqual(report.observed_pair_envelopes.map(row => [
