@@ -162,7 +162,7 @@ function pinnedFactsLink(firstId, secondId, entry, tag = "") {
     version: entry.dataset.observationVersion,
     catalog: entry.dataset.observationCatalog,
     evidence: entry.dataset.observationEvidence,
-    pair: tag ? [] : [firstId, secondId], query: tag ? BY_ID.get(firstId).name.slice(0, 120) : "", tag
+    pair: tag ? [] : [firstId, secondId], query: tag ? firstId : "", tag
   };
   return "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
 }
