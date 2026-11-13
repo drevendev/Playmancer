@@ -64,13 +64,13 @@ for (const [index, path] of modules.entries()) {
     // from only the strict-size fictional bundle. Published real builds retain
     // the complete immutable-SHA links and their interactive explanations.
     const receiptStart = source.indexOf("function catalogReceiptBase() {");
-    const realEvidenceEnd = source.indexOf("function pinnedFactsLink(firstId, secondId, entry) {", receiptStart);
+    const realEvidenceEnd = source.indexOf("function pinnedFactsLink(", receiptStart);
     if (receiptStart < 0 || realEvidenceEnd <= receiptStart) throw new Error("Unexpected receipt/evidence boundary");
     source = source.slice(0, receiptStart) +
       "function renderCatalogReceipts() { return null; }\n" +
       "function renderBasketEvidence() { return null; }\n" +
       source.slice(realEvidenceEnd);
-    const start = source.indexOf("function pinnedFactsLink(firstId, secondId, entry) {");
+    const start = source.indexOf("function pinnedFactsLink(");
     const end = source.indexOf("function showCatalogIdentity() {", start);
     if (start < 0 || end <= start) throw new Error("Unexpected observation deep-link boundary");
     source = source.slice(0, start) +
