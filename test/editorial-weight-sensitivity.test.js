@@ -85,6 +85,28 @@ test('rejects duplicated, reversed, missing or spurious shared positive evidence
     /shared positive tags/);
 });
 
+test('rejects a substituted or reordered comparison even with valid identical overlap', () => {
+  const substituted = structuredClone(baseline);
+  // Factorio/RimWorld and Factorio/Dwarf Fortress both have an observed
+  // building overlap of 0.16. The old shape/set checks accepted substitution
+  // while continuing to report the same numerical envelope under a false pair.
+  substituted.pairs[1].right = proposal.profiles[1].id;
+  assert.equal(substituted.pairs[1].editorial_observed_overlap, 0.16);
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, substituted),
+    /editorial comparison cohort or order changed/);
+
+  const reordered = structuredClone(baseline);
+  [reordered.pairs[0], reordered.pairs[1]] =
+    [reordered.pairs[1], reordered.pairs[0]];
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, reordered),
+    /editorial comparison cohort or order changed/);
+
+  const reversed = structuredClone(baseline);
+  [reversed.pairs[0].left, reversed.pairs[0].right] =
+    [reversed.pairs[0].right, reversed.pairs[0].left];
+  assert.throws(() => auditEditorialWeightSensitivity(proposal, reversed),
+    /editorial comparison cohort or order changed/);
+});
 test('CLI report matches imported library and retains exact source snapshot ids', () => {
   const output = execFileSync(process.execPath,
     [new URL('../scripts/audit-editorial-weight-sensitivity.mjs', import.meta.url).pathname],
