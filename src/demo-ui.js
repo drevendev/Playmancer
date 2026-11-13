@@ -589,9 +589,9 @@ function drawResults() {
     const noWholeBasketOverlap = !syntheticCatalog && state.mode === "intersection" && item.scores.intersection === 0;
     const zeroBlendGain = !syntheticCatalog && blendSelection && item.blend.objective === 0 && item.scores.arithmetic > 0;
     if (noGenreOverlap) {
-      fit.append(element("small", "No shared genres with any favorite", "fit-warning"));
+      fit.append(element("small", "No recorded genre overlap with any favorite", "fit-warning"));
     } else if (noWholeBasketOverlap) {
-      fit.append(element("small", "No shared genres with at least one favorite", "fit-warning"));
+      fit.append(element("small", "No recorded genre overlap with at least one favorite", "fit-warning"));
     } else if (zeroBlendGain) {
       fit.append(element("small", "No additional uncovered-strand gain here; some genres still overlap", "fit-warning"));
     }
@@ -603,7 +603,7 @@ function drawResults() {
     const affinities = element("div", undefined, "affinities");
     item.evidence.forEach((pair) => {
       const row = element("div", undefined, "affinity");
-      row.append(element("span", `Match to ${BY_ID.get(pair.id).name}`), element("b", pair.affinity.toFixed(3)));
+      row.append(element("span", `${syntheticCatalog ? "Match to" : "Recorded genre score vs"} ${BY_ID.get(pair.id).name}`), element("b", pair.affinity.toFixed(3)));
       affinities.append(row);
     });
     card.append(affinities);
@@ -630,7 +630,11 @@ function drawResults() {
       }
     }
     if (item.blend) why.append(element("p", `Blend selection objective: ${item.blend.objective.toFixed(3)}; average fit: ${item.scores.arithmetic.toFixed(3)}; uncovered-strand gain: ${item.blend.gain.toFixed(3)}; relevance weight λ: ${state.lambda}.`));
-    if (state.mode === "intersection" && score === 0) why.append(element("p", "No overlap with at least one seed: this is not a strong whole-basket match."));
+    if (state.mode === "intersection" && score === 0) why.append(element("p", syntheticCatalog
+      ? "No overlap with at least one seed: this is not a strong whole-basket match."
+      : "No recorded genre overlap with at least one favorite: not a demonstrated whole-basket match."));
+    if (!syntheticCatalog && (noGenreOverlap || noWholeBasketOverlap)) why.append(element("p",
+      "Missing recorded overlap does not prove unrelated gameplay. Unrecorded mechanics and other facts remain unknown."));
     why.append(element("p", syntheticCatalog
       ? `Comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}%. Mechanics use 70% and themes 30%; popularity is not used.`
       : `Observed comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}% of the full model (genre labels only, internally held in the themes field). Mechanics are unknown; similarities are exploratory and popularity is not used.`));
@@ -676,7 +680,7 @@ function drawResults() {
     ? visible.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
   $("status").textContent = `${visible.length} of ${result.ranked.length} ranked shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
     (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "") +
-    (partialIntersection ? ` ${partialIntersection} lack overlap with at least one favorite; not whole-basket matches.` : "");
+    (partialIntersection ? ` ${partialIntersection} lack recorded genre overlap with at least one favorite; not demonstrated whole-basket matches.` : "");
   $("uncertainty-title").textContent = `Uncertain (${result.uncertain.length}) and excluded (${result.excluded.length}) profiles`;
   $("partition-list").replaceChildren();
   for (const item of [...result.uncertain, ...result.excluded]) {
