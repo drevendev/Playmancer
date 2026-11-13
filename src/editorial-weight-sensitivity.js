@@ -115,6 +115,30 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
     }
   }
   requireValid(variantCount === 32, 'unexpected sensitivity variant count');
+  // Compare ONLY the order of the four selected-positive overlap observations,
+  // not candidates or full-game taste. Each of the 32 weight changes must be
+  // compared against the same six frozen pair-to-pair baseline relationships.
+  const pairOrder = [];
+  for (let first = 0; first < pairs.length; first++) {
+    for (let second = first + 1; second < pairs.length; second++) {
+      const baseline = Math.sign(values[first][0].value - values[second][0].value);
+      const reversalCases = [], tieChangeCases = [];
+      for (let n = 1; n <= variantCount; n++) {
+        requireValid(values[first][n].label === values[second][n].label,
+          'sensitivity variant alignment changed');
+        const observed = Math.sign(values[first][n].value - values[second][n].value);
+        if (baseline !== 0 && observed === -baseline) reversalCases.push(values[first][n].label);
+        if ((baseline === 0) !== (observed === 0)) tieChangeCases.push(values[first][n].label);
+      }
+      pairOrder.push({
+        first_pair: [pairs[first].left, pairs[first].right],
+        second_pair: [pairs[second].left, pairs[second].right],
+        baseline_relation: baseline === 0 ? 'tie' : baseline > 0 ? 'higher' : 'lower',
+        reversed_variants: reversalCases.length, reversal_cases: reversalCases,
+        tie_changed_variants: tieChangeCases.length, tie_change_cases: tieChangeCases,
+      });
+    }
+  }
   return {
     protocol: EDITORIAL_SENSITIVITY_PROTOCOL,
     source_protocol: vettedAudit.protocol,
@@ -125,6 +149,10 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
     perturbation_policy: "one selected-positive tag per game +/-0.05; proportional compensation among that game's other three positives; all 29 reviewed profiles retain partial coverage",
     variants: variantCount,
     evaluated_scenarios_including_baseline: variantCount + 1,
+    pair_order_comparisons: pairOrder.length * variantCount,
+    pair_order_reversals: pairOrder.reduce((sum, item) => sum + item.reversed_variants, 0),
+    pair_order_tie_changes: pairOrder.reduce((sum, item) => sum + item.tie_changed_variants, 0),
+    observed_pair_order_sensitivity: pairOrder,
     complete_profile_count: 0,
     v2_rankable_scenarios: 0,
     observed_pair_envelopes: pairs.map((pair, i) => {
@@ -141,6 +169,6 @@ export function auditEditorialWeightSensitivity(pilot, vettedAudit) {
         status: 'uncertain', rankable_affinity: null,
       };
     }),
-    interpretation: 'Finite one-at-a-time editorial sensitivity envelope, NOT a confidence interval or real-game similarity range. All 29 observed tag profiles remain partial; no v2 ranking is licensed by these values.',
+    interpretation: 'Finite one-at-a-time editorial sensitivity envelope; pair-order reversals concern selected observed overlaps only, NOT basket recommendations, confidence intervals or real-game similarity ranges. All 29 observed tag profiles remain partial; no v2 ranking is licensed by these values.',
   };
 }
