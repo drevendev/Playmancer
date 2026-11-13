@@ -77,6 +77,13 @@ for (const [index, path] of modules.entries()) {
       "function recommendationFactComparison() { return null; }\n" +
       "function renderFavoriteFactComparisons() { $(\"basket-fact-comparisons\").hidden = true; }\n" +
       source.slice(end);
+    // The searched-fact source link is real-catalog-only. Remove that unreachable
+    // DOM/link builder from fictional bundles to preserve the strict HTML budget.
+    const factSourceStart = source.indexOf("      // Offer the dated source before adding a game;");
+    const factSourceEnd = source.indexOf("    } else if (!syntheticCatalog && !game.themes?.length) {", factSourceStart);
+    if (factSourceStart < 0 || factSourceEnd <= factSourceStart)
+      throw new Error("Unexpected real-only search receipt boundary");
+    source = source.slice(0, factSourceStart) + source.slice(factSourceEnd);
   }
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
