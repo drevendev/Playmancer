@@ -22,6 +22,14 @@
 .check span{display:flex;align-items:center;min-height:44px}
 .empty-reasons{padding-left:20px}.empty-actions button{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
 #quick-nav button{white-space:normal;overflow-wrap:anywhere}
+/* Keep page-section controls at their full text size: wrap buttons, not
+   their captions. At 400% root text the three native controls stack. */
+@media(max-width:800px){
+  #quick-nav{flex-wrap:wrap;gap:4px}
+  #quick-nav button{flex:1 0 auto;min-width:max-content;white-space:nowrap;overflow-wrap:normal}
+  /* Focused headings remain below the taller sticky navigation at 400% text. */
+  #basket-title,#recommendations,#bridge-title{scroll-margin-top:6rem}
+}
 .intro-actions{margin-top:20px}.intro-actions button{min-height:48px;line-height:1.3}
 /* Responsive headings scale with text zoom. */
 @media(max-width:960px){h1{font-size:2.75rem}}

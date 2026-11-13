@@ -74,6 +74,59 @@ try:
             check(label + ": keyboard preserves route and endpoints", page.locator("#bridge-steps").inner_text() == route_before and page.locator("#bridge-end").input_value() == "demo:harvest")
             check(label + ": title is in the viewport", page.locator("#bridge-title").evaluate("e => { const r=e.getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight; }"))
             if root_scale == 4:
+                # Measure actual caption characters, not just overall document
+                # width: the old equal-width buttons split Basket/Results/Bridge.
+                nav = page.locator("#quick-nav").evaluate("""panel => {
+                    const bounds = panel.getBoundingClientRect();
+                    const range = document.createRange();
+                    const labels = Array.from(panel.querySelectorAll("button"), node => {
+                        const text = node.firstChild, word = text.textContent.trim();
+                        const lines = new Set();
+                        for (let i = 0; i < word.length; i++) {
+                            range.setStart(text, i);
+                            range.setEnd(text, i + 1);
+                            lines.add(Math.round(range.getBoundingClientRect().top));
+                        }
+                        const box = node.getBoundingClientRect();
+                        return {
+                            id: node.id, word, broken: lines.size !== 1,
+                            left: box.left, right: box.right, height: box.height,
+                            selected: node.classList.contains("primary"),
+                            clipped: node.scrollWidth > node.clientWidth + 1
+                        };
+                    });
+                    return {
+                        labels, left: bounds.left, right: bounds.right,
+                        viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+                        visible: getComputedStyle(panel).display !== "none"
+                    };
+                }""")
+                check(label + ": 400% mobile section tabs keep whole words and touch targets",
+                      nav["visible"] and [item["word"] for item in nav["labels"]] ==
+                      ["Basket", "Results", "Bridge"]
+                      and not any(item["broken"] or item["clipped"] for item in nav["labels"])
+                      and all(item["height"] >= 44
+                              and item["left"] >= nav["left"] - 1
+                              and item["right"] <= nav["right"] + 1
+                              for item in nav["labels"])
+                      and sum(item["selected"] for item in nav["labels"]) == 1
+                      and nav["scrollWidth"] <= nav["viewport"])
+                nav_hash = page.evaluate("location.href")
+                nav_bridge = page.locator("#jump-bridge")
+                nav_bridge.focus()
+                check(label + ": enlarged native section tab retains visible focus",
+                      nav_bridge.evaluate("""node => {
+                          const style = getComputedStyle(node);
+                          return document.activeElement === node
+                            && parseFloat(style.outlineWidth) >= 2
+                            && style.outlineStyle !== "none";
+                      }"""))
+                nav_bridge.press("Enter")
+                check(label + ": enlarged section navigation preserves basket URL and focus",
+                      page.evaluate("location.href") == nav_hash
+                      and page.evaluate("document.activeElement.id") == "bridge-title"
+                      and page.locator("#bridge-start").input_value() == "demo:ember"
+                      and page.locator("#bridge-end").input_value() == "demo:harvest")
                 # A document-level no-overflow assertion missed words split into
                 # letter fragments. Measure actual character line positions.
                 heading = page.locator("#bridge-title").evaluate("""node => {

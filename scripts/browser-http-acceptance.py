@@ -834,6 +834,55 @@ def exercise(browser, base_url, engine, label, width, height):
                            "bridge_heading_floor": bridge_heading_floor,
                            "copy_floors": bridge_copy_floors})
             if text_size == 400 and enlarged["viewport"] <= 640:
+                # Real Chromium/Firefox/WebKit root-text stress at 390 AND 320px.
+                # Page overflow can be zero even when individual tab words
+                # fracture. Check each character's rendered line position.
+                for nav_width in (320, width):
+                    restored.set_viewport_size({"width": nav_width, "height": height})
+                    restored.evaluate(
+                        "() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
+                    nav = restored.locator("#quick-nav").evaluate("""panel => {
+                        const box = panel.getBoundingClientRect();
+                        const range = document.createRange();
+                        const labels = [...panel.querySelectorAll("button")].map(node => {
+                            const word = node.textContent.trim(), text = node.firstChild;
+                            const tops = new Set();
+                            for (let i = 0; i < word.length; i++) {
+                                range.setStart(text, i);
+                                range.setEnd(text, i + 1);
+                                tops.add(Math.round(range.getBoundingClientRect().top));
+                            }
+                            const rect = node.getBoundingClientRect();
+                            return {
+                                word, broken: tops.size !== 1, height: rect.height,
+                                left: rect.left, right: rect.right,
+                                clipped: node.scrollWidth > node.clientWidth + 1,
+                                selected: node.classList.contains("primary")
+                            };
+                        });
+                        return {
+                            visible: getComputedStyle(panel).display !== "none",
+                            labels, left: box.left, right: box.right,
+                            scrollWidth: document.documentElement.scrollWidth,
+                            viewport: innerWidth,
+                            rootSize: parseFloat(getComputedStyle(document.documentElement).fontSize)
+                        };
+                    }""")
+                    check(case, f"400% section tabs retain whole words and touch targets at {nav_width}px",
+                          nav["visible"] and nav["rootSize"] >= 63
+                          and [item["word"] for item in nav["labels"]] ==
+                              ["Basket", "Results", "Bridge"]
+                          and all(not item["broken"] and not item["clipped"]
+                                  and item["height"] >= 44
+                                  and item["left"] >= nav["left"] - 1
+                                  and item["right"] <= nav["right"] + 1
+                                  for item in nav["labels"])
+                          and sum(item["selected"] for item in nav["labels"]) == 1
+                          and nav["scrollWidth"] <= nav["viewport"] + 1,
+                          details=nav)
+                restored.set_viewport_size({"width": width, "height": height})
+                restored.evaluate(
+                    "() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
                 broken = restored.locator("#bridge-lab").evaluate("""panel => {
                     const results = {};
                     for (const [name, selector] of Object.entries({
