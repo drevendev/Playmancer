@@ -99,6 +99,22 @@ for (const [index, path] of modules.entries()) {
       throw new Error("Unexpected real-only fact-ID binding");
     source = source.replace(factSearchDestructure,
       "for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {");
+    // Fictional previews can never enter real-only genre-warning branches.
+    // Strip those unreachable DOM labels instead of loosening the strict
+    // <95kB deterministic HTML budget after real-player copy improvements.
+    const genreStart = source.indexOf('    const noGenreOverlap = !syntheticCatalog &&');
+    const genreEnd = source.indexOf('    top.append(element("span"', genreStart);
+    if (genreStart < 0 || genreEnd <= genreStart)
+      throw new Error("Unexpected real-only genre warning boundary");
+    source = source.slice(0, genreStart) +
+      "    const noGenreOverlap = false, noWholeBasketOverlap = false, zeroBlendGain = false;\n" +
+      source.slice(genreEnd);
+    const unknownStart = source.indexOf(
+      '    if (!syntheticCatalog && (noGenreOverlap || noWholeBasketOverlap)) why.append');
+    const unknownEnd = source.indexOf('    why.append(element("p", syntheticCatalog', unknownStart);
+    if (unknownStart < 0 || unknownEnd <= unknownStart)
+      throw new Error("Unexpected real-only unknown-genre explanation boundary");
+    source = source.slice(0, unknownStart) + source.slice(unknownEnd);
   }
   if (path === "src/demo.js") {
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
