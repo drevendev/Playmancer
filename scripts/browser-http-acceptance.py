@@ -299,7 +299,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and factorio_hit.count() == 1
               and fact_hint.count() == 1
               and fact_hint.inner_text().strip() ==
-                  "Recorded gameplay fact (partial evidence): Automating production"
+                  "Recorded gameplay fact (partial evidence): Automating production. Other facts may be unrecorded."
               and fact_id is not None
               and fact_id == fact_hint.get_attribute("id")
               and "matching catalog profiles" in hint.inner_text()
