@@ -44,7 +44,10 @@ test('real pilot projection uses only approved frozen genre/platform receipts; u
   assert.equal(ordinaryBasket.ranked.length, 0);
   assert.equal(ordinaryBasket.uncertain.length, 28);
   assert.ok(ordinaryBasket.uncertain.every(item =>
-    item.reason === 'partial-weighted-tags' || item.reason === 'missing-weighted-tags'));
+    item.reason === 'missing-seed-affinity' &&
+    item.evidence.every(pair =>
+      pair.reason === 'partial-weighted-tags' ||
+      pair.reason === 'missing-weighted-tags')));
   // Only a deliberately labeled, frozen genre-proxy comparison can get
   // historical matched-genre rankings; it does NOT certify semantic vectors.
   const comparatorOnly = projectFrozenGenres(snapshot, { genreProxyComparison: true });
