@@ -40,14 +40,17 @@ function buildProfiles(genres, reviewed, weightById = new Map()) {
   const observations = new Map(reviewed.games.map(game => [game.id, game]));
   const projected = genres.map(game => {
     const original = observations.get(game.id);
-    if (!original) return { ...game, tags: null };
+    // Observed real genres are partial, but are not the selected weighted facts.
+    // Do not carry their marker onto a null selected-fact vector.
+    const { tagCoverage: _genreOnlyMarker, ...base } = game;
+    if (!original) return { ...base, tags: null };
     insist(original.tagCoverage === 'partial' && original.tags?.length > 0,
       'reviewed selected-fact coverage changed: ' + game.id);
     const weights = weightById.get(game.id);
     const tags = original.tags.map(tag => ({
       ...tag, weight: weights ? weights[tag.id] : tag.weight,
     }));
-    return { ...game, tags, tagCoverage: 'partial' };
+    return { ...base, tags, tagCoverage: 'partial' };
   });
   return projectWeightedTagProfiles(prepareTagTaxonomy(reviewed.taxonomy), projected).games;
 }
