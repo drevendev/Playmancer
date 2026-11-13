@@ -378,6 +378,16 @@ function addFavorite(game, resultIndex = null) {
   }
   announceBasketAction("Added", game.name);
 }
+// Omitted title punctuation is a common search input (e.g. "Papers Please").
+// Keep IDs and evidence tags exact-substring only; this is not fuzzy feature inference.
+function titleNameMatches(value, query) {
+  const text = value.normalize("NFC").toLowerCase();
+  if (text.includes(query)) return true;
+  const words = text => text.replace(/['\u2019]/g, "").replace(/[,:;.!?()[\]{}\-–—]/g, " ")
+    .replace(/\s+/g, " ").trim();
+  const foldedQuery = words(query);
+  return foldedQuery.length >= 2 && words(text).includes(foldedQuery);
+}
 function drawSearch() {
   const query = $("search").value.trim().normalize("NFC").toLowerCase();
   const store = $("store-filter").value;
@@ -390,8 +400,9 @@ function drawSearch() {
     ? CATALOG.filter((game) => !chosen.has(game.id) &&
         (store === "all" || game.storeLinks?.some(link => link.store === store))).map((game) => {
       if (!query) return { game, matchedTag: null };
-      const direct = [game.name, game.id, ...game.aliases, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
-        .some((value) => value.normalize("NFC").toLowerCase().includes(query));
+      const direct = [game.name, ...game.aliases].some(value => titleNameMatches(value, query)) ||
+        [game.id, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
+          .some(value => value.normalize("NFC").toLowerCase().includes(query));
       const tags = syntheticCatalog
         ? [...(game.mechanics ?? []), ...(game.themes ?? [])] : (game.themes ?? []);
       const matchedTag = direct ? null
