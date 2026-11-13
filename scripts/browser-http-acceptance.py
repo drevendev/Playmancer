@@ -319,6 +319,38 @@ def exercise(browser, base_url, engine, label, width, height):
               and "matching catalog profiles" in hint.inner_text()
               and page.locator("#seeds > li").count() == 2
               and page.evaluate("document.activeElement.id") == "search")
+        # A matched positive fact must lead to the exact version-pinned observation
+        # and its public source, without adding a game or changing basket state.
+        fact_source = fact_matches.locator("a.fact-compare-link")
+        fact_href = fact_source.get_attribute("href") if fact_source.count() == 1 else ""
+        fact_fragment = urlsplit(fact_href).fragment
+        fact_state = (json.loads(unquote(fact_fragment[len("facts="):]))
+                      if fact_fragment.startswith("facts=") else {})
+        check(case, "matched fact has a source link with exact game/tag and evidence revision",
+              fact_source.count() == 1
+              and fact_source.get_attribute("target") == "_blank"
+              and "noopener" in (fact_source.get_attribute("rel") or "")
+              and "noreferrer" in (fact_source.get_attribute("rel") or "")
+              and fact_state.get("pair") == []
+              and fact_state.get("query") == "Factorio"
+              and fact_state.get("tag") == "mechanic:automation"
+              and fact_state.get("catalog") == catalog_id
+              and len(fact_state.get("evidence", "")) == 40)
+        with context.expect_page() as source_popup:
+            fact_source.click()
+        source_page = source_popup.value
+        source_page.wait_for_load_state("load")
+        source_card = source_page.locator('#observation-games article[data-game-id="wikidata:q16972008"]')
+        if source_card.count() == 1:
+            source_card.get_by_text("Inspect sources for Factorio").click()
+        check(case, "fact search opens Factorio's recorded source without changing the basket",
+              source_page.url.startswith(base_url + "/observations.html#facts=")
+              and source_page.locator("#link-error").is_hidden()
+              and source_page.locator("#observation-games article").count() == 1
+              and source_card.count() == 1
+              and source_card.locator("details a[href^='https://']").count() >= 1
+              and page.locator("#seeds > li").count() == 2)
+        source_page.close()
         page.locator("#search").fill("unrecorded fictitious mechanic")
         check(case, "unrecorded gameplay facts remain unknown, not negative evidence",
               page.locator("#search-results li").count() == 0
