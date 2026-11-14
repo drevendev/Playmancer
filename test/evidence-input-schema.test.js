@@ -112,3 +112,31 @@ test("co-op receipts must be attached to a known co-op observation", () => {
   assert.equal(retained.coop, false);
   assert.equal(retained.coopSource, "fixture:negative-coop");
 });
+
+test("externally sourced tags require an explicit whole-game coverage claim", () => {
+  const receipt = "https://example.org/verified-observation";
+  const observed = { ...profile("wikidata:q12345"),
+    tags: [{ id: "mechanic:puzzle", weight: 1, source: receipt }] };
+  // Normalized mass 1 is not proof of complete whole-game semantics.
+  assert.throws(() => prepareEvidenceModel({ games: [observed] }),
+    /tagCoverage must explicitly be complete or partial for sourced tags/);
+  const mixed = { ...observed, tags: [
+    { id: "mechanic:puzzle", weight: 0.5, source },
+    { id: "mood:cozy", weight: 0.5, source: receipt },
+  ] };
+  assert.throws(() => prepareEvidenceModel({ games: [mixed] }),
+    /tagCoverage must explicitly/);
+  const complete = profile("fixture:complete");
+  const partial = prepareEvidenceModel({ games: [
+    { ...observed, tagCoverage: "partial" }, complete,
+  ] });
+  assert.equal(partial.profiles.get(observed.id).tagCoverage, "partial");
+  assert.equal(compareEvidenceGames(partial, observed.id, complete.id).status, "uncertain");
+  const explicitlyComplete = prepareEvidenceModel({ games: [
+    { ...observed, tagCoverage: "complete" }, complete,
+  ] });
+  assert.equal(compareEvidenceGames(explicitlyComplete, observed.id, complete.id).status, "rankable");
+  // Preserve the documented legacy behavior only for explicit fixture sources.
+  assert.equal(prepareEvidenceModel({ games: [profile("fixture:legacy")] })
+    .profiles.get("fixture:legacy").tagCoverage, "complete");
+});
