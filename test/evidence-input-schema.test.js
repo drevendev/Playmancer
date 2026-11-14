@@ -92,3 +92,23 @@ test("unknown fields inside metadata receipts fail closed instead of asserting c
   ] });
   assert.deepEqual(valid.profiles.get(game.id).metadata.platforms, platforms);
 });
+
+test("co-op receipts must be attached to a known co-op observation", () => {
+  const unknown = profile("fixture:unknown-coop");
+  const detached = { ...unknown, coopSource: "fixture:unattached" };
+  assert.throws(() => prepareEvidenceModel({ games: [detached] }),
+    /coopSource requires a recorded co-op value/);
+  const omitted = { ...detached };
+  delete omitted.coop;
+  assert.throws(() => prepareEvidenceModel({ games: [omitted] }),
+    /coopSource requires a recorded co-op value/);
+
+  // Unknown without a receipt remains unknown; an explicitly recorded
+  // negative observation retains its independent source.
+  assert.equal(prepareEvidenceModel({ games: [unknown] })
+    .profiles.get(unknown.id).coopSource, null);
+  const negative = { ...unknown, coop: false, coopSource: "fixture:negative-coop" };
+  const retained = prepareEvidenceModel({ games: [negative] }).profiles.get(negative.id);
+  assert.equal(retained.coop, false);
+  assert.equal(retained.coopSource, "fixture:negative-coop");
+});
