@@ -25,6 +25,11 @@ function record(value, label) {
 // complete affinity vectors (notably misspelled tagCoverage).
 const GAME_FIELDS = new Set(["id", "tags", "tagCoverage", "metadata", "coop", "coopSource"]);
 const TAG_FIELDS = new Set(["id", "weight", "source"]);
+// Before the taxonomy projection required an explicit coverage marker, the
+// scorer accepted implicit completeness for *fictional fixtures*. Preserve only
+// these unmistakable legacy fixture receipts; an observed external source may
+// not silently become a complete whole-game weighted-tag distribution.
+const LEGACY_FIXTURE_TAG_SOURCE = /^(?:authored-fixture|authored-fictional-fixture|playmancer:authored-fictional-fixture|playmancer:fictional-capacity-fixture|fixture:[a-z0-9-]+)$/;
 const MODEL_FIELDS = new Set(["games", "relations"]);
 const FIELD_RECEIPT_FIELDS = new Set(["value", "source"]);
 const RELATION_FIELDS = new Set(["from", "to", "type", "strength", "source"]);
@@ -106,6 +111,12 @@ function normalizeProfile(input) {
   }
   // Legacy complete fixtures retain their existing scoring behavior.
   // Reviewed, selected-fact snapshots must explicitly opt into partial coverage.
+  // External/editorial receipts must declare their evidence completeness. The
+  // legacy default is permitted only for clearly marked fictional test data.
+  if (tags !== null && !Object.hasOwn(game, "tagCoverage") &&
+      !tags.every(tag => LEGACY_FIXTURE_TAG_SOURCE.test(tag.source))) {
+    throw new TypeError(`${id}.tagCoverage must explicitly be complete or partial for sourced tags`);
+  }
   if (game.tagCoverage !== undefined && !["complete", "partial"].includes(game.tagCoverage))
     throw new TypeError(`${id}.tagCoverage must be complete or partial`);
   if (tags === null && game.tagCoverage !== undefined)
