@@ -140,3 +140,33 @@ test("externally sourced tags require an explicit whole-game coverage claim", ()
   assert.equal(prepareEvidenceModel({ games: [profile("fixture:legacy")] })
     .profiles.get("fixture:legacy").tagCoverage, "complete");
 });
+
+test("sourced co-op values need an inspectable receipt before affecting hard filters", () => {
+  const yes = { ...profile("demo:coop-yes"), coop: true,
+    coopSource: "https://studio.example.org/game/coop-faq" };
+  const no = { ...profile("demo:coop-no"), coop: false,
+    coopSource: "https://studio.example.org/game/no-coop" };
+  const valid = prepareEvidenceModel({ games: [yes, no] });
+  assert.equal(valid.profiles.get(yes.id).coopSource, yes.coopSource);
+  assert.equal(valid.profiles.get(no.id).coopSource, no.coopSource);
+  // Fictional benchmark receipts remain valid, but must not be confused with
+  // a source-backed production claim.
+  for (const fixture of ["authored-fixture", "fixture:curated-receipt",
+    "playmancer:authored-fictional-fixture", "playmancer:fictional-capacity-fixture"]) {
+    const synthetic = prepareEvidenceModel({ games: [
+      { ...yes, coopSource: fixture },
+    ] });
+    assert.equal(synthetic.profiles.get(yes.id).coopSource, fixture);
+  }
+  for (const source of ["private spreadsheet", "authored-research-note",
+    "http://studio.example.org/coop", "https://localhost/coop",
+    "https://127.0.0.1/coop", "https://someone:password@studio.example.org/coop",
+    "https://studio.example.org/coop with spaces", "fixture:unverified notes"]) {
+    for (const coop of [true, false]) {
+      assert.throws(() => prepareEvidenceModel({ games: [
+        { ...yes, coop, coopSource: source },
+      ] }), /coopSource must be a public HTTPS URL or an authored fictional fixture/,
+      `opaque co-op evidence was accepted: ${source}`);
+    }
+  }
+});
