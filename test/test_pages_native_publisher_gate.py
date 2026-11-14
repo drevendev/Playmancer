@@ -2,10 +2,13 @@
 import sys
 import unittest
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from pages_native_publisher_gate import (GateError, NATIVE_PATH, classify,
-                                         wait_for_safe_order)
+from pages_native_publisher_gate import (GateError, TransientGateError,
+                                         MAX_TRANSIENT_FAILURES, NATIVE_PATH,
+                                         classify, fetch_json, wait_for_safe_order)
 
 SHA = 'a' * 40
 OTHER = 'b' * 40
@@ -23,6 +26,62 @@ def listing(*runs):
 
 
 class FenceTests(unittest.TestCase):
+    def test_http_server_failures_are_transient_but_auth_errors_are_terminal(self):
+        for status in (500, 502, 503, 504, 401, 403, 404):
+            with self.subTest(status=status):
+                failure = HTTPError('https://api.github.com', status, 'fixture', None, None)
+                with patch('pages_native_publisher_gate.urlopen', side_effect=failure):
+                    with self.assertRaises(GateError) as result:
+                        fetch_json('https://api.github.com/fixture', 'placeholder-token')
+                expected = TransientGateError if status >= 500 else GateError
+                self.assertIs(type(result.exception), expected)
+                self.assertEqual(str(result.exception), f'GitHub API HTTP_{status}')
+        with patch('pages_native_publisher_gate.urlopen', side_effect=URLError('fixture')):
+            with self.assertRaises(TransientGateError) as result:
+                fetch_json('https://api.github.com/fixture', 'placeholder-token')
+        self.assertEqual(str(result.exception), 'GitHub API NETWORK_OR_TIMEOUT')
+
+    def test_gateway_failures_retry_full_poll_before_releasing_same_sha(self):
+        replies = iter([TransientGateError('GitHub API HTTP_502'),
+                        {'build_type': 'legacy'}, TransientGateError('GitHub API HTTP_503'),
+                        {'build_type': 'legacy'}, listing(native())])
+        urls, pauses, messages = [], [], []
+        def fetch(url, token):
+            urls.append(url)
+            self.assertEqual(token, 'never-log-this-token')
+            response = next(replies)
+            if isinstance(response, Exception):
+                raise response
+            return response
+        self.assertTrue(wait_for_safe_order(
+            REPO, SHA, 'never-log-this-token', fetch=fetch,
+            sleep=pauses.append, emit=messages.append, max_polls=4))
+        self.assertEqual(pauses, [15, 15])
+        self.assertEqual(len(urls), 5)
+        self.assertEqual([url.endswith('/pages') for url in urls],
+                         [True, True, False, True, False])
+        self.assertIn('NATIVE_FINISHED', messages[-1])
+        self.assertNotIn('never-log-this-token', ''.join(messages))
+
+    def test_repeated_gateway_failure_exhausts_small_budget_without_deploy(self):
+        pauses, messages = [], []
+        with self.assertRaisesRegex(GateError, 'bounded transient retry budget exhausted'):
+            wait_for_safe_order(
+                REPO, SHA, 'token',
+                fetch=lambda *_: (_ for _ in ()).throw(TransientGateError('GitHub API HTTP_502')),
+                sleep=pauses.append, emit=messages.append, max_polls=MAX_TRANSIENT_FAILURES + 1)
+        self.assertEqual(pauses, [15] * (MAX_TRANSIENT_FAILURES - 1))
+        self.assertEqual(len(messages), MAX_TRANSIENT_FAILURES - 1)
+
+    def test_permanent_api_error_stops_without_sleep_or_deploy(self):
+        with self.assertRaisesRegex(GateError, 'GitHub API HTTP_403'):
+            wait_for_safe_order(
+                REPO, SHA, 'token',
+                fetch=lambda *_: (_ for _ in ()).throw(GateError('GitHub API HTTP_403')),
+                sleep=lambda _: self.fail('Must not retry a permissions error'),
+                emit=lambda _: self.fail('Must not announce publication'),
+                max_polls=4)
+
     def test_current_native_run_facts_match_only_exact_event_path_sha(self):
         payload = listing(native(sha=OTHER), native(event='push'),
                           native(path='.github/workflows/pages.yml'),
