@@ -26,6 +26,13 @@ least-misery, Intersection, Blend. Bridge is NOT benchmarked or redefined.
 A valid change to any basket weight, order, constraint or exclusion is rejected
 as a changed protocol rather than silently relabeled as the predeclared pilot.
 The report includes both frozen catalog and plan blob identities.
+The paired comparator also reconstructs each method's **entire** rankable
+candidate pool from the full excluded/uncertain partitions and rejects any
+difference. Matching top-five recommendations alone would not prove the other
+25 candidates were held to identical eligibility rules. The older positive-only
+platform classification may move excluded cases to *unknown*, but never into
+the rankable pool. This is a fail-closed benchmark invariant, not a measured
+improvement in recommendation quality.
 
 ## What evidence actually exists
 
