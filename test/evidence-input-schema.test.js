@@ -217,6 +217,15 @@ test("sourced tags and metadata require inspectable receipts, including frozen p
     { ...external, tags: [{ ...external.tags[0],
       source: "https://studio.example.org/claim (unreviewed spreadsheet)" }] },
   ] }), /source must be a public HTTPS URL or an authored fictional fixture/);
+  // The separate seed regression fixture remains valid only with an explicit
+  // coverage declaration; do not expand the implicit-complete legacy set.
+  const regression = { ...external, tags: [{ ...external.tags[0],
+    source: "authored-regression-fixture" }] };
+  assert.equal(prepareEvidenceModel({ games: [regression] })
+    .profiles.get(external.id).tags[0].source, "authored-regression-fixture");
+  const { tagCoverage: _explicit, ...implicit } = regression;
+  assert.throws(() => prepareEvidenceModel({ games: [implicit] }),
+    /tagCoverage must explicitly be complete or partial/);
   // Fictional offline vectors retain the established provenance markers.
   assert.equal(prepareEvidenceModel({ games: [profile("fixture:legacy")] })
     .profiles.get("fixture:legacy").tags[0].source, source);
