@@ -19,10 +19,20 @@ SHA_PATTERN = re.compile(r'[0-9a-f]{40}\Z')
 REPO_PATTERN = re.compile(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z')
 MAX_POLLS = 32
 POLL_SECONDS = 15
+MAX_TRANSIENT_FAILURES = 3
 
 
 class GateError(Exception):
     """A non-retriable input, API or publication sequencing failure."""
+
+
+class TransientGateError(GateError):
+    """A temporary GitHub API failure; retry only within the bounded fence."""
+
+
+def api_http_error(status):
+    kind = TransientGateError if 500 <= status < 600 else GateError
+    return kind(f'GitHub API HTTP_{status}')
 
 
 def fetch_json(url, token):
@@ -35,12 +45,12 @@ def fetch_json(url, token):
     try:
         with urlopen(request, timeout=15) as response:
             if response.status != 200:
-                raise GateError(f'GitHub API HTTP_{response.status}')
+                raise api_http_error(response.status)
             return json.loads(response.read(1_000_001))
     except HTTPError as exc:
-        raise GateError(f'GitHub API HTTP_{exc.code}') from None
+        raise api_http_error(exc.code) from None
     except (URLError, OSError, TimeoutError):
-        raise GateError('GitHub API NETWORK_OR_TIMEOUT') from None
+        raise TransientGateError('GitHub API NETWORK_OR_TIMEOUT') from None
     except (json.JSONDecodeError, UnicodeError, ValueError):
         raise GateError('GitHub API INVALID_JSON') from None
 
@@ -98,17 +108,29 @@ def wait_for_safe_order(repo, sha, token, fetch=fetch_json,
         raise GateError('Invalid bounded polling limit')
     base = f'https://api.github.com/repos/{repo}'
     last_state = None
+    transient_failures = 0
     for attempt in range(1, max_polls + 1):
-        # Re-evaluate the source every poll so an administrative switch to Actions
-        # does not leave the custom publisher indefinitely blocked.
-        pages = fetch(base + '/pages', token)
-        if isinstance(pages, dict) and pages.get('build_type') == 'workflow':
-            emit('Pages native fence: ACTIONS_ONLY_SOURCE; no native sequencing required')
-            return True
-        # GitHub emits the native run as event=dynamic with the SAME merge SHA.
-        # Querying the run collection by SHA excludes other master publications.
-        listing = fetch(base + '/actions/runs?head_sha=' + sha + '&per_page=100', token)
-        state, ids = classify(pages, listing, sha)
+        try:
+            # A retry must start at Pages configuration; never reuse a partial
+            # source/listing read from a failed poll to release publication.
+            pages = fetch(base + '/pages', token)
+            if isinstance(pages, dict) and pages.get('build_type') == 'workflow':
+                emit('Pages native fence: ACTIONS_ONLY_SOURCE; no native sequencing required')
+                return True
+            # GitHub emits the native run as event=dynamic with the SAME merge SHA.
+            # Querying the run collection by SHA excludes other master publications.
+            listing = fetch(base + '/actions/runs?head_sha=' + sha + '&per_page=100', token)
+            state, ids = classify(pages, listing, sha)
+        except TransientGateError as exc:
+            transient_failures += 1
+            if transient_failures >= MAX_TRANSIENT_FAILURES or attempt == max_polls:
+                raise GateError(
+                    f'{exc}; bounded transient retry budget exhausted '
+                    f'({transient_failures}/{MAX_TRANSIENT_FAILURES})') from None
+            emit(f'Pages native fence: temporary {exc}; retrying fresh exact-SHA poll '
+                 f'({attempt}/{max_polls}); deployment held')
+            sleep(POLL_SECONDS)
+            continue
         if state == 'NATIVE_FINISHED':
             emit('Pages native fence: NATIVE_FINISHED for exact SHA; native run IDs=' +
                  ','.join(str(value) for value in ids))
