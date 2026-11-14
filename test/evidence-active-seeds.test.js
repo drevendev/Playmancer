@@ -7,6 +7,9 @@ function game(id, tags = [{ id: "mechanic:building", weight: 1, source }]) {
   return {
     id,
     tags,
+    // Synthetic regression vectors are exhaustive by construction. Declare this
+    // explicitly rather than relying on legacy implicit-complete behavior.
+    ...(tags === null ? {} : { tagCoverage: "complete" }),
     metadata: tags === null ? {} : { platforms: { value: ["windows"], source } },
     coop: null,
   };
