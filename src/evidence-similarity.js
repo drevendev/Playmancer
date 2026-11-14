@@ -114,6 +114,10 @@ function normalizeProfile(input) {
   const metadata = normalizeMetadata(game.metadata, id);
   const coop = game.coop === undefined ? null : game.coop;
   if (coop !== null && typeof coop !== "boolean") throw new TypeError(`${id}.coop must be boolean or null`);
+  // An unattached receipt must not be silently discarded as if it validated a
+  // missing co-op observation. Preserve unknown, but reject contradictory input.
+  if (coop === null && game.coopSource != null)
+    throw new TypeError(`${id}.coopSource requires a recorded co-op value`);
   const coopSource = coop !== null ? text(game.coopSource, `${id}.coopSource`) : null;
   return { id, tags, tagCoverage, metadata, coop, coopSource };
 }
