@@ -58,7 +58,7 @@ function property(value, label) {
   if (value === undefined || value === null) return null;
   const entry = record(value, label);
   rejectUnknownFields(entry, FIELD_RECEIPT_FIELDS, label);
-  const source = text(entry.source, `${label}.source`);
+  const source = observationReceipt(entry.source, `${label}.source`);
   if (!Object.hasOwn(entry, "value")) throw new TypeError(`${label}.value is required`);
   return { value: entry.value, source };
 }
@@ -104,7 +104,7 @@ function normalizeProfile(input) {
       if (!TAG_ID.test(key) || key.length > 96) throw new TypeError(`invalid tag ID: ${key}`);
       if (seen.has(key)) throw new TypeError(`duplicate tag: ${id}/${key}`);
       seen.add(key);
-      return { id: key, weight: unit(tag.weight, `${id}/${key}.weight`), source: text(tag.source, `${id}/${key}.source`) };
+      return { id: key, weight: unit(tag.weight, `${id}/${key}.weight`), source: observationReceipt(tag.source, `${id}/${key}.source`) };
     }).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     const total = tags.reduce((sum, tag) => sum + tag.weight, 0);
     if (Math.abs(total - 1) > 1e-9) throw new RangeError(`tag weights for ${id} must sum to 1; got ${total}`);
@@ -158,6 +158,18 @@ function relationReceipt(value, label = "relation.source", allowLegacyFixture = 
       /^[0-9.]+$/.test(host) || host.startsWith("[") || /\s/.test(source)) {
     throw invalid();
   }
+  return source;
+}
+// Field/tag observations can influence ranking or strict eligibility. Accept
+// inspectable public HTTPS receipts and unmistakably fictional fixtures only.
+// The frozen 30-game genre proxy appends a *versioned provenance annotation*
+// after its public URL. Preserve that historical receipt verbatim, but validate
+// the link portion independently; arbitrary notes must not masquerade as URLs.
+// This is syntax/inspectability validation, NOT a truth or rights attestation.
+function observationReceipt(value, label) {
+  const source = text(value, label);
+  const frozen = /^(https:\/\/[^\\s]+) \\(frozen [a-z0-9][a-z0-9._-]* \\/ [a-z][a-z0-9-]*:[a-z0-9._-]+ \\/ (?:themes|platforms)\\)$/.exec(source);
+  relationReceipt(frozen ? frozen[1] : source, label, true);
   return source;
 }
 function pairKey(a, b) { return JSON.stringify(a < b ? [a, b] : [b, a]); }
