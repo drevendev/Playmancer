@@ -230,3 +230,33 @@ test("sourced tags and metadata require inspectable receipts, including frozen p
   assert.equal(prepareEvidenceModel({ games: [profile("fixture:legacy")] })
     .profiles.get("fixture:legacy").tags[0].source, source);
 });
+
+test("frozen source annotations cannot be borrowed across games or observation fields", () => {
+  const id = "wikidata:q12345";
+  const receipt = (gameId, scope) => "https://www.wikidata.org/wiki/Q12345#P136 " +
+    `(frozen multi-store-genre-pilot-30-2026-10-28 / ${gameId} / ${scope})`;
+  const external = { ...profile(id), tagCoverage: "complete",
+    tags: [{ id: "genre:puzzle", weight: 1, source: receipt(id, "themes") }],
+    metadata: { platforms: { value: ["windows"], source: receipt(id, "platforms") } },
+  };
+  const valid = prepareEvidenceModel({ games: [external] });
+  assert.equal(valid.profiles.get(id).tags[0].source, receipt(id, "themes"));
+  assert.equal(valid.profiles.get(id).metadata.platforms.source, receipt(id, "platforms"));
+
+  for (const mismatched of [receipt("wikidata:q67890", "themes"),
+    receipt(id, "platforms")]) {
+    assert.throws(() => prepareEvidenceModel({ games: [
+      { ...external, tags: [{ ...external.tags[0], source: mismatched }] },
+    ] }), /frozen receipt must match game ID and observation scope/);
+  }
+  for (const mismatched of [receipt("wikidata:q67890", "platforms"),
+    receipt(id, "themes")]) {
+    assert.throws(() => prepareEvidenceModel({ games: [
+      { ...external, metadata: { platforms: { value: ["windows"], source: mismatched } } },
+    ] }), /frozen receipt must match game ID and observation scope/);
+  }
+  assert.throws(() => prepareEvidenceModel({ games: [
+    { ...external, metadata: { creator: { value: "Studio", source: receipt(id, "platforms") } } },
+  ] }), /frozen receipt must match game ID and observation scope/,
+  "a frozen platform observation is not provenance for a creator assertion");
+});
