@@ -170,3 +170,54 @@ test("sourced co-op values need an inspectable receipt before affecting hard fil
     }
   }
 });
+
+test("sourced tags and metadata require inspectable receipts, including frozen proxy provenance", () => {
+  const external = { ...profile("wikidata:q12345"), tagCoverage: "complete",
+    tags: [{ id: "mechanic:puzzle", weight: 1,
+      source: "https://studio.example.org/gameplay/puzzle" }] };
+  const platforms = { value: ["windows"], source: "https://studio.example.org/platforms" };
+  const valid = prepareEvidenceModel({ games: [
+    { ...external, metadata: { platforms } }, profile("fixture:peer"),
+  ] });
+  assert.equal(valid.profiles.get(external.id).tags[0].source, external.tags[0].source);
+  assert.equal(valid.profiles.get(external.id).metadata.platforms.source, platforms.source);
+
+  for (const bad of ["internal spreadsheet", "editorial-note",
+    "http://studio.example.org/claim", "https://localhost/claim",
+    "https://127.0.0.1/claim", "https://reader:secret@studio.example.org/claim",
+    "https://studio.example.org/claim extra notes"]) {
+    assert.throws(() => prepareEvidenceModel({ games: [
+      { ...external, tags: [{ ...external.tags[0], source: bad }] },
+    ] }), /source must be a public HTTPS URL or an authored fictional fixture/,
+    `uninspectable tag evidence was accepted: ${bad}`);
+    assert.throws(() => prepareEvidenceModel({ games: [
+      { ...external, metadata: { platforms: { ...platforms, source: bad } } },
+    ] }), /source must be a public HTTPS URL or an authored fictional fixture/,
+    `uninspectable platform receipt was accepted: ${bad}`);
+    assert.throws(() => prepareEvidenceModel({ games: [
+      { ...external, metadata: { creator: { value: "Example", source: bad } } },
+    ] }), /source must be a public HTTPS URL or an authored fictional fixture/,
+    `uninspectable scalar metadata receipt was accepted: ${bad}`);
+  }
+
+  // The frozen genre proxy stores a clickable URL plus an explicit source-scope
+  // annotation. Validate the URL without erasing the version/field provenance.
+  const frozen = "https://www.wikidata.org/wiki/Q12345#P136 " +
+    "(frozen multi-store-genre-pilot-30-2026-10-28 / wikidata:q12345 / themes)";
+  const snapshot = prepareEvidenceModel({ games: [
+    { ...external, tags: [{ ...external.tags[0], source: frozen }] },
+  ] });
+  assert.equal(snapshot.profiles.get(external.id).tags[0].source, frozen);
+  const frozenPlatform = frozen.replace("#P136", "#P400").replace("/ themes)", "/ platforms)");
+  const platformSnapshot = prepareEvidenceModel({ games: [
+    { ...external, metadata: { platforms: { ...platforms, source: frozenPlatform } } },
+  ] });
+  assert.equal(platformSnapshot.profiles.get(external.id).metadata.platforms.source, frozenPlatform);
+  assert.throws(() => prepareEvidenceModel({ games: [
+    { ...external, tags: [{ ...external.tags[0],
+      source: "https://studio.example.org/claim (unreviewed spreadsheet)" }] },
+  ] }), /source must be a public HTTPS URL or an authored fictional fixture/);
+  // Fictional offline vectors retain the established provenance markers.
+  assert.equal(prepareEvidenceModel({ games: [profile("fixture:legacy")] })
+    .profiles.get("fixture:legacy").tags[0].source, source);
+});
