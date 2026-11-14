@@ -168,7 +168,7 @@ function relationReceipt(value, label = "relation.source", allowLegacyFixture = 
 // This is syntax/inspectability validation, NOT a truth or rights attestation.
 function observationReceipt(value, label) {
   const source = text(value, label);
-  const frozen = /^(https:\/\/[^\\s]+) \\(frozen [a-z0-9][a-z0-9._-]* \\/ [a-z][a-z0-9-]*:[a-z0-9._-]+ \\/ (?:themes|platforms)\\)$/.exec(source);
+  const frozen = /^(https:\/\/[^ ]+) [(]frozen [a-z0-9][a-z0-9._-]* \/ [a-z][a-z0-9-]*:[a-z0-9._-]+ \/ (?:themes|platforms)[)]$/.exec(source);
   relationReceipt(frozen ? frozen[1] : source, label, true);
   return source;
 }
