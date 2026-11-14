@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateCatalogSnapshot } from '../src/catalog.js';
 import { canonicalGenreTag, projectFrozenGenres, runFrozenRealEvidenceComparison,
-  REAL_EVIDENCE_PROTOCOL, FROZEN_CATALOG_BLOB, FROZEN_PLAN_BLOB } from '../src/evidence-real-pilot.js';
+  assertSameRankableCandidatePool, REAL_EVIDENCE_PROTOCOL, FROZEN_CATALOG_BLOB,
+  FROZEN_PLAN_BLOB } from '../src/evidence-real-pilot.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 import { prepareEvidenceModel, compareEvidenceGames, rankEvidenceBasket } from '../src/evidence-similarity.js';
 
@@ -58,6 +59,26 @@ test('real pilot projection uses only approved frozen genre/platform receipts; u
     /invalid genre proxy options/);
   assert.equal(canonicalGenreTag('Metroidvania'), 'genre:metroidvania');
   assert.equal(canonicalGenreTag('2D platform game'), 'genre:2d-platform-game');
+});
+
+test('full candidate-pool guard allows fail-to-unknown but rejects eligibility drift', () => {
+  const catalogIds = ['demo:a', 'demo:b', 'demo:c', 'demo:d'];
+  const legacy = { excluded: ['demo:a', 'demo:b'], uncertain: ['demo:c'] };
+  // Positive-only platform evidence can move from excluded to uncertain,
+  // but must NOT become eligible, even when a top-five listing looks unchanged.
+  const equivalent = { excluded: ['demo:a'], uncertain: ['demo:b', 'demo:c'] };
+  assert.doesNotThrow(() => assertSameRankableCandidatePool(catalogIds, legacy, equivalent));
+  assert.doesNotThrow(() => assertSameRankableCandidatePool(
+    [...catalogIds].reverse(), equivalent, legacy));
+  assert.throws(() => assertSameRankableCandidatePool(catalogIds, legacy,
+    { excluded: ['demo:a'], uncertain: ['demo:c'] }),
+  /rankable candidate pool changed/);
+  assert.throws(() => assertSameRankableCandidatePool(catalogIds, legacy,
+    { excluded: ['demo:a', 'demo:b'], uncertain: ['demo:c', 'demo:missing'] }),
+  /invalid trial comparison partition/);
+  assert.throws(() => assertSameRankableCandidatePool(catalogIds, legacy,
+    { excluded: ['demo:a', 'demo:b'], uncertain: ['demo:b', 'demo:c'] }),
+  /invalid trial comparison partition/);
 });
 
 test('frozen 30-basket real-identity comparison shares exact catalog, filters and exclusions', () => {
