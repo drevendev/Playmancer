@@ -233,7 +233,8 @@ test("sourced tags and metadata require inspectable receipts, including frozen p
 
 test("frozen source annotations cannot be borrowed across games or observation fields", () => {
   const id = "wikidata:q12345";
-  const receipt = (gameId, scope) => "https://www.wikidata.org/wiki/Q12345#P136 " +
+  const receipt = (gameId, scope) =>
+    `https://www.wikidata.org/wiki/Q12345#${scope === "platforms" ? "P400" : "P136"} ` +
     `(frozen multi-store-genre-pilot-30-2026-10-28 / ${gameId} / ${scope})`;
   const external = { ...profile(id), tagCoverage: "complete",
     tags: [{ id: "genre:puzzle", weight: 1, source: receipt(id, "themes") }],
