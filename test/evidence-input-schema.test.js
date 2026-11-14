@@ -260,3 +260,36 @@ test("frozen source annotations cannot be borrowed across games or observation f
   ] }), /frozen receipt must match game ID and observation scope/,
   "a frozen platform observation is not provenance for a creator assertion");
 });
+
+test("frozen Wikidata URL must identify the annotated QID and recorded property", () => {
+  const id = "wikidata:q12345";
+  const annotation = (field) =>
+    ` (frozen multi-store-genre-pilot-30-2026-10-28 / ${id} / ${field})`;
+  const theme = "https://www.wikidata.org/wiki/Q12345#P136";
+  const platform = "https://www.wikidata.org/wiki/Q12345#P400";
+  const makeGame = (tagUrl, platformUrl) => ({
+    ...profile(id),
+    tagCoverage: "complete",
+    tags: [{ id: "genre:puzzle", weight: 1, source: tagUrl + annotation("themes") }],
+    metadata: { platforms: { value: ["windows"],
+      source: platformUrl + annotation("platforms") } },
+  });
+  const valid = prepareEvidenceModel({ games: [makeGame(theme, platform)] });
+  assert.equal(valid.profiles.get(id).tags[0].source, theme + annotation("themes"));
+  assert.equal(valid.profiles.get(id).metadata.platforms.source, platform + annotation("platforms"));
+
+  // Neither matching "(frozen ... / game / field)" text nor an HTTPS URL
+  // establishes the claimed observation if the clickable target differs.
+  for (const malicious of [
+    ["https://www.wikidata.org/wiki/Q67890#P136", platform],
+    [platform, platform],
+    ["https://www.wikidata.org.evil.example/wiki/Q12345#P136", platform],
+    ["https://www.wikidata.org/wiki/Q12345?oldid=42#P136", platform],
+    [theme, "https://www.wikidata.org/wiki/Q67890#P400"],
+    [theme, theme],
+  ]) {
+    assert.throws(() => prepareEvidenceModel({ games: [makeGame(...malicious)] }),
+      /frozen Wikidata URL must match game QID and observation field/,
+      `misbound frozen receipt accepted: ${malicious.join(" | ")}`);
+  }
+});
