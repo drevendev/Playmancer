@@ -118,8 +118,11 @@ export function auditReviewedTagReadiness(catalogText, frozenPlan, reviewedTagsT
   const taxonomy = prepareTagTaxonomy(reviewed.taxonomy);
   const profiles = projectWeightedTagProfiles(taxonomy, sourceProfiles.map(source => {
     const observation = reviewedById.get(source.id);
+    // A genre-only coverage marker must not survive when selected tag facts
+    // are missing: null tags must remain truly unknown in the v2 experiment.
+    const { tagCoverage: _genreOnlyMarker, ...base } = source;
     return {
-      ...source,
+      ...base,
       tags: observation?.tags ?? null,
       ...(observation ? { tagCoverage: observation.tagCoverage } : {}),
     };

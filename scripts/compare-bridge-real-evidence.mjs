@@ -80,7 +80,7 @@ export function compareFrozenBridgeEvidence(catalogText, plan) {
       baseline.basket_plan_git_blob_sha1 !== FROZEN_PLAN_BLOB ||
       baseline.summary.pair_count !== 50)
     throw new Error('Unexpected frozen Bridge comparison inputs');
-  const profiles = projectFrozenGenres(JSON.parse(catalogText));
+  const profiles = projectFrozenGenres(JSON.parse(catalogText), { genreProxyComparison: true });
   const model = prepareEvidenceModel({ games: profiles, relations: [] });
   const totals = counts(), baselineTotals = counts(), byGroup = {};
   const baskets = plan.baskets.map((basket, index) => {

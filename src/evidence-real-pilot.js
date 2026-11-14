@@ -5,7 +5,7 @@ import { validateCatalogSnapshot } from './catalog.js';
 import { prepareEvidenceModel, rankEvidenceBasket, EVIDENCE_METHOD_VERSION } from './evidence-similarity.js';
 import { evaluateFrozenPilot } from '../scripts/evaluate-real-pilot.mjs';
 
-export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-3';
+export const REAL_EVIDENCE_PROTOCOL = 'p76-frozen-real-genre-proxy-4';
 export const FROZEN_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 export const FROZEN_CATALOG_BLOB = '0570fd610b14fb336c0de65e6cc3062892abe301';
 // The immutable, predeclared 30-basket plan (Git blob of 2-space JSON + LF).
@@ -37,7 +37,15 @@ function receipt(game, field, source, snapshotId) {
   return listing + ' (frozen ' + snapshotId + ' / ' + game.id + ' / ' + field + ')';
 }
 
-export function projectFrozenGenres(input) {
+// Real genre receipts are selected observations, not complete semantic profiles.
+// Only the frozen, explicitly labeled genre-only comparator may treat the genre
+// proxy as complete inside its own experiment; ordinary v2 scoring abstains.
+export function projectFrozenGenres(input, options = {}) {
+  assert(options !== null && typeof options === 'object' && !Array.isArray(options) &&
+    Object.keys(options).every(key => key === 'genreProxyComparison'),
+    'invalid genre proxy options');
+  const { genreProxyComparison = false } = options;
+  assert(typeof genreProxyComparison === 'boolean', 'genreProxyComparison must be boolean');
   // The catalog validator enforces per-field publication rights and canonical
   // game identity. Do not independently import store/community tags.
   const snapshot = validateCatalogSnapshot(input, { requirePublishable: true });
@@ -64,7 +72,9 @@ export function projectFrozenGenres(input) {
       };
     }
     // No creator/year/co-op/curated link assertions without field receipts.
-    return { id: game.id, tags, metadata, coop: null };
+    return { id: game.id, tags,
+      ...(tags === null ? {} : { tagCoverage: genreProxyComparison ? 'complete' : 'partial' }),
+      metadata, coop: null };
   });
 }
 
@@ -104,7 +114,9 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
   assert(baseline.catalog_snapshot_id === FROZEN_CATALOG_ID &&
     baseline.catalog_git_blob_sha1 === FROZEN_CATALOG_BLOB, 'frozen source changed');
   const snapshot = validateCatalogSnapshot(JSON.parse(catalogText), { requirePublishable: true });
-  const profiles = projectFrozenGenres(snapshot);
+  // The historical 30-basket comparison scores a *genre-only proxy*. That
+  // explicit comparator exception must never become a complete real-game vector.
+  const profiles = projectFrozenGenres(snapshot, { genreProxyComparison: true });
   const model = prepareEvidenceModel({ games: profiles, relations: [] });
   const rows = [];
   for (let i = 0; i < frozenPlan.baskets.length; i++) {
@@ -175,9 +187,10 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
     basket_count: frozenPlan.baskets.length, top_k: frozenPlan.topK,
     blend_lambda: frozenPlan.blendLambda, modes: [...MODES],
     weight_policy: 'Equal authorship-only mass among each game\'s observed CC0/owner-published genres; not source-ranked tag importance.',
+    projection_policy: 'comparison-only complete genre proxy; ordinary real-profile projection is partial and abstains',
     observed_lanes: ['genre', 'platforms'], curated_relation_count: 0,
     unobserved_lanes: ['mechanics', 'visual-style', 'characters', 'mood', 'creator', 'franchise', 'release-year', 'curated-links', 'coop'],
-    warning: 'Offline same-rankable-pool real-identity genre-only PROXY; exclusion vs unknown labels can differ because platform lists are positive-only. no human labels, measured uplift or complete semantic tag vectors. Bridge not evaluated.',
+    warning: 'Offline same-rankable-pool real-identity genre-only PROXY; comparator-only complete marker describes genres, not semantic tags. Ordinary real-game v2 projection abstains. Platform lists are positive-only; no human labels, measured uplift or complete semantic tag vectors. Bridge not evaluated.',
     summary: {
       paired_rows: rows.length,
       platform_support_reclassified_rows: rows.filter(row =>

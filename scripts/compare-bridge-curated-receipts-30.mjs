@@ -71,7 +71,7 @@ export function compareOfficialCrossoverReceipts(manifest) {
     throw new Error('Frozen comparator source or task plan changed');
   }
   const model = prepareEvidenceModel({
-    games: projectFrozenGenres(JSON.parse(readFileSync(CATALOG, 'utf8'))),
+    games: projectFrozenGenres(JSON.parse(readFileSync(CATALOG, 'utf8')), { genreProxyComparison: true }),
     relations,
   });
   const statuses = counts();

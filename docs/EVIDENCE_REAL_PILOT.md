@@ -36,6 +36,17 @@ Weights sum to one, but **these weights are authored uniform proxies**, NOT
 Wikidata vote weights, official tag ranks, game importance, player judgments
 or a complete semantic tag description. The prototype's normalized genre lane
 must not be described as 76% of *all possible* gameplay evidence.
+
+**Completeness gate (v4):** `projectFrozenGenres(snapshot)` now marks
+every recorded real genre vector `tagCoverage: partial`, so passing it to
+ordinary weighted-tag v2 scoring **abstains** rather than treating known
+genres as a complete game-wide semantic distribution. The historical
+identical-catalog top-k experiment explicitly opts into
+`{ genreProxyComparison: true }` and treats those genre lists as complete
+**only within that frozen genre-only proxy comparator**. Its report states
+`projection_policy`; it must never be read as 29 complete semantic profiles,
+an authorized v2 launch, or a replacement of real-player preference labels.
+That exceptional comparison does not enter the live player or share format.
 Null genre lists remain unknown; no hidden inference from store categories.
 
 Per-field source receipts point to Wikidata QID P136/P400 statements
@@ -56,7 +67,7 @@ overlap, experimental composite fit, coverage, abstentions, hard exclusions
 and count of top recommendations supported by **all** seeds' known genres.
 The report records changed orders and both increases **and decreases** in
 observed genre support; none are proof of human preference or uplift.
-Protocol `p76-frozen-real-genre-proxy-3` retains
+Protocol `p76-frozen-real-genre-proxy-4` retains
 `v2_top_observed_evidence[].observed_genre_gaps_by_seed`: each
 candidate/favorite pair retains source-backed `candidate_only` and
 `favorite_only` genre mass, including unequal emphasis on shared tags.
@@ -81,5 +92,5 @@ fully weighted-tag release. A player-facing switch needs independently
 cleared non-genre tag fields with field receipts, predeclared evaluation with
 real player judgments, a separate Bridge analysis, method/catalog/share
 version handling, performance and browser acceptance, plus verified
-publication. The public `feature-overlap-2` player and existing Pages
+publication. The public `feature-overlap-3` player and existing Pages
 catalog are unchanged by this experiment.
