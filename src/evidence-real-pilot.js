@@ -81,6 +81,28 @@ export function projectFrozenGenres(input, options = {}) {
 function ids(items, field = 'id') { return items.map(item => item[field]); }
 function sortedIds(items) { return [...items].sort((a, b) => a < b ? -1 : a > b ? 1 : 0); }
 function equalIds(left, right) { return JSON.stringify(sortedIds(left)) === JSON.stringify(sortedIds(right)); }
+
+// Top-k equality does not establish a fair paired benchmark: two methods could
+// show the same first five results while silently admitting different candidates.
+// Recover the FULL rankable pool from the complete excluded/unknown partitions.
+// Moving a missing platform receipt from "fail" to "unknown" is permitted;
+// moving that game into the rankable pool is never permitted.
+export function assertSameRankableCandidatePool(catalogIds, legacy, trial) {
+  assert(Array.isArray(catalogIds) && catalogIds.every(id => typeof id === 'string') &&
+    new Set(catalogIds).size === catalogIds.length, 'invalid comparison catalog IDs');
+  const universe = new Set(catalogIds);
+  const pool = (partition, label) => {
+    assert(partition && Array.isArray(partition.excluded) && Array.isArray(partition.uncertain),
+      'invalid ' + label + ' comparison partition');
+    const blocked = [...partition.excluded, ...partition.uncertain];
+    const hidden = new Set(blocked);
+    assert(hidden.size === blocked.length && blocked.every(id => universe.has(id)),
+      'invalid ' + label + ' comparison partition');
+    return catalogIds.filter(id => !hidden.has(id));
+  };
+  assert(equalIds(pool(legacy, 'legacy'), pool(trial, 'trial')),
+    'rankable candidate pool changed between paired methods');
+}
 function supportFromTags(item) {
   return item.evidence.every(pair => pair.tags.similarity !== null && pair.tags.similarity > 0);
 }
@@ -118,6 +140,7 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
   // explicit comparator exception must never become a complete real-game vector.
   const profiles = projectFrozenGenres(snapshot, { genreProxyComparison: true });
   const model = prepareEvidenceModel({ games: profiles, relations: [] });
+  const catalogIds = profiles.map(profile => profile.id);
   const rows = [];
   for (let i = 0; i < frozenPlan.baskets.length; i++) {
     const basket = frozenPlan.baskets[i];
@@ -149,6 +172,12 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
         ...basket.excludedCandidateIds]);
       assert([...protectedIds].every(id => excludedV2.includes(id)),
         'seed or explicit exclusion was weakened: ' + basket.id + '/' + mode);
+      // Check the entire same-eligibility pool, not only truncated top-k lists.
+      const unknownOld = ids(old.uncertain, 'candidate_id');
+      const unknownV2 = ids(v2.uncertain);
+      assertSameRankableCandidatePool(catalogIds,
+        { excluded: excludedOld, uncertain: unknownOld },
+        { excluded: excludedV2, uncertain: unknownV2 });
       const oldTop = ids(old.ranked, 'candidate_id');
       const newTop = ids(v2.ranked);
       const seedIds = basket.seeds.map(seed => seed.id);
@@ -165,8 +194,8 @@ export function runFrozenRealEvidenceComparison(catalogText, frozenPlan) {
         reclassified_platform_support_to_unknown: sortedIds(reclassified),
         old_top: oldTop, v2_top: newTop,
         v2_top_observed_evidence: v2.ranked.map(detail),
-        unknown_old: ids(old.uncertain, 'candidate_id'),
-        unknown_v2: ids(v2.uncertain),
+        unknown_old: unknownOld,
+        unknown_v2: unknownV2,
         shared_top_k: oldTop.filter(id => newTop.includes(id)).length,
         changed_order: JSON.stringify(oldTop) !== JSON.stringify(newTop),
         old_top_all_seed_genre_support: oldSupported,
