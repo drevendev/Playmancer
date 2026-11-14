@@ -129,7 +129,7 @@ function normalizeProfile(input) {
   // missing co-op observation. Preserve unknown, but reject contradictory input.
   if (coop === null && game.coopSource != null)
     throw new TypeError(`${id}.coopSource requires a recorded co-op value`);
-  const coopSource = coop !== null ? text(game.coopSource, `${id}.coopSource`) : null;
+  const coopSource = coop !== null ? relationReceipt(game.coopSource, `${id}.coopSource`, true) : null;
   return { id, tags, tagCoverage, metadata, coop, coopSource };
 }
 // A public editorial graph edge needs an inspectable HTTPS receipt. The only
@@ -140,20 +140,23 @@ const FICTIONAL_RELATION_RECEIPT = "playmancer:authored-fictional-fixture";
 // Preserve deterministic offline Bridge/capacity tests without admitting opaque
 // labels as supposedly inspectable editorial sources.
 const FICTIONAL_TEST_RECEIPT = /^(?:fixture:[a-z0-9-]+|playmancer:fictional-capacity-fixture)$/;
-function relationReceipt(value) {
-  const source = text(value, "relation.source");
-  if (source === FICTIONAL_RELATION_RECEIPT || FICTIONAL_TEST_RECEIPT.test(source)) return source;
+// A claimed positive/negative co-op observation can decide strict eligibility.
+// Require an inspectable public receipt, not an opaque editorial note. The only
+// non-HTTPS exceptions are unmistakably fictional fixture identifiers.
+function relationReceipt(value, label = "relation.source", allowLegacyFixture = false) {
+  const source = text(value, label);
+  if (source === FICTIONAL_RELATION_RECEIPT || FICTIONAL_TEST_RECEIPT.test(source) ||
+      (allowLegacyFixture && LEGACY_FIXTURE_TAG_SOURCE.test(source))) return source;
+  const invalid = () => new TypeError(`${label} must be a public HTTPS URL or an authored fictional fixture`);
   let url;
-  try { url = new URL(source); } catch {
-    throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
-  }
+  try { url = new URL(source); } catch { throw invalid(); }
   // DNS root dots survive URL.hostname; normalize before checking local hosts.
   const host = url.hostname.toLowerCase().replace(/\.+$/, "");
   if (url.protocol !== "https:" || url.username || url.password ||
       !host.includes(".") || host === "localhost" || host.endsWith(".localhost") ||
       host.endsWith(".local") || host.endsWith(".internal") ||
       /^[0-9.]+$/.test(host) || host.startsWith("[") || /\s/.test(source)) {
-    throw new TypeError("relation.source must be a public HTTPS URL or an authored fictional fixture");
+    throw invalid();
   }
   return source;
 }
