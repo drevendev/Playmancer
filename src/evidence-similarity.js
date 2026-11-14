@@ -54,11 +54,11 @@ function canonicalId(value) {
   if (!TAG_ID.test(value)) throw new TypeError(`noncanonical game ID: ${value}`);
   return value;
 }
-function property(value, label) {
+function property(value, label, receiptContext) {
   if (value === undefined || value === null) return null;
   const entry = record(value, label);
   rejectUnknownFields(entry, FIELD_RECEIPT_FIELDS, label);
-  const source = observationReceipt(entry.source, `${label}.source`);
+  const source = observationReceipt(entry.source, `${label}.source`, receiptContext);
   if (!Object.hasOwn(entry, "value")) throw new TypeError(`${label}.value is required`);
   return { value: entry.value, source };
 }
@@ -69,7 +69,8 @@ function normalizeMetadata(input, id) {
   }
   const result = {};
   for (const name of Object.keys(METADATA_WEIGHTS)) {
-    const field = property(metadata[name], `${id}.${name}`);
+    const field = property(metadata[name], `${id}.${name}`,
+      { gameId: id, scope: name === "platforms" ? "platforms" : null });
     if (field !== null) {
       if (name === "releaseYear") {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
@@ -104,7 +105,8 @@ function normalizeProfile(input) {
       if (!TAG_ID.test(key) || key.length > 96) throw new TypeError(`invalid tag ID: ${key}`);
       if (seen.has(key)) throw new TypeError(`duplicate tag: ${id}/${key}`);
       seen.add(key);
-      return { id: key, weight: unit(tag.weight, `${id}/${key}.weight`), source: observationReceipt(tag.source, `${id}/${key}.source`) };
+      return { id: key, weight: unit(tag.weight, `${id}/${key}.weight`), source: observationReceipt(tag.source, `${id}/${key}.source`,
+        { gameId: id, scope: "themes" }) };
     }).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     const total = tags.reduce((sum, tag) => sum + tag.weight, 0);
     if (Math.abs(total - 1) > 1e-9) throw new RangeError(`tag weights for ${id} must sum to 1; got ${total}`);
@@ -166,12 +168,18 @@ function relationReceipt(value, label = "relation.source", allowLegacyFixture = 
 // after its public URL. Preserve that historical receipt verbatim, but validate
 // the link portion independently; arbitrary notes must not masquerade as URLs.
 // This is syntax/inspectability validation, NOT a truth or rights attestation.
-function observationReceipt(value, label) {
+function observationReceipt(value, label, context) {
   const source = text(value, label);
   // Existing seed-dedup regression deliberately uses a non-public fixture label.
   // It is NOT in the implicit-complete legacy set: explicit coverage is required.
   if (source === "authored-regression-fixture") return source;
-  const frozen = /^(https:\/\/[^ ]+) [(]frozen [a-z0-9][a-z0-9._-]* \/ [a-z][a-z0-9-]*:[a-z0-9._-]+ \/ (?:themes|platforms)[)]$/.exec(source);
+  const frozen = /^(https:\/\/[^ ]+) [(]frozen ([a-z0-9][a-z0-9._-]*) \/ ([a-z][a-z0-9-]*:[a-z0-9._-]+) \/ (themes|platforms)[)]$/.exec(source);
+  // A frozen receipt is scoped to one canonical game and one observed field.
+  // A valid source URL alone cannot justify borrowing another game's themes
+  // or attaching a platform receipt to a taste tag (or scalar metadata).
+  if (frozen && (!context || frozen[3] !== context.gameId || frozen[4] !== context.scope)) {
+    throw new TypeError(`${label} frozen receipt must match game ID and observation scope`);
+  }
   relationReceipt(frozen ? frozen[1] : source, label, true);
   return source;
 }
