@@ -180,6 +180,16 @@ function observationReceipt(value, label, context) {
   if (frozen && (!context || frozen[3] !== context.gameId || frozen[4] !== context.scope)) {
     throw new TypeError(`${label} frozen receipt must match game ID and observation scope`);
   }
+  // A matching annotation is insufficient if its clickable Wikidata URL points
+  // to another QID, an unrelated property, or a lookalike host. These frozen
+  // proxy receipts are emitted by evidence-real-pilot.js in canonical form.
+  if (frozen && frozen[3].startsWith("wikidata:")) {
+    const qid = /^wikidata:q([1-9][0-9]*)$/.exec(frozen[3]);
+    const expected = qid && `https://www.wikidata.org/wiki/Q${qid[1]}#${frozen[4] === "themes" ? "P136" : "P400"}`;
+    if (frozen[1] !== expected) {
+      throw new TypeError(`${label} frozen Wikidata URL must match game QID and observation field`);
+    }
+  }
   relationReceipt(frozen ? frozen[1] : source, label, true);
   return source;
 }
