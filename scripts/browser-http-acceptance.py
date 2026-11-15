@@ -988,6 +988,61 @@ def exercise(browser, base_url, engine, label, width, height):
                     path=str(ARTIFACTS / f"http-{engine}-{label}-bridge-text400.png"),
                     animations="disabled")
 
+        if label == "mobile":
+            # Browser zoom can reduce the CSS viewport height to a few hundred
+            # pixels. A tall multi-row sticky nav would cover the reading area.
+            # Test real short-viewport geometry in addition to root-text reflow.
+            original_hash = restored.evaluate("location.hash")
+            restored.set_viewport_size({"width": 320, "height": 240})
+            restored.evaluate(
+                "() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
+            short_nav = restored.locator("#quick-nav").evaluate("""panel => ({
+                position: getComputedStyle(panel).position,
+                visible: getComputedStyle(panel).display !== 'none',
+                tabs: [...panel.querySelectorAll('button')].map(button => ({
+                    label: button.textContent.trim(),
+                    height: button.getBoundingClientRect().height,
+                    clipped: button.scrollWidth > button.clientWidth + 1
+                })),
+                width: document.documentElement.scrollWidth,
+                viewport: innerWidth
+            })""")
+            check(case, "400% text in a short zoomed viewport does not pin the navigation over content",
+                  short_nav["visible"] and short_nav["position"] == "static"
+                  and [tab["label"] for tab in short_nav["tabs"]] ==
+                      ["Basket", "Results", "Bridge"]
+                  and all(tab["height"] >= 44 and not tab["clipped"]
+                          for tab in short_nav["tabs"])
+                  and short_nav["width"] <= short_nav["viewport"] + 1,
+                  details=short_nav)
+            # Focus alone can pass even when a 6rem scroll-margin positions
+            # the heading below the entire 240px viewport at 400% root text.
+            for jump_id, heading_id in (
+                ("jump-basket", "basket-title"),
+                ("jump-results", "recommendations"),
+                ("jump-bridge", "bridge-title"),
+            ):
+                restored.locator(f"#{jump_id}").click()
+                heading_geometry = restored.locator(f"#{heading_id}").evaluate("""heading => {
+                    const rect = heading.getBoundingClientRect();
+                    return {
+                        top: rect.top, bottom: rect.bottom,
+                        viewportHeight: innerHeight,
+                        scrollMarginTop: getComputedStyle(heading).scrollMarginTop
+                    };
+                }""")
+                check(case, f"short-viewport {jump_id} keeps heading visible, focused and share unchanged",
+                      restored.evaluate("document.activeElement.id") == heading_id
+                      and heading_geometry["top"] >= -1
+                      and heading_geometry["top"] < heading_geometry["viewportHeight"]
+                      and heading_geometry["bottom"] > 0
+                      and restored.evaluate("location.hash") == original_hash,
+                      details=heading_geometry)
+            restored.screenshot(
+                path=str(ARTIFACTS / f"http-{engine}-{label}-short-height-text400.png"),
+                animations="disabled")
+            restored.set_viewport_size({"width": width, "height": height})
+
         stale = {**saved, "catalog": "unavailable-snapshot"}
         invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
         bad_page = context.new_page()
