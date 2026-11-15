@@ -429,6 +429,11 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
   // for coverage, explanations, or eligibility.
   const activeSeeds = normalizeSeeds(seeds);
+  // Keep the experimental ranker within the same one-to-five *active*
+  // favorites contract as the player. Duplicate IDs and zero-weight entries
+  // are normalized before checking, so inert inputs cannot change the basket.
+  // This also bounds pairwise evidence work before a future browser rollout.
+  if (activeSeeds.length > 5) throw new RangeError("at most five active favorites are supported");
   const hidden = new Set(excluded);
   // A basket cannot borrow two-hop taste evidence through a game that fails
   // its hard filters, is explicitly excluded, or has unknown required metadata.

@@ -61,3 +61,27 @@ test("an entirely zero-weight basket must fail rather than invent an effective f
     seeds: [{ id: "demo:a", weight: 0 }],
   }), /at least one seed must have positive weight/);
 });
+
+test("v2 rejects more than five active favorites, not inert or duplicated inputs", () => {
+  const ids = ["demo:a", "demo:b", "demo:c", "demo:d", "demo:e", "demo:f", "demo:g"];
+  const largeModel = prepareEvidenceModel({ games: ids.map(id => game(id)) });
+  const five = ids.slice(0, 5).map(id => ({ id, weight: 1 }));
+  for (const mode of ["intersection", "blend"]) {
+    const options = { mode, limit: 7 };
+    const expected = rankEvidenceBasket(largeModel, { ...options, seeds: five });
+    assert.ok(expected.ranked.some(item => item.id === "demo:g"));
+
+    assert.throws(() => rankEvidenceBasket(largeModel, {
+      ...options, seeds: [...five, { id: "demo:f", weight: 1 }],
+    }), /at most five active favorites/);
+
+    // Repeated favorites are summed and zero-weight entries remain inert.
+    // Neither may accidentally trip the five-distinct-active-favorites limit.
+    assert.deepEqual(rankEvidenceBasket(largeModel, {
+      ...options, seeds: [...five, { id: "demo:f", weight: 0 }],
+    }), expected);
+    assert.deepEqual(rankEvidenceBasket(largeModel, {
+      ...options, seeds: [...five, { id: "demo:a", weight: 0 }],
+    }), expected);
+  }
+});
