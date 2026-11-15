@@ -988,6 +988,42 @@ def exercise(browser, base_url, engine, label, width, height):
                     path=str(ARTIFACTS / f"http-{engine}-{label}-bridge-text400.png"),
                     animations="disabled")
 
+        if label == "mobile":
+            # Browser zoom can reduce the CSS viewport height to a few hundred
+            # pixels. A tall multi-row sticky nav would cover the reading area.
+            # Test real short-viewport geometry in addition to root-text reflow.
+            original_hash = restored.evaluate("location.hash")
+            restored.set_viewport_size({"width": 320, "height": 240})
+            restored.evaluate(
+                "() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
+            short_nav = restored.locator("#quick-nav").evaluate("""panel => ({
+                position: getComputedStyle(panel).position,
+                visible: getComputedStyle(panel).display !== 'none',
+                tabs: [...panel.querySelectorAll('button')].map(button => ({
+                    label: button.textContent.trim(),
+                    height: button.getBoundingClientRect().height,
+                    clipped: button.scrollWidth > button.clientWidth + 1
+                })),
+                width: document.documentElement.scrollWidth,
+                viewport: innerWidth
+            })""")
+            check(case, "400% text in a short zoomed viewport does not pin the navigation over content",
+                  short_nav["visible"] and short_nav["position"] == "static"
+                  and [tab["label"] for tab in short_nav["tabs"]] ==
+                      ["Basket", "Results", "Bridge"]
+                  and all(tab["height"] >= 44 and not tab["clipped"]
+                          for tab in short_nav["tabs"])
+                  and short_nav["width"] <= short_nav["viewport"] + 1,
+                  details=short_nav)
+            restored.locator("#jump-bridge").click()
+            check(case, "short-viewport Bridge shortcut preserves target focus and shared state",
+                  restored.evaluate("document.activeElement.id") == "bridge-title"
+                  and restored.evaluate("location.hash") == original_hash)
+            restored.screenshot(
+                path=str(ARTIFACTS / f"http-{engine}-{label}-short-height-text400.png"),
+                animations="disabled")
+            restored.set_viewport_size({"width": width, "height": height})
+
         stale = {**saved, "catalog": "unavailable-snapshot"}
         invalid_hash = "#basket=" + quote(json.dumps(stale, separators=(",", ":")), safe="")
         bad_page = context.new_page()
