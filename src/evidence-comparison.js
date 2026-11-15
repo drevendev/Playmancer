@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-7';
+const VERSION = 'p76-synthetic-paired-8';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -112,6 +112,26 @@ export function pairedProbeDiagnostics(probes, oldTop, v2Top, oldAbstained, v2Ab
     paired_probe_hits_old: oldHits, paired_probe_hits_v2: v2Hits,
     paired_probe_delta: v2Hits - oldHits };
 }
+// Compare signed authored exposures only on the SAME shared candidate pool.
+// Balance positive/negative rates so adding labels on one side cannot silently
+// outweigh the other side. This is a fictional diagnostic, NOT player utility.
+// Missing jointly scoreable positives OR negatives means no signed evaluation.
+export function pairedSignedExposureBalance(positive, negative) {
+  const positives = positive.comparable_probe_ids.length;
+  const negatives = negative.comparable_probe_ids.length;
+  const status = positives && negatives ? 'comparable'
+    : !positives && !negatives ? 'no-comparable-signed-probes'
+      : !positives ? 'no-comparable-positive-probes' : 'no-comparable-negative-probes';
+  const base = { status, comparable_positive_count: positives, comparable_negative_count: negatives };
+  if (status !== 'comparable') return { ...base, old_balance: null, v2_balance: null, balance_delta: null };
+  const oldBalance = positive.paired_probe_hits_old / positives -
+    negative.paired_probe_hits_old / negatives;
+  const v2Balance = positive.paired_probe_hits_v2 / positives -
+    negative.paired_probe_hits_v2 / negatives;
+  return { ...base, old_balance: oldBalance, v2_balance: v2Balance,
+    balance_delta: v2Balance - oldBalance };
+}
+
 // A numeric zero delta without jointly scoreable probes is NOT evidence of a tie.
 export function pairedProbeEvaluation(probes, comparable, shared) {
   const status = probes.length === 0 ? 'no-authored-probes'
@@ -239,6 +259,7 @@ export function runEvidenceComparison(input) {
       const negativeIds = basket.negativeProbeIds ?? [];
       const pairedNegatives = pairedProbeDiagnostics(negativeIds, paired.paired_top_old,
         paired.paired_top_v2, oldAbstained, v2Abstained);
+      const signedExposure = pairedSignedExposureBalance(pairedProbes, pairedNegatives);
       check(JSON.stringify(pairedProbes.comparable_probe_ids) ===
         JSON.stringify(basket.probeIds.filter(id => paired.paired_rankable_ids.includes(id))),
         `paired probe/candidate mismatch for ${basket.id}/${mode}`);
@@ -275,13 +296,14 @@ export function runEvidenceComparison(input) {
         paired_negative_probe_hits_v2: pairedNegatives.paired_probe_hits_v2,
         paired_negative_probe_delta: pairedNegatives.paired_probe_delta,
         paired_negative_probe_evaluation: pairedProbeEvaluation(negativeIds,
-          pairedNegatives.comparable_probe_ids, paired.paired_rankable_ids) });
+          pairedNegatives.comparable_probe_ids, paired.paired_rankable_ids),
+        paired_signed_exposure: signedExposure });
     }
   }
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
     old_method: METHOD_VERSION, new_method: EVIDENCE_METHOD_VERSION,
     evidence_source: 'authored-fictional-only',
-    warning: 'Offline synthetic signed probes, NOT real-catalog tags, human relevance labels or measured uplift; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
+    warning: 'Offline synthetic signed probes and balanced exposure are NOT real-catalog tags, human relevance labels, measured uplift or measured accuracy; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
     game_count: CATALOG.length, basket_count: input.baskets.length,
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
@@ -292,6 +314,10 @@ export function runEvidenceComparison(input) {
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })),
     paired_negative_gains: rows.filter(row => row.paired_negative_probe_delta < 0)
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })),
+    paired_signed_exposure_gains: rows.filter(row => row.paired_signed_exposure.balance_delta > 0)
+      .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
+    paired_signed_exposure_losses: rows.filter(row => row.paired_signed_exposure.balance_delta < 0)
+      .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
     paired_comparability: summarizeComparability(rows),
     paired_negative_comparability: summarizeComparability(rows, 'paired_negative_probe_evaluation'), rows };
 }
