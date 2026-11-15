@@ -214,8 +214,10 @@ Platform statuses are `not-required`, `unknown`, `recorded-support` and
 platform**, never a sourced assertion of incompatibility. Co-op statuses are
 `not-required`, `unknown`, `recorded-yes` and `recorded-no`. Known
 negative co-op evidence retains its receipt instead of being reduced to a
-generic filter failure. Excluded favorites still have a `seed` reason; explicit
-player exclusions remain visible independently. Rejected candidates also
+generic filter failure. Favorites are automatically excluded from results with
+reason `seed`; an active favorite additionally listed as an explicit exclusion is
+now rejected as a contradictory basket. Zero-weight entries are not active
+favorites, so their explicit exclusion remains valid. Rejected candidates also
 retain per-seed evidence for offline inspection.
 
 These source receipts remain **explanation data**, not permission to
