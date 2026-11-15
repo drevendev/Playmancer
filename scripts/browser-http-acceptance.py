@@ -1015,10 +1015,29 @@ def exercise(browser, base_url, engine, label, width, height):
                           for tab in short_nav["tabs"])
                   and short_nav["width"] <= short_nav["viewport"] + 1,
                   details=short_nav)
-            restored.locator("#jump-bridge").click()
-            check(case, "short-viewport Bridge shortcut preserves target focus and shared state",
-                  restored.evaluate("document.activeElement.id") == "bridge-title"
-                  and restored.evaluate("location.hash") == original_hash)
+            # Focus alone can pass even when a 6rem scroll-margin positions
+            # the heading below the entire 240px viewport at 400% root text.
+            for jump_id, heading_id in (
+                ("jump-basket", "basket-title"),
+                ("jump-results", "recommendations"),
+                ("jump-bridge", "bridge-title"),
+            ):
+                restored.locator(f"#{jump_id}").click()
+                heading_geometry = restored.locator(f"#{heading_id}").evaluate("""heading => {
+                    const rect = heading.getBoundingClientRect();
+                    return {
+                        top: rect.top, bottom: rect.bottom,
+                        viewportHeight: innerHeight,
+                        scrollMarginTop: getComputedStyle(heading).scrollMarginTop
+                    };
+                }""")
+                check(case, f"short-viewport {jump_id} keeps heading visible, focused and share unchanged",
+                      restored.evaluate("document.activeElement.id") == heading_id
+                      and heading_geometry["top"] >= -1
+                      and heading_geometry["top"] < heading_geometry["viewportHeight"]
+                      and heading_geometry["bottom"] > 0
+                      and restored.evaluate("location.hash") == original_hash,
+                      details=heading_geometry)
             restored.screenshot(
                 path=str(ARTIFACTS / f"http-{engine}-{label}-short-height-text400.png"),
                 animations="disabled")
