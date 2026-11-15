@@ -435,6 +435,11 @@ export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda
   // This also bounds pairwise evidence work before a future browser rollout.
   if (activeSeeds.length > 5) throw new RangeError("at most five active favorites are supported");
   const hidden = new Set(excluded);
+  // A selected favorite cannot simultaneously be a hard-excluded candidate.
+  // Check the normalized active basket so inert zero-weight entries stay inert.
+  if (activeSeeds.some(seed => hidden.has(seed.id))) {
+    throw new TypeError("active favorites cannot be explicitly excluded");
+  }
   // A basket cannot borrow two-hop taste evidence through a game that fails
   // its hard filters, is explicitly excluded, or has unknown required metadata.
   // Raw sourced routes remain observable but cannot enter fit or its tie-break.
