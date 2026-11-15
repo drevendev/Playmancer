@@ -327,3 +327,42 @@ test('signed probes fail closed on overlap, unknowns, duplicates and filtered ca
   assert.ok(result.rows.every(row => row.paired_negative_probe_evaluation.status === 'no-authored-probes'));
   assert.ok(result.paired_negative_comparability.every(group => group.comparable_scenarios === 0));
 });
+
+test('signed negative paired exposures preserve literal regression and improvement directions', () => {
+  // These independently specified outcomes prevent an inverted delta sign from
+  // passing tests that derive their expected values from the implementation.
+  const negatives = ['demo:unwanted-a', 'demo:unwanted-b'];
+  assert.deepEqual(pairedProbeDiagnostics(negatives,
+    ['demo:unwanted-a'], negatives, [], []), {
+    comparable_probe_ids: negatives,
+    probe_evidence_unpaired: [],
+    paired_probe_hits_old: 1,
+    paired_probe_hits_v2: 2,
+    paired_probe_delta: 1, // More unwanted games under v2 is worse.
+  });
+  assert.deepEqual(pairedProbeDiagnostics(negatives,
+    negatives, ['demo:unwanted-b'], [], []), {
+    comparable_probe_ids: negatives,
+    probe_evidence_unpaired: [],
+    paired_probe_hits_old: 2,
+    paired_probe_hits_v2: 1,
+    paired_probe_delta: -1, // Fewer unwanted games under v2 is better.
+  });
+  // A missing evidence receipt is not a successful avoidance.
+  assert.deepEqual(pairedProbeDiagnostics(['demo:unwanted-a'],
+    ['demo:unwanted-a'], [], [], ['demo:unwanted-a']), {
+    comparable_probe_ids: [],
+    probe_evidence_unpaired: [
+      { id: 'demo:unwanted-a', old: 'rankable', v2: 'abstained' },
+    ],
+    paired_probe_hits_old: 0,
+    paired_probe_hits_v2: 0,
+    paired_probe_delta: 0,
+  });
+  assert.deepEqual(pairedProbeEvaluation(['demo:unwanted-a'], [], ['demo:other']), {
+    status: 'no-comparable-probes',
+    authored_probe_count: 1,
+    comparable_probe_count: 0,
+    unpaired_probe_count: 1,
+  });
+});
