@@ -56,6 +56,29 @@ test("zero-weight and duplicate input seeds do not dilute evidence coverage or d
   }
 });
 
+test("explicit exclusions cannot contradict active favorites, including duplicate seeds", () => {
+  for (const mode of ["intersection", "blend"]) {
+    for (const seeds of [
+      [{ id: "demo:a", weight: 1 }],
+      [{ id: "demo:a", weight: 0 }, { id: "demo:a", weight: 2 }],
+      [{ id: "demo:a", weight: 1 }, { id: "demo:b", weight: 1 }],
+    ]) {
+      assert.throws(() => rankEvidenceBasket(model, {
+        mode, seeds, excluded: ["demo:a"],
+      }), /active favorites cannot be explicitly excluded/);
+    }
+
+    // An inactive zero-weight entry is not a favorite and can still be excluded.
+    const inactive = rankEvidenceBasket(model, {
+      mode, seeds: [{ id: "demo:a", weight: 1 }, { id: "demo:b", weight: 0 }],
+      excluded: ["demo:b"],
+    });
+    assert.equal(inactive.excluded.find(item => item.id === "demo:b")?.reason,
+      "hard-constraint-fail");
+    assert.ok(inactive.ranked.some(item => item.id === "demo:c"));
+  }
+});
+
 test("an entirely zero-weight basket must fail rather than invent an effective favorite", () => {
   assert.throws(() => rankEvidenceBasket(model, {
     seeds: [{ id: "demo:a", weight: 0 }],
