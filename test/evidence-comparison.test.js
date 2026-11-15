@@ -8,7 +8,7 @@ const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-6');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-7');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -262,4 +262,68 @@ test('paired Blend recomputes list-level marginal gains on the same shared pool'
   assert.deepEqual(paired.paired_top_v2, paired.paired_top_old);
   assert.equal(paired.paired_shared_top_k, 2);
   assert.equal(paired.paired_rankable_ids.length, 3);
+});
+
+
+test('signed fictional negatives remain distinct from positive probe gains and expose paired coverage', () => {
+  const result = runEvidenceComparison(clone());
+  assert.ok(result.rows.some(row => row.negative_probe_ids.length > 0));
+  assert.deepEqual(result.paired_negative_losses, result.rows
+    .filter(row => row.paired_negative_probe_delta > 0)
+    .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })));
+  assert.deepEqual(result.paired_negative_gains, result.rows
+    .filter(row => row.paired_negative_probe_delta < 0)
+    .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })));
+  for (const row of result.rows) {
+    assert.ok(row.negative_probe_ids.every(id => !row.probe_ids.includes(id)));
+    assert.equal(row.negative_probe_delta, row.negative_probe_hits_v2 - row.negative_probe_hits_old);
+    assert.equal(row.paired_negative_probe_delta,
+      row.paired_negative_probe_hits_v2 - row.paired_negative_probe_hits_old);
+    assert.deepEqual(row.paired_negative_probe_ids,
+      row.negative_probe_ids.filter(id => row.paired_rankable_ids.includes(id)));
+    assert.deepEqual([...row.paired_negative_probe_ids,
+      ...row.negative_probe_evidence_unpaired.map(item => item.id)].sort(),
+      [...row.negative_probe_ids].sort());
+    assert.ok(row.paired_negative_probe_hits_old <= row.paired_negative_probe_ids.length);
+    assert.ok(row.paired_negative_probe_hits_v2 <= row.paired_negative_probe_ids.length);
+    assert.equal(row.paired_negative_probe_evaluation.comparable_probe_count,
+      row.paired_negative_probe_ids.length);
+    if (row.negative_probe_ids.length === 0) {
+      assert.equal(row.paired_negative_probe_evaluation.status, 'no-authored-probes');
+      assert.equal(row.paired_negative_probe_delta, 0);
+    }
+  }
+  assert.deepEqual(result, runEvidenceComparison(clone()));
+  for (const summary of result.paired_negative_comparability) {
+    const rows = result.rows.filter(row => row.mode === summary.mode);
+    assert.equal(summary.scenarios, rows.length);
+    assert.equal(summary.authored_probe_opportunities,
+      rows.reduce((sum, row) => sum + row.negative_probe_ids.length, 0));
+    assert.equal(summary.comparable_probe_opportunities,
+      rows.reduce((sum, row) => sum + row.paired_negative_probe_ids.length, 0));
+  }
+});
+
+test('signed probes fail closed on overlap, unknowns, duplicates and filtered candidates', () => {
+  const cases = [
+    ['overlap', d => { d.baskets[0].negativeProbeIds = ['demo:tide']; }, /disjoint/],
+    ['duplicate negative', d => { d.baskets[0].negativeProbeIds = ['demo:citadel', 'demo:citadel']; }, /negativeProbeIds/],
+    ['unknown negative', d => { d.baskets[0].negativeProbeIds = ['demo:imaginary']; }, /unknown game/],
+    ['excluded negative', d => { d.baskets[0].excluded.push('demo:citadel'); }, /cannot be explicitly excluded/],
+    ['seed negative', d => { d.baskets[0].negativeProbeIds = ['demo:ember']; }, /cannot be a seed/],
+    ['unknown platform support', d => { d.baskets[1].negativeProbeIds = ['demo:echo']; }, /must pass hard constraints/],
+    ['mistyped field', d => { d.baskets[0].negativeProbeIDs = ['demo:citadel']; }, /unknown basket field/],
+  ];
+  for (const [label, change, error] of cases) {
+    const input = clone();
+    change(input);
+    assert.throws(() => runEvidenceComparison(input), error, label);
+  }
+  // Absence of authored negative judgments is an explicitly unevaluable result,
+  // not proof of zero false positives.
+  const noNegatives = clone();
+  for (const basket of noNegatives.baskets) delete basket.negativeProbeIds;
+  const result = runEvidenceComparison(noNegatives);
+  assert.ok(result.rows.every(row => row.paired_negative_probe_evaluation.status === 'no-authored-probes'));
+  assert.ok(result.paired_negative_comparability.every(group => group.comparable_scenarios === 0));
 });

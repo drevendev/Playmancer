@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-6';
+const VERSION = 'p76-synthetic-paired-7';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -44,7 +44,7 @@ function prepareFixture(input) {
   const ids = new Set(gameById.keys());
   const baskets = new Set();
   for (const basket of input.baskets) {
-    assertShape(basket, ['id', 'seeds', 'platform', 'coopOnly', 'excluded', 'probeIds'], 'basket');
+    assertShape(basket, ['id', 'seeds', 'platform', 'coopOnly', 'excluded', 'probeIds', 'negativeProbeIds'], 'basket');
     check(typeof basket.id === 'string' && basket.id.trim(), 'invalid basket id');
     check(!baskets.has(basket.id), `duplicate basket id: ${basket.id}`);
     baskets.add(basket.id);
@@ -62,14 +62,21 @@ function prepareFixture(input) {
     check(Array.isArray(basket.excluded) && new Set(basket.excluded).size === basket.excluded.length, 'duplicate or missing exclusions');
     for (const id of basket.excluded) { knownId(id, ids, 'exclusion'); check(!seeds.has(id), 'seed cannot be excluded'); }
     check(Array.isArray(basket.probeIds) && new Set(basket.probeIds).size === basket.probeIds.length, 'probeIds must be unique array');
-    for (const id of basket.probeIds) {
-      knownId(id, ids, 'probe');
-      check(!seeds.has(id), 'probe cannot be a seed');
-      check(!basket.excluded.includes(id), 'probe cannot be explicitly excluded: ' + id);
-      // Probe deltas are meaningless if a proposed target is unavailable under
-      // the same mandatory platform/co-op filters as both rankers.
-      check(constraintState(gameById.get(id), basket) === 'pass',
-        'probe must pass hard constraints (not fail or unknown): ' + id);
+    const negatives = basket.negativeProbeIds ?? [];
+    check(Array.isArray(negatives) && new Set(negatives).size === negatives.length,
+      'negativeProbeIds must be unique array');
+    check(!negatives.some(id => basket.probeIds.includes(id)),
+      'positive and negative probe IDs must be disjoint');
+    for (const [label, probes] of [['probe', basket.probeIds], ['negative probe', negatives]]) {
+      for (const id of probes) {
+        knownId(id, ids, label);
+        check(!seeds.has(id), label + ' cannot be a seed');
+        check(!basket.excluded.includes(id), label + ' cannot be explicitly excluded: ' + id);
+        // Both signed observations must be actual opportunities, never hidden
+        // failures or unknown mandatory platform/co-op eligibility.
+        check(constraintState(gameById.get(id), basket) === 'pass',
+          label + ' must pass hard constraints (not fail or unknown): ' + id);
+      }
     }
   }
   return prepareEvidenceModel({ games: CATALOG.map(profile), relations: input.relations });
@@ -114,16 +121,16 @@ export function pairedProbeEvaluation(probes, comparable, shared) {
     comparable_probe_count: comparable.length,
     unpaired_probe_count: probes.length - comparable.length };
 }
-function summarizeComparability(rows) {
+function summarizeComparability(rows, field = 'paired_probe_evaluation') {
   return MODES.map(mode => {
     const group = rows.filter(row => row.mode === mode);
-    const count = status => group.filter(row => row.paired_probe_evaluation.status === status).length;
+    const count = status => group.filter(row => row[field].status === status).length;
     return { mode, scenarios: group.length, comparable_scenarios: count('comparable'),
       no_authored_probes_scenarios: count('no-authored-probes'),
       no_shared_scoreable_candidates_scenarios: count('no-shared-scoreable-candidates'),
       no_comparable_probes_scenarios: count('no-comparable-probes'),
-      authored_probe_opportunities: group.reduce((n, row) => n + row.paired_probe_evaluation.authored_probe_count, 0),
-      comparable_probe_opportunities: group.reduce((n, row) => n + row.paired_probe_evaluation.comparable_probe_count, 0) };
+      authored_probe_opportunities: group.reduce((n, row) => n + row[field].authored_probe_count, 0),
+      comparable_probe_opportunities: group.reduce((n, row) => n + row[field].comparable_probe_count, 0) };
   });
 }
 
@@ -229,12 +236,22 @@ export function runEvidenceComparison(input) {
         basket.seeds, mode, input.lambda, input.topK);
       const pairedProbes = pairedProbeDiagnostics(basket.probeIds, paired.paired_top_old,
         paired.paired_top_v2, oldAbstained, v2Abstained);
+      const negativeIds = basket.negativeProbeIds ?? [];
+      const pairedNegatives = pairedProbeDiagnostics(negativeIds, paired.paired_top_old,
+        paired.paired_top_v2, oldAbstained, v2Abstained);
       check(JSON.stringify(pairedProbes.comparable_probe_ids) ===
         JSON.stringify(basket.probeIds.filter(id => paired.paired_rankable_ids.includes(id))),
         `paired probe/candidate mismatch for ${basket.id}/${mode}`);
+      check(JSON.stringify(pairedNegatives.comparable_probe_ids) ===
+        JSON.stringify(negativeIds.filter(id => paired.paired_rankable_ids.includes(id))),
+        `paired negative probe/candidate mismatch for ${basket.id}/${mode}`);
       rows.push({ basket_id: basket.id, mode, constraints: { platform: basket.platform, coopOnly: basket.coopOnly },
         seeds: basket.seeds.map(seed => ({ id: seed.id, weight: seed.weight })),
         excluded_ids: [...basket.excluded], probe_ids: [...basket.probeIds],
+        negative_probe_ids: [...negativeIds],
+        negative_probe_hits_old: probeHits(legacy.top, negativeIds),
+        negative_probe_hits_v2: probeHits(experimental.top, negativeIds),
+        negative_probe_delta: probeHits(experimental.top, negativeIds) - probeHits(legacy.top, negativeIds),
         old: legacy, v2: experimental,
         eligible_candidates: universe.eligible.length,
         hard_unknown_candidates: universe.hardUnknown.length,
@@ -251,18 +268,30 @@ export function runEvidenceComparison(input) {
         probe_delta: experimentalHits - legacyHits,
         ...paired, ...pairedProbes,
         paired_probe_evaluation: pairedProbeEvaluation(basket.probeIds,
-          pairedProbes.comparable_probe_ids, paired.paired_rankable_ids) });
+          pairedProbes.comparable_probe_ids, paired.paired_rankable_ids),
+        paired_negative_probe_ids: pairedNegatives.comparable_probe_ids,
+        negative_probe_evidence_unpaired: pairedNegatives.probe_evidence_unpaired,
+        paired_negative_probe_hits_old: pairedNegatives.paired_probe_hits_old,
+        paired_negative_probe_hits_v2: pairedNegatives.paired_probe_hits_v2,
+        paired_negative_probe_delta: pairedNegatives.paired_probe_delta,
+        paired_negative_probe_evaluation: pairedProbeEvaluation(negativeIds,
+          pairedNegatives.comparable_probe_ids, paired.paired_rankable_ids) });
     }
   }
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
     old_method: METHOD_VERSION, new_method: EVIDENCE_METHOD_VERSION,
     evidence_source: 'authored-fictional-only',
-    warning: 'Offline synthetic probes, NOT real-catalog tags, human labels or measured uplift; identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
+    warning: 'Offline synthetic signed probes, NOT real-catalog tags, human relevance labels or measured uplift; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
     game_count: CATALOG.length, basket_count: input.baskets.length,
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
     gains: rows.filter(row => row.probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
     paired_losses: rows.filter(row => row.paired_probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
     paired_gains: rows.filter(row => row.paired_probe_delta > 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })),
-    paired_comparability: summarizeComparability(rows), rows };
+    paired_negative_losses: rows.filter(row => row.paired_negative_probe_delta > 0)
+      .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })),
+    paired_negative_gains: rows.filter(row => row.paired_negative_probe_delta < 0)
+      .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_negative_probe_delta })),
+    paired_comparability: summarizeComparability(rows),
+    paired_negative_comparability: summarizeComparability(rows, 'paired_negative_probe_evaluation'), rows };
 }
