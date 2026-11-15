@@ -108,3 +108,33 @@ test("v2 rejects more than five active favorites, not inert or duplicated inputs
     }), expected);
   }
 });
+
+test("mistyped v2 basket controls fail closed instead of relaxing hard filters", () => {
+  const seeds = [{ id: "demo:a", weight: 1 }];
+  // All fictional test games have unknown co-op eligibility; a required
+  // co-op filter must not accidentally fall back to the unfiltered result.
+  assert.ok(rankEvidenceBasket(model, { seeds }).ranked.some(item => item.id === "demo:c"));
+  assert.equal(rankEvidenceBasket(model, { seeds, coopOnly: true }).ranked.length, 0);
+
+  for (const [field, value] of [
+    ["cooponly", true],
+    ["coOpOnly", true],
+    ["platfrom", "windows"],
+    ["exclude", ["demo:c"]],
+    ["exclusions", ["demo:c"]],
+    ["limt", 1],
+    ["mod", "blend"],
+  ]) {
+    assert.throws(() => rankEvidenceBasket(model, { seeds, [field]: value }),
+      new RegExp("unknown basket option field: " + field));
+  }
+  // A correctly specified filter does not make an additional misspelling safe.
+  assert.throws(() => rankEvidenceBasket(model, { seeds, coopOnly: true, cooponly: false }),
+    /unknown basket option field: cooponly/);
+  // Inherited properties are not verified caller controls.
+  assert.throws(() => rankEvidenceBasket(model,
+    Object.assign(Object.create({ coopOnly: true }), { seeds })),
+  /basket options must be a plain record/);
+  assert.throws(() => rankEvidenceBasket(model, null),
+    /basket options must be a plain record/);
+});

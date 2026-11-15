@@ -416,8 +416,14 @@ function eligible(game, { platform, coopOnly, excluded }) {
   }
   return unknown ? "unknown" : "pass";
 }
-export function rankEvidenceBasket(model, { seeds, mode = "intersection", lambda = 0.3,
-  limit = 6, platform = "any", coopOnly = false, excluded = [] } = {}) {
+const BASKET_FIELDS = new Set(["seeds", "mode", "lambda", "limit", "platform", "coopOnly", "excluded"]);
+export function rankEvidenceBasket(model, options = {}) {
+  // Unknown controls, especially misspelled hard filters, must not silently
+  // become an unconstrained recommendation request.
+  const input = record(options, "basket options");
+  rejectUnknownFields(input, BASKET_FIELDS, "basket option");
+  const { seeds, mode = "intersection", lambda = 0.3,
+    limit = 6, platform = "any", coopOnly = false, excluded = [] } = input;
   if (!Array.isArray(seeds) || !seeds.length || seeds.some(seed => !model.profiles.has(seed?.id)))
     throw new TypeError("seeds must reference known catalog games");
   if (typeof platform !== "string" || (platform !== "any" &&
