@@ -1,14 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort, runEvidenceComparison } from '../src/evidence-comparison.js';
+import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort,
+  pairedSignedExposureBalance, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-7');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-8');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -365,4 +366,93 @@ test('signed negative paired exposures preserve literal regression and improveme
     comparable_probe_count: 0,
     unpaired_probe_count: 1,
   });
+});
+
+test('signed exposure balances positive/negative probe rates only when both are comparable', () => {
+  const positives = ['demo:liked-a', 'demo:liked-b'];
+  const negatives = ['demo:disliked-a', 'demo:disliked-b'];
+  const oldTop = ['demo:liked-a', 'demo:disliked-a'];
+  const improved = ['demo:liked-a', 'demo:liked-b'];
+  const worsened = ['demo:disliked-a', 'demo:disliked-b'];
+
+  // Independent literal rates: old 1/2 - 1/2 = 0,
+  // improved 2/2 - 0/2 = 1; worsened 0/2 - 2/2 = -1.
+  const positive = pairedProbeDiagnostics(positives, oldTop, improved, [], []);
+  const negative = pairedProbeDiagnostics(negatives, oldTop, improved, [], []);
+  assert.deepEqual(pairedSignedExposureBalance(positive, negative), {
+    status: 'comparable', comparable_positive_count: 2, comparable_negative_count: 2,
+    old_balance: 0, v2_balance: 1, balance_delta: 1,
+  });
+  assert.deepEqual(pairedSignedExposureBalance(
+    pairedProbeDiagnostics(positives, oldTop, worsened, [], []),
+    pairedProbeDiagnostics(negatives, oldTop, worsened, [], [])), {
+    status: 'comparable', comparable_positive_count: 2, comparable_negative_count: 2,
+    old_balance: 0, v2_balance: -1, balance_delta: -1,
+  });
+  // A positive hit can trade off with one negative exposure. Different label
+  // counts are normalized *separately*, not pooled into one total hit count.
+  assert.deepEqual(pairedSignedExposureBalance(
+    pairedProbeDiagnostics(['demo:liked-a'], ['demo:liked-a'], [], [], []),
+    pairedProbeDiagnostics(negatives, [], ['demo:disliked-a'], [], [])), {
+    status: 'comparable', comparable_positive_count: 1, comparable_negative_count: 2,
+    old_balance: 1, v2_balance: -0.5, balance_delta: -1.5,
+  });
+});
+
+test('missing signed comparison groups abstain rather than producing fake zero quality deltas', () => {
+  const p = pairedProbeDiagnostics(['demo:liked'], ['demo:liked'], [], [], []);
+  const n = pairedProbeDiagnostics(['demo:disliked'], [], [], [], []);
+  const noPositive = pairedProbeDiagnostics(['demo:liked'], [], [], ['demo:liked'], []);
+  const noNegative = pairedProbeDiagnostics(['demo:disliked'], [], [], ['demo:disliked'], []);
+  const cases = [
+    [noPositive, n, 'no-comparable-positive-probes', 0, 1],
+    [p, noNegative, 'no-comparable-negative-probes', 1, 0],
+    [noPositive, noNegative, 'no-comparable-signed-probes', 0, 0],
+    [p, pairedProbeDiagnostics([], [], [], [], []), 'no-comparable-negative-probes', 1, 0],
+  ];
+  for (const [positive, negative, status, pc, nc] of cases) {
+    assert.deepEqual(pairedSignedExposureBalance(positive, negative), {
+      status, comparable_positive_count: pc, comparable_negative_count: nc,
+      old_balance: null, v2_balance: null, balance_delta: null,
+    });
+  }
+  const noNegatives = clone();
+  for (const basket of noNegatives.baskets) delete basket.negativeProbeIds;
+  const report = runEvidenceComparison(noNegatives);
+  assert.ok(report.rows.every(row =>
+    row.paired_signed_exposure.status !== 'comparable' &&
+    row.paired_signed_exposure.balance_delta === null));
+  assert.deepEqual(report.paired_signed_exposure_gains, []);
+  assert.deepEqual(report.paired_signed_exposure_losses, []);
+});
+
+test('signed exposure report follows paired-only cohort and only classifies comparable deltas', () => {
+  const report = runEvidenceComparison(clone());
+  assert.deepEqual(report, runEvidenceComparison(clone()));
+  for (const row of report.rows) {
+    const exposure = row.paired_signed_exposure;
+    assert.equal(exposure.comparable_positive_count, row.comparable_probe_ids.length);
+    assert.equal(exposure.comparable_negative_count, row.paired_negative_probe_ids.length);
+    if (exposure.status === 'comparable') {
+      assert.equal(exposure.old_balance,
+        row.paired_probe_hits_old / exposure.comparable_positive_count -
+        row.paired_negative_probe_hits_old / exposure.comparable_negative_count);
+      assert.equal(exposure.v2_balance,
+        row.paired_probe_hits_v2 / exposure.comparable_positive_count -
+        row.paired_negative_probe_hits_v2 / exposure.comparable_negative_count);
+      assert.equal(exposure.balance_delta, exposure.v2_balance - exposure.old_balance);
+    } else {
+      assert.equal(exposure.balance_delta, null);
+      assert.equal(exposure.old_balance, null);
+      assert.equal(exposure.v2_balance, null);
+    }
+  }
+  for (const [key, sign] of [['paired_signed_exposure_gains', 1],
+    ['paired_signed_exposure_losses', -1]]) {
+    assert.deepEqual(report[key], report.rows.filter(row =>
+      row.paired_signed_exposure.balance_delta !== null &&
+      sign * row.paired_signed_exposure.balance_delta > 0)
+      .map(row => ({ basket_id: row.basket_id, mode: row.mode,
+        delta: row.paired_signed_exposure.balance_delta })));
+  }
 });
