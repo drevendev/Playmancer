@@ -9,7 +9,7 @@ const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-9');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-10');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -399,6 +399,36 @@ test('signed exposure balances positive/negative probe rates only when both are 
   });
 });
 
+test('exact signed hit fractions classify mathematical ties without phantom improvements', () => {
+  // Both signed balances are exactly -1/6, but independent floating division
+  // produces -0.16666666666666666 vs -0.16666666666666663.
+  const positives = {
+    comparable_probe_ids: ['p1', 'p2'], paired_probe_hits_old: 0, paired_probe_hits_v2: 1,
+  };
+  const negatives = {
+    comparable_probe_ids: ['n1', 'n2', 'n3', 'n4', 'n5', 'n6'],
+    paired_probe_hits_old: 1, paired_probe_hits_v2: 4,
+  };
+  const result = pairedSignedExposureBalance(positives, negatives);
+  assert.equal(result.status, 'comparable');
+  assert.equal(result.old_balance, -1 / 6);
+  assert.ok(result.v2_balance > result.old_balance, 'the fixture reproduces floating cancellation');
+  assert.equal(result.balance_delta, 0, 'an exact rational tie must not be reported as a win');
+  const summary = summarizeSignedExposureByMode([
+    { mode: 'union', paired_signed_exposure: result },
+  ]).find(row => row.mode === 'union');
+  assert.equal(summary.tied_scenarios, 1);
+  assert.equal(summary.improved_scenarios, 0);
+  assert.equal(summary.worsened_scenarios, 0);
+
+  // Reversing the observations must also remain a tie, not a phantom loss.
+  const reverse = pairedSignedExposureBalance(
+    { ...positives, paired_probe_hits_old: 1, paired_probe_hits_v2: 0 },
+    { ...negatives, paired_probe_hits_old: 4, paired_probe_hits_v2: 1 },
+  );
+  assert.equal(reverse.balance_delta, 0);
+});
+
 test('missing signed comparison groups abstain rather than producing fake zero quality deltas', () => {
   const p = pairedProbeDiagnostics(['demo:liked'], ['demo:liked'], [], [], []);
   const n = pairedProbeDiagnostics(['demo:disliked'], [], [], [], []);
@@ -440,7 +470,12 @@ test('signed exposure report follows paired-only cohort and only classifies comp
       assert.equal(exposure.v2_balance,
         row.paired_probe_hits_v2 / exposure.comparable_positive_count -
         row.paired_negative_probe_hits_v2 / exposure.comparable_negative_count);
-      assert.equal(exposure.balance_delta, exposure.v2_balance - exposure.old_balance);
+      const signedNumerator =
+        (row.paired_probe_hits_v2 - row.paired_probe_hits_old) * exposure.comparable_negative_count -
+        (row.paired_negative_probe_hits_v2 - row.paired_negative_probe_hits_old) *
+          exposure.comparable_positive_count;
+      assert.equal(exposure.balance_delta, signedNumerator /
+        (exposure.comparable_positive_count * exposure.comparable_negative_count));
     } else {
       assert.equal(exposure.balance_delta, null);
       assert.equal(exposure.old_balance, null);
