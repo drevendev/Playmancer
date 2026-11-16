@@ -156,8 +156,8 @@ test("unknown per-seed keys fail closed instead of silently defaulting a mistype
     [{ id: "demo:a", platform: "linux" }, "platform"],
     [{ id: "demo:a", coopOnly: true }, "coopOnly"],
   ];
-  for (const [seeds, unknown] of misspellings) {
-    assert.throws(() => rankEvidenceBasket(model, { seeds }),
+  for (const [seed, unknown] of misspellings) {
+    assert.throws(() => rankEvidenceBasket(model, { seeds: [seed] }),
       new RegExp("unknown basket seed field: " + unknown));
   }
 
