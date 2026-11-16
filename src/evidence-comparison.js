@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-9';
+const VERSION = 'p76-synthetic-paired-10';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -128,8 +128,14 @@ export function pairedSignedExposureBalance(positive, negative) {
     negative.paired_probe_hits_old / negatives;
   const v2Balance = positive.paired_probe_hits_v2 / positives -
     negative.paired_probe_hits_v2 / negatives;
+  // Both methods use the SAME integer probe denominators. Subtract integer
+  // hit counts before division to classify exact mathematical ties; otherwise
+  // subtracting rounded balances can invent a tiny false win or loss.
+  const positiveDelta = positive.paired_probe_hits_v2 - positive.paired_probe_hits_old;
+  const negativeDelta = negative.paired_probe_hits_v2 - negative.paired_probe_hits_old;
+  const signedNumerator = positiveDelta * negatives - negativeDelta * positives;
   return { ...base, old_balance: oldBalance, v2_balance: v2Balance,
-    balance_delta: v2Balance - oldBalance };
+    balance_delta: signedNumerator / (positives * negatives) };
 }
 
 // A numeric zero delta without jointly scoreable probes is NOT evidence of a tie.
