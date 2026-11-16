@@ -78,15 +78,15 @@ missing-data abstention are covered by the Node regression suite.
 
 ### Basket-balanced per-mode summaries (protocol v9)
 
-Protocol \`p76-synthetic-paired-9\` additionally reports \`paired_signed_exposure_by_mode\` for Union,
+Protocol `p76-synthetic-paired-9` additionally reports `paired_signed_exposure_by_mode` for Union,
 Arithmetic, Least Misery, Intersection and Blend separately. Each **comparable
 basket** contributes exactly one signed balance per mode; the mode summary
 reports the equal-basket means for old, v2 and delta, plus improved, worsened
 and tied comparable-scenario counts. It does **not** pool labels across baskets
 or weight heavily annotated fictional baskets more strongly.
 
-Status counts explicitly distinguish \`no-comparable-positive-probes\`,
-\`no-comparable-negative-probes\` and \`no-comparable-signed-probes\`.
+Status counts explicitly distinguish `no-comparable-positive-probes`,
+`no-comparable-negative-probes` and `no-comparable-signed-probes`.
 Only comparable rows enter the means or win/loss/tie counts. With zero
 comparable rows all three means are **null**, not zero. A mode with one
 eligible basket is not representative of the whole six-basket fixture;
