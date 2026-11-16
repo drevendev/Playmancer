@@ -138,3 +138,34 @@ test("mistyped v2 basket controls fail closed instead of relaxing hard filters",
   assert.throws(() => rankEvidenceBasket(model, null),
     /basket options must be a plain record/);
 });
+
+test("unknown per-seed keys fail closed instead of silently defaulting a mistyped weight", () => {
+  const valid = rankEvidenceBasket(model, {
+    seeds: [{ id: "demo:a", weight: 1 }, { id: "demo:b", weight: 2 }],
+    mode: "intersection", limit: 5,
+  });
+  // The intentional, documented omitted-weight default is still supported.
+  assert.deepEqual(rankEvidenceBasket(model, {
+    seeds: [{ id: "demo:a" }, { id: "demo:b", weight: 2 }],
+    mode: "intersection", limit: 5,
+  }), valid);
+
+  const misspellings = [
+    [{ id: "demo:a", weigth: 100 }, "weigth"],
+    [{ id: "demo:a", weight: 1, weigth: 100 }, "weigth"],
+    [{ id: "demo:a", platform: "linux" }, "platform"],
+    [{ id: "demo:a", coopOnly: true }, "coopOnly"],
+  ];
+  for (const [seeds, unknown] of misspellings) {
+    assert.throws(() => rankEvidenceBasket(model, { seeds }),
+      new RegExp("unknown basket seed field: " + unknown));
+  }
+
+  // Inherited caller fields and array-shaped records must not hide weights.
+  const inherited = Object.assign(Object.create({ weight: 10 }), { id: "demo:a" });
+  assert.throws(() => rankEvidenceBasket(model, { seeds: [inherited] }),
+    /basket seed must be a plain record/);
+  const arraySeed = Object.assign([], { id: "demo:a", weight: 1 });
+  assert.throws(() => rankEvidenceBasket(model, { seeds: [arraySeed] }),
+    /basket seed must be a plain record/);
+});
