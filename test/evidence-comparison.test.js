@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort,
-  pairedSignedExposureBalance, runEvidenceComparison } from '../src/evidence-comparison.js';
+  pairedSignedExposureBalance, summarizeSignedExposureByMode, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-8');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-9');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -455,4 +455,67 @@ test('signed exposure report follows paired-only cohort and only classifies comp
       .map(row => ({ basket_id: row.basket_id, mode: row.mode,
         delta: row.paired_signed_exposure.balance_delta })));
   }
+});
+
+
+test('per-mode signed balance counts non-comparable scenarios and averages baskets equally', () => {
+  const exposure = (status, old_balance = null, v2_balance = null, balance_delta = null) =>
+    ({ paired_signed_exposure: { status, old_balance, v2_balance, balance_delta } });
+  const rows = [
+    { mode: 'union', ...exposure('comparable', 0, 1, 1) },
+    { mode: 'union', ...exposure('comparable', 0, -1, -1) },
+    { mode: 'union', ...exposure('comparable', 0, 0, 0) },
+    { mode: 'union', ...exposure('no-comparable-positive-probes') },
+    { mode: 'union', ...exposure('no-comparable-signed-probes') },
+    { mode: 'arithmetic', ...exposure('no-comparable-negative-probes') },
+  ];
+  const byMode = summarizeSignedExposureByMode(rows);
+  assert.deepEqual(byMode.find(item => item.mode === 'union'), {
+    mode: 'union', scenarios: 5, comparable_scenarios: 3,
+    no_comparable_positive_scenarios: 1,
+    no_comparable_negative_scenarios: 0,
+    no_comparable_signed_scenarios: 1,
+    improved_scenarios: 1, worsened_scenarios: 1, tied_scenarios: 1,
+    mean_old_balance: 0, mean_v2_balance: 0, mean_balance_delta: 0,
+  });
+  assert.deepEqual(byMode.find(item => item.mode === 'arithmetic'), {
+    mode: 'arithmetic', scenarios: 1, comparable_scenarios: 0,
+    no_comparable_positive_scenarios: 0,
+    no_comparable_negative_scenarios: 1,
+    no_comparable_signed_scenarios: 0,
+    improved_scenarios: 0, worsened_scenarios: 0, tied_scenarios: 0,
+    mean_old_balance: null, mean_v2_balance: null, mean_balance_delta: null,
+  });
+  assert.ok(byMode.filter(item => item.scenarios === 0).every(item =>
+    item.mean_balance_delta === null && item.comparable_scenarios === 0));
+});
+
+test('frozen paired signed mode report never treats missing labels as zero or a win', () => {
+  const report = runEvidenceComparison(clone());
+  assert.deepEqual(report, runEvidenceComparison(clone()));
+  assert.equal(report.paired_signed_exposure_by_mode.length, report.modes.length);
+  for (const mode of report.modes) {
+    const rows = report.rows.filter(row => row.mode === mode);
+    const summary = report.paired_signed_exposure_by_mode.find(item => item.mode === mode);
+    const comparable = rows.filter(row => row.paired_signed_exposure.status === 'comparable');
+    assert.equal(summary.scenarios, rows.length);
+    assert.equal(summary.comparable_scenarios, comparable.length);
+    assert.equal(summary.improved_scenarios + summary.worsened_scenarios + summary.tied_scenarios,
+      comparable.length);
+    assert.equal(summary.comparable_scenarios + summary.no_comparable_positive_scenarios +
+      summary.no_comparable_negative_scenarios + summary.no_comparable_signed_scenarios,
+      summary.scenarios);
+    if (comparable.length === 0) assert.equal(summary.mean_balance_delta, null);
+    else assert.ok(Math.abs(summary.mean_balance_delta -
+      comparable.reduce((sum, row) => sum + row.paired_signed_exposure.balance_delta, 0) /
+      comparable.length) < 1e-12);
+  }
+
+  const noNegatives = clone();
+  for (const basket of noNegatives.baskets) delete basket.negativeProbeIds;
+  const unscored = runEvidenceComparison(noNegatives);
+  assert.ok(unscored.paired_signed_exposure_by_mode.every(group =>
+    group.comparable_scenarios === 0 && group.mean_old_balance === null &&
+    group.mean_v2_balance === null && group.mean_balance_delta === null &&
+    group.tied_scenarios === 0));
 });

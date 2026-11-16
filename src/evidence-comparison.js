@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-8';
+const VERSION = 'p76-synthetic-paired-9';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -151,6 +151,32 @@ function summarizeComparability(rows, field = 'paired_probe_evaluation') {
       no_comparable_probes_scenarios: count('no-comparable-probes'),
       authored_probe_opportunities: group.reduce((n, row) => n + row[field].authored_probe_count, 0),
       comparable_probe_opportunities: group.reduce((n, row) => n + row[field].comparable_probe_count, 0) };
+  });
+}
+
+// Equal-weight each *comparable basket scenario* within a mode. Do not
+// pool fictional labels across baskets: that would let annotation density
+// outweigh another basket, or turn missing signed probes into ties.
+export function summarizeSignedExposureByMode(rows) {
+  return MODES.map(mode => {
+    const scenarios = rows.filter(row => row.mode === mode);
+    const comparable = scenarios.filter(row => row.paired_signed_exposure.status === 'comparable');
+    const count = status => scenarios.filter(row => row.paired_signed_exposure.status === status).length;
+    const mean = field => comparable.length === 0 ? null :
+      comparable.reduce((sum, row) => sum + row.paired_signed_exposure[field], 0) / comparable.length;
+    const deltas = comparable.map(row => row.paired_signed_exposure.balance_delta);
+    return {
+      mode, scenarios: scenarios.length, comparable_scenarios: comparable.length,
+      no_comparable_positive_scenarios: count('no-comparable-positive-probes'),
+      no_comparable_negative_scenarios: count('no-comparable-negative-probes'),
+      no_comparable_signed_scenarios: count('no-comparable-signed-probes'),
+      improved_scenarios: deltas.filter(delta => delta > 0).length,
+      worsened_scenarios: deltas.filter(delta => delta < 0).length,
+      tied_scenarios: deltas.filter(delta => delta === 0).length,
+      mean_old_balance: mean('old_balance'),
+      mean_v2_balance: mean('v2_balance'),
+      mean_balance_delta: mean('balance_delta'),
+    };
   });
 }
 
@@ -318,6 +344,7 @@ export function runEvidenceComparison(input) {
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
     paired_signed_exposure_losses: rows.filter(row => row.paired_signed_exposure.balance_delta < 0)
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
+    paired_signed_exposure_by_mode: summarizeSignedExposureByMode(rows),
     paired_comparability: summarizeComparability(rows),
     paired_negative_comparability: summarizeComparability(rows, 'paired_negative_probe_evaluation'), rows };
 }
