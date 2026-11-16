@@ -25,7 +25,7 @@ The legacy synthetic fixture's 70/30 mechanics/themes distributions are transfor
 
 Every authored probe must be eligible under the same hard platform/co-op filters and must not be an excluded or selected favorite. Otherwise the diagnostic aborts: an unreachable probe cannot truthfully count as a recommendation opportunity. The evaluator independently derives each method's hard-filter partition from the original catalog. Both methods require the **same positive eligibility** for ranking, but v9 separately records games reclassified from legacy *excluded* to experimental *unknown* because recorded platform lists are non-exhaustive. A hard-unknown profile must never become a rankable candidate in one method merely because its scoring evidence differs. These gates do not modify the pinned fixture or infer any missing attributes.
 
-Output reports each method's top IDs, uncertain/abstained IDs, hard-excluded IDs, overlap@3 and whether explicitly authored **fictional probe candidates** appear in the top-3. Protocol `p76-synthetic-paired-9` additionally checks the immutable catalog's **independent hard-eligibility partition** (eligible, hard-unknown, hard-excluded) for each method, including `platform_support_reclassified_to_unknown` and separate v2 partition counts. It reports separate per-method **rankable opportunity counts** (eligible minus missing-scoring-evidence abstentions) and explicitly names probes unavailable due to missing scoring evidence. Blend returns only top-k, so the report does **not** mistake its returned list length for its candidate denominator. The original `probe_delta` plus raw `losses`/`gains` remain visible even if a method abstains on a probe. New `comparable_probe_ids` require a probe to be scoreable by **both** methods; `probe_evidence_unpaired` gives each excluded probe's old/v2 abstention state. `paired_probe_hits_*`, `paired_probe_delta` and `paired_losses`/`paired_gains` measure results after both methods re-rank their complete shared scoreable candidate pool, so a missing feature cannot alone masquerade as a ranking regression or improvement. 
+Output reports each method's top IDs, uncertain/abstained IDs, hard-excluded IDs, overlap@3 and whether explicitly authored **fictional probe candidates** appear in the top-3. Protocol `p76-synthetic-paired-10` additionally checks the immutable catalog's **independent hard-eligibility partition** (eligible, hard-unknown, hard-excluded) for each method, including `platform_support_reclassified_to_unknown` and separate v2 partition counts. It reports separate per-method **rankable opportunity counts** (eligible minus missing-scoring-evidence abstentions) and explicitly names probes unavailable due to missing scoring evidence. Blend returns only top-k, so the report does **not** mistake its returned list length for its candidate denominator. The original `probe_delta` plus raw `losses`/`gains` remain visible even if a method abstains on a probe. New `comparable_probe_ids` require a probe to be scoreable by **both** methods; `probe_evidence_unpaired` gives each excluded probe's old/v2 abstention state. `paired_probe_hits_*`, `paired_probe_delta` and `paired_losses`/`paired_gains` measure results after both methods re-rank their complete shared scoreable candidate pool, so a missing feature cannot alone masquerade as a ranking regression or improvement. 
 
 The paired comparison now recomputes each scalar mode and the greedy Blend objective on the **same full set of candidates rankable by both models**, not merely the same probe IDs. It reports `paired_rankable_ids`, one-sided rankable IDs, `paired_top_old` / `paired_top_v2`, and paired overlap@k. This prevents one-sided background candidates from occupying top-k slots or changing Blend's marginal-coverage state. Raw method rankings and raw probe deltas are still retained, because common-cohort diagnostics deliberately hide some evidence-availability consequences. The synthetic labels remain unvalidated, so this does **not** prove real-world ranking quality. 
 
@@ -78,7 +78,7 @@ missing-data abstention are covered by the Node regression suite.
 
 ### Basket-balanced per-mode summaries (protocol v9)
 
-Protocol `p76-synthetic-paired-9` additionally reports `paired_signed_exposure_by_mode` for Union,
+Protocol `p76-synthetic-paired-10` additionally reports `paired_signed_exposure_by_mode` for Union,
 Arithmetic, Least Misery, Intersection and Blend separately. Each **comparable
 basket** contributes exactly one signed balance per mode; the mode summary
 reports the equal-basket means for old, v2 and delta, plus improved, worsened
@@ -93,12 +93,36 @@ eligible basket is not representative of the whole six-basket fixture;
 inspect the scenario denominators before comparing modes. These remain
 fictional diagnostics and do not pass real-catalog or player-quality gates.
 
+### Exact signed tie classification (protocol v10)
+
+A floating-point subtraction of separately rounded old/v2 balances can
+report a tiny, *spurious* gain or loss for a mathematically tied basket.
+Protocol `p76-synthetic-paired-10` therefore calculates the signed delta
+from **integer hit differences** over the same comparable positive and
+negative denominators:
+
+```text
+balance delta =
+ ((v2 positive hits - old positive hits) * negative probe count
+  - (v2 negative hits - old negative hits) * positive probe count)
+ / (positive probe count * negative probe count)
+```
+
+For example, positive counts of 0/2 → 1/2 and negative counts of 1/6 → 4/6
+both produce an exact signed balance of −1/6: the delta is **zero**, not an
+improvement caused by binary rounding. The displayed old and v2 balances
+remain conventional floating values and may differ in the last machine bit;
+only the exact-fraction delta determines gain/loss/tie classification and
+the basket-balanced per-mode delta. This changes offline diagnostic arithmetic,
+not the production ranker, published catalog, live player or human-quality
+release criteria.
+
 The union, arithmetic, least-misery, Intersection and Blend modes are evaluated separately; Bridge remains a route-explanation task and is **not** represented as an equivalent scalar score.
 
 ## Historical v7 diagnostic observations (authored fixture only)
 
 In the previous v7 run of the frozen six-basket fixture (30 mode/basket comparisons, top-3), the prototype changed some rankings. The probe-hit delta is **negative in one comparison** (`three-strands` / Union: −1) and **positive in one** (`combat-and-harvest` / arithmetic: +1). Other 28 were unchanged in that v7 diagnostic. Re-run the commands above
-for version-9 results; these prior numbers are not v9 acceptance claims.
+for version-10 results; these prior numbers are not v10 acceptance claims.
 These are neither a net quality gain nor proof of fitness for real players: the probes and relations were authored for testing, not sampled from users. Missing evidence remains visible as `uncertain`; explicit player exclusions and known co-op failures remain identical, while platform-receipt absences have a separately recorded abstention transition.
 
 Version 9 also changes how an unverified required platform is classified: a
