@@ -230,6 +230,17 @@ public player later adopted `feature-overlap-3` for platform-evidence
 classification without adopting weighted tags. No new real-game sources or
 complete tag-weight profiles were added by this experiment.
 
+### Basket seed input integrity (offline v2)
+
+The experimental `rankEvidenceBasket` rejects unknown top-level basket controls **and**
+unknown per-favorite fields before normalization. Each seed must be a plain
+record containing only `id` and optional `weight`. A misspelling such as
+`weigth` must fail visibly rather than silently selecting the intentional
+default weight of 1. Explicit finite nonnegative weights, duplicate-seed
+normalization and zero-weight inert entries retain their existing semantics.
+This protects experimental scoring inputs; it does not alter public
+`feature-overlap-3` baskets, shared links or the hosted player.
+
 ## Canonical platform evidence
 
 In the offline v2 model, a **recorded** platform list must be nonempty,
