@@ -417,6 +417,7 @@ function eligible(game, { platform, coopOnly, excluded }) {
   return unknown ? "unknown" : "pass";
 }
 const BASKET_FIELDS = new Set(["seeds", "mode", "lambda", "limit", "platform", "coopOnly", "excluded"]);
+const BASKET_SEED_FIELDS = new Set(["id", "weight"]);
 export function rankEvidenceBasket(model, options = {}) {
   // Unknown controls, especially misspelled hard filters, must not silently
   // become an unconstrained recommendation request.
@@ -424,8 +425,15 @@ export function rankEvidenceBasket(model, options = {}) {
   rejectUnknownFields(input, BASKET_FIELDS, "basket option");
   const { seeds, mode = "intersection", lambda = 0.3,
     limit = 6, platform = "any", coopOnly = false, excluded = [] } = input;
-  if (!Array.isArray(seeds) || !seeds.length || seeds.some(seed => !model.profiles.has(seed?.id)))
+  if (!Array.isArray(seeds) || !seeds.length)
     throw new TypeError("seeds must reference known catalog games");
+  // A misspelled per-favorite weight must not silently become the default 1.
+  // Validate the same records later consumed by normalizeSeeds before ranking.
+  for (const seed of seeds) {
+    rejectUnknownFields(record(seed, "basket seed"), BASKET_SEED_FIELDS, "basket seed");
+    if (!model.profiles.has(seed.id))
+      throw new TypeError("seeds must reference known catalog games");
+  }
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
       !Array.isArray(excluded) || new Set(excluded).size !== excluded.length ||
