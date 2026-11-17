@@ -43,6 +43,36 @@ class PagesProbeTests(unittest.TestCase):
         self.assertIn('UNBUILT_SOURCE_TEMPLATE', probe(BASE, SHA, fetch)[1])
         self.assertEqual(len(fetch.calls), 1)
 
+    def test_matching_sha_does_not_rescue_unbuilt_source_template(self):
+        client = FakeFetch(index_body=index() + '<script src="./src/demo-ui.js"></script>')
+        ok, detail = probe(BASE, SHA, client)
+        self.assertFalse(ok)
+        self.assertIn('index=UNBUILT_SOURCE_TEMPLATE', detail)
+        self.assertEqual(client.calls, [BASE])
+
+    def test_duplicate_revision_markers_fail_closed_even_with_current_sha(self):
+        for body in [
+            index(OLD) + index(SHA),
+            index(SHA) + index(OLD),
+            index(SHA) + index(SHA),
+            index(SHA) + '<meta name="playmancer-revision" content="private">',
+        ]:
+            with self.subTest(body=body):
+                self.assertIsNone(served_revision(body))
+                client = FakeFetch(index_body=body)
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('index=AMBIGUOUS_REVISION_MARKERS', detail)
+                self.assertEqual(client.calls, [BASE])
+                self.assertNotIn('private', detail)
+
+    def test_explorer_with_mixed_revision_markers_fails_after_valid_worker(self):
+        client = FakeFetch(explorer_body=index(SHA) + index(OLD))
+        ok, detail = probe(BASE, SHA, client)
+        self.assertFalse(ok)
+        self.assertIn('index=OK; worker=OK; explorer=AMBIGUOUS_REVISION_MARKERS', detail)
+        self.assertEqual(len(client.calls), 3)
+
     def test_logs_only_safe_sha_and_catches_stale_content(self):
         ok, diag = probe(BASE, SHA, FakeFetch(index_body=index(OLD)))
         self.assertFalse(ok)
