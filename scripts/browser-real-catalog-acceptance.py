@@ -236,12 +236,26 @@ try:
             page.locator("#search").fill(
                 "https://store.steampowered.com/app/1145360/Hades/?utm_source=friend")
             check(label + ": pasted Steam link cannot bypass Google Play discovery filter",
-                  page.locator("#search-results li > button").count() == 0)
+                  page.locator("#search-results li > button").count() == 0
+                  and "Hades is in the catalog, but the Google Play store filter hides it." in
+                      page.locator("#search-hint").inner_text())
             page.locator("#store-filter").select_option("all")
             check(label + ": pasted Steam link resolves Hades without changing the basket",
                   page.get_by_role("button", name="Add Hades", exact=True).count() == 1
                   and page.locator("#search-results li > button").count() == 1
                   and page.locator("#seeds > li").count() == 2
+                  and page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
+            page.get_by_role("button", name="Add Hades", exact=True).click()
+            page.locator("#search").fill(
+                "https://store.steampowered.com/app/1145360/Hades/?utm_source=friend")
+            check(label + ": selected game store link explains why no add button is shown",
+                  page.locator("#search-results li > button").count() == 0
+                  and "Hades is already in your basket." in page.locator("#search-hint").inner_text()
+                  and page.locator("#seeds > li").count() == 3)
+            page.get_by_role("button", name="Remove Hades", exact=True).click()
+            check(label + ": link-based basket add and remove restores initial ranks",
+                  page.locator("#seeds > li").count() == 2
                   and page.locator("#results > li").evaluate_all(
                       "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
             page.locator("#search").fill("https://store.steampowered.com.evil.test/app/1145360")
