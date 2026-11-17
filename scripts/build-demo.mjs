@@ -112,8 +112,8 @@ for (const [index, path] of modules.entries()) {
     if (urlStatusStart < 0 || urlStatusEnd <= urlStatusStart)
       throw new Error("Unexpected real-only storefront recovery status boundary");
     source = source.slice(0, urlStatusStart) + source.slice(urlStatusEnd);
-    const urlHintPattern = /^    : !matches\.length && (?:selectedStoreUrl|filteredStoreUrl) \? .*\n/gm;
-    if ((source.match(urlHintPattern) ?? []).length !== 2)
+    const urlHintPattern = /^    : !matches\.length && (?:selectedStoreUrl|filteredStoreUrl|unknownStoreUrl) \? .*\n/gm;
+    if ((source.match(urlHintPattern) ?? []).length !== 3)
       throw new Error("Unexpected real-only storefront recovery hint branches");
     source = source.replace(urlHintPattern, "");
     // Fictional previews can never enter real-only genre-warning branches.
