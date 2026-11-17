@@ -9,7 +9,7 @@ const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-10');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-11');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -502,14 +502,16 @@ test('per-mode signed balance counts non-comparable scenarios and averages baske
     { mode: 'union', ...exposure('comparable', 0, 0, 0) },
     { mode: 'union', ...exposure('no-comparable-positive-probes') },
     { mode: 'union', ...exposure('no-comparable-signed-probes') },
+    { mode: 'union', ...exposure('no-ranking-headroom') },
     { mode: 'arithmetic', ...exposure('no-comparable-negative-probes') },
   ];
   const byMode = summarizeSignedExposureByMode(rows);
   assert.deepEqual(byMode.find(item => item.mode === 'union'), {
-    mode: 'union', scenarios: 5, comparable_scenarios: 3,
+    mode: 'union', scenarios: 6, comparable_scenarios: 3,
     no_comparable_positive_scenarios: 1,
     no_comparable_negative_scenarios: 0,
     no_comparable_signed_scenarios: 1,
+    no_ranking_headroom_scenarios: 1,
     improved_scenarios: 1, worsened_scenarios: 1, tied_scenarios: 1,
     mean_old_balance: 0, mean_v2_balance: 0, mean_balance_delta: 0,
   });
@@ -518,11 +520,44 @@ test('per-mode signed balance counts non-comparable scenarios and averages baske
     no_comparable_positive_scenarios: 0,
     no_comparable_negative_scenarios: 1,
     no_comparable_signed_scenarios: 0,
+    no_ranking_headroom_scenarios: 0,
     improved_scenarios: 0, worsened_scenarios: 0, tied_scenarios: 0,
     mean_old_balance: null, mean_v2_balance: null, mean_balance_delta: null,
   });
   assert.ok(byMode.filter(item => item.scenarios === 0).every(item =>
     item.mean_balance_delta === null && item.comparable_scenarios === 0));
+});
+
+test('saturated paired top-k cohorts abstain rather than inflate signed ties', () => {
+  const full = clone();
+  full.topK = 12; // The immutable authored fixture has exactly twelve games.
+  const report = runEvidenceComparison(full);
+  const signed = report.rows.filter(row =>
+    row.paired_signed_exposure.comparable_positive_count > 0 &&
+    row.paired_signed_exposure.comparable_negative_count > 0);
+  assert.ok(signed.length > 0, 'the frozen fixture must exercise the saturation gate');
+  assert.ok(signed.every(row => row.paired_rankable_ids.length <= full.topK &&
+    row.paired_signed_exposure.status === 'no-ranking-headroom' &&
+    row.paired_signed_exposure.balance_delta === null &&
+    row.paired_signed_exposure.old_balance === null &&
+    row.paired_signed_exposure.v2_balance === null));
+  assert.ok(report.rows.every(row => row.paired_signed_exposure.status !== 'comparable'));
+  assert.deepEqual(report.paired_signed_exposure_gains, []);
+  assert.deepEqual(report.paired_signed_exposure_losses, []);
+  for (const summary of report.paired_signed_exposure_by_mode) {
+    const rows = report.rows.filter(row => row.mode === summary.mode);
+    assert.equal(summary.no_ranking_headroom_scenarios,
+      rows.filter(row => row.paired_signed_exposure.status === 'no-ranking-headroom').length);
+    assert.equal(summary.comparable_scenarios, 0);
+    assert.equal(summary.tied_scenarios, 0);
+    assert.equal(summary.mean_balance_delta, null);
+  }
+  // The authored observations and raw hit totals are still reported.
+  assert.ok(signed.every(row => row.probe_ids.length > 0 &&
+    row.negative_probe_ids.length > 0 && row.paired_top_old.length > 0));
+  const selective = runEvidenceComparison(clone());
+  assert.ok(selective.rows.every(row => row.paired_signed_exposure.status !== 'comparable' ||
+    row.paired_rankable_ids.length > selective.top_k));
 });
 
 test('frozen paired signed mode report never treats missing labels as zero or a win', () => {
@@ -538,8 +573,8 @@ test('frozen paired signed mode report never treats missing labels as zero or a 
     assert.equal(summary.improved_scenarios + summary.worsened_scenarios + summary.tied_scenarios,
       comparable.length);
     assert.equal(summary.comparable_scenarios + summary.no_comparable_positive_scenarios +
-      summary.no_comparable_negative_scenarios + summary.no_comparable_signed_scenarios,
-      summary.scenarios);
+      summary.no_comparable_negative_scenarios + summary.no_comparable_signed_scenarios +
+      summary.no_ranking_headroom_scenarios, summary.scenarios);
     if (comparable.length === 0) assert.equal(summary.mean_balance_delta, null);
     else assert.ok(Math.abs(summary.mean_balance_delta -
       comparable.reduce((sum, row) => sum + row.paired_signed_exposure.balance_delta, 0) /

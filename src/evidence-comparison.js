@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-10';
+const VERSION = 'p76-synthetic-paired-11';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -138,6 +138,17 @@ export function pairedSignedExposureBalance(positive, negative) {
     balance_delta: signedNumerator / (positives * negatives) };
 }
 
+// A fully exposed common cohort cannot test ranking preference: both methods
+// must show every candidate when top-k >= the shared rankable pool. Preserve
+// comparable label counts but abstain from a fabricated signed tie/mean.
+// The raw ranked lists and probe hit counts remain available for diagnosis.
+function signedExposureWithHeadroom(positive, negative, sharedCandidateCount, topK) {
+  const balance = pairedSignedExposureBalance(positive, negative);
+  if (balance.status !== 'comparable' || sharedCandidateCount > topK) return balance;
+  return { ...balance, status: 'no-ranking-headroom',
+    old_balance: null, v2_balance: null, balance_delta: null };
+}
+
 // A numeric zero delta without jointly scoreable probes is NOT evidence of a tie.
 export function pairedProbeEvaluation(probes, comparable, shared) {
   const status = probes.length === 0 ? 'no-authored-probes'
@@ -176,6 +187,7 @@ export function summarizeSignedExposureByMode(rows) {
       no_comparable_positive_scenarios: count('no-comparable-positive-probes'),
       no_comparable_negative_scenarios: count('no-comparable-negative-probes'),
       no_comparable_signed_scenarios: count('no-comparable-signed-probes'),
+      no_ranking_headroom_scenarios: count('no-ranking-headroom'),
       improved_scenarios: deltas.filter(delta => delta > 0).length,
       worsened_scenarios: deltas.filter(delta => delta < 0).length,
       tied_scenarios: deltas.filter(delta => delta === 0).length,
@@ -291,7 +303,8 @@ export function runEvidenceComparison(input) {
       const negativeIds = basket.negativeProbeIds ?? [];
       const pairedNegatives = pairedProbeDiagnostics(negativeIds, paired.paired_top_old,
         paired.paired_top_v2, oldAbstained, v2Abstained);
-      const signedExposure = pairedSignedExposureBalance(pairedProbes, pairedNegatives);
+      const signedExposure = signedExposureWithHeadroom(pairedProbes, pairedNegatives,
+        paired.paired_rankable_ids.length, input.topK);
       check(JSON.stringify(pairedProbes.comparable_probe_ids) ===
         JSON.stringify(basket.probeIds.filter(id => paired.paired_rankable_ids.includes(id))),
         `paired probe/candidate mismatch for ${basket.id}/${mode}`);
@@ -335,7 +348,7 @@ export function runEvidenceComparison(input) {
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
     old_method: METHOD_VERSION, new_method: EVIDENCE_METHOD_VERSION,
     evidence_source: 'authored-fictional-only',
-    warning: 'Offline synthetic signed probes and balanced exposure are NOT real-catalog tags, human relevance labels, measured uplift or measured accuracy; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated.',
+    warning: 'Offline synthetic signed probes and balanced exposure are NOT real-catalog tags, human relevance labels, measured uplift or measured accuracy; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated. Saturated paired top-k cohorts cannot distinguish ranking preferences.',
     game_count: CATALOG.length, basket_count: input.baskets.length,
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
