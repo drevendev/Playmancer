@@ -43,20 +43,30 @@ def fetch_public(url):
 class Revision(HTMLParser):
     def __init__(self):
         super().__init__()
-        self.value = None
+        self.values = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'meta':
             values = dict(attrs)
             if values.get('name') == 'playmancer-revision':
-                self.value = values.get('content')
+                self.values.append(values.get('content'))
+
+
+def revision_diagnostic(html):
+    """Require exactly one valid marker; never accept a mixed-version document."""
+    parser = Revision()
+    parser.feed(html)
+    if len(parser.values) != 1:
+        return None, ('AMBIGUOUS_REVISION_MARKERS' if parser.values
+                      else 'MISSING_OR_INVALID_REVISION')
+    value = parser.values[0]
+    if value is None or re.fullmatch('[0-9a-f]{40}', value) is None:
+        return None, 'MISSING_OR_INVALID_REVISION'
+    return value, None
 
 
 def served_revision(html):
-    parser = Revision()
-    parser.feed(html)
-    value = parser.value
-    return value if value is not None and re.fullmatch('[0-9a-f]{40}', value) else None
+    return revision_diagnostic(html)[0]
 
 
 def served_worker_revision(js):
@@ -85,14 +95,16 @@ def observation(response, url, expected, kind):
         if actual:
             return f'STALE_WORKER_REVISION:{actual}'
         return 'MISSING_OR_INVALID_WORKER_REVISION'
-    actual = served_revision(response.body)
+    # Reject a recognizable unbuilt branch/Jekyll entry even if it somehow
+    # contains the expected marker. A matching SHA alone is not a built player.
+    if kind == 'index' and 'src/demo-ui.js' in response.body:
+        return 'UNBUILT_SOURCE_TEMPLATE'  # Suspicious source output, not proven cause.
+    actual, problem = revision_diagnostic(response.body)
+    if problem:
+        return problem
     if actual == expected:
         return 'OK'
-    if actual:
-        return f'STALE_REVISION:{actual}'  # Only validated public SHA is logged.
-    if kind == 'index' and 'src/demo-ui.js' in response.body:
-        return 'UNBUILT_SOURCE_TEMPLATE'  # Likely branch/Jekyll output, not proven cause.
-    return 'MISSING_OR_INVALID_REVISION'
+    return f'STALE_REVISION:{actual}'  # Only validated public SHA is logged.
 
 
 def probe(base_url, expected_sha, fetch=fetch_public):
