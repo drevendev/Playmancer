@@ -98,6 +98,26 @@ const corruptions = {
 for (const [name, mutate] of Object.entries(corruptions)) test(`reject ${name}`, () => {
   const candidate = clone(observations); mutate(candidate); assert.throws(() => prepareObservations(catalog, candidate));
 });
+test('reject local, IP and reserved receipt hosts even when per-field source origins match', () => {
+  const nonpublic = [
+    'https://localhost/facts', 'https://localhost./facts',
+    'https://sub.localhost/facts', 'https://127.0.0.1/facts',
+    'https://10.20.30.40/facts', 'https://2130706433/facts',
+    'https://[::1]/facts', 'https://docs.local/facts',
+    'https://intranet.internal/facts', 'https://source.test/facts',
+    'https://source.invalid/facts', 'https://publisher.example/facts',
+    'https://singlelabel/facts',
+  ];
+  for (const url of nonpublic) {
+    const candidate = clone(observations);
+    const id = candidate.receipts[0].id;
+    candidate.receipts[0].url = url;
+    for (const tag of candidate.games.find(game => game.id === id).tags) tag.source = url;
+    assert.throws(() => prepareObservations(catalog, candidate),
+      /Expected a public HTTPS source URL/, url);
+  }
+});
+
 test('reject duplicate or oversized catalog and malformed search state', () => {
   assert.throws(() => prepareObservations({ ...catalog, games: [catalog.games[0],catalog.games[0]] }, observations));
   assert.throws(() => prepareObservations({ ...catalog, games: Array(251).fill(catalog.games[0]) }, observations));
