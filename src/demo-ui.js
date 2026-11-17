@@ -393,6 +393,11 @@ function drawSearch() {
   const query = entered.toLowerCase();
   const store = $("store-filter").value;
   const chosen = new Set(state.seeds.map((seed) => seed.id));
+  // A pasted link can point to a game hidden by the store filter or already
+  // selected. Explain those cases instead of falsely saying the URL is unknown.
+  const recordedStoreUrlGame = !syntheticCatalog && query
+    ? CATALOG.find(game => matchesRecordedStorefrontUrl(game, entered))
+    : null;
   $("search-results").replaceChildren();
   $("catalog-browse").setAttribute("aria-expanded", String(browseAll && !query));
   // Explicit catalog genre labels improve discovery without inventing a
@@ -488,10 +493,15 @@ function drawSearch() {
   }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   const fromStore = store === "all" ? "" : ` with a recorded ${storeNames[store]} link`;
+  const selectedStoreUrl = recordedStoreUrlGame && chosen.has(recordedStoreUrlGame.id);
+  const filteredStoreUrl = recordedStoreUrlGame && !selectedStoreUrl && store !== "all" &&
+    !recordedStoreUrlGame.storeLinks.some(link => link.store === store);
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
     : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
     : !query ? `Search names, IDs, aliases${syntheticCatalog ? "" : ", recorded store URLs"} or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
+    : !matches.length && selectedStoreUrl ? `${recordedStoreUrlGame.name} is already in your basket. Adjust its weight or remove it above.`
+    : !matches.length && filteredStoreUrl ? `${recordedStoreUrlGame.name} is in the catalog, but the ${storeNames[store]} store filter hides it. Choose All games to add it.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")

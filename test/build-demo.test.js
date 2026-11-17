@@ -27,6 +27,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
       "fictional preview must not ship real-only evidence-gap labels");
     assert.ok(html.includes('<link rel="stylesheet" href="./player.css">'));
     assert.doesNotMatch(html, /<style>/);
+    assert.doesNotMatch(html, /recordedStoreUrlGame|selectedStoreUrl|filteredStoreUrl/,
+      "fictional bundle must omit unreachable recorded-storefront recovery code");
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);
     assert.match(html, /id="results-view"/);
     // The fictional bundle must keep basket comparisons inert and must not

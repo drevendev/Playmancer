@@ -99,6 +99,23 @@ for (const [index, path] of modules.entries()) {
       throw new Error("Unexpected real-only fact-ID binding");
     source = source.replace(factSearchDestructure,
       "for (const [index, { game, matchedTag, matchedFact }] of shown.entries()) {");
+    // No fictional profile has a recorded storefront URL. Remove the
+    // unreachable real-catalog empty-state recovery from this size-limited
+    // synthetic bundle without weakening the HTML budget or real-player copy.
+    const urlLookupStart = source.indexOf("  // A pasted link can point to a game hidden by the store filter or already");
+    const urlLookupEnd = source.indexOf('  $("search-results").replaceChildren();', urlLookupStart);
+    if (urlLookupStart < 0 || urlLookupEnd <= urlLookupStart)
+      throw new Error("Unexpected real-only storefront recovery lookup boundary");
+    source = source.slice(0, urlLookupStart) + source.slice(urlLookupEnd);
+    const urlStatusStart = source.indexOf("  const selectedStoreUrl = recordedStoreUrlGame");
+    const urlStatusEnd = source.indexOf('  $("search-hint").textContent', urlStatusStart);
+    if (urlStatusStart < 0 || urlStatusEnd <= urlStatusStart)
+      throw new Error("Unexpected real-only storefront recovery status boundary");
+    source = source.slice(0, urlStatusStart) + source.slice(urlStatusEnd);
+    const urlHintPattern = /^    : !matches\.length && (?:selectedStoreUrl|filteredStoreUrl) \? .*\n/gm;
+    if ((source.match(urlHintPattern) ?? []).length !== 2)
+      throw new Error("Unexpected real-only storefront recovery hint branches");
+    source = source.replace(urlHintPattern, "");
     // Fictional previews can never enter real-only genre-warning branches.
     // Strip those unreachable DOM labels instead of loosening the strict
     // <95kB deterministic HTML budget after real-player copy improvements.
