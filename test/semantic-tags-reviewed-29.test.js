@@ -58,6 +58,6 @@ test('old fact links reject current evidence and mismatched-origin sources fail 
     pair: ['dreven:shadow-runner', 'wikidata:q28451532'], tag: 'mechanic:platforming' };
   assert.throws(() => decodeObservationState(currentModel, encodeObservationState(oldModel, priorState)), /Incompatible/);
   const tampered = structuredClone(current);
-  tampered.games.find(game => game.id === id).tags[0].source = 'https://example.invalid/borrowed';
+  tampered.games.find(game => game.id === id).tags[0].source = 'https://www.mozilla.org/borrowed';
   assert.throws(() => prepareObservations(catalog, tampered), /source does not match/);
 });

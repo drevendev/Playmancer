@@ -75,7 +75,7 @@ test('versioned comparisons restore exact IDs and reject incompatible source dig
   const historical={...state,evidence:oldModel.evidence,pair:['wikidata:q109051201','wikidata:q48078440']};
   assert.throws(()=>decodeObservationState(current,encodeObservationState(oldModel,historical)),/Incompatible/);
   const tampered=JSON.parse(JSON.stringify(now));
-  tampered.games.find(g=>g.id===sekiro).tags[0].source='https://example.invalid/';
+  tampered.games.find(g=>g.id===sekiro).tags[0].source='https://www.mozilla.org/';
   assert.throws(()=>prepareObservations(catalog,tampered),/source does not match/);
   tampered.games.find(g=>g.id===sekiro).tags[0].source=added.get(sekiro).url;
   tampered.games.find(g=>g.id===sekiro).tagCoverage='complete';

@@ -82,6 +82,6 @@ test('obsolete evidence shares visibly fail; unrelated-origin receipts are rejec
   assert.throws(()=>decodeObservationState(current,encodeObservationState(previous,oldState)),
     /Incompatible/);
   const tampered=JSON.parse(JSON.stringify(reviewed));
-  tampered.games.find(g=>g.id===meat).tags[0].source='https://example.invalid/borrowed';
+  tampered.games.find(g=>g.id===meat).tags[0].source='https://www.mozilla.org/borrowed';
   assert.throws(()=>prepareObservations(catalog,tampered),/source does not match/);
 });

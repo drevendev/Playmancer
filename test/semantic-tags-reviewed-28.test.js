@@ -52,7 +52,7 @@ test('old evidence shares, borrowed sources and false complete coverage fail vis
  assert.deepEqual(decodeObservationState(current,encodeObservationState(current,state)),state);
  const obsolete={...state,evidence:previous.evidence,pair:['wikidata:q1711379','wikidata:q59756366'],tag:'activity:character-stories'};
  assert.throws(()=>decodeObservationState(current,encodeObservationState(previous,obsolete)),/Incompatible/);
- const changed=JSON.parse(JSON.stringify(after));changed.games.find(g=>g.id==='wikidata:q24300').tags[0].source='https://example.invalid';
+ const changed=JSON.parse(JSON.stringify(after));changed.games.find(g=>g.id==='wikidata:q24300').tags[0].source='https://www.mozilla.org';
  assert.throws(()=>prepareObservations(catalog,changed),/source does not match/);
  changed.games.find(g=>g.id==='wikidata:q24300').tags[0].source=added[1][3];
  changed.games.find(g=>g.id==='wikidata:q24300').tagCoverage='complete';

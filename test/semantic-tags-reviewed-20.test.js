@@ -61,7 +61,7 @@ test('version-pinned links reject old snapshots and borrowed source credentials'
  const oldState={...state,evidence:old.evidence,pair:['wikidata:q248810','wikidata:q54906424'],tag:''};
  assert.throws(()=>decodeObservationState(current,encodeObservationState(old,oldState)),/Incompatible/);
  const tampered=JSON.parse(JSON.stringify(now));
- tampered.games.find(g=>g.id===portal).tags[0].source='https://example.invalid/';
+ tampered.games.find(g=>g.id===portal).tags[0].source='https://www.mozilla.org/';
  assert.throws(()=>prepareObservations(catalog,tampered),/source does not match/);
  tampered.games.find(g=>g.id===portal).tags[0].source=purl;
  tampered.games.find(g=>g.id===portal).tagCoverage='complete';
