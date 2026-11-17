@@ -189,7 +189,7 @@ const script = parts.join("\n\n");
 // Compile, never execute, the merged browser code before replacing an artifact.
 // Individual modules can parse while conflicting declarations break their bundle.
 new Script(script, { filename: "playmancer-browser-bundle.js" });
-const entry = '<script type="module" src="./src/demo-ui.js"></script>';
+const entry = '<script type="application/x-playmancer-source" src="./src/demo-ui.js"></script>';
 const sourceHtml = await readFile(join(root, "index.html"), "utf8");
 const sourceStyles = sourceHtml.match(/<style>([\s\S]*?)<\/style>/);
 if (!sourceStyles || sourceHtml.split(sourceStyles[0]).length !== 2) {
@@ -200,10 +200,15 @@ if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
   throw new Error("Stylesheet must not import other assets");
 }
 const template = sourceHtml.replace(sourceStyles[0], '<link rel="stylesheet" href="./player.css">');
+const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. Please try again later.</div>";
+const sourceWrap = '<div class="wrap" hidden>';
+if (template.split(sourceNotice).length !== 2 || template.split(sourceWrap).length !== 2)
+  throw new Error("Expected exactly one inert unbuilt-source fallback and hidden source player");
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
 if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
 const escapeAttribute = value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const html = template.replace(entry, () => `<script type="module">\n${script}\n</script>`)
+const html = template.replace(sourceNotice, "").replace(sourceWrap, '<div class="wrap">')
+  .replace(entry, () => `<script type="module">\n${script}\n</script>`)
   .replace("</head>", () => `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
 await mkdir(output, { recursive: true });
 const temporary = join(output, `.index.html.${process.pid}.tmp`);
