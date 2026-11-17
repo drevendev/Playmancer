@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-12';
+const VERSION = 'p76-synthetic-paired-13';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -198,6 +198,30 @@ export function summarizeSignedExposureByMode(rows) {
   });
 }
 
+// Summarize only what ordering reveals on the SAME fully scoreable cohort.
+// Rank movement is observable even without signed ranking headroom; it is not
+// a relevance, preference or quality win. Empty cohorts are not stable orders.
+export function summarizePairedOrderByMode(rows, topK) {
+  return MODES.map(mode => {
+    const group = rows.filter(row => row.mode === mode);
+    const nonempty = group.filter(row => row.paired_order_equal !== null);
+    const reordered = nonempty.filter(row => row.paired_order_equal === false);
+    const saturated = row => row.paired_rankable_ids.length <= topK;
+    return {
+      mode, scenarios: group.length,
+      empty_cohort_scenarios: group.length - nonempty.length,
+      nonempty_order_scenarios: nonempty.length,
+      identical_order_scenarios: nonempty.filter(row => row.paired_order_equal === true).length,
+      reordered_scenarios: reordered.length,
+      saturated_nonempty_scenarios: nonempty.filter(saturated).length,
+      saturated_reordered_scenarios: reordered.filter(saturated).length,
+      unsaturated_reordered_scenarios: reordered.filter(row => !saturated(row)).length,
+      observed_rank_slots: nonempty.reduce((sum, row) => sum + row.paired_ranked_slots, 0),
+      preserved_rank_slots: nonempty.reduce((sum, row) => sum + row.paired_same_rank_slots, 0),
+    };
+  });
+}
+
 // A probe-only intersection is insufficient: one-sided rankable background games
 // still consume top-k slots, and Blend's greedy state depends on those choices.
 // Re-run BOTH production rankers on the exact same fully scoreable candidate pool.
@@ -372,6 +396,7 @@ export function runEvidenceComparison(input) {
     paired_signed_exposure_losses: rows.filter(row => row.paired_signed_exposure.balance_delta < 0)
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
     paired_signed_exposure_by_mode: summarizeSignedExposureByMode(rows),
+    paired_order_by_mode: summarizePairedOrderByMode(rows, input.topK),
     paired_comparability: summarizeComparability(rows),
     paired_negative_comparability: summarizeComparability(rows, 'paired_negative_probe_evaluation'), rows };
 }
