@@ -36,7 +36,7 @@ const expectedImports = [
   "import { findBridgeRoute } from './bridge.js';\n",
   'import { blendCandidates, rankCandidates } from "./ranking.js";\nimport { validateCatalogSnapshot } from "./catalog.js";\nimport { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\n',
   'import { buildBridgePreview, BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";\nimport { BY_ID, CATALOG, CATALOG_VERSION, BRIDGE_STATE_VERSION } from "./demo.js";\n',
-  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
+  'import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState, matchesRecordedStorefrontUrl } from "./demo.js";\nimport { bindBridgeControls, renderBridge } from "./bridge-ui.js";\n'
 ];
 const defaultDemo = await import(new URL("../src/demo.js", import.meta.url));
 const effectiveSnapshot = selectedSnapshot ?? defaultDemo.DEMO_SNAPSHOT;
@@ -117,6 +117,17 @@ for (const [index, path] of modules.entries()) {
     source = source.slice(0, unknownStart) + source.slice(unknownEnd);
   }
   if (path === "src/demo.js") {
+    if (effectiveSnapshot.kind === "synthetic") {
+      // The fictional preview has no recorded external storefront links.
+      // Keep the audited runtime call inert and retain the stricter <95 kB
+      // self-contained HTML budget rather than weakening the size gate.
+      const start = source.indexOf("// A pasted official storefront URL");
+      const end = source.indexOf("export const BY_ID =", start);
+      if (start < 0 || end <= start) throw new Error("Unexpected storefront lookup boundary");
+      source = source.slice(0, start) +
+        "function matchesRecordedStorefrontUrl() { return false; }\n" +
+        source.slice(end);
+    }
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
     if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
     if (selectedSnapshot !== null) {

@@ -38,6 +38,35 @@ export const CATALOG = DEMO_SNAPSHOT.games;
 export const CATALOG_VERSION = DEMO_SNAPSHOT.snapshotId;
 export const PLATFORMS = ["any", "windows", "linux", "mac", ...[...new Set(CATALOG.flatMap(game => game.platforms ?? []))]
   .filter(platform => !["any", "windows", "linux", "mac"].includes(platform)).sort()];
+// A pasted official storefront URL is a lookup key for links actually recorded
+// in this catalog. Never fetch URLs, infer membership from unrelated external
+// IDs, or let store URLs enter basket ranking, filters, or versioned share state.
+function storefrontLookupKey(href) {
+  if (typeof href !== "string" || href.length > 2048) return null;
+  let url;
+  try { url = new URL(href.trim()); } catch { return null; }
+  if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
+  if (url.hostname === "store.steampowered.com") {
+    const match = /^\/app\/([1-9][0-9]*)(?:\/[^\/]+)?\/?$/.exec(url.pathname);
+    return match ? `steam:${match[1]}` : null;
+  }
+  if (/^[a-z0-9-]+\.itch\.io$/.test(url.hostname)) {
+    const match = /^\/([a-z0-9][a-z0-9-]*)\/?$/.exec(url.pathname);
+    return match ? `itch:${url.hostname}/${match[1]}` : null;
+  }
+  if (url.hostname === "play.google.com" && url.pathname === "/store/apps/details") {
+    const ids = url.searchParams.getAll("id");
+    return ids.length === 1 && /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/.test(ids[0])
+      ? `googleplay:${ids[0]}` : null;
+  }
+  return null;
+}
+export function matchesRecordedStorefrontUrl(game, query) {
+  const key = storefrontLookupKey(query);
+  return key !== null && Array.isArray(game?.storeLinks) &&
+    game.storeLinks.some(link => storefrontLookupKey(link.url) === key);
+}
+
 export const BY_ID = new Map(CATALOG.map((game) => [game.id, game]));
 
 export function initialState() {

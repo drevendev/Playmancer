@@ -1,4 +1,4 @@
-import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState } from "./demo.js";
+import { BY_ID, CATALOG, CATALOG_VERSION, METHOD_VERSION, DEMO_SNAPSHOT, PLATFORMS, decodeState, encodeState, initialState, observedGenreMass, recommend, validateState, matchesRecordedStorefrontUrl } from "./demo.js";
 import { bindBridgeControls, renderBridge } from "./bridge-ui.js";
 const $ = (id) => document.getElementById(id);
 const element = (tag, text, className) => {
@@ -389,7 +389,8 @@ function titleNameMatches(value, query) {
   return foldedQuery.length >= 2 && words(text).includes(foldedQuery);
 }
 function drawSearch() {
-  const query = $("search").value.trim().normalize("NFC").toLowerCase();
+  const entered = $("search").value.trim().normalize("NFC");
+  const query = entered.toLowerCase();
   const store = $("store-filter").value;
   const chosen = new Set(state.seeds.map((seed) => seed.id));
   $("search-results").replaceChildren();
@@ -402,7 +403,8 @@ function drawSearch() {
       if (!query) return { game, matchedTag: null };
       const direct = [game.name, ...game.aliases].some(value => titleNameMatches(value, query)) ||
         [game.id, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
-          .some(value => value.normalize("NFC").toLowerCase().includes(query));
+          .some(value => value.normalize("NFC").toLowerCase().includes(query)) ||
+        matchesRecordedStorefrontUrl(game, entered);
       const tags = syntheticCatalog
         ? [...(game.mechanics ?? []), ...(game.themes ?? [])] : (game.themes ?? []);
       const matchedTag = direct ? null
@@ -489,10 +491,10 @@ function drawSearch() {
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
     : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
-    : !query ? `Search names, IDs, aliases or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
+    : !query ? `Search names, IDs, aliases${syntheticCatalog ? "" : ", recorded store URLs"} or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
-        "No profiles match. Try another name, genre or gameplay fact; unrecorded facts remain unknown.")
+        "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
 }
 function drawEmptyRecovery(result) {

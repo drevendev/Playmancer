@@ -226,6 +226,34 @@ try:
             check(label + ": missing recorded store link cannot be inferred from platform",
                   page.locator("#search-results li > button").count() == 0
                   and "No catalog profiles with a recorded Google Play link" in page.locator("#search-hint").inner_text())
+            # A pasted official store link must find its exact recorded game,
+            # but the explicit discovery store filter is never weakened.
+            page.locator("#search").fill(
+                "https://play.google.com/store/apps/details?id=com.TrilobytesStudio.ShadowRunner&hl=en")
+            check(label + ": pasted Google Play link finds the recorded title",
+                  page.get_by_role("button", name="Add Shadow Runner", exact=True).count() == 1
+                  and page.locator("#search-results li > button").count() == 1)
+            page.locator("#search").fill(
+                "https://store.steampowered.com/app/1145360/Hades/?utm_source=friend")
+            check(label + ": pasted Steam link cannot bypass Google Play discovery filter",
+                  page.locator("#search-results li > button").count() == 0)
+            page.locator("#store-filter").select_option("all")
+            check(label + ": pasted Steam link resolves Hades without changing the basket",
+                  page.get_by_role("button", name="Add Hades", exact=True).count() == 1
+                  and page.locator("#search-results li > button").count() == 1
+                  and page.locator("#seeds > li").count() == 2
+                  and page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
+            page.locator("#search").fill("https://store.steampowered.com.evil.test/app/1145360")
+            check(label + ": lookalike store URL matches nothing",
+                  page.locator("#search-results li > button").count() == 0
+                  and not requests)
+            page.locator("#search").fill("https://drevengames.itch.io/shadow-runner/?ref=friend")
+            check(label + ": pasted itch.io link finds the recorded title",
+                  page.get_by_role("button", name="Add Shadow Runner", exact=True).count() == 1
+                  and page.locator("#search-results li > button").count() == 1
+                  and not requests)
+            page.screenshot(path=str(ARTIFACTS / f"real-store-url-search-{label}.png"), full_page=True)
             page.locator("#search").fill("")
             page.locator("#store-filter").select_option("itch")
             check(label + ": itch.io discovery preserves real multi-store memberships",
