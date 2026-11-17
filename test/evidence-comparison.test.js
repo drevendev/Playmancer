@@ -2,14 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort,
-  pairedSignedExposureBalance, summarizeSignedExposureByMode, runEvidenceComparison } from '../src/evidence-comparison.js';
+  pairedSignedExposureBalance, summarizeSignedExposureByMode, summarizePairedOrderByMode, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-12');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-13');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
   assert.equal(report.game_count, 12);
@@ -79,6 +79,49 @@ test('reports reproducible byte-for-byte rankings and explicit wins/losses witho
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
   assert.deepEqual(first.paired_gains, first.rows.filter(row => row.paired_probe_delta > 0)
     .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_probe_delta })));
+});
+
+test('order summaries distinguish empty, stable, saturated and headroom changes without quality labels', () => {
+  const row = (cohort, equal, slots, same) => ({
+    mode: 'arithmetic', paired_rankable_ids: cohort,
+    paired_order_equal: equal, paired_ranked_slots: slots, paired_same_rank_slots: same,
+  });
+  const rows = [
+    row([], null, 0, 0),
+    row(['a', 'b'], true, 2, 2),
+    row(['a', 'b'], false, 2, 0),
+    row(['a', 'b', 'c'], false, 2, 1),
+  ];
+  assert.deepEqual(summarizePairedOrderByMode(rows, 2).find(entry => entry.mode === 'arithmetic'), {
+    mode: 'arithmetic', scenarios: 4, empty_cohort_scenarios: 1,
+    nonempty_order_scenarios: 3, identical_order_scenarios: 1,
+    reordered_scenarios: 2, saturated_nonempty_scenarios: 2,
+    saturated_reordered_scenarios: 1, unsaturated_reordered_scenarios: 1,
+    observed_rank_slots: 6, preserved_rank_slots: 3,
+  });
+  const emptyMode = summarizePairedOrderByMode(rows, 2).find(entry => entry.mode === 'union');
+  assert.equal(emptyMode.scenarios, 0);
+  assert.equal(emptyMode.reordered_scenarios, 0);
+  assert.equal(emptyMode.observed_rank_slots, 0);
+});
+
+test('frozen per-mode order summaries reconcile exactly with individual basket rows', () => {
+  const report = runEvidenceComparison(clone());
+  assert.equal(report.paired_order_by_mode.length, report.modes.length);
+  for (const summary of report.paired_order_by_mode) {
+    const rows = report.rows.filter(row => row.mode === summary.mode);
+    assert.equal(summary.scenarios, rows.length);
+    assert.equal(summary.empty_cohort_scenarios + summary.nonempty_order_scenarios, rows.length);
+    assert.equal(summary.identical_order_scenarios + summary.reordered_scenarios,
+      summary.nonempty_order_scenarios);
+    assert.equal(summary.saturated_reordered_scenarios +
+      summary.unsaturated_reordered_scenarios, summary.reordered_scenarios);
+    assert.equal(summary.observed_rank_slots,
+      rows.reduce((sum, row) => sum + row.paired_ranked_slots, 0));
+    assert.equal(summary.preserved_rank_slots,
+      rows.reduce((sum, row) => sum + row.paired_same_rank_slots, 0));
+    assert.ok(summary.preserved_rank_slots <= summary.observed_rank_slots);
+  }
 });
 
 test('paired benchmark marks non-evaluable zero deltas instead of claiming ties', () => {
