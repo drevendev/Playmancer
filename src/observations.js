@@ -14,7 +14,16 @@ function observationList(value, name, max) {
 }
 function observationURL(value) {
   const url = new URL(observationText(value, 'source URL', 512));
-  if (url.protocol !== 'https:' || url.username || url.password || url.port)
+  // HTTPS URL syntax alone does not prove a receipt is publicly inspectable.
+  // Reject local, loopback, IP and reserved test hosts even when a receipt and
+  // all of its field links agree on the same non-public origin. The check is
+  // syntactic; actual DNS reachability and reuse rights need independent review.
+  const host = url.hostname.toLowerCase().replace(/\.+$, '');
+  if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+      !host.includes('.') || host === 'localhost' || host.endsWith('.localhost') ||
+      host.endsWith('.local') || host.endsWith('.internal') ||
+      host.endsWith('.test') || host.endsWith('.invalid') || host.endsWith('.example') ||
+      /^[0-9.]+$/.test(host) || host.startsWith('['))
     throw new Error('Expected a public HTTPS source URL without credentials');
   return url;
 }
