@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-11';
+const VERSION = 'p76-synthetic-paired-12';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -219,9 +219,17 @@ export function pairedRankableCohort(legacyFull, experimentalFull, seeds, mode, 
     return idsOf(ranked);
   };
   const pairedOld = rerank(oldById), pairedV2 = rerank(newById);
+  // Even when top-k exhausts the shared pool and signed exposure must abstain,
+  // the *order* can change. Report it separately from relevance/quality labels.
+  // An empty shared pool is unknown stability, never a successful order match.
+  const rankedSlots = Math.max(pairedOld.length, pairedV2.length);
+  const sameRankSlots = pairedOld.filter((id, index) => id === pairedV2[index]).length;
   return { paired_rankable_ids: shared, old_only_rankable_ids: oldOnly,
     v2_only_rankable_ids: newOnly, paired_top_old: pairedOld, paired_top_v2: pairedV2,
-    paired_shared_top_k: pairedOld.filter(id => pairedV2.includes(id)).length };
+    paired_shared_top_k: pairedOld.filter(id => pairedV2.includes(id)).length,
+    paired_ranked_slots: rankedSlots, paired_same_rank_slots: sameRankSlots,
+    paired_order_equal: rankedSlots ? (sameRankSlots === rankedSlots &&
+      pairedOld.length === pairedV2.length) : null };
 }
 
 function hardUnknownIds(partition) {
@@ -348,7 +356,7 @@ export function runEvidenceComparison(input) {
   return { report_schema: VERSION, catalog_snapshot_id: CATALOG_VERSION,
     old_method: METHOD_VERSION, new_method: EVIDENCE_METHOD_VERSION,
     evidence_source: 'authored-fictional-only',
-    warning: 'Offline synthetic signed probes and balanced exposure are NOT real-catalog tags, human relevance labels, measured uplift or measured accuracy; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated. Saturated paired top-k cohorts cannot distinguish ranking preferences.',
+    warning: 'Offline synthetic signed probes and balanced exposure are NOT real-catalog tags, human relevance labels, measured uplift or measured accuracy; negative probes are authored counterexamples, not measured dissatisfaction. Identical positive-support rankable pool, but positive-only platform records can move from legacy excluded to v2 unknown. Bridge route quality is not evaluated. Saturated paired top-k cohorts cannot distinguish signed exposure preferences; positional rank changes are descriptive only, not quality gains.',
     game_count: CATALOG.length, basket_count: input.baskets.length,
     top_k: input.topK, blend_lambda: input.lambda, modes: [...MODES],
     losses: rows.filter(row => row.probe_delta < 0).map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.probe_delta })),
