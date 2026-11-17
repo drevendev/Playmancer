@@ -262,6 +262,17 @@ try:
             check(label + ": lookalike store URL matches nothing",
                   page.locator("#search-results li > button").count() == 0
                   and not requests)
+            page.locator("#search").fill("https://store.steampowered.com/app/999999999/Unlisted")
+            check(label + ": unrecorded legitimate store URL has explicit no-fetch recovery",
+                  page.locator("#search-results li > button").count() == 0
+                  and "not a recorded HTTPS store link" in page.locator("#search-hint").inner_text()
+                  and "Browse games" in page.locator("#search-hint").inner_text()
+                  and not requests)
+            page.locator("#search").fill("http://store.steampowered.com/app/1145360/Hades")
+            check(label + ": insecure store URL cannot resolve a recorded game",
+                  page.locator("#search-results li > button").count() == 0
+                  and "not a recorded HTTPS store link" in page.locator("#search-hint").inner_text()
+                  and not requests)
             page.locator("#search").fill("https://drevengames.itch.io/shadow-runner/?ref=friend")
             check(label + ": pasted itch.io link finds the recorded title",
                   page.get_by_role("button", name="Add Shadow Runner", exact=True).count() == 1
