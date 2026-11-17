@@ -44,19 +44,27 @@ class Revision(HTMLParser):
     def __init__(self):
         super().__init__()
         self.values = []
+        self.malformed = False
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'meta':
-            values = dict(attrs)
-            if values.get('name') == 'playmancer-revision':
-                self.values.append(values.get('content'))
+        if tag != 'meta':
+            return
+        # HTMLParser retains duplicate attributes. Collapsing with dict(attrs)
+        # could hide a stale revision behind a second, expected content value.
+        names = [value for name, value in attrs if name == 'name']
+        if 'playmancer-revision' not in names:
+            return
+        contents = [value for name, value in attrs if name == 'content']
+        if len(names) != 1 or len(contents) != 1:
+            self.malformed = True
+        self.values.append(contents[0] if len(contents) == 1 else None)
 
 
 def revision_diagnostic(html):
     """Require exactly one valid marker; never accept a mixed-version document."""
     parser = Revision()
     parser.feed(html)
-    if len(parser.values) != 1:
+    if parser.malformed or len(parser.values) != 1:
         return None, ('AMBIGUOUS_REVISION_MARKERS' if parser.values
                       else 'MISSING_OR_INVALID_REVISION')
     value = parser.values[0]
@@ -89,6 +97,9 @@ def observation(response, url, expected, kind):
     if kind == 'worker':
         if 'self.onmessage =' not in response.body:
             return 'MISSING_WORKER_ENTRY'
+        # A mixed worker bundle must not pass because its first line is valid.
+        if response.body.count('// playmancer-revision:') > 1:
+            return 'AMBIGUOUS_WORKER_REVISION_MARKERS'
         actual = served_worker_revision(response.body)
         if actual == expected:
             return 'OK'

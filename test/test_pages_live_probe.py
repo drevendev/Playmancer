@@ -73,6 +73,40 @@ class PagesProbeTests(unittest.TestCase):
         self.assertIn('index=OK; worker=OK; explorer=AMBIGUOUS_REVISION_MARKERS', detail)
         self.assertEqual(len(client.calls), 3)
 
+    def test_duplicate_revision_attributes_cannot_override_stale_or_invalid_data(self):
+        cases = [
+            f'<meta name="playmancer-revision" content="{OLD}" content="{SHA}">',
+            f'<meta name="playmancer-revision" content="{SHA}" content="{OLD}">',
+            f'<meta name="other" name="playmancer-revision" content="{SHA}">',
+            f'<meta name="playmancer-revision" name="other" content="{SHA}">',
+            f'<meta name="playmancer-revision" content="{SHA}" name="playmancer-revision">',
+        ]
+        for body in cases:
+            with self.subTest(body=body):
+                self.assertIsNone(served_revision(body))
+                client = FakeFetch(index_body=body)
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('index=AMBIGUOUS_REVISION_MARKERS', detail)
+                self.assertEqual(client.calls, [BASE])
+        # The observations page is checked independently, not just the index.
+        client = FakeFetch(explorer_body=cases[0])
+        self.assertIn('explorer=AMBIGUOUS_REVISION_MARKERS', probe(BASE, SHA, client)[1])
+
+    def test_duplicate_worker_revision_markers_abort_before_explorer(self):
+        for tail in ('// playmancer-revision:' + OLD,
+                     '// playmancer-revision:' + SHA,
+                     '// playmancer-revision:untrusted'):
+            with self.subTest(tail=tail):
+                body = '// playmancer-revision:' + SHA + '\nself.onmessage = () => {}\n' + tail
+                client = FakeFetch(worker_body=body)
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('worker=AMBIGUOUS_WORKER_REVISION_MARKERS', detail)
+                self.assertIn('explorer=NOT_CHECKED', detail)
+                self.assertEqual(len(client.calls), 2)
+                self.assertNotIn('untrusted', detail)
+
     def test_logs_only_safe_sha_and_catches_stale_content(self):
         ok, diag = probe(BASE, SHA, FakeFetch(index_body=index(OLD)))
         self.assertFalse(ok)
