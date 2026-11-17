@@ -117,6 +117,17 @@ for (const [index, path] of modules.entries()) {
     source = source.slice(0, unknownStart) + source.slice(unknownEnd);
   }
   if (path === "src/demo.js") {
+    if (effectiveSnapshot.kind === "synthetic") {
+      // The fictional preview has no recorded external storefront links.
+      // Keep the audited runtime call inert and retain the stricter <95 kB
+      // self-contained HTML budget rather than weakening the size gate.
+      const start = source.indexOf("// A pasted official storefront URL");
+      const end = source.indexOf("export const BY_ID =", start);
+      if (start < 0 || end <= start) throw new Error("Unexpected storefront lookup boundary");
+      source = source.slice(0, start) +
+        "function matchesRecordedStorefrontUrl() { return false; }\n" +
+        source.slice(end);
+    }
     const slot = "const BUILD_CATALOG_SNAPSHOT = null;";
     if (source.split(slot).length !== 2) throw new Error("Expected exactly one catalog build slot");
     if (selectedSnapshot !== null) {
