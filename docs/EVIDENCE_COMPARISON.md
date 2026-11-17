@@ -149,7 +149,7 @@ The union, arithmetic, least-misery, Intersection and Blend modes are evaluated 
 ## Historical v7 diagnostic observations (authored fixture only)
 
 In the previous v7 run of the frozen six-basket fixture (30 mode/basket comparisons, top-3), the prototype changed some rankings. The probe-hit delta is **negative in one comparison** (`three-strands` / Union: −1) and **positive in one** (`combat-and-harvest` / arithmetic: +1). Other 28 were unchanged in that v7 diagnostic. Re-run the commands above
-for version-12 results; these prior numbers are not v11 acceptance claims.
+for version-12 results; these prior numbers are not v12 acceptance claims.
 These are neither a net quality gain nor proof of fitness for real players: the probes and relations were authored for testing, not sampled from users. Missing evidence remains visible as `uncertain`; explicit player exclusions and known co-op failures remain identical, while platform-receipt absences have a separately recorded abstention transition.
 
 Version 9 also changes how an unverified required platform is classified: a
