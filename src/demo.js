@@ -47,16 +47,16 @@ function storefrontLookupKey(href) {
   try { url = new URL(href.trim()); } catch { return null; }
   if (url.protocol !== "https:" || url.username || url.password || url.port) return null;
   if (url.hostname === "store.steampowered.com") {
-    const match = /^\\/app\\/([1-9][0-9]*)(?:\\/[^/]+)?\\/?$/.exec(url.pathname);
+    const match = /^\/app\/([1-9][0-9]*)(?:\/[^\/]+)?\/?$/.exec(url.pathname);
     return match ? `steam:${match[1]}` : null;
   }
-  if (/^[a-z0-9-]+\\.itch\\.io$/.test(url.hostname)) {
-    const match = /^\\/([a-z0-9][a-z0-9-]*)\\/?$/.exec(url.pathname);
+  if (/^[a-z0-9-]+\.itch\.io$/.test(url.hostname)) {
+    const match = /^\/([a-z0-9][a-z0-9-]*)\/?$/.exec(url.pathname);
     return match ? `itch:${url.hostname}/${match[1]}` : null;
   }
   if (url.hostname === "play.google.com" && url.pathname === "/store/apps/details") {
     const ids = url.searchParams.getAll("id");
-    return ids.length === 1 && /^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$/.test(ids[0])
+    return ids.length === 1 && /^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)+$/.test(ids[0])
       ? `googleplay:${ids[0]}` : null;
   }
   return null;
