@@ -27,15 +27,15 @@ test('an accidental native Pages source publication fails visibly instead of run
   const source = readFileSync(join(root, 'index.html'), 'utf8');
   assert.match(source, /id="unbuilt-source-notice"[^>]*role="alert"/);
   assert.match(source, /<div class="wrap" hidden>/);
-  assert.match(source, /<script type="application\\/x-playmancer-source" src="\\.\\/src\\/demo-ui\\.js"><\\/script>/);
-  assert.doesNotMatch(source, /<script type="module" src="\\.\\/src\\/demo-ui\\.js">/);
+  assert.match(source, /<script type="application\/x-playmancer-source" src="\.\/src\/demo-ui\.js"><\/script>/);
+  assert.doesNotMatch(source, /<script type="module" src="\.\/src\/demo-ui\.js">/);
   const out = join(dir, 'built');
   const result = run(out);
   assert.equal(result.status, 0, result.stderr);
   const built = readFileSync(join(out, 'index.html'), 'utf8');
-  assert.doesNotMatch(built, /unbuilt-source-notice|Player temporarily unavailable|application\\/x-playmancer-source/);
+  assert.doesNotMatch(built, /unbuilt-source-notice|Player temporarily unavailable|application\/x-playmancer-source/);
   assert.match(built, /<div class="wrap">/);
-  assert.match(built, /<script type="module">\\n/);
+  assert.match(built, /<script type="module">\n/);
   assert.doesNotMatch(built, /<div class="wrap" hidden>/);
 }));
 
