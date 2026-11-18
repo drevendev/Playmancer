@@ -102,6 +102,19 @@ for (const [index, path] of modules.entries()) {
     // No fictional profile has a recorded storefront URL. Remove the
     // unreachable real-catalog empty-state recovery from this size-limited
     // synthetic bundle without weakening the HTML budget or real-player copy.
+    // Only the real catalog can carry sourced "already in basket" identity hints.
+    // Omit those real-only branches from the strict-size fictional bundle;
+    // keep its existing name search and basket membership behavior unchanged.
+    const selectedIdentityStart = source.indexOf("  // Chosen games are excluded from Add results,");
+    const selectedIdentityEnd = source.indexOf("  // A pasted link can point to a game hidden by the store filter or already", selectedIdentityStart);
+    if (selectedIdentityStart < 0 || selectedIdentityEnd <= selectedIdentityStart)
+      throw new Error("Unexpected selected-game identity hint boundary");
+    source = source.slice(0, selectedIdentityStart) + source.slice(selectedIdentityEnd);
+    const selectedHintStart = source.indexOf('    : !matches.length && selectedNameMatches.length');
+    const selectedHintEnd = source.indexOf('    : !matches.length && unknownStoreUrl', selectedHintStart);
+    if (selectedHintStart < 0 || selectedHintEnd <= selectedHintStart)
+      throw new Error("Unexpected selected-game hint branch boundary");
+    source = source.slice(0, selectedHintStart) + source.slice(selectedHintEnd);
     const urlLookupStart = source.indexOf("  // A pasted link can point to a game hidden by the store filter or already");
     const urlLookupEnd = source.indexOf('  $("search-results").replaceChildren();', urlLookupStart);
     if (urlLookupStart < 0 || urlLookupEnd <= urlLookupStart)
