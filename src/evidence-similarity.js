@@ -308,6 +308,10 @@ function secondaryEvidence(a, b) {
   return { similarity: coverage ? score : null, coverage, tasteCoverage, matches, recordedDifferences };
 }
 function relationEvidence(model, a, b, fitEligibleVia = null) {
+  // A--B--A traverses the same undirected receipt twice. It is not an
+  // independently observed two-hop relation from a game back to itself.
+  // Preserve tag/metadata self-comparisons without inventing graph coverage.
+  if (a.id === b.id) return { direct: null, twoHop: null, fitTwoHop: null };
   const direct = model.edges.get(a.id).get(b.id) ?? null;
   // Only direct taste similarity supersedes its transitive substitute.
   // A factual direct reference/inspiration can coexist with an independent
