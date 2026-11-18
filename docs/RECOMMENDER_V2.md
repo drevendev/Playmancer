@@ -24,9 +24,11 @@ tracked implementation and acceptance: [issue #76](https://github.com/drevendev/
    original sourced claim direction is retained. **Only `similar` is a taste
    affinity assertion.** Inspiration and crossover/reference receipts remain
    visible route evidence, not automatic recommendations or fit boosts.
-   Rights/source review is mandatory. Relation receipts must be public HTTPS
-   URLs with no embedded credentials, not local/private-looking hosts or
-   opaque labels. The explicit `playmancer:authored-fictional-fixture` marker
+   Rights/source review is mandatory. Relation, field, and co-op receipts
+   must use DNS-shaped public HTTPS hosts, without embedded credentials or
+   explicit non-default ports. Local/IP and reserved test/example/invalid/
+   infrastructure hosts (including subdomains of example.com/.net/.org) are
+   rejected rather than mistaken for inspectable sources. The explicit `playmancer:authored-fictional-fixture` marker
    remains valid only as a deliberately **fictional** experiment input.
    Existing `fixture:[a-z0-9-]+` and `playmancer:fictional-capacity-fixture`
    receipts are also allowed exclusively as explicitly marked offline test
