@@ -83,7 +83,7 @@ test('link compatibility remains fingerprinted; source, identity and coverage fa
   assert.throws(() => decodeObservationState(model, oldLink), /Incompatible/);
   const clone = () => structuredClone(current);
   let bad = clone();
-  bad.games.find(row => row.id === ID).tags[0].source = 'https://example.com/unsupported';
+  bad.games.find(row => row.id === ID).tags[0].source = 'https://www.mozilla.org/unsupported';
   assert.throws(() => prepareObservations(catalog, bad), /source does not match/);
   bad = clone();
   bad.games.find(row => row.id === ID).tagCoverage = 'complete';
