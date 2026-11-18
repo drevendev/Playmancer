@@ -152,7 +152,7 @@ function renderBasketEvidence(game) {
     details.append(element("p", reviewed?.size
       ? `Separately reviewed gameplay facts (${reviewed.size} selected, partial): ${[...reviewed.values()].join(", ")}. Not a complete mechanic list; not used for ranking.`
       : "No separately reviewed gameplay facts for this game. Unrecorded features remain unknown."));
-    const inspect = element("a", `Inspect gameplay fact sources for ${game.name} (new tab)`);
+    const inspect = element("a", `Inspect gameplay fact sources for ${game.name} (new tab)`, "basket-fact-link");
     inspect.href = pinnedFactsSearchLink(game.name, entry);
     inspect.target = "_blank";
     inspect.rel = "noopener noreferrer";
