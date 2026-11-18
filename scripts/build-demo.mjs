@@ -124,11 +124,12 @@ for (const [index, path] of modules.entries()) {
       throw new Error("Unexpected real-only filtered-search hint boundary");
     source = source.slice(0, genericHintStart) + source.slice(genericHintEnd);
     const candidatesBinding = "  const candidates = query || browseAll";
-    const storeFilter = '  const matches = candidates.filter(({ game }) => store === "all" ||\\n    game.storeLinks?.some(link => link.store === store));\\n'.replace(/\\n/g, "\\n");
-    if (source.split(candidatesBinding).length !== 2 || source.split(storeFilter).length !== 2)
+    const storeFilterStart = source.indexOf('  const matches = candidates.filter(({ game }) => store === "all" ||');
+    const storeFilterEnd = source.indexOf('  const shown =', storeFilterStart);
+    if (source.split(candidatesBinding).length !== 2 || storeFilterStart < 0 || storeFilterEnd <= storeFilterStart)
       throw new Error("Unexpected real-only store-search binding");
-    source = source.replace(candidatesBinding, "  const matches = query || browseAll")
-      .replace(storeFilter, "");
+    source = source.slice(0, storeFilterStart) + source.slice(storeFilterEnd);
+    source = source.replace(candidatesBinding, "  const matches = query || browseAll");
     const recoveryStateStart = source.indexOf("  // Offer a real recovery only if at least one unselected game would match");
     const recoveryStateEnd = source.indexOf("}\nfunction drawEmptyRecovery(", recoveryStateStart);
     if (recoveryStateStart < 0 || recoveryStateEnd <= recoveryStateStart)
