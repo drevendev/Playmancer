@@ -107,6 +107,15 @@ test('reject local, IP and reserved receipt hosts even when per-field source ori
     'https://intranet.internal/facts', 'https://source.test/facts',
     'https://source.invalid/facts', 'https://publisher.example/facts',
     'https://singlelabel/facts',
+    // IANA documentation examples include their subdomains.
+    'https://example.com/facts', 'https://www.example.com/facts',
+    'https://source.example.org/facts', 'https://source.example.net/facts',
+    // home.arpa is local-use, not a public publisher namespace.
+    'https://host.home.arpa/facts',
+    // URL parsing alone accepts empty, edge-hyphen and overlong DNS labels.
+    'https://publisher..com/facts', 'https://-publisher.com/facts',
+    'https://publisher-.com/facts', 'https://publisher.com./facts',
+    'https://' + 'a'.repeat(64) + '.com/facts',
   ];
   for (const url of nonpublic) {
     const candidate = clone(observations);
