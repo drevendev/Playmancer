@@ -81,7 +81,7 @@ test('new static explorer exposes 54 facts, preserves unknowns and rejects old l
 
 test('unknown, duplicate and borrowed-source facts are rejected without profile substitution', () => {
   const broken=copy(reviewed);
-  broken.games.find(g=>g.id===id).tags[0].source='https://example.org/fake';
+  broken.games.find(g=>g.id===id).tags[0].source='https://www.mozilla.org/fake';
   assert.throws(()=>prepareObservations(catalog,broken),/source does not match/);
   const absent=copy(reviewed);
   absent.games.find(g=>g.id===id).tags[0].id='mechanic:imaginary';
