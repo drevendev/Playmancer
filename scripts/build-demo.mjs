@@ -116,6 +116,29 @@ for (const [index, path] of modules.entries()) {
     if ((source.match(urlHintPattern) ?? []).length !== 3)
       throw new Error("Unexpected real-only storefront recovery hint branches");
     source = source.replace(urlHintPattern, "");
+    // The synthetic preview has no store selector options to recover from.
+    // Remove real-only recovery instead of relaxing the fixed HTML size gate.
+    const genericHintStart = source.indexOf('    : !matches.length && store !== "all" && candidates.length');
+    const genericHintEnd = source.indexOf('    : matches.length ?', genericHintStart);
+    if (genericHintStart < 0 || genericHintEnd <= genericHintStart)
+      throw new Error("Unexpected real-only filtered-search hint boundary");
+    source = source.slice(0, genericHintStart) + source.slice(genericHintEnd);
+    const candidatesBinding = "  const candidates = query || browseAll";
+    const storeFilter = '  const matches = candidates.filter(({ game }) => store === "all" ||\\n    game.storeLinks?.some(link => link.store === store));\\n'.replace(/\\n/g, "\\n");
+    if (source.split(candidatesBinding).length !== 2 || source.split(storeFilter).length !== 2)
+      throw new Error("Unexpected real-only store-search binding");
+    source = source.replace(candidatesBinding, "  const matches = query || browseAll")
+      .replace(storeFilter, "");
+    const recoveryStateStart = source.indexOf("  // Offer a real recovery only if at least one unselected game would match");
+    const recoveryStateEnd = source.indexOf("}\nfunction drawEmptyRecovery(", recoveryStateStart);
+    if (recoveryStateStart < 0 || recoveryStateEnd <= recoveryStateStart)
+      throw new Error("Unexpected search recovery state boundary");
+    source = source.slice(0, recoveryStateStart) + source.slice(recoveryStateEnd);
+    const recoveryActionStart = source.indexOf('$("search-all-stores").addEventListener("click", () => {');
+    const recoveryActionEnd = source.indexOf('$("search").addEventListener("keydown", (event) => {', recoveryActionStart);
+    if (recoveryActionStart < 0 || recoveryActionEnd <= recoveryActionStart)
+      throw new Error("Unexpected search recovery action boundary");
+    source = source.slice(0, recoveryActionStart) + source.slice(recoveryActionEnd);
     // Fictional previews can never enter real-only genre-warning branches.
     // Strip those unreachable DOM labels instead of loosening the strict
     // <95kB deterministic HTML budget after real-player copy improvements.
@@ -227,7 +250,13 @@ const stylesheet = sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
 if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
   throw new Error("Stylesheet must not import other assets");
 }
-const template = sourceHtml.replace(sourceStyles[0], '<link rel="stylesheet" href="./player.css">');
+let template = sourceHtml.replace(sourceStyles[0], '<link rel="stylesheet" href="./player.css">');
+if (effectiveSnapshot.kind === "synthetic") {
+  const realOnlyRecovery = '<div id="search-recovery" hidden><button id="search-all-stores" type="button">Search all stores</button></div>';
+  if (template.split(realOnlyRecovery).length !== 2)
+    throw new Error("Unexpected real-only search recovery DOM boundary");
+  template = template.replace(realOnlyRecovery, "");
+}
 const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. Please try again later.</div>";
 const sourceWrap = '<div class="wrap" hidden>';
 if (template.split(sourceNotice).length !== 2 || template.split(sourceWrap).length !== 2)
