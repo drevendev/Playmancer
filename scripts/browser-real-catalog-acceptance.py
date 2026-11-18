@@ -161,19 +161,59 @@ try:
                   key_search.locator("#seeds > li").count() == 1
                   and key_search.locator("#search").evaluate(
                       "node => document.activeElement === node"))
+            # A composing Escape belongs to the IME; do not dismiss text.
+            key_search.locator("#search").evaluate(
+                "node => node.dispatchEvent(new KeyboardEvent('keydown', "
+                "{key:'Escape', isComposing:true, bubbles:true, cancelable:true}))")
+            check(label + ": composing Escape preserves the query and catalog choices",
+                  key_search.locator("#search").input_value() == "a"
+                  and choice_buttons.count() > 1)
             first_choice = choice_buttons.first
             first_label = first_choice.get_attribute("aria-label")
             key_search.locator("#search").press("Enter")
             check(label + ": ambiguous Enter focuses first choice without adding a game",
                   key_search.locator("#seeds > li").count() == 1
                   and first_choice.evaluate("node => document.activeElement === node"))
+            first_choice.press("Escape")
+            check(label + ": choice Escape returns focus without deleting the query",
+                  key_search.locator("#search").input_value() == "a"
+                  and key_search.locator("#search").evaluate(
+                      "node => document.activeElement === node")
+                  and key_search.locator("#seeds > li").count() == 1)
+            before_dismiss_hash = key_search.evaluate("location.hash")
+            key_search.locator("#search").press("Escape")
+            check(label + ": second Escape clears ambiguous matches but preserves shared basket",
+                  key_search.locator("#search").input_value() == ""
+                  and key_search.locator("#search-results li").count() == 0
+                  and key_search.locator("#catalog-browse").get_attribute("aria-expanded") == "false"
+                  and key_search.evaluate("location.hash") == before_dismiss_hash
+                  and key_search.locator("#seeds > li").count() == 1)
+            # Dismissing a search must not change the next explicit choice.
+            key_search.locator("#search").fill("a")
+            key_search.locator("#search").press("Enter")
             first_choice.press("Enter")
-            check(label + ": explicit focused Enter adds chosen game without script errors",
+            check(label + ": explicit focused Enter still adds chosen game without script errors",
                   key_search.locator("#seeds > li").count() == 2
                   and first_label.removeprefix("Add ") in key_search.locator("#seeds").inner_text()
                   and key_search.locator("#search").evaluate(
                       "node => document.activeElement === node")
                   and not key_errors)
+            key_search.locator("#catalog-browse").click()
+            check(label + ": Browse games shows remaining catalog games",
+                  key_search.locator("#search-results li > button:not(:disabled)").count() > 0
+                  and key_search.locator("#catalog-browse").get_attribute("aria-expanded") == "true")
+            before_browse_dismiss = key_search.evaluate("location.hash")
+            key_search.locator("#search").focus()
+            key_search.locator("#search").press("Escape")
+            check(label + ": Escape closes Browse while preserving basket, store and share",
+                  key_search.locator("#search-results li").count() == 0
+                  and key_search.locator("#catalog-browse").get_attribute("aria-expanded") == "false"
+                  and key_search.locator("#store-filter").input_value() == "all"
+                  and key_search.evaluate("location.hash") == before_browse_dismiss
+                  and key_search.locator("#seeds > li").count() == 2
+                  and not key_errors)
+            key_search.screenshot(path=str(ARTIFACTS / f"real-catalog-search-escape-{label}.png"),
+                                  full_page=True)
             key_search.close()
             # Mobile section navigation must not change the state-bearing URL fragment.
             nav = page.get_by_role("navigation", name="Page sections")
