@@ -511,9 +511,12 @@ function drawSearch() {
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
-  // Offer a real recovery only if at least one unselected game would match
-  // outside the active discovery-store filter. Never relax ranking constraints.
-  $("search-recovery").hidden = !(store !== "all" && !matches.length && candidates.length > 0);
+  // Offer recovery only when a hidden match can actually be added. At the
+  // five-favorite limit, the existing hint directs the player to remove one
+  // first rather than offering a button that reveals disabled Add controls.
+  // This is discovery-only: ranking and hard constraints remain untouched.
+  $("search-recovery").hidden = !(state.seeds.length < 5 && store !== "all" &&
+    !matches.length && candidates.length > 0);
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
