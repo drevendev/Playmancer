@@ -222,7 +222,7 @@ try:
             check(label + ": store filter combines with text search",
                   page.locator("#search-results li > button").count() == 1
                   and "Shadow Runner" in page.locator("#search-results").inner_text())
-            page.locator("#search").fill("Stardew")
+            page.locator("#search").fill("Hades")
             check(label + ": a title hidden by the store filter exposes an actionable recovery",
                   page.locator("#search-results li > button").count() == 0
                   and "hidden by the Google Play store filter" in page.locator("#search-hint").inner_text()
@@ -230,7 +230,7 @@ try:
             page.get_by_role("button", name="Search all stores").click()
             check(label + ": title recovery reveals the real game without changing ranking or basket",
                   page.locator("#store-filter").input_value() == "all"
-                  and page.get_by_role("button", name="Add Stardew Valley", exact=True).count() == 1
+                  and page.get_by_role("button", name="Add Hades", exact=True).count() == 1
                   and page.locator("#seeds > li").count() == 2
                   and page.locator("#results > li").evaluate_all(
                       "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
