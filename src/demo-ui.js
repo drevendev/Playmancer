@@ -142,7 +142,22 @@ function renderBasketEvidence(game) {
     ? "Wikidata genre statements" : "publisher-authored tags";
   details.append(element("p", `Recorded genres (${genreOrigin}): ${game.themes?.length ? game.themes.join(", ") : "unknown"}.`));
   details.append(element("p", `Recorded platforms (positive observations, not an exhaustive support list): ${game.platforms?.length ? game.platforms.join(", ") : "unknown"}.`));
-  details.append(element("p", `Mechanics: ${game.mechanics?.length ? game.mechanics.join(", ") : "unknown"}. Co-op: ${game.coop === null ? "unknown" : game.coop ? "recorded yes" : "recorded no"}.`));
+  details.append(element("p", `Catalog mechanics: ${game.mechanics?.length ? game.mechanics.join(", ") : "unknown"}. Co-op: ${game.coop === null ? "unknown" : game.coop ? "recorded yes" : "recorded no"}.`));
+  // The independent, partial Gameplay Facts inventory can contain positive
+  // observations even when the ranking catalog records no mechanics. Make
+  // that distinction inspectable without upgrading those facts into taste fit.
+  const entry = $("observation-explorer-entry");
+  if (inlineGameplayFacts && entry) {
+    const reviewed = inlineGameplayFacts.get(game.id);
+    details.append(element("p", reviewed?.size
+      ? `Separately reviewed gameplay facts (${reviewed.size} selected, partial): ${[...reviewed.values()].join(", ")}. Not a complete mechanic list; not used for ranking.`
+      : "No separately reviewed gameplay facts for this game. Unrecorded features remain unknown."));
+    const inspect = element("a", `Inspect gameplay fact sources for ${game.name} (new tab)`);
+    inspect.href = pinnedFactsSearchLink(game.name, entry);
+    inspect.target = "_blank";
+    inspect.rel = "noopener noreferrer";
+    details.append(inspect);
+  }
   const wikidataQid = game.sourceId === "wikidata-cc0"
     ? game.externalIds.find(item => item.provider === "wikidata")?.id : null;
   const source = element("a", wikidataQid ? "Inspect Wikidata item" : "Inspect publisher/storefront receipts");
@@ -163,6 +178,17 @@ function pinnedFactsLink(firstId, secondId, entry, tag = "") {
     catalog: entry.dataset.observationCatalog,
     evidence: entry.dataset.observationEvidence,
     pair: tag ? [] : [firstId, secondId], query: tag ? firstId : "", tag
+  };
+  return "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
+}
+// Deep-link to the independently versioned fact explorer's name search.
+// A single favorite is not a fabricated pairwise overlap or a taste score.
+function pinnedFactsSearchLink(query, entry) {
+  const evidenceState = {
+    version: entry.dataset.observationVersion,
+    catalog: entry.dataset.observationCatalog,
+    evidence: entry.dataset.observationEvidence,
+    pair: [], query, tag: ""
   };
   return "./observations.html#facts=" + encodeURIComponent(JSON.stringify(evidenceState));
 }
