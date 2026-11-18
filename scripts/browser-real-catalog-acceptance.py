@@ -221,7 +221,9 @@ try:
                   and jump_state["version"] == entry.get_attribute("data-observation-version")
                   and jump_state["evidence"] == entry.get_attribute("data-observation-evidence")
                   and source_jump.get_attribute("target") == "_blank"
-                  and source_jump.get_attribute("rel") == "noopener noreferrer")
+                  and source_jump.get_attribute("rel") == "noopener noreferrer"
+                  and source_jump.get_attribute("class") == "basket-fact-link"
+                  and source_jump.evaluate("node => node.getBoundingClientRect().height >= 44"))
             fact_lookup.locator("#search").fill("unrecorded fictitious mechanic")
             check(label + ": missing gameplay observation is unknown, never evidence of absence",
                   fact_lookup.locator("#search-results li").count() == 0
