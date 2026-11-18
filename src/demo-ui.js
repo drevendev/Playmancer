@@ -419,6 +419,12 @@ function drawSearch() {
   const query = entered.toLowerCase();
   const store = $("store-filter").value;
   const chosen = new Set(state.seeds.map((seed) => seed.id));
+  // Chosen games are excluded from Add results, but direct name/ID searches
+  // must not falsely report that they are absent from the catalog. Tag/fact
+  // matches alone do not establish game identity.
+  const selectedNameMatches = query ? state.seeds.map(seed => BY_ID.get(seed.id)).filter(game =>
+    game && ([game.name, ...game.aliases].some(value => titleNameMatches(value, query)) ||
+      game.id.normalize("NFC").toLowerCase().includes(query))) : [];
   // A pasted link can point to a game hidden by the store filter or already
   // selected. Explain those cases instead of falsely saying the URL is unknown.
   const recordedStoreUrlGame = !syntheticCatalog && query
@@ -530,6 +536,8 @@ function drawSearch() {
     : !query ? `Search names, IDs, aliases${syntheticCatalog ? "" : ", recorded store URLs"} or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
     : !matches.length && selectedStoreUrl ? `${recordedStoreUrlGame.name} is already in your basket. Adjust its weight or remove it above.`
     : !matches.length && filteredStoreUrl ? `${recordedStoreUrlGame.name} is in the catalog, but the ${storeNames[store]} store filter hides it. Choose All games to add it.`
+    : !matches.length && selectedNameMatches.length
+      ? `Already in basket: ${selectedNameMatches.map(game => game.name).join(", ")}. Adjust ${selectedNameMatches.length === 1 ? "its weight" : "their weights"} or remove a favorite above.`
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
     : !matches.length && store !== "all" && candidates.length
       ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
