@@ -511,10 +511,9 @@ function drawSearch() {
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
-  // Offer recovery only when a hidden match can actually be added. At the
-  // five-favorite limit, the existing hint directs the player to remove one
-  // first rather than offering a button that reveals disabled Add controls.
-  // This is discovery-only: ranking and hard constraints remain untouched.
+  // Offer a real recovery only if at least one unselected game would match
+  // outside the active discovery-store filter. Never relax ranking constraints.
+  // At five favorites, keep the remove-first hint instead of a disabled Add.
   $("search-recovery").hidden = !(state.seeds.length < 5 && store !== "all" &&
     !matches.length && candidates.length > 0);
 }
