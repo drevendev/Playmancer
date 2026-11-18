@@ -533,7 +533,7 @@ function drawSearch() {
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
     : !matches.length && store !== "all" && candidates.length
       ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
-    : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
+    : matches.length ? `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
@@ -788,11 +788,20 @@ $("search-all-stores").addEventListener("click", () => {
   (first ?? $("search")).focus();
 });
 $("search").addEventListener("keydown", (event) => {
-  if (event.key !== "ArrowDown") return;
-  const first = $("search-results").querySelector("button:not(:disabled)");
+  // Composition Enter confirms an IME candidate, not a game selection.
+  if (event.isComposing || event.keyCode === 229) return;
+  const choices = $("search-results").querySelectorAll("li > button:not(:disabled)");
+  const first = choices[0];
   if (!first) return;
-  event.preventDefault();
-  first.focus();
+  if (event.key === "Enter" && $("search").value.trim()) {
+    event.preventDefault();
+    // An ambiguous search must not silently pick the first catalog entry.
+    if (choices.length === 1) first.click();
+    else first.focus();
+  } else if (event.key === "ArrowDown") {
+    event.preventDefault();
+    first.focus();
+  }
 });
 $("mode").addEventListener("change", (event) => { state.mode = event.target.value; commit(); });
 $("platform").addEventListener("change", (event) => { state.platform = event.target.value; commit(); });
