@@ -43,6 +43,57 @@ class PagesProbeTests(unittest.TestCase):
         self.assertIn('UNBUILT_SOURCE_TEMPLATE', probe(BASE, SHA, fetch)[1])
         self.assertEqual(len(fetch.calls), 1)
 
+    def test_unbuilt_source_reports_http_and_only_validated_observed_revision(self):
+        for body, expected in [
+            ('<script src="./src/demo-ui.js"></script>', 'UNKNOWN'),
+            (index(OLD) + '<script src="./src/demo-ui.js"></script>', OLD),
+            (index(OLD) + index(SHA) + '<script src="./src/demo-ui.js"></script>', 'UNKNOWN'),
+            ('<meta name="playmancer-revision" content="PRIVATE_TOKEN">' +
+                '<script src="./src/demo-ui.js"></script>', 'UNKNOWN'),
+        ]:
+            with self.subTest(expected=expected):
+                ok, detail = probe(BASE, SHA, FakeFetch(index_body=body))
+                self.assertFalse(ok)
+                self.assertIn('index=UNBUILT_SOURCE_TEMPLATE; index_http=200; '
+                    'index_served_sha=' + expected, detail)
+                self.assertIn('worker=NOT_CHECKED; explorer=NOT_CHECKED', detail)
+                self.assertNotIn('PRIVATE_TOKEN', detail)
+                self.assertNotIn('<script', detail)
+
+    def test_failed_gates_report_bounded_status_and_safe_revision(self):
+        cases = [
+            (FakeFetch(index_status=404),
+                'index=HTTP_404; index_http=404; index_served_sha=UNKNOWN'),
+            (FakeFetch(worker_status=503),
+                'worker=HTTP_503; worker_http=503; worker_served_sha=UNKNOWN'),
+            (FakeFetch(worker_body='// playmancer-revision:' + OLD +
+                chr(10) + 'self.onmessage ='),
+                'worker=STALE_WORKER_REVISION:' + OLD +
+                '; worker_http=200; worker_served_sha=' + OLD),
+            (FakeFetch(explorer_body=index(OLD)),
+                'explorer=STALE_REVISION:' + OLD +
+                '; explorer_http=200; explorer_served_sha=' + OLD),
+            (FakeFetch(explorer_body=index(OLD) + index(SHA)),
+                'explorer=AMBIGUOUS_REVISION_MARKERS; explorer_http=200; '
+                'explorer_served_sha=UNKNOWN'),
+        ]
+        for fetch, diagnostic in cases:
+            with self.subTest(diagnostic=diagnostic):
+                ok, detail = probe(BASE, SHA, fetch)
+                self.assertFalse(ok)
+                self.assertIn(diagnostic, detail)
+                self.assertNotIn('https://', detail)
+        # A redirected origin, oversized body or failed request has no trusted marker.
+        responses = [
+            Response(200, 'https://elsewhere.invalid/', index(OLD)),
+            Response(200, BASE, index(OLD) + 'x' * 1_000_001),
+            Response(0, BASE, index(OLD), fault='network-or-timeout'),
+        ]
+        for response in responses:
+            ok, detail = probe(BASE, SHA, lambda url: response)
+            self.assertFalse(ok)
+            self.assertIn('index_served_sha=UNKNOWN', detail)
+
     def test_matching_sha_does_not_rescue_unbuilt_source_template(self):
         client = FakeFetch(index_body=index() + '<script src="./src/demo-ui.js"></script>')
         ok, detail = probe(BASE, SHA, client)
