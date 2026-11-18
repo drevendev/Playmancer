@@ -29,6 +29,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
     assert.doesNotMatch(html, /<style>/);
     assert.doesNotMatch(html, /recordedStoreUrlGame|selectedStoreUrl|filteredStoreUrl|unknownStoreUrl/,
       "fictional bundle must omit unreachable recorded-storefront recovery code");
+    assert.doesNotMatch(html, /selectedNameMatches|Already in basket:/,
+      "fictional bundle must omit real-catalog-only selected-game recovery");
     assert.doesNotMatch(html, /search-recovery|search-all-stores|const candidates = query \|\| browseAll/,
       "fictional bundle must not ship real-only filter recovery controls or state");
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);
