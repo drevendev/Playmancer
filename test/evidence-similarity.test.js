@@ -334,6 +334,35 @@ test("mixed two-hop reference routes do not masquerade as semantic affinity", ()
   assert.ok(Math.abs(bothSimilar.affinity - baseline.affinity - .03 * .2) < 1e-12);
 });
 
+test("a two-hop return walk cannot manufacture a self-relation or taste evidence", () => {
+  const bareSelf = compareEvidenceGames(model(), a.id, a.id);
+  const connected = model(undefined, [
+    relation("demo:a", "demo:b", .8, "similar"),
+    relation("demo:a", "demo:c", 1, "references"),
+    relation("demo:a", "demo:d", 1, "similar"),
+  ]);
+  const self = compareEvidenceGames(connected, a.id, a.id);
+  assert.deepEqual(self.relations, { direct: null, twoHop: null, fitTwoHop: null });
+  assert.equal(self.affinity, bareSelf.affinity);
+  assert.equal(self.evidenceCoverageByLane.twoHop, 0);
+  assert.equal(self.tasteEvidenceCoverageByLane.twoHop, 0);
+
+  // Excluded favorites still retain their per-seed evidence for diagnostics;
+  // this self-pair must not claim a sourced graph route.
+  const basket = rankEvidenceBasket(connected, { seeds: [{ id: a.id, weight: 1 }] });
+  const favorite = basket.excluded.find(item => item.id === a.id);
+  assert.equal(favorite?.reason, "seed");
+  assert.deepEqual(favorite.evidence[0].relations, self.relations);
+
+  // Real two-hop routes between distinct catalog entities remain observable.
+  const mixed = compareEvidenceGames(connected, b.id, c.id);
+  assert.equal(mixed.relations.twoHop.via, a.id);
+  assert.equal(mixed.relations.fitTwoHop, null);
+  const similar = compareEvidenceGames(connected, b.id, d.id);
+  assert.equal(similar.relations.twoHop.via, a.id);
+  assert.equal(similar.relations.fitTwoHop.via, a.id);
+});
+
 test("two hops decay, never claim that a transitive link is a direct source", () => {
   const m = model(undefined, [relation("demo:a", "demo:b", .8), relation("demo:b", "demo:c", .5)]);
   const ac = compareEvidenceGames(m, a.id, c.id);
