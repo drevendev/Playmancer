@@ -223,9 +223,18 @@ try:
                   page.locator("#search-results li > button").count() == 1
                   and "Shadow Runner" in page.locator("#search-results").inner_text())
             page.locator("#search").fill("Stardew")
-            check(label + ": missing recorded store link cannot be inferred from platform",
+            check(label + ": a title hidden by the store filter exposes an actionable recovery",
                   page.locator("#search-results li > button").count() == 0
-                  and "No catalog profiles with a recorded Google Play link" in page.locator("#search-hint").inner_text())
+                  and "hidden by the Google Play store filter" in page.locator("#search-hint").inner_text()
+                  and page.get_by_role("button", name="Search all stores").is_visible())
+            page.get_by_role("button", name="Search all stores").click()
+            check(label + ": title recovery reveals the real game without changing ranking or basket",
+                  page.locator("#store-filter").input_value() == "all"
+                  and page.get_by_role("button", name="Add Stardew Valley", exact=True).count() == 1
+                  and page.locator("#seeds > li").count() == 2
+                  and page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
+            page.locator("#store-filter").select_option("googleplay")
             # A pasted official store link must find its exact recorded game,
             # but the explicit discovery store filter is never weakened.
             page.locator("#search").fill(
@@ -238,8 +247,9 @@ try:
             check(label + ": pasted Steam link cannot bypass Google Play discovery filter",
                   page.locator("#search-results li > button").count() == 0
                   and "Hades is in the catalog, but the Google Play store filter hides it." in
-                      page.locator("#search-hint").inner_text())
-            page.locator("#store-filter").select_option("all")
+                      page.locator("#search-hint").inner_text()
+                  and page.get_by_role("button", name="Search all stores").is_visible())
+            page.get_by_role("button", name="Search all stores").click()
             check(label + ": pasted Steam link resolves Hades without changing the basket",
                   page.get_by_role("button", name="Add Hades", exact=True).count() == 1
                   and page.locator("#search-results li > button").count() == 1
@@ -267,6 +277,7 @@ try:
                   page.locator("#search-results li > button").count() == 0
                   and "not a recorded HTTPS store link" in page.locator("#search-hint").inner_text()
                   and "Browse games" in page.locator("#search-hint").inner_text()
+                  and page.locator("#search-recovery").is_hidden()
                   and not requests)
             page.locator("#search").fill("http://store.steampowered.com/app/1145360/Hades")
             check(label + ": insecure store URL cannot resolve a recorded game",
