@@ -18,11 +18,19 @@ function observationURL(value) {
   // Reject local, loopback, IP and reserved test hosts even when a receipt and
   // all of its field links agree on the same non-public origin. The check is
   // syntactic; actual DNS reachability and reuse rights need independent review.
-  const host = url.hostname.toLowerCase().replace(/\.+$/, '');
+  const host = url.hostname.toLowerCase();
+  const labels = host.split('.');
+  // Require DNS-shaped labels; URL parsing alone allows empty and edge-hyphen labels.
+  // Reserved example domains include all subdomains; .arpa is infrastructure/local use.
+  const dnsShaped = host.length <= 253 && labels.length >= 2 &&
+    labels.every(label => label.length <= 63 &&
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label));
+  const reservedSuffix = ['localhost', 'local', 'internal', 'test', 'invalid',
+    'example', 'arpa', 'onion'].includes(labels.at(-1));
+  const reservedExample = ['example.com', 'example.net', 'example.org']
+    .some(domain => host === domain || host.endsWith('.' + domain));
   if (url.protocol !== 'https:' || url.username || url.password || url.port ||
-      !host.includes('.') || host === 'localhost' || host.endsWith('.localhost') ||
-      host.endsWith('.local') || host.endsWith('.internal') ||
-      host.endsWith('.test') || host.endsWith('.invalid') || host.endsWith('.example') ||
+      !dnsShaped || reservedSuffix || reservedExample ||
       /^[0-9.]+$/.test(host) || host.startsWith('['))
     throw new Error('Expected a public HTTPS source URL without credentials');
   return url;
