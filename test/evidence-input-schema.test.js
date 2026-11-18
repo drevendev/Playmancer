@@ -61,7 +61,7 @@ test("unexpected model or relation fields cannot silently drop sourced graph evi
   const a = profile("fixture:source");
   const b = profile("fixture:target");
   const receipt = { from: a.id, to: b.id, type: "inspired-by", strength: 0.8,
-    source: "https://example.org/relations/1" };
+    source: "https://github.com/drevendev/Playmancer/relations/1" };
   assert.throws(() => prepareEvidenceModel({ games: [a, b], relatons: [receipt] }),
     /unknown evidence model field: relatons/);
   assert.throws(() => prepareEvidenceModel({ games: [a, b], relations: [
@@ -114,7 +114,7 @@ test("co-op receipts must be attached to a known co-op observation", () => {
 });
 
 test("externally sourced tags require an explicit whole-game coverage claim", () => {
-  const receipt = "https://example.org/verified-observation";
+  const receipt = "https://github.com/drevendev/Playmancer/verified-observation";
   const observed = { ...profile("wikidata:q12345"),
     tags: [{ id: "mechanic:puzzle", weight: 1, source: receipt }] };
   // Normalized mass 1 is not proof of complete whole-game semantics.
