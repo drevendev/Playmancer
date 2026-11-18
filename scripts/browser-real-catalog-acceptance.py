@@ -68,7 +68,7 @@ try:
             page.locator("#seeds .basket-evidence summary").first.click()
             check(label + ": inspected favorite distinguishes genres, unknowns and exact QID",
                   "farming simulation game" in page.locator("#seeds .basket-evidence").first.inner_text()
-                  and "Mechanics: unknown. Co-op: unknown." in page.locator("#seeds .basket-evidence").first.inner_text()
+                  and "Catalog mechanics: unknown. Co-op: unknown." in page.locator("#seeds .basket-evidence").first.inner_text()
                   and "not an exhaustive support list" in page.locator("#seeds .basket-evidence").first.inner_text()
                   and page.locator('#seeds .basket-evidence a[href="https://www.wikidata.org/wiki/Q23013817"]').count() == 1)
             # A real favorite without source-backed genre labels must not
@@ -111,7 +111,7 @@ try:
             publisher_receipt = f"https://github.com/drevendev/Playmancer/blob/{expected_ref}/docs/STOREFRONTS.md"
             check(label + ": sparse owner game explicitly exposes unknown evidence and publisher receipts",
                   "Recorded genres (publisher-authored tags): unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
-                  and "Mechanics: unknown. Co-op: unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
+                  and "Catalog mechanics: unknown. Co-op: unknown." in gap.locator("#seeds .basket-evidence").first.inner_text()
                   and gap.locator("#seeds .basket-evidence a").first.get_attribute("href") == publisher_receipt)
             gap.locator("#seeds input[type=range]").first.evaluate(
                 "(slider) => { slider.value = '9'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
@@ -200,6 +200,28 @@ try:
                   and "Recorded gameplay fact (partial evidence): Automating production" in fact_result.inner_text()
                   and fact_button.get_attribute("aria-describedby") ==
                       fact_result.locator(".hint").get_attribute("id"))
+            # Favorite disclosures distinguish absent catalog mechanics from
+            # separately reviewed positive facts, and deep-link to that exact
+            # observation revision without changing player ranking or filters.
+            fact_button.click()
+            fact_lookup.locator("#seeds .basket-evidence summary").first.click()
+            favorite_evidence = fact_lookup.locator("#seeds .basket-evidence").first
+            source_jump = favorite_evidence.get_by_role("link", name="Inspect gameplay fact sources for Factorio (new tab)")
+            jump_url = source_jump.get_attribute("href")
+            jump_state = json.loads(unquote(urlsplit(jump_url).fragment.split("facts=", 1)[1]))
+            entry = fact_lookup.locator("#observation-explorer-entry")
+            check(label + ": favorite exposes separate partial facts and exact-version source search",
+                  "Catalog mechanics: unknown" in favorite_evidence.inner_text()
+                  and "Separately reviewed gameplay facts (4 selected, partial)" in favorite_evidence.inner_text()
+                  and "Automating production" in favorite_evidence.inner_text()
+                  and "not used for ranking" in favorite_evidence.inner_text()
+                  and jump_state["query"] == "Factorio" and jump_state["pair"] == []
+                  and jump_state["tag"] == ""
+                  and jump_state["catalog"] == entry.get_attribute("data-observation-catalog")
+                  and jump_state["version"] == entry.get_attribute("data-observation-version")
+                  and jump_state["evidence"] == entry.get_attribute("data-observation-evidence")
+                  and source_jump.get_attribute("target") == "_blank"
+                  and source_jump.get_attribute("rel") == "noopener noreferrer")
             fact_lookup.locator("#search").fill("unrecorded fictitious mechanic")
             check(label + ": missing gameplay observation is unknown, never evidence of absence",
                   fact_lookup.locator("#search-results li").count() == 0
@@ -207,6 +229,13 @@ try:
             fact_lookup.locator("#search").fill("DevMatch")
             check(label + ": unreviewed game remains findable by its name",
                   fact_lookup.get_by_role("button", name="Add DevMatch").count() == 1)
+            fact_lookup.get_by_role("button", name="Add DevMatch").click()
+            devmatch_evidence = fact_lookup.locator("#seeds .basket-evidence").last
+            devmatch_evidence.locator("summary").click()
+            check(label + ": unreviewed favorite does not invent absent mechanics",
+                  "No separately reviewed gameplay facts for this game" in devmatch_evidence.inner_text()
+                  and "Unrecorded features remain unknown" in devmatch_evidence.inner_text()
+                  and devmatch_evidence.get_by_role("link", name="Inspect gameplay fact sources for DevMatch (new tab)").count() == 1)
             fact_lookup.close()
             check(label + ": real catalog exposes only recorded store options",
                   not page.locator("#store-filter-wrap").is_hidden()
