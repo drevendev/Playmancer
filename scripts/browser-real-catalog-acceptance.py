@@ -222,10 +222,54 @@ try:
             check(label + ": store filter combines with text search",
                   page.locator("#search-results li > button").count() == 1
                   and "Shadow Runner" in page.locator("#search-results").inner_text())
-            page.locator("#search").fill("Stardew")
-            check(label + ": missing recorded store link cannot be inferred from platform",
+            page.locator("#search").fill("Hades")
+            check(label + ": a title hidden by the store filter exposes an actionable recovery",
                   page.locator("#search-results li > button").count() == 0
-                  and "No catalog profiles with a recorded Google Play link" in page.locator("#search-hint").inner_text())
+                  and "hidden by the Google Play store filter" in page.locator("#search-hint").inner_text()
+                  and page.get_by_role("button", name="Search all stores").is_visible())
+            page.get_by_role("button", name="Search all stores").click()
+            check(label + ": title recovery reveals the real game without changing ranking or basket",
+                  page.locator("#store-filter").input_value() == "all"
+                  and page.get_by_role("button", name="Add Hades", exact=True).count() == 1
+                  and page.locator("#seeds > li").count() == 2
+                  and page.locator("#results > li").evaluate_all(
+                      "cards => cards.map(card => card.dataset.gameId)") == initial_ranks)
+            # Store recovery must not promise an actionable Add at basket capacity.
+            # Exercise the full-to-available transition on a separate real player.
+            full_basket = ctx.new_page()
+            full_errors, full_requests = [], []
+            full_basket.on("pageerror", lambda error: full_errors.append(str(error)))
+            full_basket.on("request", lambda request: full_requests.append(request.url))
+            full_basket.set_content(HTML, wait_until="load")
+            full_basket.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+            for name in ("Factorio", "Shadow Runner", "Circlanoid"):
+                full_basket.locator("#search").fill(name)
+                full_basket.get_by_role("button", name=f"Add {name}", exact=True).click()
+            check(label + ": five favorites fill the real basket",
+                  full_basket.locator("#seeds > li").count() == 5
+                  and "5 / 5 games" in full_basket.locator("#seed-count").inner_text())
+            full_basket.locator("#store-filter").select_option("googleplay")
+            full_basket.locator("#search").fill("Hades")
+            check(label + ": full basket hides non-actionable store recovery",
+                  full_basket.locator("#search-results li > button").count() == 0
+                  and full_basket.locator("#search-recovery").is_hidden()
+                  and "Remove one before adding another" in
+                      full_basket.locator("#search-hint").inner_text()
+                  and full_basket.locator("#store-filter").input_value() == "googleplay")
+            full_basket.get_by_role("button", name="Remove Factorio", exact=True).click()
+            check(label + ": removing a favorite restores the store recovery option",
+                  full_basket.locator("#seeds > li").count() == 4
+                  and full_basket.get_by_role("button", name="Search all stores").is_visible())
+            full_basket.get_by_role("button", name="Search all stores").click()
+            add_hades = full_basket.get_by_role("button", name="Add Hades", exact=True)
+            check(label + ": recovered result is enabled and keyboard-focused",
+                  full_basket.locator("#store-filter").input_value() == "all"
+                  and add_hades.is_enabled()
+                  and add_hades.evaluate("node => document.activeElement === node")
+                  and full_basket.locator("#seeds > li").count() == 4
+                  and not full_requests and not full_errors)
+            full_basket.close()
+            page.locator("#store-filter").select_option("googleplay")
             # A pasted official store link must find its exact recorded game,
             # but the explicit discovery store filter is never weakened.
             page.locator("#search").fill(
@@ -238,8 +282,9 @@ try:
             check(label + ": pasted Steam link cannot bypass Google Play discovery filter",
                   page.locator("#search-results li > button").count() == 0
                   and "Hades is in the catalog, but the Google Play store filter hides it." in
-                      page.locator("#search-hint").inner_text())
-            page.locator("#store-filter").select_option("all")
+                      page.locator("#search-hint").inner_text()
+                  and page.get_by_role("button", name="Search all stores").is_visible())
+            page.get_by_role("button", name="Search all stores").click()
             check(label + ": pasted Steam link resolves Hades without changing the basket",
                   page.get_by_role("button", name="Add Hades", exact=True).count() == 1
                   and page.locator("#search-results li > button").count() == 1
@@ -267,6 +312,7 @@ try:
                   page.locator("#search-results li > button").count() == 0
                   and "not a recorded HTTPS store link" in page.locator("#search-hint").inner_text()
                   and "Browse games" in page.locator("#search-hint").inner_text()
+                  and page.locator("#search-recovery").is_hidden()
                   and not requests)
             page.locator("#search").fill("http://store.steampowered.com/app/1145360/Hades")
             check(label + ": insecure store URL cannot resolve a recorded game",

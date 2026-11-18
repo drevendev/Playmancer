@@ -402,9 +402,8 @@ function drawSearch() {
   $("catalog-browse").setAttribute("aria-expanded", String(browseAll && !query));
   // Explicit catalog genre labels improve discovery without inventing a
   // mechanic, co-op flag or source-backed match where none is recorded.
-  const matches = query || browseAll
-    ? CATALOG.filter((game) => !chosen.has(game.id) &&
-        (store === "all" || game.storeLinks?.some(link => link.store === store))).map((game) => {
+  const candidates = query || browseAll
+    ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
       if (!query) return { game, matchedTag: null };
       const direct = [game.name, ...game.aliases].some(value => titleNameMatches(value, query)) ||
         [game.id, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
@@ -425,6 +424,8 @@ function drawSearch() {
         ? { game, matchedTag, matchedFact, matchedFactId: matchedFactEntry?.[0] } : null;
     }).filter(Boolean)
     : [];
+  const matches = candidates.filter(({ game }) => store === "all" ||
+    game.storeLinks?.some(link => link.store === store));
   const shown = browseAll && !query ? matches.slice(0, browseLimit) : matches;
   for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {
     const row = element("li");
@@ -504,10 +505,17 @@ function drawSearch() {
     : !matches.length && selectedStoreUrl ? `${recordedStoreUrlGame.name} is already in your basket. Adjust its weight or remove it above.`
     : !matches.length && filteredStoreUrl ? `${recordedStoreUrlGame.name} is in the catalog, but the ${storeNames[store]} store filter hides it. Choose All games to add it.`
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
+    : !matches.length && store !== "all" && candidates.length
+      ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
     : matches.length ? `${matches.length} matching ${noun}${fromStore}. Use Arrow Down to browse; Enter adds a focused result.`
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
+  // Offer a real recovery only if at least one unselected game would match
+  // outside the active discovery-store filter. Never relax ranking constraints.
+  // At five favorites, keep the remove-first hint instead of a disabled Add.
+  $("search-recovery").hidden = !(state.seeds.length < 5 && store !== "all" &&
+    !matches.length && candidates.length > 0);
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -746,6 +754,13 @@ $("search").addEventListener("input", () => {
   drawSearch();
 });
 $("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; drawSearch(); });
+$("search-all-stores").addEventListener("click", () => {
+  $("store-filter").value = "all";
+  drawSearch();
+  // Keyboard users land on the now-available game, not a vanished recovery button.
+  const first = $("search-results").querySelector("li > button:not(:disabled)");
+  (first ?? $("search")).focus();
+});
 $("search").addEventListener("keydown", (event) => {
   if (event.key !== "ArrowDown") return;
   const first = $("search-results").querySelector("button:not(:disabled)");
