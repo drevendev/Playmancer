@@ -13,7 +13,15 @@ node scripts/compare-evidence-models.mjs examples/evidence-comparison.synthetic.
 cmp /tmp/v2-a.json /tmp/v2-b.json
 ```
 
-The fixture freezes **12 authored fictional games**, six weighted 2–3-seed baskets, three explicitly **fictional** editorial relations, top-3 recommendations and Blend lambda 0.3. For every basket the same game IDs, hard platform/co-op states, explicit exclusions, seed weights and top-k are used by the unchanged `feature-overlap-2` implementation and the separate `weighted-tags-graph-experiment-9` prototype. The runner calls the actual player `pairEvidence` and production scalar/Blend rankers rather than duplicating their formulas.
+The fixture freezes **12 authored fictional games**, six weighted 2–3-seed baskets, three explicitly **fictional** editorial relations, top-3 recommendations and Blend lambda 0.3. For every basket the same game IDs, hard platform/co-op states, explicit exclusions, seed weights and top-k are used by the unchanged `feature-overlap-2` implementation and the separate `weighted-tags-graph-experiment-10` prototype. The runner calls the actual player `pairEvidence` and production scalar/Blend rankers rather than duplicating their formulas.
+
+Version 10 additionally keeps sourced scalar metadata differences (creator,
+franchise, developer, publisher and release year) as observable explanation
+and coverage, but not positive-taste coverage used to break equal-fit ties.
+A fully documented mismatch therefore cannot outrank missing metadata solely
+because it has more receipts. Previous v9 comparisons are historical; regenerate
+reports rather than relabeling them. The public player still uses
+`feature-overlap-2`.
 
 The offline method version changes because positive platform receipts now earn a bounded shared-platform signal independent of how many other platforms were recorded. A missing platform list remains unknown; no shared recorded platform is not proof of incompatibility. Previous v6, v7 and v8 results are historical. Version 8 also separates observed
 platform-list coverage from taste-comparable tie-break coverage: two
