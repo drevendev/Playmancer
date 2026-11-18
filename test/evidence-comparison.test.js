@@ -11,7 +11,9 @@ test('paired synthetic comparison uses identical catalog, hard filters, exclusio
   const report = runEvidenceComparison(clone());
   assert.equal(report.report_schema, 'p76-synthetic-paired-13');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
-  assert.equal(report.new_method, 'weighted-tags-graph-experiment-9');
+  // The comparator comes from live src/demo.js, not a frozen v2 implementation.
+  assert.equal(report.old_method, 'feature-overlap-3');
+  assert.equal(report.new_method, 'weighted-tags-graph-experiment-10');
   assert.equal(report.game_count, 12);
   assert.equal(report.rows.length, fixture.baskets.length * 5);
   for (const row of report.rows) {

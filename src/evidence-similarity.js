@@ -2,7 +2,7 @@
 // Frozen tag weights are a per-game distribution, not crowdsourced popularity.
 import { rankCandidates, blendCandidates, normalizeSeeds } from "./ranking.js";
 
-export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-9";
+export const EVIDENCE_METHOD_VERSION = "weighted-tags-graph-experiment-10";
 export const EVIDENCE_LANES = Object.freeze({ tags: 0.76, metadata: 0.13, direct: 0.08, twoHop: 0.03 });
 const METADATA_WEIGHTS = Object.freeze({ franchise: 0.3, creator: 0.27, developer: 0.18,
   publisher: 0.12, releaseYear: 0.05, platforms: 0.08 });
@@ -301,9 +301,10 @@ function secondaryEvidence(a, b) {
         right: { value: right.value, source: right.source } });
     }
     score += match * weight;
-    // Disjoint positive platform receipts are observed, not confirmed taste
-    // mismatches. Do not let receipt density win a ranking score tie.
-    if (key !== "platforms" || match > 0) tasteCoverage += weight;
+    // Sourced differences, including scalar mismatches, are observed facts
+    // rather than positive taste support. A mismatching receipt must not win
+    // a ranking tie over an otherwise identical unknown observation.
+    if (match > 0) tasteCoverage += weight;
   }
   return { similarity: coverage ? score : null, coverage, tasteCoverage, matches, recordedDifferences };
 }

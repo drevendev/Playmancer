@@ -13,7 +13,19 @@ node scripts/compare-evidence-models.mjs examples/evidence-comparison.synthetic.
 cmp /tmp/v2-a.json /tmp/v2-b.json
 ```
 
-The fixture freezes **12 authored fictional games**, six weighted 2–3-seed baskets, three explicitly **fictional** editorial relations, top-3 recommendations and Blend lambda 0.3. For every basket the same game IDs, hard platform/co-op states, explicit exclusions, seed weights and top-k are used by the unchanged `feature-overlap-2` implementation and the separate `weighted-tags-graph-experiment-9` prototype. The runner calls the actual player `pairEvidence` and production scalar/Blend rankers rather than duplicating their formulas.
+The fixture freezes **12 authored fictional games**, six weighted 2–3-seed baskets, three explicitly **fictional** editorial relations, top-3 recommendations and Blend lambda 0.3. For every basket the same game IDs, hard platform/co-op states, explicit exclusions, seed weights and top-k are used by the **current** `feature-overlap-3` player comparator (imported from `src/demo.js`) and the separate `weighted-tags-graph-experiment-10` prototype. The fixture is frozen; the baseline implementation is **not** pinned to historical v2. The runner invokes the current player's `pairEvidence` and scalar/Blend rankers rather than duplicating their formulas, and emits that method as `old_method`.
+
+Version 10 additionally keeps sourced scalar metadata differences (creator,
+franchise, developer, publisher and release year) as observable explanation
+and coverage, but not positive-taste coverage used to break equal-fit ties.
+A fully documented mismatch therefore cannot outrank missing metadata solely
+because it has more receipts. Previous v9 comparisons are historical; regenerate
+reports rather than relabeling them. The current player source, share method
+and this report's `old_method` are `feature-overlap-3`; historical
+`feature-overlap-2` share links are incompatible and no v2 scoring implementation
+is frozen by this runner. If the current player method changes, the comparison
+must be regenerated and identified under its actual emitted version. This offline
+experiment does not verify live Pages.
 
 The offline method version changes because positive platform receipts now earn a bounded shared-platform signal independent of how many other platforms were recorded. A missing platform list remains unknown; no shared recorded platform is not proof of incompatibility. Previous v6, v7 and v8 results are historical. Version 8 also separates observed
 platform-list coverage from taste-comparable tie-break coverage: two
@@ -172,4 +184,9 @@ fixture for v9 before comparing counts; previous reports remain historical.
 
 ## Still required before public integration
 
-A rights-reviewed, immutable real-game tag snapshot with actual tag weights, taxonomy, coverage and per-field receipts; identical-catalog real-pilot baselines including negative findings; separate Bridge route validation; p95 browser performance and compatibility/replay checks; and fresh hosted Pages acceptance. The published 30-game genre-only catalog and `feature-overlap-2` share state remain unchanged. Do not treat this synthetic experiment as passing those release gates.
+A rights-reviewed, immutable real-game tag snapshot with actual tag weights, taxonomy, coverage and per-field receipts; identical-catalog real-pilot baselines including negative findings; separate Bridge route validation; p95 browser performance and compatibility/replay checks; and fresh hosted Pages acceptance. The 30-game genre-based player source uses `feature-overlap-3` for current
+share-state validation; historical `feature-overlap-2` links are rejected as
+incompatible rather than silently replayed. The offline v10 experiment changes
+neither the player method nor the existing catalog. Live Pages delivery still
+requires separate verification. Do not treat this synthetic experiment as
+passing those release gates.

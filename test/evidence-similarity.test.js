@@ -244,6 +244,48 @@ test("disjoint positive platforms cannot win a taste-evidence tie", () => {
   assert.ok(!strict.ranked.some(item => item.id === disjoint.id));
 });
 
+test("documented scalar metadata mismatches cannot win a positive-taste coverage tie", () => {
+  const seed = { id: "demo:seed", tags: [tag("genre:rpg", 1)], metadata: {
+    franchise: field("Series A"), creator: field("Creator A"),
+    developer: field("Developer A"), publisher: field("Publisher A"),
+    releaseYear: field(2020),
+  }, coop: null };
+  const unknown = { ...seed, id: "demo:a-unknown", metadata: {} };
+  const mismatched = { ...seed, id: "demo:z-mismatched", metadata: {
+    franchise: field("Series B"), creator: field("Creator B"),
+    developer: field("Developer B"), publisher: field("Publisher B"),
+    releaseYear: field(2021),
+  } };
+  const matched = { ...seed, id: "demo:matched", metadata: {
+    creator: field("Creator A"),
+  } };
+  const m = model([seed, unknown, mismatched]);
+  const differing = compareEvidenceGames(m, seed.id, mismatched.id);
+  const missing = compareEvidenceGames(m, seed.id, unknown.id);
+  assert.deepEqual(differing.metadata.matches, []);
+  assert.deepEqual(differing.metadata.recordedDifferences.map(item => item.field),
+    ["franchise", "creator", "developer", "publisher", "releaseYear"]);
+  assert.ok(Math.abs(differing.metadata.coverage - .92) < 1e-12);
+  assert.equal(differing.metadata.tasteCoverage, 0);
+  assert.equal(differing.metadata.similarity, 0);
+  assert.ok(differing.evidenceCoverage > missing.evidenceCoverage);
+  assert.equal(differing.tasteEvidenceCoverage, missing.tasteEvidenceCoverage);
+  assert.equal(differing.affinity, missing.affinity);
+  const supported = compareEvidenceGames(model([seed, matched]), seed.id, matched.id);
+  assert.equal(supported.metadata.tasteCoverage, .27);
+  assert.ok(supported.affinity > differing.affinity);
+
+  // This is a scoring neutrality guarantee, not a suppression of useful
+  // per-field mismatch receipts. Check both scalar ranks and Blend.
+  for (const mode of ["intersection", "arithmetic", "blend"]) {
+    const ranked = rankEvidenceBasket(m, { seeds: [{ id: seed.id }], mode });
+    assert.deepEqual(ranked.ranked.map(item => item.id),
+      ["demo:a-unknown", "demo:z-mismatched"], mode);
+    assert.deepEqual(ranked.ranked.map(item => item.evidence[0].metadata.recordedDifferences.length),
+      [0, 5], mode);
+  }
+});
+
 test("editorial graph receipts require public HTTPS or an unmistakably fictional marker", () => {
   const base = relation("demo:a", "demo:b");
   const accepted = [
