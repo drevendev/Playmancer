@@ -118,19 +118,46 @@ def observation(response, url, expected, kind):
     return f'STALE_REVISION:{actual}'  # Only validated public SHA is logged.
 
 
+def failed_observation(response, url, kind, reason):
+    """Log bounded HTTP and verified marker shape, never response bytes or URLs.
+
+    A well-shaped revision is only an observation, NOT proof that an
+    unbuilt source template or invalid worker is a deployed player.
+    """
+    status = response.status if type(response.status) is int and 0 <= response.status <= 599 else 0
+    actual = None
+    if (not response.fault and status == 200 and response.url == url and
+            len(response.body) <= 1_000_000):
+        if kind == 'worker':
+            # Do not report the first marker of a mixed-version worker as truth.
+            if response.body.count('// playmancer-revision:') <= 1:
+                actual = served_worker_revision(response.body)
+        else:
+            actual = served_revision(response.body)
+    return f'{kind}={reason}; {kind}_http={status}; {kind}_served_sha={actual or "UNKNOWN"}'
+
+
 def probe(base_url, expected_sha, fetch=fetch_public):
     """Return (pass, safe diagnostic), short-circuiting on an invalid index."""
     base = base_url.rstrip('/') + '/'
-    index = observation(fetch(base), base, expected_sha, 'index')
+    index_response = fetch(base)
+    index = observation(index_response, base, expected_sha, 'index')
     if index != 'OK':
-        return False, f'index={index}; worker=NOT_CHECKED; explorer=NOT_CHECKED'
+        return False, (failed_observation(index_response, base, 'index', index) +
+            '; worker=NOT_CHECKED; explorer=NOT_CHECKED')
     worker_url = base + 'bridge-worker.js'
-    worker = observation(fetch(worker_url), worker_url, expected_sha, 'worker')
+    worker_response = fetch(worker_url)
+    worker = observation(worker_response, worker_url, expected_sha, 'worker')
     if worker != 'OK':
-        return False, f'index=OK; worker={worker}; explorer=NOT_CHECKED'
+        return False, ('index=OK; ' + failed_observation(worker_response, worker_url, 'worker', worker) +
+            '; explorer=NOT_CHECKED')
     explorer_url = base + 'observations.html'
-    explorer = observation(fetch(explorer_url), explorer_url, expected_sha, 'explorer')
-    return explorer == 'OK', f'index=OK; worker=OK; explorer={explorer}'
+    explorer_response = fetch(explorer_url)
+    explorer = observation(explorer_response, explorer_url, expected_sha, 'explorer')
+    if explorer != 'OK':
+        return False, ('index=OK; worker=OK; ' +
+            failed_observation(explorer_response, explorer_url, 'explorer', explorer))
+    return True, 'index=OK; worker=OK; explorer=OK'
 
 
 def verify(base_url, expected_sha, fetch=fetch_public, attempts=12, sleep=time.sleep, emit=print):
