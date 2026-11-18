@@ -788,8 +788,19 @@ $("search-all-stores").addEventListener("click", () => {
   (first ?? $("search")).focus();
 });
 $("search").addEventListener("keydown", (event) => {
-  // Composition Enter confirms an IME candidate, not a game selection.
+  // Composition keys belong to the input method, not catalog navigation.
   if (event.isComposing || event.keyCode === 229) return;
+  // Escape from a result returns to the search field (above). A second Escape
+  // clears the query or closes an open Browse list without touching the basket,
+  // selected store, hard filters or the versioned share URL.
+  if (event.key === "Escape" && ($("search").value || browseAll)) {
+    event.preventDefault();
+    $("search").value = "";
+    browseAll = false;
+    browseLimit = 8;
+    drawSearch();
+    return;
+  }
   const choices = $("search-results").querySelectorAll("li > button:not(:disabled)");
   const first = choices[0];
   if (!first) return;
