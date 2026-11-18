@@ -13,7 +13,7 @@ const c = { id: "demo:c", tags: [tag("genre:puzzle", 1)],
 const d = { id: "demo:d", tags: [tag("genre:puzzle", 1)], metadata: {}, coop: null };
 const model = (games = [a, b, c, d], relations = []) => prepareEvidenceModel({ games, relations });
 const relation = (from, to, strength = 1, type = "similar") =>
-  ({ from, to, strength, type, source: "https://example.org/receipt" });
+  ({ from, to, strength, type, source: "https://github.com/drevendev/Playmancer/issues/76" });
 // Evidence lane arithmetic is floating point (0.27 + 0.08 != 0.35 exactly).
 // Verify the lane names exactly and each value within a tight numeric tolerance.
 function assertCoverageLanes(actual, expected) {
@@ -247,9 +247,8 @@ test("disjoint positive platforms cannot win a taste-evidence tie", () => {
 test("editorial graph receipts require public HTTPS or an unmistakably fictional marker", () => {
   const base = relation("demo:a", "demo:b");
   const accepted = [
-    "https://studio.example.org/games/relation",
-    "https://www.example.org/story?section=gameplay",
-    "https://studio.example.org./games/relation",
+    "https://github.com/drevendev/Playmancer/games/relation",
+    "https://github.com/drevendev/Playmancer/story?section=gameplay",
     "playmancer:authored-fictional-fixture",
     "playmancer:fictional-capacity-fixture",
     "fixture:curated-receipt",
@@ -264,6 +263,14 @@ test("editorial graph receipts require public HTTPS or an unmistakably fictional
     "https://localhost/receipt", "https://localhost./receipt",
     "https://foo.localhost/receipt", "https://foo.localhost./receipt",
     "https://127.0.0.1/receipt",
+    "https://github.com./games/relation",
+    "https://example.com/receipt", "https://sub.example.net/receipt",
+    "https://example.org/receipt", "https://sub.example.org/receipt",
+    "https://studio.test/receipt", "https://studio.invalid/receipt",
+    "https://service.example/receipt", "https://service.arpa/receipt",
+    "https://service.onion/receipt", "https://bad..github.com/receipt",
+    "https://-bad.github.com/receipt", "https://bad-.github.com/receipt",
+    "https://github.com:8443/receipt",
     "https://service.local/receipt", "https://service.local./receipt",
     "https://service.local../receipt",
     "https://service.internal/receipt", "https://service.internal./receipt",
@@ -290,7 +297,7 @@ test("sourced direct influence is symmetric as affinity but keeps its arrow", ()
   assert.equal(ac.relations.direct.to, "demo:a");
   assert.equal(ac.affinity, ca.affinity);
   assert.equal(ac.relations.twoHop, null);
-  assert.equal(ac.relations.direct.source, "https://example.org/receipt");
+  assert.equal(ac.relations.direct.source, "https://github.com/drevendev/Playmancer/issues/76");
 });
 test("reference and inspiration receipts are factual routes, not taste boosts", () => {
   const baseline = compareEvidenceGames(model(), a.id, c.id);
@@ -301,7 +308,7 @@ test("reference and inspiration receipts are factual routes, not taste boosts", 
     assert.equal(withReceipt.affinity, baseline.affinity);
     assert.equal(withReceipt.relations.direct.type, type);
     assert.equal(withReceipt.relations.direct.from, "demo:c");
-    assert.equal(withReceipt.relations.direct.source, "https://example.org/receipt");
+    assert.equal(withReceipt.relations.direct.source, "https://github.com/drevendev/Playmancer/issues/76");
     assert.equal(withReceipt.evidenceCoverageByLane.direct, .08);
   }
   const similar = compareEvidenceGames(model(undefined,
@@ -638,7 +645,7 @@ test("factual direct receipts never mask independent two-hop taste evidence", ()
     assert.deepEqual(pair.relations.fitTwoHop.hops.map(hop => hop.type),
       ["similar", "similar"]);
     assert.deepEqual(pair.relations.fitTwoHop.sources,
-      ["https://example.org/receipt", "https://example.org/receipt"]);
+      ["https://github.com/drevendev/Playmancer/issues/76", "https://github.com/drevendev/Playmancer/issues/76"]);
     assert.equal(pair.affinity, withoutDirect.affinity);
     assert.equal(reverse.affinity, pair.affinity);
     assert.equal(reverse.relations.direct.from, c.id);

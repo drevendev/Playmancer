@@ -152,11 +152,20 @@ function relationReceipt(value, label = "relation.source", allowLegacyFixture = 
   const invalid = () => new TypeError(`${label} must be a public HTTPS URL or an authored fictional fixture`);
   let url;
   try { url = new URL(source); } catch { throw invalid(); }
-  // DNS root dots survive URL.hostname; normalize before checking local hosts.
-  const host = url.hostname.toLowerCase().replace(/\.+$/, "");
-  if (url.protocol !== "https:" || url.username || url.password ||
-      !host.includes(".") || host === "localhost" || host.endsWith(".localhost") ||
-      host.endsWith(".local") || host.endsWith(".internal") ||
+  // Reject reserved and malformed DNS names; a syntactically valid HTTPS URL
+  // need not have a publicly inspectable origin. This does not perform DNS or
+  // establish a receipt's truth, provenance, or redistribution rights.
+  const host = url.hostname.toLowerCase();
+  const labels = host.split(".");
+  const dnsShaped = host.length <= 253 && labels.length >= 2 &&
+    labels.every(label => label.length <= 63 &&
+      /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label));
+  const reservedSuffix = ["localhost", "local", "internal", "test", "invalid",
+    "example", "arpa", "onion"].includes(labels.at(-1));
+  const reservedExample = ["example.com", "example.net", "example.org"]
+    .some(domain => host === domain || host.endsWith("." + domain));
+  if (url.protocol !== "https:" || url.username || url.password || url.port ||
+      !dnsShaped || reservedSuffix || reservedExample ||
       /^[0-9.]+$/.test(host) || host.startsWith("[") || /\s/.test(source)) {
     throw invalid();
   }
