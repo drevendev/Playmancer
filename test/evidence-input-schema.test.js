@@ -143,9 +143,9 @@ test("externally sourced tags require an explicit whole-game coverage claim", ()
 
 test("sourced co-op values need an inspectable receipt before affecting hard filters", () => {
   const yes = { ...profile("demo:coop-yes"), coop: true,
-    coopSource: "https://studio.example.org/game/coop-faq" };
+    coopSource: "https://github.com/game/coop-faq" };
   const no = { ...profile("demo:coop-no"), coop: false,
-    coopSource: "https://studio.example.org/game/no-coop" };
+    coopSource: "https://github.com/game/no-coop" };
   const valid = prepareEvidenceModel({ games: [yes, no] });
   assert.equal(valid.profiles.get(yes.id).coopSource, yes.coopSource);
   assert.equal(valid.profiles.get(no.id).coopSource, no.coopSource);
@@ -160,8 +160,9 @@ test("sourced co-op values need an inspectable receipt before affecting hard fil
   }
   for (const source of ["private spreadsheet", "authored-research-note",
     "http://studio.example.org/coop", "https://localhost/coop",
-    "https://127.0.0.1/coop", "https://someone:password@studio.example.org/coop",
-    "https://studio.example.org/coop with spaces", "fixture:unverified notes"]) {
+    "https://127.0.0.1/coop", "https://service.test/coop",
+    "https://sub.example.org/coop", "https://github.com:8443/coop", "https://someone:password@studio.example.org/coop",
+    "https://github.com/coop with spaces", "fixture:unverified notes"]) {
     for (const coop of [true, false]) {
       assert.throws(() => prepareEvidenceModel({ games: [
         { ...yes, coop, coopSource: source },
@@ -174,8 +175,8 @@ test("sourced co-op values need an inspectable receipt before affecting hard fil
 test("sourced tags and metadata require inspectable receipts, including frozen proxy provenance", () => {
   const external = { ...profile("wikidata:q12345"), tagCoverage: "complete",
     tags: [{ id: "mechanic:puzzle", weight: 1,
-      source: "https://studio.example.org/gameplay/puzzle" }] };
-  const platforms = { value: ["windows"], source: "https://studio.example.org/platforms" };
+      source: "https://github.com/gameplay/puzzle" }] };
+  const platforms = { value: ["windows"], source: "https://github.com/platforms" };
   const valid = prepareEvidenceModel({ games: [
     { ...external, metadata: { platforms } }, profile("fixture:peer"),
   ] });
@@ -184,8 +185,10 @@ test("sourced tags and metadata require inspectable receipts, including frozen p
 
   for (const bad of ["internal spreadsheet", "editorial-note",
     "http://studio.example.org/claim", "https://localhost/claim",
-    "https://127.0.0.1/claim", "https://reader:secret@studio.example.org/claim",
-    "https://studio.example.org/claim extra notes"]) {
+    "https://127.0.0.1/claim", "https://sub.example.net/claim",
+    "https://service.invalid/claim", "https://github.com./claim",
+    "https://bad..github.com/claim", "https://github.com:8443/claim", "https://reader:secret@studio.example.org/claim",
+    "https://github.com/claim extra notes"]) {
     assert.throws(() => prepareEvidenceModel({ games: [
       { ...external, tags: [{ ...external.tags[0], source: bad }] },
     ] }), /source must be a public HTTPS URL or an authored fictional fixture/,
@@ -215,7 +218,7 @@ test("sourced tags and metadata require inspectable receipts, including frozen p
   assert.equal(platformSnapshot.profiles.get(external.id).metadata.platforms.source, frozenPlatform);
   assert.throws(() => prepareEvidenceModel({ games: [
     { ...external, tags: [{ ...external.tags[0],
-      source: "https://studio.example.org/claim (unreviewed spreadsheet)" }] },
+      source: "https://github.com/claim (unreviewed spreadsheet)" }] },
   ] }), /source must be a public HTTPS URL or an authored fictional fixture/);
   // The separate seed regression fixture remains valid only with an explicit
   // coverage declaration; do not expand the implicit-complete legacy set.
