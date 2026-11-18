@@ -85,7 +85,7 @@ test('old versioned comparison links reject the new digest; current links restor
   const oldState={...state,evidence:OLD_SHA,pair:['wikidata:q30591391','wikidata:q4308783']};
   assert.throws(()=>decodeObservationState(currentModel,encodeObservationState(oldModel,oldState)),/Incompatible/);
   const tampered=JSON.parse(JSON.stringify(current));
-  tampered.games.find(g=>g.id==='wikidata:q109051201').tags[0].source='https://attacker.test/';
+  tampered.games.find(g=>g.id==='wikidata:q109051201').tags[0].source='https://www.mozilla.org/';
   assert.throws(()=>prepareObservations(catalog,tampered),/source does not match/);
   tampered.games.find(g=>g.id==='wikidata:q109051201').tags[0].source='https://www.inscryption.com/steam';
   tampered.games.find(g=>g.id==='wikidata:q109051201').tagCoverage='complete';
