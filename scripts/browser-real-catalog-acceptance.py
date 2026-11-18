@@ -131,6 +131,50 @@ try:
                   and gap.locator("#seeds .seed-evidence-warning").count() == 0
                   and gap.locator("#results .card").count() > 0)
             gap.close()
+            # Enter on search should help with one clear match without silently
+            # choosing the first game from an ambiguous set. IME confirmation
+            # must remain text input, and focus remains predictable on mobile.
+            key_search = ctx.new_page()
+            key_errors = []
+            key_search.on("pageerror", lambda err: key_errors.append(str(err)))
+            key_search.set_content(HTML, wait_until="load")
+            key_search.locator("#clear").click()
+            key_search.locator("#search").fill("DevMatch")
+            check(label + ": unique search exposes exactly one enabled add action",
+                  key_search.locator("#search-results li > button:not(:disabled)").count() == 1)
+            key_search.locator("#search").press("Enter")
+            check(label + ": Enter adds sole match with focus and basket share preserved",
+                  key_search.locator("#seeds > li").count() == 1
+                  and "DevMatch" in key_search.locator("#seeds").inner_text()
+                  and key_search.locator("#search").input_value() == ""
+                  and key_search.locator("#search").evaluate(
+                      "node => document.activeElement === node")
+                  and "dreven%3Adevmatch" in key_search.evaluate("location.hash"))
+            key_search.locator("#search").fill("a")
+            choice_buttons = key_search.locator("#search-results li > button:not(:disabled)")
+            check(label + ": broad search has multiple independently selectable results",
+                  choice_buttons.count() > 1)
+            key_search.locator("#search").evaluate(
+                "node => node.dispatchEvent(new KeyboardEvent('keydown', "
+                "{key:'Enter', isComposing:true, bubbles:true, cancelable:true}))")
+            check(label + ": IME Enter does not select or move search focus",
+                  key_search.locator("#seeds > li").count() == 1
+                  and key_search.locator("#search").evaluate(
+                      "node => document.activeElement === node"))
+            first_choice = choice_buttons.first
+            first_label = first_choice.get_attribute("aria-label")
+            key_search.locator("#search").press("Enter")
+            check(label + ": ambiguous Enter focuses first choice without adding a game",
+                  key_search.locator("#seeds > li").count() == 1
+                  and first_choice.evaluate("node => document.activeElement === node"))
+            first_choice.press("Enter")
+            check(label + ": explicit focused Enter adds chosen game without script errors",
+                  key_search.locator("#seeds > li").count() == 2
+                  and first_label.removeprefix("Add ") in key_search.locator("#seeds").inner_text()
+                  and key_search.locator("#search").evaluate(
+                      "node => document.activeElement === node")
+                  and not key_errors)
+            key_search.close()
             # Mobile section navigation must not change the state-bearing URL fragment.
             nav = page.get_by_role("navigation", name="Page sections")
             check(label + ": section shortcuts are shown only on narrow screens",
