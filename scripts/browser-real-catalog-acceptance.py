@@ -150,6 +150,23 @@ try:
                   and key_search.locator("#search").evaluate(
                       "node => document.activeElement === node")
                   and "dreven%3Adevmatch" in key_search.evaluate("location.hash"))
+            selected_hash = key_search.evaluate("location.hash")
+            key_search.locator("#search").fill("DevMatch")
+            check(label + ": selected title search explains why no second Add action is offered",
+                  key_search.locator("#search-results > li").count() == 0
+                  and "Already in basket: DevMatch" in key_search.locator("#search-hint").inner_text()
+                  and key_search.locator("#seeds > li").count() == 1
+                  and key_search.evaluate("location.hash") == selected_hash)
+            key_search.locator("#search").fill("dreven:devmatch")
+            check(label + ": selected canonical ID search also reports basket membership",
+                  key_search.locator("#search-results > li").count() == 0
+                  and "Already in basket: DevMatch" in key_search.locator("#search-hint").inner_text()
+                  and key_search.evaluate("location.hash") == selected_hash)
+            key_search.locator("#search").fill("unlisted favorite")
+            check(label + ": unmatched title is not mislabeled as already selected",
+                  "Already in basket:" not in key_search.locator("#search-hint").inner_text()
+                  and "No profiles match" in key_search.locator("#search-hint").inner_text()
+                  and key_search.evaluate("location.hash") == selected_hash)
             key_search.locator("#search").fill("a")
             choice_buttons = key_search.locator("#search-results li > button:not(:disabled)")
             check(label + ": broad search has multiple independently selectable results",
