@@ -2,14 +2,80 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { pairedProbeDiagnostics, pairedProbeEvaluation, pairedRankableCohort,
-  pairedSignedExposureBalance, summarizeSignedExposureByMode, summarizePairedOrderByMode, runEvidenceComparison } from '../src/evidence-comparison.js';
+  pairedSignedExposureBalance, summarizeSignedExposureByMode, summarizePairedRankabilityByMode,
+  summarizePairedOrderByMode, runEvidenceComparison } from '../src/evidence-comparison.js';
 
 const fixture = JSON.parse(readFileSync(new URL('../examples/evidence-comparison.synthetic.json', import.meta.url), 'utf8'));
 const clone = () => structuredClone(fixture);
 
+test('per-mode paired rankability tracks shared opportunities separately from missing evidence', () => {
+  const report = runEvidenceComparison(clone());
+  assert.equal(report.paired_rankability_by_mode.length, report.modes.length);
+  for (const summary of report.paired_rankability_by_mode) {
+    const rows = report.rows.filter(row => row.mode === summary.mode);
+    const sum = select => rows.reduce((n, row) => n + select(row), 0);
+    assert.equal(summary.scenarios, rows.length);
+    assert.equal(summary.eligible_opportunities, sum(row => row.eligible_candidates));
+    assert.equal(summary.old_rankable_opportunities, sum(row => row.rankable_opportunities_old));
+    assert.equal(summary.v2_rankable_opportunities, sum(row => row.rankable_opportunities_v2));
+    assert.equal(summary.shared_rankable_opportunities, sum(row => row.paired_rankable_ids.length));
+    assert.equal(summary.old_only_rankable_opportunities,
+      summary.old_rankable_opportunities - summary.shared_rankable_opportunities);
+    assert.equal(summary.v2_only_rankable_opportunities,
+      summary.v2_rankable_opportunities - summary.shared_rankable_opportunities);
+    assert.equal(summary.no_shared_rankable_scenarios,
+      rows.filter(row => row.paired_rankable_ids.length === 0).length);
+    for (const [fraction, numerator] of [
+      ['old_rankable_fraction', summary.old_rankable_opportunities],
+      ['v2_rankable_fraction', summary.v2_rankable_opportunities],
+      ['shared_rankable_fraction', summary.shared_rankable_opportunities],
+    ]) {
+      assert.equal(summary[fraction], summary.eligible_opportunities
+        ? numerator / summary.eligible_opportunities : null);
+    }
+  }
+  const sparse = report.rows.filter(row => row.basket_id === 'sparse-tag-evidence');
+  assert.ok(sparse.every(row => row.paired_rankable_ids.length === 0));
+  const noEligible = summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 0,
+    rankable_opportunities_old: 0, rankable_opportunities_v2: 0,
+    paired_rankable_ids: [], old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]).find(row => row.mode === 'intersection');
+  assert.equal(noEligible.shared_rankable_fraction, null);
+  assert.equal(noEligible.old_rankable_fraction, null);
+  assert.equal(noEligible.v2_rankable_fraction, null);
+  assert.equal(noEligible.no_shared_rankable_scenarios, 1);
+  assert.throws(() => summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 2,
+    rankable_opportunities_old: 2, rankable_opportunities_v2: 1,
+    paired_rankable_ids: ['only:one'],
+    old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]), /partition drift/);
+  // Two opposing errors reconcile in aggregate but are invalid per basket.
+  assert.throws(() => summarizePairedRankabilityByMode([
+    { mode: 'intersection', basket_id: 'under-counted', eligible_candidates: 2,
+      rankable_opportunities_old: 2, rankable_opportunities_v2: 2,
+      paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [] },
+    { mode: 'intersection', basket_id: 'over-counted', eligible_candidates: 2,
+      rankable_opportunities_old: 1, rankable_opportunities_v2: 1,
+      paired_rankable_ids: ['B'], old_only_rankable_ids: ['C'], v2_only_rankable_ids: ['D'] },
+  ]), /partition drift for intersection basket under-counted/);
+  // A single malformed row cannot hide an impossible or fractional denominator.
+  assert.throws(() => summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 0,
+    rankable_opportunities_old: 1, rankable_opportunities_v2: 0,
+    paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]), /partition drift/);
+  assert.throws(() => summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 1.5,
+    rankable_opportunities_old: 1, rankable_opportunities_v2: 1,
+    paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]), /partition drift/);
+});
+
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
   const report = runEvidenceComparison(clone());
-  assert.equal(report.report_schema, 'p76-synthetic-paired-13');
+  assert.equal(report.report_schema, 'p76-synthetic-paired-14');
   assert.equal(report.catalog_snapshot_id, 'synthetic-demo-1');
   // The comparator comes from live src/demo.js, not a frozen v2 implementation.
   assert.equal(report.old_method, 'feature-overlap-3');
