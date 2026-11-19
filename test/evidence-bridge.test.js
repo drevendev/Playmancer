@@ -69,6 +69,43 @@ test("hard exclusions block intermediary routes; eligible alternatives remain av
   assert.deepEqual(blocked.hops, []);
 });
 
+test("valid curated Bridge retains unknown alternatives without treating them as eligible", () => {
+  const relations = [
+    edge("demo:a", "demo:e", 1), edge("demo:e", "demo:d", 1),
+    edge("demo:a", "demo:c", .9), edge("demo:c", "demo:d", .9),
+    edge("demo:a", "demo:b", .4), edge("demo:b", "demo:d", .5),
+  ];
+  const m = model(relations, {
+    "demo:c": { platforms: ["linux"] },
+    "demo:e": { platforms: null },
+  });
+  const selected = route(m, { platform: "windows" });
+  assert.equal(selected.method, CURATED_BRIDGE_VERSION);
+  assert.equal(selected.status, "route");
+  assert.equal(selected.reason, null);
+  assert.deepEqual(selected.nodes, ["demo:a", "demo:b", "demo:d"]);
+  assert.ok(Math.abs(selected.evidenceStrength - .1) < 1e-12);
+  // Stronger but unverified platform alternatives are diagnostic only.
+  // Canonical ID ordering is stable despite authored edge insertion order.
+  assert.deepEqual(selected.unknownIntermediates, ["demo:c", "demo:e"]);
+  assert.deepEqual(selected.hops.map(hop => [hop.travelFrom, hop.travelTo]), [
+    ["demo:a", "demo:b"], ["demo:b", "demo:d"],
+  ]);
+  assert.deepEqual(route(m, {
+    platform: "windows", excluded: ["demo:c", "demo:e"],
+  }).unknownIntermediates, []);
+  const coopUnknown = route(model(relations, {
+    "demo:c": { coop: null }, "demo:e": { coop: false },
+  }), { coopOnly: true });
+  assert.equal(coopUnknown.status, "route");
+  assert.deepEqual(coopUnknown.nodes, ["demo:a", "demo:b", "demo:d"]);
+  assert.deepEqual(coopUnknown.unknownIntermediates, ["demo:c"]);
+  // The same graph is fully observable without hard constraints.
+  const unrestricted = route(m);
+  assert.deepEqual(unrestricted.nodes, ["demo:a", "demo:e", "demo:d"]);
+  assert.deepEqual(unrestricted.unknownIntermediates, []);
+});
+
 test("missing mandatory intermediary facts abstain; failed facts cannot pass", () => {
   const relations = [edge("demo:a", "demo:b"), edge("demo:b", "demo:d")];
   const missingPlatform = route(model(relations, {
