@@ -198,9 +198,6 @@ export function summarizeSignedExposureByMode(rows) {
   });
 }
 
-// Summarize only what ordering reveals on the SAME fully scoreable cohort.
-// Rank movement is observable even without signed ranking headroom; it is not
-// a relevance, preference or quality win. Empty cohorts are not stable orders.
 // Every basket contributes an opportunity per eligible game. These are not
 // distinct players or unique games across baskets. A shared-rankability
 // denominator exposes evidence scarcity before interpreting top-k probe deltas.
@@ -235,6 +232,9 @@ export function summarizePairedRankabilityByMode(rows) {
   });
 }
 
+// Summarize only what ordering reveals on the SAME fully scoreable cohort.
+// Rank movement is observable even without signed ranking headroom; it is not
+// a relevance, preference or quality win. Empty cohorts are not stable orders.
 export function summarizePairedOrderByMode(rows, topK) {
   return MODES.map(mode => {
     const group = rows.filter(row => row.mode === mode);
