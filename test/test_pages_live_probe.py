@@ -13,9 +13,13 @@ OLD = 'b' * 40
 def index(sha=SHA):
     return f'<html><meta name="playmancer-revision" content="{sha}"></html>'
 
+def stylesheet(sha=SHA):
+    return f'/* playmancer-revision:{sha} */\\n' + ':root{' + 'x' * 120 + '}'
+
 class FakeFetch:
     def __init__(self, index_body=None, index_status=200, worker_status=200,
-                 worker_body='// playmancer-revision:' + SHA + '\nself.onmessage =', explorer_body=None, explorer_status=200, redirect=False):
+                 worker_body='// playmancer-revision:' + SHA + '\nself.onmessage =', explorer_body=None, explorer_status=200, redirect=False,
+                 stylesheet_body=None, stylesheet_status=200, stylesheet_redirect=False):
         self.body = index() if index_body is None else index_body
         self.index_status = index_status
         self.worker_status = worker_status
@@ -23,6 +27,9 @@ class FakeFetch:
         self.explorer_body = index() if explorer_body is None else explorer_body
         self.explorer_status = explorer_status
         self.redirect = redirect
+        self.stylesheet_body = stylesheet() if stylesheet_body is None else stylesheet_body
+        self.stylesheet_status = stylesheet_status
+        self.stylesheet_redirect = stylesheet_redirect
         self.calls = []
     def __call__(self, url):
         self.calls.append(url)
@@ -30,13 +37,41 @@ class FakeFetch:
             return Response(self.index_status, url, self.body)
         if url.endswith('bridge-worker.js'):
             return Response(self.worker_status, 'https://elsewhere.example/' if self.redirect else url, self.worker_body)
+        if url.endswith('player.css'):
+            return Response(self.stylesheet_status,
+                'https://elsewhere.invalid/' if self.stylesheet_redirect else url,
+                self.stylesheet_body)
         return Response(self.explorer_status, url, self.explorer_body)
 
 class PagesProbeTests(unittest.TestCase):
     def test_exact_revision_worker_explorer_success(self):
         fetch = FakeFetch()
-        self.assertEqual(probe(BASE, SHA, fetch), (True, 'index=OK; worker=OK; explorer=OK'))
-        self.assertEqual(len(fetch.calls), 3)
+        self.assertEqual(probe(BASE, SHA, fetch),
+            (True, 'index=OK; worker=OK; explorer=OK; stylesheet=OK'))
+        self.assertEqual(fetch.calls, [BASE, BASE + 'bridge-worker.js',
+            BASE + 'observations.html', BASE + 'player.css'])
+
+    def test_stylesheet_is_a_required_revision_pinned_public_asset(self):
+        cases = [
+            (FakeFetch(stylesheet_status=404), 'HTTP_404'),
+            (FakeFetch(stylesheet_redirect=True), 'REDIRECT_OR_WRONG_ORIGIN'),
+            (FakeFetch(stylesheet_body=stylesheet(OLD)), 'STALE_STYLESHEET_REVISION:' + OLD),
+            (FakeFetch(stylesheet_body=':root{color:red}'), 'MISSING_OR_INVALID_STYLESHEET_REVISION'),
+            (FakeFetch(stylesheet_body='/* playmancer-revision:' + SHA + ' */\\n'),
+                'INCOMPLETE_STYLESHEET'),
+            (FakeFetch(stylesheet_body=stylesheet(SHA) + stylesheet(OLD)),
+                'AMBIGUOUS_STYLESHEET_REVISION_MARKERS'),
+        ]
+        for client, expected in cases:
+            with self.subTest(expected=expected):
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('stylesheet=' + expected, detail)
+                self.assertIn('stylesheet_http=', detail)
+                self.assertNotIn('https://', detail)
+                self.assertEqual(client.calls[-1], BASE + 'player.css')
+        self.assertIn('stylesheet_served_sha=' + OLD,
+            probe(BASE, SHA, FakeFetch(stylesheet_body=stylesheet(OLD)))[1])
 
     def test_detects_source_root_html_not_rebuilt(self):
         fetch = FakeFetch(index_body='<script src="./src/demo-ui.js"></script>')
