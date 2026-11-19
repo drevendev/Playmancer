@@ -549,15 +549,14 @@ function drawSearch() {
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
   // Offer a real recovery only if at least one unselected game would match
-  // or a typed query has no available matches; the fictional-size build
-  // deliberately excludes this real-catalog-only recovery implementation.
-  // and a genuine no-match query. Never relax ranking hard constraints or
-  // silently replace a query for a game that is already in the basket.
-  // At five favorites, require removal first rather than showing a dead Add.
+  // outside its discovery-store filter, or a name/tag/fact query has no hits.
+  // Unrecorded storefront URLs retain their explicit no-fetch guidance.
+  // Never relax ranking hard constraints or replace an already chosen game.
+  // At five favorites require removal before offering another Add action.
   const filteredRecovery = state.seeds.length < 5 && store !== "all" &&
     !matches.length && candidates.length > 0;
   const browseRecovery = state.seeds.length < 5 && !!query && !matches.length &&
-    !selectedNameMatches.length && !selectedStoreUrl && !filteredRecovery;
+    !selectedNameMatches.length && !selectedStoreUrl && !unknownStoreUrl && !filteredRecovery;
   $("search-recovery").hidden = !(filteredRecovery || browseRecovery);
   $("search-all-stores").dataset.mode = filteredRecovery ? "all-stores" : "browse";
   $("search-all-stores").textContent = filteredRecovery ? "Search all stores" : "Browse available games";
