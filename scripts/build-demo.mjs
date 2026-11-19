@@ -1,4 +1,5 @@
 import { readFile, mkdir, writeFile, rename, rm, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
 import { Script } from "node:vm";
@@ -260,7 +261,11 @@ const sourceStyles = sourceHtml.match(/<style>([\s\S]*?)<\/style>/);
 if (!sourceStyles || sourceHtml.split(sourceStyles[0]).length !== 2) {
   throw new Error("Expected exactly one inline source stylesheet");
 }
-const stylesheet = `/* playmancer-revision:${revision} */\n` + sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
+// Pin the complete stylesheet bytes, not only the first revision marker.
+// A terminal digest catches a truncated or corrupted CDN response after 100 bytes.
+const stylesheetBody = `/* playmancer-revision:${revision} */\n` + sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
+const stylesheet = stylesheetBody +
+  `\n/* playmancer-stylesheet-sha256:${createHash("sha256").update(stylesheetBody).digest("hex")} */\n`;
 if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
   throw new Error("Stylesheet must not import other assets");
 }
