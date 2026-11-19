@@ -321,7 +321,7 @@ function readLocation() {
     invalidLink = true;
   }
   $("search").value = "";
-  $("store-filter").value = "all"; // Discovery filters are not part of shared basket state.
+  $("store-filter").value = "all";
   browseAll = false; browseLimit = 8; compactResults = false;
   clearShareFeedback();
   render(true);
@@ -553,13 +553,12 @@ function drawSearch() {
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
-  empty.hidden = result.ranked.length > 0;
   empty.replaceChildren();
-  if (result.ranked.length > 0) return;
+  empty.hidden = !!result.ranked.length;
+  if (empty.hidden) return;
   if (!state.seeds.length) {
-    empty.append(element("p", "Add a game to start. Two or more let you compare preferences."));
+    empty.append(element("p", "Add a game to start; two or more compare tastes."));
     const browse = element("button", "Browse available games");
-    // The hero Browse action preserves filters and the shared basket.
     browse.onclick = () => $("intro-browse").click();
     empty.append(browse);
     return;
