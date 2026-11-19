@@ -548,7 +548,9 @@ function drawSearch() {
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
-  // An explicit recovery handles both a store filter hiding known matches
+  // Offer a real recovery only if at least one unselected game would match
+  // or a typed query has no available matches; the fictional-size build
+  // deliberately excludes this real-catalog-only recovery implementation.
   // and a genuine no-match query. Never relax ranking hard constraints or
   // silently replace a query for a game that is already in the basket.
   // At five favorites, require removal first rather than showing a dead Add.
