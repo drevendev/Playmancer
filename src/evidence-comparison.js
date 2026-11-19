@@ -204,6 +204,20 @@ export function summarizeSignedExposureByMode(rows) {
 export function summarizePairedRankabilityByMode(rows) {
   return MODES.map(mode => {
     const group = rows.filter(row => row.mode === mode);
+    // Validate each basket before aggregating: opposing errors must not cancel.
+    for (const [index, row] of group.entries()) {
+      const eligible = row.eligible_candidates;
+      const old = row.rankable_opportunities_old;
+      const v2 = row.rankable_opportunities_v2;
+      const shared = row.paired_rankable_ids.length;
+      const oldOnly = row.old_only_rankable_ids.length;
+      const v2Only = row.v2_only_rankable_ids.length;
+      if (![eligible, old, v2].every(n => Number.isSafeInteger(n) && n >= 0) ||
+          old !== shared + oldOnly || v2 !== shared + v2Only ||
+          old > eligible || v2 > eligible) {
+        throw new TypeError(`paired rankability partition drift for ${mode} basket ${row.basket_id ?? index}`);
+      }
+    }
     const sum = get => group.reduce((total, row) => total + get(row), 0);
     const eligible = sum(row => row.eligible_candidates);
     const old = sum(row => row.rankable_opportunities_old);
