@@ -39,6 +39,37 @@ test("direct authored edge wins and preserves its direction on reverse traversal
   assert.equal(reverse.hops[0].travelFrom, "demo:d");
 });
 
+test("a direct route still discloses hard-unknown two-hop alternatives", () => {
+  const relations = [
+    edge("demo:a", "demo:d", 0.6),
+    edge("demo:a", "demo:b", 1), edge("demo:b", "demo:d", 1),
+    edge("demo:a", "demo:c", 0.9), edge("demo:c", "demo:d", 0.9),
+    edge("demo:a", "demo:e", 0.8), edge("demo:e", "demo:d", 0.8),
+  ];
+  const overrides = {
+    "demo:c": { platforms: ["linux"] },
+    "demo:e": { coop: null },
+  };
+  const options = { platform: "windows", coopOnly: true };
+  const selected = route(model(relations, overrides), options);
+  const shuffled = route(model([...relations].reverse(), overrides), options);
+  assert.deepEqual(selected, shuffled);
+  assert.equal(selected.method, CURATED_BRIDGE_VERSION);
+  assert.equal(selected.status, "route");
+  assert.equal(selected.reason, null);
+  assert.deepEqual(selected.nodes, ["demo:a", "demo:d"]);
+  assert.equal(selected.evidenceStrength, 0.6);
+  assert.equal(selected.hops.length, 1);
+  // A documented direct relation remains preferred even over a supported
+  // two-hop alternative; missing platform/co-op is never counted as support.
+  assert.deepEqual(selected.unknownIntermediates, ["demo:c", "demo:e"]);
+  assert.deepEqual(route(model(relations, overrides), {
+    ...options, excluded: ["demo:c"],
+  }).unknownIntermediates, ["demo:e"]);
+  assert.deepEqual(route(model(relations, overrides)).unknownIntermediates, []);
+  assert.deepEqual(route(model(relations, overrides)).nodes, ["demo:a", "demo:d"]);
+});
+
 test("two-hop route is attenuated, tie-broken deterministically, and never marked direct", () => {
   const connections = [
     edge("demo:a", "demo:b", .8),
