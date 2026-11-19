@@ -82,7 +82,7 @@ with sync_playwright() as p:
     page.locator('#restore').click()
     check('restore hidden results is explicit and deterministic',page.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')==expected)
     while page.locator('#seeds > li').count(): page.locator('#seeds button').first.click()
-    check('removing all seeds does not restore defaults',page.locator('#results > li').count()==0 and 'Add a profile' in page.locator('#empty').inner_text())
+    check('removing all seeds does not restore defaults',page.locator('#results > li').count()==0 and 'Add a game' in page.locator('#empty').inner_text())
     page.locator('#search').fill('Orbit'); page.locator('#search').focus(); page.keyboard.press('Tab'); page.keyboard.press('Enter')
     check('search and add work with keyboard only',page.locator('#seeds > li').count()==1 and 'Orbit Cartographer' in page.locator('#seeds').inner_text())
     for query in ['Ember', 'Harvest', 'Tide', 'Grove']:
