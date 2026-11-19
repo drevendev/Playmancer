@@ -51,6 +51,26 @@ test('per-mode paired rankability tracks shared opportunities separately from mi
     paired_rankable_ids: ['only:one'],
     old_only_rankable_ids: [], v2_only_rankable_ids: [],
   }]), /partition drift/);
+  // Two opposing errors reconcile in aggregate but are invalid per basket.
+  assert.throws(() => summarizePairedRankabilityByMode([
+    { mode: 'intersection', basket_id: 'under-counted', eligible_candidates: 2,
+      rankable_opportunities_old: 2, rankable_opportunities_v2: 2,
+      paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [] },
+    { mode: 'intersection', basket_id: 'over-counted', eligible_candidates: 2,
+      rankable_opportunities_old: 1, rankable_opportunities_v2: 1,
+      paired_rankable_ids: ['B'], old_only_rankable_ids: ['C'], v2_only_rankable_ids: ['D'] },
+  ]), /partition drift for intersection basket under-counted/);
+  // A single malformed row cannot hide an impossible or fractional denominator.
+  assert.throws(() => summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 0,
+    rankable_opportunities_old: 1, rankable_opportunities_v2: 0,
+    paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]), /partition drift/);
+  assert.throws(() => summarizePairedRankabilityByMode([{
+    mode: 'intersection', eligible_candidates: 1.5,
+    rankable_opportunities_old: 1, rankable_opportunities_v2: 1,
+    paired_rankable_ids: ['A'], old_only_rankable_ids: [], v2_only_rankable_ids: [],
+  }]), /partition drift/);
 });
 
 test('paired synthetic comparison uses identical catalog, hard filters, exclusions and top-k', () => {
