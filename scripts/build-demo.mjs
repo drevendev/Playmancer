@@ -260,7 +260,7 @@ const sourceStyles = sourceHtml.match(/<style>([\s\S]*?)<\/style>/);
 if (!sourceStyles || sourceHtml.split(sourceStyles[0]).length !== 2) {
   throw new Error("Expected exactly one inline source stylesheet");
 }
-const stylesheet = sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
+const stylesheet = `/* playmancer-revision:${revision} */\n` + sourceStyles[1].replace(/\/\*[\s\S]*?\*\//g, "");
 if (/<\/style/i.test(stylesheet) || /@import\b|url\s*\(/i.test(stylesheet)) {
   throw new Error("Stylesheet must not import other assets");
 }
