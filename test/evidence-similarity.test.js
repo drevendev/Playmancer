@@ -430,6 +430,31 @@ test("reverse traversal preserves both original authored direction/type claims",
   assert.deepEqual(edges(forward.hops).map(h => h.slice(0, 3)), [
     ["demo:b", "demo:a", "inspired-by"], ["demo:c", "demo:b", "references"]
   ]);
+  // The sourced arrows remain authored b->a and c->b, but the route
+  // requested a->c walks against both. Reversing the query changes only
+  // traversal, never the factual direction or the computed affinity.
+  const travel = route => route.hops.map(hop =>
+    [hop.traversedFrom, hop.traversedTo, hop.traversalDirection]);
+  assert.deepEqual(travel(forward), [
+    ["demo:a", "demo:b", "against-source"],
+    ["demo:b", "demo:c", "against-source"],
+  ]);
+  assert.deepEqual(travel(reverse), [
+    ["demo:c", "demo:b", "with-source"],
+    ["demo:b", "demo:a", "with-source"],
+  ]);
+  assert.equal(compareEvidenceGames(m, a.id, c.id).affinity,
+    compareEvidenceGames(m, c.id, a.id).affinity);
+  const mixed = model(undefined, [
+    relation("demo:a", "demo:b", .8, "similar"),
+    relation("demo:c", "demo:b", .5, "similar"),
+  ]);
+  const mixedRoute = compareEvidenceGames(mixed, a.id, c.id).relations.fitTwoHop;
+  assert.deepEqual(travel(mixedRoute), [
+    ["demo:a", "demo:b", "with-source"],
+    ["demo:b", "demo:c", "against-source"],
+  ]);
+  assert.equal(mixedRoute.strength, .2);
 });
 test("a stronger factual route cannot mask a weaker sourced similarity path", () => {
   const baseline = compareEvidenceGames(model(), a.id, c.id);
