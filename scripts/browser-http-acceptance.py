@@ -390,6 +390,31 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#search-results li").count() == 0
               and "unrecorded facts remain unknown" in hint.inner_text()
               and page.locator("#seeds > li").count() == 2)
+        # A real no-match query offers explicit catalog browsing, without
+        # weakening required filters or changing the versioned basket URL.
+        no_match_hash = page.evaluate("location.hash")
+        no_match_filters = (page.locator("#mode").input_value(),
+                            page.locator("#platform").input_value(),
+                            page.locator("#coop").is_checked())
+        browse_recovery = page.locator("#search-all-stores")
+        check(case, "no-match search exposes a keyboard-accessible catalog recovery",
+              browse_recovery.is_visible()
+              and browse_recovery.inner_text() == "Browse available games"
+              and browse_recovery.evaluate("node => node.getBoundingClientRect().height >= 44"))
+        browse_recovery.focus()
+        browse_recovery.press("Enter")
+        check(case, "no-match recovery opens all games with first-result focus and unchanged basket",
+              page.locator("#search").input_value() == ""
+              and page.locator("#store-filter").input_value() == "all"
+              and page.locator("#catalog-browse").get_attribute("aria-expanded") == "true"
+              and page.locator("#search-results li > button").count() == 9
+              and page.locator("#search-results li > button").first.evaluate(
+                  "node => document.activeElement === node")
+              and page.evaluate("location.hash") == no_match_hash
+              and (page.locator("#mode").input_value(),
+                   page.locator("#platform").input_value(),
+                   page.locator("#coop").is_checked()) == no_match_filters
+              and page.locator("#seeds > li").count() == 2)
         page.locator("#search").fill("Factorio")
         check(case, "direct game-name lookup does not claim a gameplay-fact match",
               page.get_by_role("button", name="Add Factorio", exact=True).count() == 1
