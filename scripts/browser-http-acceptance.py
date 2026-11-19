@@ -244,6 +244,20 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate('document.activeElement.id') == 'search'
               and page.locator('#intro-empty').evaluate('el => el.getBoundingClientRect().height >= 44')
               and page.evaluate("JSON.parse(decodeURIComponent(location.hash.slice(8))).seeds.length === 0"))
+        empty_share = page.evaluate('location.hash')
+        empty_browse = page.get_by_role('button', name='Browse available games')
+        check(case, 'empty results includes a native touch-sized browse recovery',
+              empty_browse.is_visible()
+              and empty_browse.evaluate('el => el.getBoundingClientRect().height >= 44'))
+        empty_browse.click()
+        check(case, 'empty recommendation recovery preserves filters and share and focuses first catalog game',
+              page.locator('#catalog-browse').get_attribute('aria-expanded') == 'true'
+              and page.locator('#search-results li > button').first.evaluate('el => document.activeElement === el')
+              and page.locator('#platform').input_value() == 'linux'
+              and page.locator('#coop').is_checked()
+              and page.locator('#seeds > li').count() == 0
+              and page.evaluate('location.hash') == empty_share)
+        page.locator('#catalog-browse').click()
         page.locator('#intro-sample').click()
         check(case, 'sample after empty start restores default filters and results',
               page.locator('#seeds > li').count() == 2
