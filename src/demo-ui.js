@@ -557,7 +557,13 @@ function drawEmptyRecovery(result) {
   empty.replaceChildren();
   if (result.ranked.length > 0) return;
   if (state.seeds.length === 0) {
-    empty.append(element("p", "Add a profile to start. Two or more let you compare different preferences."));
+    empty.append(element("p", "Add a game to start. Two or more let you compare different preferences."));
+    // A direct route out of the empty recommendation pane. Reuse the first-
+    // screen catalog action: browsing changes neither hard filters nor shares.
+    const browse = element("button", "Browse available games");
+    browse.type = "button";
+    browse.addEventListener("click", () => $("intro-browse").click());
+    empty.append(browse);
     return;
   }
 
