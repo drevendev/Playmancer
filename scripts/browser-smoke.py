@@ -37,6 +37,15 @@ with sync_playwright() as p:
     check('initial two-seed basket renders real ranking',page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     page.locator('#clear').click()
     check('start empty basket clears sample explicitly',page.locator('#seeds > li').count()==0 and page.locator('#results > li').count()==0 and page.evaluate('document.activeElement.id')=='search')
+    empty_share = page.evaluate('location.hash')
+    page.get_by_role('button', name='Browse available games').click()
+    check('empty results offers keyboard-focusable browsing without mutating basket or share',
+          page.locator('#catalog-browse').get_attribute('aria-expanded')=='true'
+          and page.locator('#search-results li > button').count() >= 8
+          and page.locator('#search-results li > button').first.evaluate('el => document.activeElement === el')
+          and page.locator('#seeds > li').count()==0
+          and page.evaluate('location.hash')==empty_share)
+    page.locator('#catalog-browse').click()
     page.locator('#reset').click()
     check('sample reset restores starter basket',page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     page.locator('.skip').focus(); page.keyboard.press('Enter')
@@ -73,7 +82,7 @@ with sync_playwright() as p:
     page.locator('#restore').click()
     check('restore hidden results is explicit and deterministic',page.locator('#results > li').evaluate_all('(nodes)=>nodes.map(n=>n.dataset.gameId)')==expected)
     while page.locator('#seeds > li').count(): page.locator('#seeds button').first.click()
-    check('removing all seeds does not restore defaults',page.locator('#results > li').count()==0 and 'Add a profile' in page.locator('#empty').inner_text())
+    check('removing all seeds does not restore defaults',page.locator('#results > li').count()==0 and 'Add a game' in page.locator('#empty').inner_text())
     page.locator('#search').fill('Orbit'); page.locator('#search').focus(); page.keyboard.press('Tab'); page.keyboard.press('Enter')
     check('search and add work with keyboard only',page.locator('#seeds > li').count()==1 and 'Orbit Cartographer' in page.locator('#seeds').inner_text())
     for query in ['Ember', 'Harvest', 'Tide', 'Grove']:
