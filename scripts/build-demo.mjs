@@ -50,6 +50,14 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // Fictional games have no recorded external storefront links. Retain an
+    // inert call site without shipping the real-only link builder.
+    const storeLinksStart = source.indexOf("function renderStoreLinks(game) {");
+    const storeLinksEnd = source.indexOf("// Bind player-facing provenance documents", storeLinksStart);
+    if (storeLinksStart < 0 || storeLinksEnd <= storeLinksStart)
+      throw new Error("Unexpected real-only store-link renderer boundary");
+    source = source.slice(0, storeLinksStart) +
+      "function renderStoreLinks() { return null; }\n" + source.slice(storeLinksEnd);
     // This optional real-only positive-fact overlay has no fictional data.
     // Remove unreachable JSON map/parsing code rather than relaxing the
     // established <95 kB synthetic preview budget.
