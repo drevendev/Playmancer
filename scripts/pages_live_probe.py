@@ -85,7 +85,7 @@ def served_worker_revision(js):
 
 def served_stylesheet_revision(css):
     """Read only a bounded, well-shaped build marker at the stylesheet start."""
-    marker = re.match(r"/\\* playmancer-revision:([0-9a-f]{40}) \\*/\\r?\\n", css)
+    marker = re.match(r"/\* playmancer-revision:([0-9a-f]{40}) \*/\r?\n", css)
     return marker.group(1) if marker else None
 
 
