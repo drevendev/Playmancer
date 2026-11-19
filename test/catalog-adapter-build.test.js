@@ -129,6 +129,7 @@ test('a merged-script declaration collision fails before last-valid HTML is repl
   cpSync(join(root, 'src'), join(dir, 'src'), { recursive: true });
   mkdirSync(join(dir, 'scripts'));
   cpSync(builder, join(dir, 'scripts/build-demo.mjs'));
+  cpSync(join(root, 'scripts/stylesheet-integrity.mjs'), join(dir, 'scripts/stylesheet-integrity.mjs'));
   cpSync(join(root, 'index.html'), join(dir, 'index.html'));
   writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
   const build = () => spawnSync(process.execPath, [join(dir, 'scripts/build-demo.mjs')], { encoding: 'utf8' });
