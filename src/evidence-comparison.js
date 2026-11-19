@@ -8,7 +8,7 @@ import { blendCandidates, rankCandidates } from './ranking.js';
 const GROUPS = [ ['mechanics', 'mechanic', 0.7], ['themes', 'theme', 0.3] ];
 const MODES = ['union', 'arithmetic', 'leastMisery', 'intersection', 'blend'];
 const RECEIPT = 'playmancer:authored-fictional-fixture';
-const VERSION = 'p76-synthetic-paired-13';
+const VERSION = 'p76-synthetic-paired-14';
 
 function check(condition, message) { if (!condition) throw new TypeError(message); }
 // A mistyped benchmark control must never silently change the comparison cohort.
@@ -201,6 +201,40 @@ export function summarizeSignedExposureByMode(rows) {
 // Summarize only what ordering reveals on the SAME fully scoreable cohort.
 // Rank movement is observable even without signed ranking headroom; it is not
 // a relevance, preference or quality win. Empty cohorts are not stable orders.
+// Every basket contributes an opportunity per eligible game. These are not
+// distinct players or unique games across baskets. A shared-rankability
+// denominator exposes evidence scarcity before interpreting top-k probe deltas.
+export function summarizePairedRankabilityByMode(rows) {
+  return MODES.map(mode => {
+    const group = rows.filter(row => row.mode === mode);
+    const sum = get => group.reduce((total, row) => total + get(row), 0);
+    const eligible = sum(row => row.eligible_candidates);
+    const old = sum(row => row.rankable_opportunities_old);
+    const v2 = sum(row => row.rankable_opportunities_v2);
+    const shared = sum(row => row.paired_rankable_ids.length);
+    const oldOnly = sum(row => row.old_only_rankable_ids.length);
+    const v2Only = sum(row => row.v2_only_rankable_ids.length);
+    // Fail closed if a future comparator silently changes the cohort accounting.
+    if (old !== shared + oldOnly || v2 !== shared + v2Only ||
+        old > eligible || v2 > eligible) {
+      throw new TypeError(`paired rankability partition drift for ${mode}`);
+    }
+    return {
+      mode, scenarios: group.length,
+      eligible_opportunities: eligible,
+      old_rankable_opportunities: old,
+      v2_rankable_opportunities: v2,
+      shared_rankable_opportunities: shared,
+      old_only_rankable_opportunities: oldOnly,
+      v2_only_rankable_opportunities: v2Only,
+      no_shared_rankable_scenarios: group.filter(row => row.paired_rankable_ids.length === 0).length,
+      old_rankable_fraction: eligible ? old / eligible : null,
+      v2_rankable_fraction: eligible ? v2 / eligible : null,
+      shared_rankable_fraction: eligible ? shared / eligible : null,
+    };
+  });
+}
+
 export function summarizePairedOrderByMode(rows, topK) {
   return MODES.map(mode => {
     const group = rows.filter(row => row.mode === mode);
@@ -396,6 +430,7 @@ export function runEvidenceComparison(input) {
     paired_signed_exposure_losses: rows.filter(row => row.paired_signed_exposure.balance_delta < 0)
       .map(row => ({ basket_id: row.basket_id, mode: row.mode, delta: row.paired_signed_exposure.balance_delta })),
     paired_signed_exposure_by_mode: summarizeSignedExposureByMode(rows),
+    paired_rankability_by_mode: summarizePairedRankabilityByMode(rows),
     paired_order_by_mode: summarizePairedOrderByMode(rows, input.topK),
     paired_comparability: summarizeComparability(rows),
     paired_negative_comparability: summarizeComparability(rows, 'paired_negative_probe_evaluation'), rows };
