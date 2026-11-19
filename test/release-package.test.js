@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { linkObservationExplorer } from '../scripts/build-observations.mjs';
 import { prepareObservations } from '../src/observations.js';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from '../scripts/build-basket-library.mjs';
+import { appendToSealedStylesheet } from '../scripts/stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 test('production adds explicit tools without changing player scoring/worker bytes; all assets remain strictly validated', async t => {
   const dir = await mkdtemp(join(tmpdir(), 'playmancer-release-test-'));
@@ -22,7 +23,10 @@ test('production adds explicit tools without changing player scoring/worker byte
       `${file} must remain byte-identical to the validated player build`);
   const baseCss = await readFile(join(base,'player.css'),'utf8');
   const baseIndex = await readFile(join(base,'index.html'),'utf8');
-  assert.equal(await readFile(join(release,'player.css'),'utf8'), baseCss + BASKET_LIBRARY_CSS);
+  assert.equal(await readFile(join(release,'player.css'),'utf8'),
+    appendToSealedStylesheet(baseCss, BASKET_LIBRARY_CSS));
+  assert.throws(() => appendToSealedStylesheet(baseCss.slice(0,150), BASKET_LIBRARY_CSS),
+    /Missing or corrupt stylesheet seal/);
   const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-30.real.json'),'utf8'));
   const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-29.v1.json'),'utf8'));
   const pinnedPositiveFacts = prepareObservations(catalog, observations);
@@ -43,6 +47,11 @@ test('production adds explicit tools without changing player scoring/worker byte
   const firstCss = await readFile(join(release,'player.css'),'utf8');
   await writeFile(join(release,'player.css'), firstCss + '\n@import url("https://example.invalid/unapproved.css");\n');
   assert.notEqual(check().status,0,'external stylesheet references must reject publication');
+  await writeFile(join(release,'player.css'), firstCss);
+  await writeFile(join(release,'player.css'), firstCss.slice(0,150));
+  assert.notEqual(check().status,0,'long truncated stylesheet must reject publication');
+  await writeFile(join(release,'player.css'), firstCss.replace('.basket-library', '.basket-librarX'));
+  assert.notEqual(check().status,0,'interior CSS corruption must reject publication');
   await writeFile(join(release,'player.css'), firstCss);
   await writeFile(join(release,'unapproved.json'),'{}');
   assert.notEqual(check().status,0,'unapproved public assets must reject publication');
