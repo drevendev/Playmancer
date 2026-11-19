@@ -299,6 +299,7 @@ function showCatalogIdentity() {
 let state;
 let browseAll = false;
 let browseLimit = 8;
+let searchLimit = 8;
 let compactResults = false;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
@@ -322,7 +323,7 @@ function readLocation() {
   }
   $("search").value = "";
   $("store-filter").value = "all";
-  browseAll = false; browseLimit = 8; compactResults = false;
+  browseAll = false; browseLimit = 8; searchLimit = 8; compactResults = false;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -458,7 +459,7 @@ function drawSearch() {
     : [];
   const matches = candidates.filter(({ game }) => store === "all" ||
     game.storeLinks?.some(link => link.store === store));
-  const shown = browseAll && !query ? matches.slice(0, browseLimit) : matches;
+  const shown = matches.slice(0, query ? searchLimit : browseLimit);
   for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
@@ -512,13 +513,13 @@ function drawSearch() {
     }
     $("search-results").append(row);
   }
-  if (browseAll && !query && shown.length < matches.length) {
+  if (shown.length < matches.length) {
     const row = element("li");
-    const more = element("button", `Show ${Math.min(8, matches.length - shown.length)} more games`);
+    const more = element("button", `Show ${Math.min(8, matches.length - shown.length)} more ${query ? "matches" : "games"}`);
     more.type = "button";
     more.addEventListener("click", () => {
       const firstNew = shown.length;
-      browseLimit += 8;
+      if (query) searchLimit += 8; else browseLimit += 8;
       drawSearch();
       $("search-results").querySelectorAll("li > button")[firstNew]?.focus();
     });
@@ -541,7 +542,9 @@ function drawSearch() {
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
     : !matches.length && store !== "all" && candidates.length
       ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
-    : matches.length ? `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`
+    : matches.length ? (shown.length < matches.length
+      ? `${shown.length} of ${matches.length} matching ${noun}${fromStore} shown. Show more matches to continue.`
+      : `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`)
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
@@ -784,12 +787,14 @@ function render(rebuildSeeds) {
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", () => {
+  searchLimit = 8;
   browseAll = !$("search").value.trim() && $("store-filter").value !== "all";
   drawSearch();
 });
-$("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; drawSearch(); });
+$("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; searchLimit = 8; drawSearch(); });
 $("search-all-stores").addEventListener("click", () => {
   $("store-filter").value = "all";
+  searchLimit = 8;
   drawSearch();
   // Keyboard users land on the now-available game, not a vanished recovery button.
   const first = $("search-results").querySelector("li > button:not(:disabled)");
@@ -806,6 +811,7 @@ $("search").addEventListener("keydown", (event) => {
     $("search").value = "";
     browseAll = false;
     browseLimit = 8;
+    searchLimit = 8;
     drawSearch();
     return;
   }
@@ -849,7 +855,7 @@ bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(
 $("catalog-browse").addEventListener("click", () => {
   const filtered = $("store-filter").value !== "all";
   $("store-filter").value = "all";
-  browseAll = filtered || !browseAll; browseLimit = 8;
+  browseAll = filtered || !browseAll; browseLimit = 8; searchLimit = 8;
   $("search").value = "";
   drawSearch();
 });

@@ -8,7 +8,9 @@ recommendations fit each preference or require a compromise. The first screen of
 (clearing starter favorites without silently changing hard filters). With no
 favorites selected, the empty recommendations pane also offers **Browse available
 games**; browsing preserves hard filters and share state. No account, paid inference,
-tracking, remote assets or runtime API requests are needed.
+tracking, remote assets or runtime API requests are needed. Broad catalog searches
+show eight matches at a time, with an explicit **Show more matches** action that
+keeps keyboard focus and does not change the shared basket.
 
 ## Play in your browser — GitHub Pages
 

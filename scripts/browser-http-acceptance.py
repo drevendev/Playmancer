@@ -415,6 +415,26 @@ def exercise(browser, base_url, engine, label, width, height):
         # Arrow Down/Up/Escape provide a keyboard-only fast path without
         # fabricating combobox or active-descendant semantics.
         page.locator("#search").fill("e")
+        # Broad searches must not bury the basket under every matching game.
+        # Paging is discovery-only: the shared basket must remain untouched.
+        first_page = page.locator("#search-results li > button")
+        hash_before_search_paging = page.evaluate("location.hash")
+        check(case, "broad search starts with eight options and an explicit show-more action",
+              first_page.count() == 9
+              and "more matches" in first_page.last.inner_text()
+              and "8 of " in page.locator("#search-hint").inner_text())
+        first_page.last.click()
+        check(case, "showing more matches preserves search and focuses the first new game",
+              page.locator("#search-results li > button").count() > 9
+              and page.locator("#search-results li > button").nth(8).evaluate(
+                  "node => document.activeElement === node")
+              and page.locator("#search").input_value() == "e"
+              and page.evaluate("location.hash") == hash_before_search_paging)
+        page.locator("#search").fill("Hades")
+        check(case, "typing a new query resets pagination and returns the unique match",
+              page.locator("#search-results li > button").count() == 1
+              and page.locator("#search-results li > button").first.inner_text().endswith("Hades"))
+        page.locator("#search").fill("e")
         choices = page.locator("#search-results button:not([disabled])")
         check(case, "search exposes multiple keyboard-navigable suggestions",
               choices.count() >= 2)
