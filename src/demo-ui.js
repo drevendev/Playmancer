@@ -438,7 +438,8 @@ function drawSearch() {
   const candidates = query || browseAll
     ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
       if (!query) return { game, matchedTag: null };
-      const direct = [game.name, ...game.aliases].some(value => titleNameMatches(value, query)) ||
+      const nameMatch = [game.name, ...game.aliases].some(value => titleNameMatches(value, query));
+      const direct = nameMatch ||
         [game.id, ...(game.sourceId === "dreven-owned" ? ["Dreven Games"] : [])]
           .some(value => value.normalize("NFC").toLowerCase().includes(query)) ||
         matchesRecordedStorefrontUrl(game, entered);
@@ -454,11 +455,14 @@ function drawSearch() {
           .find(([, label]) => label.normalize("NFC").toLowerCase().includes(query)) ?? null);
       const matchedFact = matchedFactEntry?.[1] ?? null;
       return direct || matchedTag || matchedFact
-        ? { game, matchedTag, matchedFact, matchedFactId: matchedFactEntry?.[0] } : null;
+        ? { game, matchedTag, matchedFact, matchedFactId: matchedFactEntry?.[0],
+          searchPriority: nameMatch ? 0 : direct ? 1 : matchedTag ? 2 : 3 } : null;
     }).filter(Boolean)
     : [];
+  // Source order breaks ties: identity/URL lookups precede genres and partial facts.
   const matches = candidates.filter(({ game }) => store === "all" ||
-    game.storeLinks?.some(link => link.store === store));
+    game.storeLinks?.some(link => link.store === store))
+    .sort((a, b) => (a.searchPriority ?? 0) - (b.searchPriority ?? 0));
   const shown = matches.slice(0, query ? searchLimit : browseLimit);
   for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {
     const row = element("li");

@@ -320,6 +320,21 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#" + hades_hint_id).inner_text() == "Recorded genre: roguelike"
               and "matching catalog profiles" in hint.inner_text()
               and page.locator("#seeds > li").count() == 2)
+        # Search is for discovering a named favorite: an explicit title hit
+        # must not be buried by earlier catalog entries matching only genres.
+        # The ranker's scores, filters and versioned basket stay untouched.
+        hash_before_identity_search = page.evaluate("location.hash")
+        page.locator("#search").fill("adventure")
+        ordered_hits = page.locator("#search-results li > button")
+        check(case, "title identity match precedes genre-only matches on broad queries",
+              ordered_hits.count() >= 3
+              and ordered_hits.first.get_attribute("aria-label") == "Add Hunter Adventure"
+              and ordered_hits.nth(1).get_attribute("aria-label") == "Add Infamous 2"
+              and ordered_hits.first.get_attribute("aria-describedby") is None
+              and ordered_hits.nth(1).get_attribute("aria-describedby") is not None
+              and page.evaluate("location.hash") == hash_before_identity_search
+              and page.locator("#seeds > li").count() == 2
+              and page.evaluate("document.activeElement.id") == "search")
         # Guard the real deployed player, not merely the offline Gameplay Facts
         # explorer or synthetic fixture. Source-backed positives are partial
         # discovery evidence; a missing observation must never imply absence.
