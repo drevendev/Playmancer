@@ -1,6 +1,6 @@
 // Offline v2 Bridge primitive: traverses only authored, sourced graph edges.
 // Not integrated with the live player or the legacy Bridge scorer.
-export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-2";
+export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-3";
 const TWO_HOP_DECAY = 0.5;
 // The same platform-key contract as the experimental candidate ranker.
 const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
@@ -92,9 +92,12 @@ export function findCuratedBridge(model, {
     }
   }
   if (best) {
+    // Unknown alternatives cannot satisfy a hard constraint or outrank a
+    // proven eligible route. Still expose them: the chosen route is best only
+    // among eligible, source-backed paths, not a globally proven optimum.
     return response(from, to, "route", null, [from, best.via, to],
       [hop(best.first, from, best.via), hop(best.second, best.via, to)],
-      best.strength);
+      best.strength, unknownIntermediates.sort());
   }
   if (unknownIntermediates.length) {
     return response(from, to, "uncertain", "intermediate-required-metadata-unknown",
