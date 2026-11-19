@@ -328,10 +328,17 @@ function relationEvidence(model, a, b, fitEligibleVia = null) {
     const second = model.edges.get(middle).get(b.id);
     if (!second) continue;
     const strength = first.strength * second.strength * TWO_HOP_DECAY;
-    // Preserve the original authored arrows, even for reverse traversal.
-    const hops = [first, second].map(edge => ({
+    // Preserve the sourced claim's authored arrow AND the direction in which
+    // this candidate route actually traverses it. An inspiration/reference
+    // receipt must never be silently described as the reverse causal claim.
+    const hops = [
+      { edge: first, traversedFrom: a.id, traversedTo: middle },
+      { edge: second, traversedFrom: middle, traversedTo: b.id },
+    ].map(({ edge, traversedFrom, traversedTo }) => ({
       from: edge.from, to: edge.to, type: edge.type,
       strength: edge.strength, source: edge.source,
+      traversedFrom, traversedTo,
+      traversalDirection: edge.from === traversedFrom ? "with-source" : "against-source",
     }));
     const candidate = { via: middle, strength, sources: hops.map(hop => hop.source), hops };
     const better = best => !best || strength > best.strength ||
