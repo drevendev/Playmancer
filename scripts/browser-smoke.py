@@ -133,6 +133,17 @@ with sync_playwright() as p:
     page.locator('#intro-sample').click()
     check('first-screen sample action shows results and focuses recommendations',
           page.locator('#results > li').count()>0 and page.evaluate('document.activeElement.id')=='recommendations')
+    page.locator('#platform').select_option('linux')
+    page.locator('#coop').check()
+    page.locator('#intro-empty').click()
+    check('first-screen empty start clears sample, keeps filters, focuses search and shares empty basket',
+          page.locator('#seeds > li').count()==0 and page.locator('#results > li').count()==0
+          and page.locator('#platform').input_value()=='linux' and page.locator('#coop').is_checked()
+          and page.evaluate('document.activeElement.id')=='search'
+          and page.evaluate("JSON.parse(decodeURIComponent(location.hash.slice(8))).seeds.length === 0"))
+    page.locator('#intro-sample').click()
+    check('sample action restores recommendations after an empty start',
+          page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     for width in [280, 320, 390, 800, 1280]:
         for size in [16, 24, 32]:
             page.set_viewport_size({'width':width,'height':1000})
