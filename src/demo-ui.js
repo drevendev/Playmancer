@@ -556,20 +556,16 @@ function drawEmptyRecovery(result) {
   empty.hidden = result.ranked.length > 0;
   empty.replaceChildren();
   if (result.ranked.length > 0) return;
-  if (state.seeds.length === 0) {
-    empty.append(element("p", "Add a game to start. Two or more let you compare different preferences."));
-    // A direct route out of the empty recommendation pane. Reuse the first-
-    // screen catalog action: browsing changes neither hard filters nor shares.
+  if (!state.seeds.length) {
+    empty.append(element("p", "Add a game to start. Two or more let you compare preferences."));
     const browse = element("button", "Browse available games");
-    browse.type = "button";
-    browse.addEventListener("click", () => $("intro-browse").click());
+    // The hero Browse action preserves filters and the shared basket.
+    browse.onclick = () => $("intro-browse").click();
     empty.append(browse);
     return;
   }
 
-  // No ranked output may mean unavailable comparable evidence, not a denied
-  // platform or hidden candidate. Preserve strict filters without mislabelling
-  // an abstention as ineligibility.
+  // Abstentions are not denied platform support.
   empty.append(element("p", "No rankable recommendations for this basket. Hard filters and hidden results have not been relaxed."));
   const list = element("ul", undefined, "empty-reasons");
   const hidden = result.excluded.filter((item) => state.excluded.includes(item.id));
@@ -606,8 +602,7 @@ function drawEmptyRecovery(result) {
     actions.append(button);
   };
   if (hidden.length) addAction(`Restore ${hidden.length} hidden ${hidden.length === 1 ? "profile" : "profiles"}`, () => { state.excluded = []; });
-  // Unknown source metadata can leave zero eligible results without any explicit
-  // failures. Offer a deliberate recovery choice; never relax constraints silently.
+  // Strict constraints change only by explicit player action.
   if ((failed.length || unknown.length) && state.platform !== "any") addAction("Allow any platform", () => { state.platform = "any"; });
   if ((failed.length || unknown.length) && state.coopOnly) addAction("Remove co-op requirement", () => { state.coopOnly = false; });
   for (const seed of sparseSeeds) {
@@ -702,7 +697,7 @@ function drawResults() {
       : `Observed comparable feature weight: ${Math.round(item.evidenceCoverage * 100)}% of the full model (genre labels only, internally held in the themes field). Mechanics are unknown; similarities are exploratory and popularity is not used.`));
     why.append(technicalMetadata);
     card.append(why);
-    // Keep the canonical Why-game explanation as the card's first summary.
+    // Why-game remains the first card summary.
     const observedOverlap = renderObservedOverlap(game);
     if (observedOverlap) card.append(observedOverlap);
     const footer = element("div", undefined, "card-footer");
