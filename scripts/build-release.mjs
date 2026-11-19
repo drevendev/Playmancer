@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { buildObservationPage, linkObservationExplorer, gitObservationBlob } from './build-observations.mjs';
 import { prepareObservations, REVIEWED_OBSERVATIONS_SHA } from '../src/observations.js';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from './build-basket-library.mjs';
+import { appendToSealedStylesheet } from './stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 if (process.argv.length > 3 || process.argv[2]?.startsWith('--')) throw new Error('Usage: node scripts/build-release.mjs [output-directory]');
 const output = resolve(process.argv[2] ?? join(root, '_site'));
@@ -27,7 +28,9 @@ try {
   execFileSync(process.execPath, [join(root, 'scripts/build-demo.mjs'), stage, '--catalog', catalogPath], { stdio: 'inherit' });
   const index = await addBasketLibrary(root, linkObservationExplorer(await readFile(join(stage, 'index.html'), 'utf8'), inlineFacts));
   await writeFile(join(stage, 'index.html'), index);
-  await writeFile(join(stage, 'player.css'), await readFile(join(stage, 'player.css'), 'utf8') + BASKET_LIBRARY_CSS);
+  // Release-only basket styles must be covered by the same terminal digest.
+  await writeFile(join(stage, 'player.css'),
+    appendToSealedStylesheet(await readFile(join(stage, 'player.css'), 'utf8'), BASKET_LIBRARY_CSS));
   await writeFile(join(stage, 'observations.html'), explorer);
   await mkdir(output, { recursive: true });
   // Write every pending file first; replace the entry document last.
