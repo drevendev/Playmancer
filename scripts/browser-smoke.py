@@ -37,6 +37,15 @@ with sync_playwright() as p:
     check('initial two-seed basket renders real ranking',page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     page.locator('#clear').click()
     check('start empty basket clears sample explicitly',page.locator('#seeds > li').count()==0 and page.locator('#results > li').count()==0 and page.evaluate('document.activeElement.id')=='search')
+    empty_share = page.evaluate('location.hash')
+    page.get_by_role('button', name='Browse available games').click()
+    check('empty results offers keyboard-focusable browsing without mutating basket or share',
+          page.locator('#catalog-browse').get_attribute('aria-expanded')=='true'
+          and page.locator('#search-results li > button').count() >= 8
+          and page.locator('#search-results li > button').first.evaluate('el => document.activeElement === el')
+          and page.locator('#seeds > li').count()==0
+          and page.evaluate('location.hash')==empty_share)
+    page.locator('#catalog-browse').click()
     page.locator('#reset').click()
     check('sample reset restores starter basket',page.locator('#seeds > li').count()==2 and page.locator('#results > li').count()==6)
     page.locator('.skip').focus(); page.keyboard.press('Enter')
