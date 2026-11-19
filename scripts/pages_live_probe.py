@@ -3,6 +3,7 @@
 The source-of-truth publication setting is in GitHub Pages administration: this
 probe deliberately cannot disable a competing branch/Jekyll publisher.
 """
+import hashlib
 import os
 import re
 import sys
@@ -120,8 +121,14 @@ def observation(response, url, expected, kind):
             return 'MISSING_OR_INVALID_STYLESHEET_REVISION'
         if actual != expected:
             return f'STALE_STYLESHEET_REVISION:{actual}'
-        if len(response.body) < 100:
+        # Verify the terminal SHA-256 of the complete published stylesheet.
+        # A valid prefix alone must not accept a truncated (even >100 B) CSS.
+        trailer = re.search(r'\n/\* playmancer-stylesheet-sha256:([0-9a-f]{64}) \*/\n\Z', response.body)
+        if response.body.count('/* playmancer-stylesheet-sha256:') != 1 or not trailer:
             return 'INCOMPLETE_STYLESHEET'
+        actual_digest = hashlib.sha256(response.body[:trailer.start()].encode('utf-8')).hexdigest()
+        if actual_digest != trailer.group(1):
+            return 'CORRUPT_STYLESHEET'
         return 'OK'
     # Reject a recognizable unbuilt branch/Jekyll entry even if it somehow
     # contains the expected marker. A matching SHA alone is not a built player.
