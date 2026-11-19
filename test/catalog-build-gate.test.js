@@ -12,6 +12,7 @@ test('invalid actual demo metadata fails before replacing last-valid static outp
     cpSync(new URL('src/', root), join(dir, 'src'), { recursive: true });
     mkdirSync(join(dir, 'scripts'));
     cpSync(new URL('scripts/build-demo.mjs', root), join(dir, 'scripts/build-demo.mjs'));
+    cpSync(new URL('scripts/stylesheet-integrity.mjs', root), join(dir, 'scripts/stylesheet-integrity.mjs'));
     cpSync(new URL('index.html', root), join(dir, 'index.html'));
     writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
     const build = () => spawnSync(process.execPath, [join(dir, 'scripts/build-demo.mjs')], { encoding: 'utf8' });

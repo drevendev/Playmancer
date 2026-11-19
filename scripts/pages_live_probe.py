@@ -3,6 +3,7 @@
 The source-of-truth publication setting is in GitHub Pages administration: this
 probe deliberately cannot disable a competing branch/Jekyll publisher.
 """
+import hashlib
 import os
 import re
 import sys
@@ -83,6 +84,12 @@ def served_worker_revision(js):
     return marker.group(1) if marker else None
 
 
+def served_stylesheet_revision(css):
+    """Read only a bounded, well-shaped build marker at the stylesheet start."""
+    marker = re.match(r"/\* playmancer-revision:([0-9a-f]{40}) \*/\r?\n", css)
+    return marker.group(1) if marker else None
+
+
 def observation(response, url, expected, kind):
     if response.fault:
         return 'NETWORK_OR_TIMEOUT'
@@ -106,6 +113,23 @@ def observation(response, url, expected, kind):
         if actual:
             return f'STALE_WORKER_REVISION:{actual}'
         return 'MISSING_OR_INVALID_WORKER_REVISION'
+    if kind == 'stylesheet':
+        if response.body.count('/* playmancer-revision:') > 1:
+            return 'AMBIGUOUS_STYLESHEET_REVISION_MARKERS'
+        actual = served_stylesheet_revision(response.body)
+        if not actual:
+            return 'MISSING_OR_INVALID_STYLESHEET_REVISION'
+        if actual != expected:
+            return f'STALE_STYLESHEET_REVISION:{actual}'
+        # Verify the terminal SHA-256 of the complete published stylesheet.
+        # A valid prefix alone must not accept a truncated (even >100 B) CSS.
+        trailer = re.search(r'\n/\* playmancer-stylesheet-sha256:([0-9a-f]{64}) \*/\n\Z', response.body)
+        if response.body.count('/* playmancer-stylesheet-sha256:') != 1 or not trailer:
+            return 'INCOMPLETE_STYLESHEET'
+        actual_digest = hashlib.sha256(response.body[:trailer.start()].encode('utf-8')).hexdigest()
+        if actual_digest != trailer.group(1):
+            return 'CORRUPT_STYLESHEET'
+        return 'OK'
     # Reject a recognizable unbuilt branch/Jekyll entry even if it somehow
     # contains the expected marker. A matching SHA alone is not a built player.
     if kind == 'index' and 'src/demo-ui.js' in response.body:
@@ -132,6 +156,9 @@ def failed_observation(response, url, kind, reason):
             # Do not report the first marker of a mixed-version worker as truth.
             if response.body.count('// playmancer-revision:') <= 1:
                 actual = served_worker_revision(response.body)
+        elif kind == 'stylesheet':
+            if response.body.count('/* playmancer-revision:') <= 1:
+                actual = served_stylesheet_revision(response.body)
         else:
             actual = served_revision(response.body)
     return f'{kind}={reason}; {kind}_http={status}; {kind}_served_sha={actual or "UNKNOWN"}'
@@ -144,20 +171,29 @@ def probe(base_url, expected_sha, fetch=fetch_public):
     index = observation(index_response, base, expected_sha, 'index')
     if index != 'OK':
         return False, (failed_observation(index_response, base, 'index', index) +
-            '; worker=NOT_CHECKED; explorer=NOT_CHECKED')
+            '; worker=NOT_CHECKED; explorer=NOT_CHECKED; stylesheet=NOT_CHECKED')
     worker_url = base + 'bridge-worker.js'
     worker_response = fetch(worker_url)
     worker = observation(worker_response, worker_url, expected_sha, 'worker')
     if worker != 'OK':
         return False, ('index=OK; ' + failed_observation(worker_response, worker_url, 'worker', worker) +
-            '; explorer=NOT_CHECKED')
+            '; explorer=NOT_CHECKED; stylesheet=NOT_CHECKED')
     explorer_url = base + 'observations.html'
     explorer_response = fetch(explorer_url)
     explorer = observation(explorer_response, explorer_url, expected_sha, 'explorer')
     if explorer != 'OK':
         return False, ('index=OK; worker=OK; ' +
-            failed_observation(explorer_response, explorer_url, 'explorer', explorer))
-    return True, 'index=OK; worker=OK; explorer=OK'
+            failed_observation(explorer_response, explorer_url, 'explorer', explorer) +
+            '; stylesheet=NOT_CHECKED')
+    # CSS is a separate asset and can lag an otherwise exact-revision HTML/worker.
+    # Treat a missing or stale stylesheet as a failed Pages release, not a visual pass.
+    stylesheet_url = base + 'player.css'
+    stylesheet_response = fetch(stylesheet_url)
+    stylesheet = observation(stylesheet_response, stylesheet_url, expected_sha, 'stylesheet')
+    if stylesheet != 'OK':
+        return False, ('index=OK; worker=OK; explorer=OK; ' +
+            failed_observation(stylesheet_response, stylesheet_url, 'stylesheet', stylesheet))
+    return True, 'index=OK; worker=OK; explorer=OK; stylesheet=OK'
 
 
 def verify(base_url, expected_sha, fetch=fetch_public, attempts=12, sleep=time.sleep, emit=print):
