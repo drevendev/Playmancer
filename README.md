@@ -10,7 +10,10 @@ favorites selected, the empty recommendations pane also offers **Browse availabl
 games**; browsing preserves hard filters and share state. No account, paid inference,
 tracking, remote assets or runtime API requests are needed. Broad catalog searches
 show eight matches at a time, with an explicit **Show more matches** action that
-keeps keyboard focus and does not change the shared basket.
+keeps keyboard focus and does not change the shared basket. In the real catalog,
+an unmatched game-name, genre or gameplay-fact search offers **Browse available
+games** to explore without changing the weighted basket, required filters, or
+saved link. Unrecognized storefront URLs retain an explicit no-fetch warning.
 
 ## Play in your browser — GitHub Pages
 

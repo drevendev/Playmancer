@@ -549,10 +549,17 @@ function drawSearch() {
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
   // Offer a real recovery only if at least one unselected game would match
-  // outside the active discovery-store filter. Never relax ranking constraints.
-  // At five favorites, keep the remove-first hint instead of a disabled Add.
-  $("search-recovery").hidden = !(state.seeds.length < 5 && store !== "all" &&
-    !matches.length && candidates.length > 0);
+  // outside its discovery-store filter, or a name/tag/fact query has no hits.
+  // Unrecorded storefront URLs retain their explicit no-fetch guidance.
+  // Never relax ranking hard constraints or replace an already chosen game.
+  // At five favorites require removal before offering another Add action.
+  const filteredRecovery = state.seeds.length < 5 && store !== "all" &&
+    !matches.length && candidates.length > 0;
+  const browseRecovery = state.seeds.length < 5 && !!query && !matches.length &&
+    !selectedNameMatches.length && !selectedStoreUrl && !unknownStoreUrl && !filteredRecovery;
+  $("search-recovery").hidden = !(filteredRecovery || browseRecovery);
+  $("search-all-stores").dataset.mode = filteredRecovery ? "all-stores" : "browse";
+  $("search-all-stores").textContent = filteredRecovery ? "Search all stores" : "Browse available games";
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -793,10 +800,18 @@ $("search").addEventListener("input", () => {
 });
 $("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; searchLimit = 8; drawSearch(); });
 $("search-all-stores").addEventListener("click", () => {
+  const browse = $("search-all-stores").dataset.mode === "browse";
   $("store-filter").value = "all";
   searchLimit = 8;
+  if (browse) {
+    // A failed search becomes explicit catalog discovery; only the search
+    // controls change, never the weighted basket, filters, exclusions or URL.
+    $("search").value = "";
+    browseAll = true;
+    browseLimit = 8;
+  }
   drawSearch();
-  // Keyboard users land on the now-available game, not a vanished recovery button.
+  // Move focus off the vanished recovery button onto the first available game.
   const first = $("search-results").querySelector("li > button:not(:disabled)");
   (first ?? $("search")).focus();
 });
