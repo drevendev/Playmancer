@@ -1,3 +1,4 @@
+import hashlib
 import os
 import sys
 import unittest
@@ -14,7 +15,9 @@ def index(sha=SHA):
     return f'<html><meta name="playmancer-revision" content="{sha}"></html>'
 
 def stylesheet(sha=SHA):
-    return f'/* playmancer-revision:{sha} */\n' + ':root{' + 'x' * 120 + '}'
+    body = f'/* playmancer-revision:{sha} */\n' + ':root{' + 'x' * 120 + '}'
+    digest = hashlib.sha256(body.encode('utf-8')).hexdigest()
+    return body + f'\n/* playmancer-stylesheet-sha256:{digest} */\n'
 
 class FakeFetch:
     def __init__(self, index_body=None, index_status=200, worker_status=200,
@@ -59,6 +62,11 @@ class PagesProbeTests(unittest.TestCase):
             (FakeFetch(stylesheet_body=':root{color:red}'), 'MISSING_OR_INVALID_STYLESHEET_REVISION'),
             (FakeFetch(stylesheet_body='/* playmancer-revision:' + SHA + ' */\n'),
                 'INCOMPLETE_STYLESHEET'),
+            # A prefix and >100 bytes is still incomplete when the tail is lost.
+            (FakeFetch(stylesheet_body=stylesheet(SHA)[:150]), 'INCOMPLETE_STYLESHEET'),
+            (FakeFetch(stylesheet_body=stylesheet(SHA)[:-2]), 'INCOMPLETE_STYLESHEET'),
+            (FakeFetch(stylesheet_body=stylesheet(SHA).replace('xxxxx', 'yyyyy', 1)),
+                'CORRUPT_STYLESHEET'),
             (FakeFetch(stylesheet_body=stylesheet(SHA) + stylesheet(OLD)),
                 'AMBIGUOUS_STYLESHEET_REVISION_MARKERS'),
         ]
