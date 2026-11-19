@@ -231,6 +231,26 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate('location.hash') == share_before_browse)
         page.locator('#catalog-browse').click()
 
+        # Explicit first-screen empty start must clear starter favorites but keep
+        # intentional hard filters, keyboard focus and versioned share semantics.
+        page.locator('#platform').select_option('linux')
+        page.locator('#coop').check()
+        page.locator('#intro-empty').click()
+        check(case, 'first-screen empty start keeps filters, focus and a shareable empty basket',
+              page.locator('#seeds > li').count() == 0
+              and page.locator('#results > li').count() == 0
+              and page.locator('#platform').input_value() == 'linux'
+              and page.locator('#coop').is_checked()
+              and page.evaluate('document.activeElement.id') == 'search'
+              and page.locator('#intro-empty').evaluate('el => el.getBoundingClientRect().height >= 44')
+              and page.evaluate("JSON.parse(decodeURIComponent(location.hash.slice(8))).seeds.length === 0"))
+        page.locator('#intro-sample').click()
+        check(case, 'sample after empty start restores default filters and results',
+              page.locator('#seeds > li').count() == 2
+              and page.locator('#platform').input_value() == 'any'
+              and not page.locator('#coop').is_checked()
+              and page.locator('#results > li').count() > 0)
+
         # Browse the actual catalog without guessing a title or genre first.
         browse = page.locator("#catalog-browse")
         browse.click()
@@ -913,9 +933,9 @@ def exercise(browser, base_url, engine, label, width, height):
                       all(not words for words in broken.values()), details=broken)
             check(case, f"{text_size}% root text reflows without horizontal action clipping",
                   enlarged["scrollWidth"] <= enlarged["viewport"] + 1
-                  and len(enlarged["actions"]) == 4
+                  and len(enlarged["actions"]) == 5
                   and {action["id"] for action in enlarged["actions"]} ==
-                      {"intro-sample", "intro-browse", "intro-bridge", "intro-library"}
+                      {"intro-sample", "intro-browse", "intro-empty", "intro-bridge", "intro-library"}
                   and all(action["left"] >= -1
                           and action["right"] <= enlarged["viewport"] + 1
                           and action["inner"] <= action["width"] + 1

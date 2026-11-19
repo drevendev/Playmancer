@@ -863,6 +863,9 @@ $("dreven-browse").addEventListener("click", () => {
 });
 // First-screen actions preserve the shared basket; catalog discovery is not a reset.
 $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recommendations").focus(); });
+// Start an empty basket from the first screen without relaxing hard filters.
+// Reuse the accessible Clear action to preserve share and focus behavior.
+$("intro-empty").addEventListener("click", () => { $("clear").click(); });
 $("intro-browse").addEventListener("click", () => {
   browseAll = true; browseLimit = 8;
   $("store-filter").value = "all";
