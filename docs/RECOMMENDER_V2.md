@@ -123,14 +123,16 @@ share schema; version-8 reports cannot be compared directly to version 9.
 The public player separately adopted unknown-platform classification in
 `feature-overlap-3`, without adopting weighted-tag ranking.
 
-The offline curated Bridge method `curated-bridge-routes-3` preserves
-`unknownIntermediates` even when it finds an independently eligible two-hop
-route. Such stronger-looking alternatives cannot satisfy mandatory platform or
-co-op requirements without documented positive support. The chosen route is
-best among *eligible* paths only, not a proven global optimum. Exclusions and
-known failures never enter this unknown list. An authored direct route remains
-preferred; this diagnostic does not alter route scoring, eligibility, source
-receipts or the public player. Historical v2 results retain their old version.
+The offline curated Bridge method `curated-bridge-routes-4` preserves
+`unknownIntermediates` even when it finds an independently eligible route,
+including a preferred authored **direct** connection. Earlier v3 skipped
+two-hop diagnostics when a direct edge existed and could hide alternative
+paths whose required platform or co-op support is unknown. Unverified
+alternatives cannot satisfy hard filters or displace the chosen route:
+direct evidence remains preferred, then the strongest eligible two-hop path.
+Exclusions and known failures never enter the unknown list. This diagnostic
+does not alter route scoring, eligibility, source receipts or the public
+player. Historical v3 reports retain their old method identifier.
 
 Prior v1/v2/v3/v4/v5/v6/v7/v8 reports are not interchangeable. The **current
 public** player/share method is `feature-overlap-3`, retaining the genre-only

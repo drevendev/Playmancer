@@ -1,6 +1,6 @@
 // Offline v2 Bridge primitive: traverses only authored, sourced graph edges.
 // Not integrated with the live player or the legacy Bridge scorer.
-export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-3";
+export const CURATED_BRIDGE_VERSION = "curated-bridge-routes-4";
 const TWO_HOP_DECAY = 0.5;
 // The same platform-key contract as the experimental candidate ranker.
 const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
@@ -67,12 +67,9 @@ export function findCuratedBridge(model, {
     return response(from, to, "uncertain", "endpoint-required-metadata-unknown");
   }
 
+  // A verified direct edge still wins, but do not discard hard-unknown
+  // two-hop alternatives merely because the preferred route was direct.
   const direct = model.edges.get(from).get(to);
-  if (direct) {
-    return response(from, to, "route", null, [from, to], [hop(direct, from, to)],
-      direct.strength);
-  }
-
   let best = null;
   const unknownIntermediates = [];
   for (const [via, first] of model.edges.get(from)) {
@@ -90,6 +87,10 @@ export function findCuratedBridge(model, {
         (strength === best.strength && via < best.via)) {
       best = { via, strength, first, second };
     }
+  }
+  if (direct) {
+    return response(from, to, "route", null, [from, to], [hop(direct, from, to)],
+      direct.strength, unknownIntermediates.sort());
   }
   if (best) {
     // Unknown alternatives cannot satisfy a hard constraint or outrank a
