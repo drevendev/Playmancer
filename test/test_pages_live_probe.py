@@ -14,7 +14,7 @@ def index(sha=SHA):
     return f'<html><meta name="playmancer-revision" content="{sha}"></html>'
 
 def stylesheet(sha=SHA):
-    return f'/* playmancer-revision:{sha} */\\n' + ':root{' + 'x' * 120 + '}'
+    return f'/* playmancer-revision:{sha} */\n' + ':root{' + 'x' * 120 + '}'
 
 class FakeFetch:
     def __init__(self, index_body=None, index_status=200, worker_status=200,
@@ -57,7 +57,7 @@ class PagesProbeTests(unittest.TestCase):
             (FakeFetch(stylesheet_redirect=True), 'REDIRECT_OR_WRONG_ORIGIN'),
             (FakeFetch(stylesheet_body=stylesheet(OLD)), 'STALE_STYLESHEET_REVISION:' + OLD),
             (FakeFetch(stylesheet_body=':root{color:red}'), 'MISSING_OR_INVALID_STYLESHEET_REVISION'),
-            (FakeFetch(stylesheet_body='/* playmancer-revision:' + SHA + ' */\\n'),
+            (FakeFetch(stylesheet_body='/* playmancer-revision:' + SHA + ' */\n'),
                 'INCOMPLETE_STYLESHEET'),
             (FakeFetch(stylesheet_body=stylesheet(SHA) + stylesheet(OLD)),
                 'AMBIGUOUS_STYLESHEET_REVISION_MARKERS'),
