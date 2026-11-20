@@ -659,6 +659,26 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "hard-filter controls remain explicit",
               page.locator("#platform").input_value() == "windows"
               and page.locator("#coop").is_checked())
+        # Missing co-op evidence must abstain, but players need a direct path
+        # from the empty results panel to the named uncertainty explanations.
+        review = page.locator("#empty").get_by_role(
+            "button", name=re.compile(r"^Review [0-9]+ uncertain games$"))
+        check(case, "strict co-op unknowns expose a keyboard-accessible explanation action",
+              page.locator("#results > li").count() == 0
+              and page.locator("#empty").is_visible()
+              and review.is_visible()
+              and review.get_attribute("aria-controls") == "uncertainty"
+              and page.locator("#coop").is_checked()
+              and page.locator("#platform").input_value() == "windows")
+        strict_hash = page.evaluate("location.hash")
+        review.focus()
+        review.press("Enter")
+        check(case, "empty-state evidence review opens uncertainty and keeps strict basket intact",
+              page.locator("#uncertainty").evaluate("node => node.open")
+              and page.evaluate("document.activeElement.id") == "uncertainty-title"
+              and page.evaluate("location.hash") == strict_hash
+              and page.locator("#coop").is_checked()
+              and page.locator("#platform").input_value() == "windows")
         page.locator("#coop").uncheck()
         page.locator("#platform").select_option("any")
         summary = page.locator("#results > li .explanation summary").first

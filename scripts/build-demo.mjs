@@ -169,6 +169,15 @@ for (const [index, path] of modules.entries()) {
     if (recoveryActionStart < 0 || recoveryActionEnd <= recoveryActionStart)
       throw new Error("Unexpected search recovery action boundary");
     source = source.slice(0, recoveryActionStart) + source.slice(recoveryActionEnd);
+    // The new empty-state evidence jump is a real-catalog recovery path.
+    // Keep the fictional fixture below its fixed 95 kB budget without dropping
+    // the live player's strict-filter explanation control.
+    const uncertaintyJumpStart = source.indexOf(
+      "  // Offer an evidence inspection path without making unknown candidates eligible.");
+    const uncertaintyJumpEnd = source.indexOf("  if (hidden.length) addAction(", uncertaintyJumpStart);
+    if (uncertaintyJumpStart < 0 || uncertaintyJumpEnd <= uncertaintyJumpStart)
+      throw new Error("Unexpected real-only uncertainty jump boundary");
+    source = source.slice(0, uncertaintyJumpStart) + source.slice(uncertaintyJumpEnd);
     // Fictional profiles have neither Wikidata QIDs nor an owner-store
     // provenance badge; retain these links in the real release only.
     const realItemStart = source.indexOf('    if (!syntheticCatalog && /^wikidata:q[0-9]+$/.test(game.id)) {');
