@@ -86,6 +86,29 @@ class PagesProbeTests(unittest.TestCase):
         self.assertIn('UNBUILT_SOURCE_TEMPLATE', probe(BASE, SHA, fetch)[1])
         self.assertEqual(len(fetch.calls), 1)
 
+    def test_compiled_bundle_source_comment_is_not_an_unbuilt_template(self):
+        # The production compiler inlines demo-ui.js and retains a section
+        # heading reading "// src/demo-ui.js". This is not a script src tag.
+        compiled = index() + '<script>\n// src/demo-ui.js\nconst ready = true;\n</script>'
+        client = FakeFetch(index_body=compiled)
+        self.assertEqual(probe(BASE, SHA, client),
+            (True, 'index=OK; worker=OK; explorer=OK; stylesheet=OK'))
+        self.assertEqual(len(client.calls), 4)
+
+    def test_actual_unbuilt_source_script_type_still_fails_closed(self):
+        for source_tag in (
+            '<script type="application/x-playmancer-source" src="./src/demo-ui.js"></script>',
+            "<script type='application/x-playmancer-source'></script>",
+            "<script src='src/demo-ui.js'></script>",
+        ):
+            with self.subTest(source_tag=source_tag):
+                client = FakeFetch(index_body=index() + source_tag)
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('index=UNBUILT_SOURCE_TEMPLATE', detail)
+                self.assertIn('index_served_sha=' + SHA, detail)
+                self.assertEqual(client.calls, [BASE])
+
     def test_unbuilt_source_reports_http_and_only_validated_observed_revision(self):
         for body, expected in [
             ('<script src="./src/demo-ui.js"></script>', 'UNKNOWN'),

@@ -74,6 +74,30 @@ def revision_diagnostic(html):
     return value, None
 
 
+class SourceScriptMarker(HTMLParser):
+    """Only actual source-template script tags count, not bundle source comments."""
+
+    def __init__(self):
+        super().__init__()
+        self.found = False
+
+    def handle_starttag(self, tag, attrs):
+        if tag != 'script':
+            return
+        self.found = (
+            self.found or
+            ('type', 'application/x-playmancer-source') in attrs or
+            any(name == 'src' and value in ('./src/demo-ui.js', 'src/demo-ui.js')
+                for name, value in attrs)
+        )
+
+
+def has_unbuilt_source_script(html):
+    marker = SourceScriptMarker()
+    marker.feed(html)
+    return marker.found
+
+
 def served_revision(html):
     return revision_diagnostic(html)[0]
 
@@ -132,7 +156,7 @@ def observation(response, url, expected, kind):
         return 'OK'
     # Reject a recognizable unbuilt branch/Jekyll entry even if it somehow
     # contains the expected marker. A matching SHA alone is not a built player.
-    if kind == 'index' and 'src/demo-ui.js' in response.body:
+    if kind == 'index' and has_unbuilt_source_script(response.body):
         return 'UNBUILT_SOURCE_TEMPLATE'  # Suspicious source output, not proven cause.
     actual, problem = revision_diagnostic(response.body)
     if problem:
