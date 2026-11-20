@@ -3,7 +3,10 @@
 **Mix your favorites. See the trade-offs.**
 
 Choose one to five favorite profiles, set weights and hard filters, and see why
-recommendations fit each preference or require a compromise. The first screen offers
+recommendations fit each preference or require a compromise. Favorites have
+**Move up** and **Move down** keyboard-accessible buttons: reorder them without
+removing them or losing weights, filters, exclusions or their share-link order.
+The first screen offers
 **Browse games** (preserving favorites), **Try the sample basket**, or **Start empty**
 (clearing starter favorites without silently changing hard filters). With no
 favorites selected, the empty recommendations pane also offers **Browse available

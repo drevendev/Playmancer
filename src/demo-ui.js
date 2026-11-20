@@ -342,7 +342,7 @@ function commit(rebuildSeeds = false) {
 }
 function drawSeeds() {
   $("seeds").replaceChildren();
-  for (const seed of state.seeds) {
+  for (const [index, seed] of state.seeds.entries()) {
     const row = element("li", undefined, "seed");
     const title = element("div", undefined, "row");
     title.append(element("span", BY_ID.get(seed.id).name, "seed-name"));
@@ -372,6 +372,28 @@ function drawSeeds() {
       commit(false);
     });
     row.append(title, label, input);
+    // Closures use this rendered index; every move rebuilds the ordered list.
+    // Only adjacent seed entries move. Weights, constraints and Bridge IDs stay.
+    const orderActions = element("div", undefined, "actions seed-order-actions");
+    for (const step of [-1, 1]) {
+      const direction = step < 0 ? "up" : "down";
+      const move = element("button", `Move ${direction}`);
+      move.type = "button";
+      move.setAttribute("aria-label", `Move ${BY_ID.get(seed.id).name} ${direction}`);
+      move.disabled = index + step < 0 || index + step >= state.seeds.length;
+      move.addEventListener("click", () => {
+        [state.seeds[index], state.seeds[index + step]] = [state.seeds[index + step], state.seeds[index]];
+        commit(true);
+        // The old control is gone: focus the new same-direction button, or
+        // the opposite enabled one if this favorite reached an edge.
+        const buttons = $("seeds").children[index + step].querySelectorAll(".seed-order-actions button");
+        const same = buttons[step < 0 ? 0 : 1];
+        (same.disabled ? buttons[step < 0 ? 1 : 0] : same).focus();
+        announceBasketAction("Moved", `${BY_ID.get(seed.id).name} ${direction}`);
+      });
+      orderActions.append(move);
+    }
+    row.append(orderActions);
     // A source-sparse favorite must not look as if its weight supplies
     // genre evidence. This is a disclosure only; ranking stays unchanged.
     if (!syntheticCatalog && !BY_ID.get(seed.id).themes?.length) {
