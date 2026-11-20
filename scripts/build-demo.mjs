@@ -169,6 +169,13 @@ for (const [index, path] of modules.entries()) {
     if (recoveryActionStart < 0 || recoveryActionEnd <= recoveryActionStart)
       throw new Error("Unexpected search recovery action boundary");
     source = source.slice(0, recoveryActionStart) + source.slice(recoveryActionEnd);
+    // Fictional profiles have neither Wikidata QIDs nor an owner-store
+    // provenance badge; retain these links in the real release only.
+    const realItemStart = source.indexOf('    if (!syntheticCatalog && /^wikidata:q[0-9]+$/.test(game.id)) {');
+    const realItemEnd = source.indexOf('    const stores = renderStoreLinks(game);', realItemStart);
+    if (realItemStart < 0 || realItemEnd <= realItemStart)
+      throw new Error("Unexpected real-only recommendation source-link boundary");
+    source = source.slice(0, realItemStart) + source.slice(realItemEnd);
     // The equal-weight genre proxy is a real-catalog-only explanation.
     // The fictional preview uses authored mechanics/theme overlap instead;
     // avoid shipping unreachable sourced-genre branches in its strict 95kB HTML.
