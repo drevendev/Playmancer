@@ -26,6 +26,9 @@ function temporary(fn) {
 test('an accidental native Pages source publication fails visibly instead of running fictional recommendations', () => temporary(dir => {
   const source = readFileSync(join(root, 'index.html'), 'utf8');
   assert.match(source, /id="unbuilt-source-notice"[^>]*role="alert"/);
+  assert.match(source, /<a class="skip" href="#unbuilt-source-notice">Skip to release status<\/a>/);
+  assert.match(source, /id="unbuilt-source-notice"[^>]*tabindex="-1"/);
+  assert.doesNotMatch(source, /<a class="skip" href="#recommendations">/);
   assert.match(source, /<div class="wrap" hidden>/);
   assert.match(source, /<script type="application\/x-playmancer-source" src="\.\/src\/demo-ui\.js"><\/script>/);
   assert.doesNotMatch(source, /<script type="module" src="\.\/src\/demo-ui\.js">/);
@@ -35,6 +38,8 @@ test('an accidental native Pages source publication fails visibly instead of run
   const built = readFileSync(join(out, 'index.html'), 'utf8');
   assert.doesNotMatch(built, /unbuilt-source-notice|Player temporarily unavailable|application\/x-playmancer-source/);
   assert.match(built, /<div class="wrap">/);
+  assert.match(built, /<a class="skip" href="#recommendations">Skip to recommendations<\/a>/);
+  assert.doesNotMatch(built, /href="#unbuilt-source-notice"|Skip to release status/);
   assert.match(built, /<script type="module">\n/);
   assert.doesNotMatch(built, /<div class="wrap" hidden>/);
 }));
