@@ -730,7 +730,7 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "explicit exclusion offers a nearby, count-labelled 44px recovery action",
               page.locator(f'[data-game-id="{hidden_id}"]').count() == 0
               and page.locator("#restore").is_visible()
-              and page.locator("#restore").inner_text() == "Restore all 1 hidden game"
+              and page.locator("#restore").inner_text() == "Restore 1 hidden game"
               and page.locator("#restore").evaluate(
                   "node => node.parentElement?.id === 'recommendations' && node.getBoundingClientRect().height >= 44"))
         # Blend re-optimizes selection when a candidate is excluded. Focus must
@@ -787,7 +787,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and observed["weight"] == str(after)
               and observed["bridge_end"] == ids[1]
               and observed["restore_visible"]
-              and restored.locator("#restore").inner_text() == "Restore all 1 hidden game"
+              and restored.locator("#restore").inner_text() == "Restore 1 hidden game"
               and observed["hidden_card_count"] == 0, details=observed)
         check(case, "narrow layout does not overflow",
               restored.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
