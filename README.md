@@ -30,16 +30,27 @@ saved link. Unrecognized storefront URLs retain an explicit no-fetch warning.
 > player journeys after each successful deployment. **This README is not a live
 > deployment-status pointer**: check the latest workflow run for the currently served SHA.
 >
-> **Historical independently inspected checkpoint (2026-11-02):**
+> **Independently inspected LIVE_VERIFIED checkpoint (2026-11-20 UTC):**
+> [`3a3e9aca7c6367e51d652718d8e92a92140decbf`](https://github.com/drevendev/Playmancer/commit/3a3e9aca7c6367e51d652718d8e92a92140decbf).
+> [Publish Pages #44791754335](https://github.com/drevendev/Playmancer/actions/runs/44791754335)
+> passed all four jobs, including the exact-SHA public index, Bridge worker, Gameplay
+> Facts explorer and stylesheet gates, saved-basket restoration and hosted desktop/mobile
+> journeys. [Verify #44791754242](https://github.com/drevendev/Playmancer/actions/runs/44791754242)
+> passed all four jobs. Retained [real HTTPS browser screenshots and reports](https://github.com/drevendev/Playmancer/actions/runs/44791754335/artifacts/14657240923)
+> recorded **673/673 player** and **1017/1017 explorer** assertions across Chromium,
+> Firefox and WebKit. The Chromium desktop/mobile screenshots were independently inspected.
+> This is a dated verification of that commit, **not a promise about the SHA served
+> after later deployments**. Check the latest workflow run before assuming a release is live.
+> [Issue #124](https://github.com/drevendev/Playmancer/issues/124) remains open:
+> an independent native Jekyll publisher has not been disabled, and two distinct
+> master commits without competing native output have not yet been proven.
+>
+> **Earlier inspected checkpoint (2026-11-02):**
 > [`9844933255626e804dfa69d98d843128f6a18537`](https://github.com/drevendev/Playmancer/commit/9844933255626e804dfa69d98d843128f6a18537).
-> [Publish Pages #41393137711](https://github.com/drevendev/Playmancer/actions/runs/41393137711)
-> passed all three jobs, including public HTTPS revision/Bridge-worker verification and
-> **453/453 hosted browser assertions** across Chromium, Firefox and WebKit on desktop
-> and mobile. [Desktop/mobile screenshots and assertion report](https://github.com/drevendev/Playmancer/actions/runs/41393137711/artifacts/13118297068)
-> were inspected for the exact SHA, including 400% text reflow.
-> [Verify #41393137791](https://github.com/drevendev/Playmancer/actions/runs/41393137791)
-> passed all four Node/build, Chromium, multi-engine HTTP and Bridge jobs.
-> **That exact checkpoint is LIVE_VERIFIED; newer commits need their own verification.**
+> [Publish #41393137711](https://github.com/drevendev/Playmancer/actions/runs/41393137711)
+> passed all three jobs and 453/453 hosted browser assertions; its
+> [screenshots](https://github.com/drevendev/Playmancer/actions/runs/41393137711/artifacts/13118297068)
+> were inspected, including 400% text reflow. This older checkpoint is historical.
 > Automated browser checks and screenshots do not certify spoken screen-reader behavior
 > or actual browser zoom ([#14](https://github.com/drevendev/Playmancer/issues/14)).
 
