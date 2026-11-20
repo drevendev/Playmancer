@@ -727,9 +727,12 @@ def exercise(browser, base_url, engine, label, width, height):
         hide_button = page.locator("#results > li").first.get_by_role("button", name=re.compile("^Hide "))
         hide_button.focus()
         hide_button.press("Enter")
-        check(case, "explicit exclusion removes result without relaxing filters",
+        check(case, "explicit exclusion offers a nearby, count-labelled 44px recovery action",
               page.locator(f'[data-game-id="{hidden_id}"]').count() == 0
-              and page.locator("#restore").is_visible())
+              and page.locator("#restore").is_visible()
+              and page.locator("#restore").inner_text() == "Restore all 1 hidden game"
+              and page.locator("#restore").evaluate(
+                  "node => node.parentElement?.id === 'recommendations' && node.getBoundingClientRect().height >= 44"))
         # Blend re-optimizes selection when a candidate is excluded. Focus must
         # follow the refreshed list position, not the former rank-two identity.
         first_remaining_id = page.locator("#results > li").first.get_attribute("data-game-id")
@@ -784,6 +787,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and observed["weight"] == str(after)
               and observed["bridge_end"] == ids[1]
               and observed["restore_visible"]
+              and restored.locator("#restore").inner_text() == "Restore all 1 hidden game"
               and observed["hidden_card_count"] == 0, details=observed)
         check(case, "narrow layout does not overflow",
               restored.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
