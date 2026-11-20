@@ -64,6 +64,17 @@ jobs:
         run: |
           npm run build
           python3 scripts/release-preflight.py _site
+      # #124: a competing branch/Jekyll publisher may still serve the raw source.
+      # Keep the already-preflighted five-file player independently downloadable;
+      # never label this artifact a successful public Pages deployment.
+      - name: Retain verified standalone player for local serving
+        uses: actions/upload-artifact@v4
+        with:
+          name: playmancer-player-${{ github.sha }}
+          path: _site/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload verified Pages payload
         uses: actions/upload-pages-artifact@v4
         with:
