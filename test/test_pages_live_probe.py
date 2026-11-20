@@ -89,7 +89,7 @@ class PagesProbeTests(unittest.TestCase):
     def test_compiled_bundle_source_comment_is_not_an_unbuilt_template(self):
         # The production compiler inlines demo-ui.js and retains a section
         # heading reading "// src/demo-ui.js". This is not a script src tag.
-        compiled = index() + '<script>\\n// src/demo-ui.js\\nconst ready = true;\\n</script>'
+        compiled = index() + '<script>\n// src/demo-ui.js\nconst ready = true;\n</script>'
         client = FakeFetch(index_body=compiled)
         self.assertEqual(probe(BASE, SHA, client),
             (True, 'index=OK; worker=OK; explorer=OK; stylesheet=OK'))
