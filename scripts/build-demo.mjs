@@ -172,12 +172,12 @@ for (const [index, path] of modules.entries()) {
     // The equal-weight genre proxy is a real-catalog-only explanation.
     // The fictional preview uses authored mechanics/theme overlap instead;
     // avoid shipping unreachable sourced-genre branches in its strict 95kB HTML.
-    const genreProxyStart = source.indexOf('      } else {\\n        // An additional, explicitly uniform genre-mass explanation');
-    const genreProxyEnd = source.indexOf('      }\\n    }\\n    if (item.blend)', genreProxyStart);
+    const genreProxyStart = source.indexOf('      } else {\n        // An additional, explicitly uniform genre-mass explanation');
+    const genreProxyEnd = source.indexOf('      }\n    }\n    if (item.blend)', genreProxyStart);
     if (genreProxyStart < 0 || genreProxyEnd <= genreProxyStart)
       throw new Error("Unexpected real-only genre-proxy boundary");
-    source = source.slice(0, genreProxyStart) + '      }\\n' +
-      source.slice(genreProxyEnd + '      }\\n'.length);
+    source = source.slice(0, genreProxyStart) + '      }\n' +
+      source.slice(genreProxyEnd + '      }\n'.length);
     // Fictional previews can never enter real-only genre-warning branches.
     // Strip those unreachable DOM labels instead of loosening the strict
     // <95kB deterministic HTML budget after real-player copy improvements.
