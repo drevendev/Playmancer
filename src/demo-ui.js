@@ -537,6 +537,10 @@ function drawSearch() {
     } else {
       row.append(button);
     }
+    // Let players inspect recorded storefronts before using a favorite slot.
+    // These links are optional navigation only, never ranking or share inputs.
+    const storeLinks = renderStoreLinks(game);
+    if (storeLinks) row.append(storeLinks);
     $("search-results").append(row);
   }
   if (shown.length < matches.length) {
