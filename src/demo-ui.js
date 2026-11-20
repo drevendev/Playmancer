@@ -815,6 +815,7 @@ function render(rebuildSeeds) {
   $("blend-control").hidden = state.mode !== "blend";
   $("mode-note").textContent = notes[state.mode];
   $("restore").hidden = state.excluded.length === 0;
+  $("restore").textContent = `Restore all ${state.excluded.length} hidden ${state.excluded.length === 1 ? "game" : "games"}`;
   // Changes to weights, ranking mode and hard filters must not close the
   // favorite-pair disclosure or drop keyboard focus: pair identities only
   // change when the seed list is rebuilt.
