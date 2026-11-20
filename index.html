@@ -146,11 +146,11 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <div class="section"><label for="platform">Required platform</label><select id="platform"><option value="any">Any platform</option><option value="windows">Windows</option><option value="linux">Linux</option><option value="mac">macOS</option></select><label class="check" for="coop"><input id="coop" type="checkbox"><span>Require co-op</span></label><p class="hint">Unknown support never passes a required filter.</p></div>
 <div class="actions"><button id="share" class="primary" type="button">Copy basket link</button><button id="clear" type="button">Start empty basket</button><button id="reset" type="button">Reset to sample basket</button></div>
 <div id="share-box" hidden><label for="share-link" class="hint">Basket URL — copy manually if needed</label><input id="share-link" type="text" readonly></div><p id="share-status" class="hint" role="status"></p>
-<button id="restore" type="button" hidden>Restore hidden results</button>
 </aside>
 <section id="recommendations" aria-labelledby="results-title" tabindex="-1">
 <div class="results-head"><div><h2 id="results-title">Your next possibilities</h2><p class="hint">Feature overlap, not popularity. Scores are not confidence percentages.</p></div></div>
 <p id="status" class="hint" role="status"></p>
+<button id="restore" type="button" hidden>Restore hidden results</button>
 <button id="results-view" type="button" aria-controls="results" aria-pressed="false" hidden>Show top 5 recommendations</button>
 <ol id="results" class="results" aria-label="Ranked recommendations"></ol>
 <div id="empty" class="empty" hidden></div>
