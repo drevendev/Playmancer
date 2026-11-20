@@ -340,10 +340,28 @@ function commit(rebuildSeeds = false) {
   catch { /* Local file browsers may prohibit History API updates; sharing still works. */ }
   render(rebuildSeeds);
 }
+// Reordering is an explicit, keyboard-accessible basket action. It preserves
+// the exact seed objects (including weights), constraints, exclusions and
+// explicit Bridge IDs, while the versioned share link records the new order.
+function moveFavorite(id, delta) {
+  const from = state.seeds.findIndex(seed => seed.id === id);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= state.seeds.length) return;
+  [state.seeds[from], state.seeds[to]] = [state.seeds[to], state.seeds[from]];
+  commit(true);
+  // The old button was removed during re-render. Focus the corresponding
+  // control on the moved game; at an edge, use the still-enabled opposite.
+  const moved = [...$("seeds").children].find(row => row.dataset.gameId === id);
+  const same = moved?.querySelector(`button[data-move="${delta}"]`);
+  const opposite = moved?.querySelector(`button[data-move="${-delta}"]`);
+  (same && !same.disabled ? same : opposite)?.focus();
+  announceBasketAction("Moved", `${BY_ID.get(id).name} ${delta < 0 ? "up" : "down"}`);
+}
 function drawSeeds() {
   $("seeds").replaceChildren();
-  for (const seed of state.seeds) {
+  for (const [index, seed] of state.seeds.entries()) {
     const row = element("li", undefined, "seed");
+    row.dataset.gameId = seed.id;
     const title = element("div", undefined, "row");
     title.append(element("span", BY_ID.get(seed.id).name, "seed-name"));
     const remove = element("button", "Remove", "remove");
@@ -372,6 +390,17 @@ function drawSeeds() {
       commit(false);
     });
     row.append(title, label, input);
+    const orderActions = element("div", undefined, "actions seed-order-actions");
+    for (const [delta, label] of [[-1, "Move up"], [1, "Move down"]]) {
+      const move = element("button", label);
+      move.type = "button";
+      move.dataset.move = String(delta);
+      move.setAttribute("aria-label", `Move ${BY_ID.get(seed.id).name} ${delta < 0 ? "up" : "down"}`);
+      move.disabled = index + delta < 0 || index + delta >= state.seeds.length;
+      move.addEventListener("click", () => moveFavorite(seed.id, delta));
+      orderActions.append(move);
+    }
+    row.append(orderActions);
     // A source-sparse favorite must not look as if its weight supplies
     // genre evidence. This is a disclosure only; ranking stays unchanged.
     if (!syntheticCatalog && !BY_ID.get(seed.id).themes?.length) {
