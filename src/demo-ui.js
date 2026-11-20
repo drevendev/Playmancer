@@ -535,6 +535,11 @@ function drawSearch() {
   const filteredStoreUrl = recordedStoreUrlGame && !selectedStoreUrl && store !== "all" &&
     !recordedStoreUrlGame.storeLinks.some(link => link.store === store);
   const unknownStoreUrl = !syntheticCatalog && !recordedStoreUrlGame && entered.includes("://");
+  // A chosen title can coexist with still-addable genre/fact matches.
+  // Mention that identity without allowing duplicate seeds or hiding other results.
+  const selectedSearchNote = selectedNameMatches.length
+    ? ` Already in basket: ${selectedNameMatches.map(game => game.name).join(", ")}. Adjust weights above or remove a favorite.`
+    : "";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
     : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
@@ -546,9 +551,9 @@ function drawSearch() {
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
     : !matches.length && store !== "all" && candidates.length
       ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
-    : matches.length ? (shown.length < matches.length
+    : matches.length ? ((shown.length < matches.length
       ? `${shown.length} of ${matches.length} matching ${noun}${fromStore} shown. Show more matches to continue.`
-      : `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`)
+      : `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`) + selectedSearchNote)
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
       : `No ${noun}${fromStore} match this search. Try another name, genre, gameplay fact or store; unrecorded facts remain unknown.`;
