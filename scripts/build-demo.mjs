@@ -306,7 +306,7 @@ if (effectiveSnapshot.kind === "synthetic") {
     throw new Error("Unexpected real-only search recovery DOM boundary");
   template = template.replace(realOnlyRecovery, "");
 }
-const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" tabindex=\"-1\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. Please try again later.</div>";
+const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" tabindex=\"-1\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. <p>To play locally, open <a href=\"https://github.com/drevendev/Playmancer/actions/workflows/pages.yml\">master Pages runs</a>, choose a run where <strong>Verify and package exact master</strong> passed, and download its <code>playmancer-player-[SHA]</code> ZIP artifact (GitHub sign-in may be required). Follow the <a href=\"https://github.com/drevendev/Playmancer#when-pages-is-unavailable-run-the-verified-player-locally\">local player instructions</a> to serve it over HTTP. This does not mean the public site is live.</p></div>";
 const sourceWrap = '<div class="wrap" hidden>';
 const sourceSkip = '<a class="skip" href="#unbuilt-source-notice">Skip to release status</a>';
 const builtSkip = '<a class="skip" href="#recommendations">Skip to recommendations</a>';

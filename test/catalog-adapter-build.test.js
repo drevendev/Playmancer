@@ -28,6 +28,13 @@ test('an accidental native Pages source publication fails visibly instead of run
   assert.match(source, /id="unbuilt-source-notice"[^>]*role="alert"/);
   assert.match(source, /<a class="skip" href="#unbuilt-source-notice">Skip to release status<\/a>/);
   assert.match(source, /id="unbuilt-source-notice"[^>]*tabindex="-1"/);
+  // A native Pages/Jekyll source publication must offer a truthful usable route
+  // to a checked standalone player rather than a dead-end error page.
+  assert.ok(source.includes("href=\"https://github.com/drevendev/Playmancer/actions/workflows/pages.yml\">master Pages runs</a>"), "source fallback missing verified-download guidance");
+  assert.ok(source.includes("Verify and package exact master"), "source fallback missing verified-download guidance");
+  assert.ok(source.includes("playmancer-player-[SHA]"), "source fallback missing verified-download guidance");
+  assert.ok(source.includes("href=\"https://github.com/drevendev/Playmancer#when-pages-is-unavailable-run-the-verified-player-locally\">local player instructions</a>"), "source fallback missing verified-download guidance");
+  assert.ok(source.includes("This does not mean the public site is live."), "source fallback missing verified-download guidance");
   assert.doesNotMatch(source, /<a class="skip" href="#recommendations">/);
   assert.match(source, /<div class="wrap" hidden>/);
   assert.match(source, /<script type="application\/x-playmancer-source" src="\.\/src\/demo-ui\.js"><\/script>/);
@@ -37,6 +44,7 @@ test('an accidental native Pages source publication fails visibly instead of run
   assert.equal(result.status, 0, result.stderr);
   const built = readFileSync(join(out, 'index.html'), 'utf8');
   assert.doesNotMatch(built, /unbuilt-source-notice|Player temporarily unavailable|application\/x-playmancer-source/);
+  assert.doesNotMatch(built, /master Pages runs|local player instructions|playmancer-player-\[SHA\]/);
   assert.match(built, /<div class="wrap">/);
   assert.match(built, /<a class="skip" href="#recommendations">Skip to recommendations<\/a>/);
   assert.doesNotMatch(built, /href="#unbuilt-source-notice"|Skip to release status/);
