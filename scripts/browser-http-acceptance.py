@@ -265,6 +265,48 @@ def exercise(browser, base_url, engine, label, width, height):
               and not page.locator('#coop').is_checked()
               and page.locator('#results > li').count() > 0)
 
+        # Ordered favorites can be moved with native keyboard buttons, without
+        # removing/re-adding a game (which would lose its chosen weight).
+        # The share contract preserves ordered IDs, weights, mode, constraints
+        # and exclusions; explicit Bridge endpoints use stable IDs.
+        page.locator('#mode').select_option('blend')
+        page.locator('#platform').select_option('windows')
+        page.locator('#coop').check()
+        first_weight = page.locator('#seeds input[type="range"]').first
+        first_weight.focus()
+        first_weight.press('ArrowRight')
+        before_order = json.loads(unquote(page.url.split('#basket=', 1)[1]))
+        down = page.get_by_role('button', name='Move Stardew Valley down', exact=True)
+        up_edge = page.get_by_role('button', name='Move Stardew Valley up', exact=True)
+        check(case, 'favorite order exposes edge-aware touch-sized native controls',
+              page.locator('#seeds > li .seed-name').all_text_contents() == ['Stardew Valley', 'Terraria']
+              and before_order['seeds'][0]['weight'] == 2
+              and down.is_enabled() and not up_edge.is_enabled()
+              and down.evaluate('node => node.getBoundingClientRect().height >= 44'))
+        down.focus()
+        down.press('Enter')
+        moved_order = json.loads(unquote(page.url.split('#basket=', 1)[1]))
+        moved_up = page.get_by_role('button', name='Move Stardew Valley up', exact=True)
+        check(case, 'keyboard moves a favorite without altering weights or constraints',
+              page.locator('#seeds > li .seed-name').all_text_contents() == ['Terraria', 'Stardew Valley']
+              and moved_order == {**before_order, 'seeds': list(reversed(before_order['seeds']))}
+              and page.locator('#mode').input_value() == 'blend'
+              and page.locator('#platform').input_value() == 'windows'
+              and page.locator('#coop').is_checked()
+              and moved_up.is_enabled()
+              and not page.get_by_role('button', name='Move Stardew Valley down', exact=True).is_enabled()
+              and moved_up.evaluate('node => document.activeElement === node')
+              and page.locator('#basket-feedback').inner_text().startswith(
+                  'Moved Stardew Valley down. 2 of 5 games selected.'))
+        moved_up.press('Enter')
+        check(case, 'reverse move restores the exact versioned basket and stable keyboard focus',
+              json.loads(unquote(page.url.split('#basket=', 1)[1])) == before_order
+              and page.locator('#seeds > li .seed-name').all_text_contents() == ['Stardew Valley', 'Terraria']
+              and page.get_by_role('button', name='Move Stardew Valley down', exact=True).evaluate(
+                  'node => document.activeElement === node')
+              and page.locator('#basket-feedback').inner_text().startswith('Moved Stardew Valley up.'))
+        page.locator('#intro-sample').click()
+
         # Browse the actual catalog without guessing a title or genre first.
         browse = page.locator("#catalog-browse")
         browse.click()
