@@ -283,14 +283,17 @@ if (effectiveSnapshot.kind === "synthetic") {
     throw new Error("Unexpected real-only search recovery DOM boundary");
   template = template.replace(realOnlyRecovery, "");
 }
-const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. Please try again later.</div>";
+const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" tabindex=\"-1\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. Please try again later.</div>";
 const sourceWrap = '<div class="wrap" hidden>';
+const sourceSkip = '<a class="skip" href="#unbuilt-source-notice">Skip to release status</a>';
+const builtSkip = '<a class="skip" href="#recommendations">Skip to recommendations</a>';
+if (template.split(sourceSkip).length !== 2) throw new Error("Expected exactly one source-only status skip link");
 if (template.split(sourceNotice).length !== 2 || template.split(sourceWrap).length !== 2)
   throw new Error("Expected exactly one inert unbuilt-source fallback and hidden source player");
 if (template.split(entry).length !== 2) throw new Error("Expected exactly one demo entry point");
 if (template.split("</head>").length !== 2) throw new Error("Expected exactly one document head");
 const escapeAttribute = value => value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const html = template.replace(sourceNotice, "").replace(sourceWrap, '<div class="wrap">')
+const html = template.replace(sourceSkip, builtSkip).replace(sourceNotice, "").replace(sourceWrap, '<div class="wrap">')
   .replace(entry, () => `<script type="module">\n${script}\n</script>`)
   .replace("</head>", () => `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${escapeAttribute(effectiveSnapshot.snapshotId)}">\n</head>`);
 await mkdir(output, { recursive: true });
