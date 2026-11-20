@@ -335,6 +335,23 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("location.hash") == hash_before_identity_search
               and page.locator("#seeds > li").count() == 2
               and page.evaluate("document.activeElement.id") == "search")
+        # A selected identity match may coexist with other addable results.
+        # Never report it as missing or add it twice; keep remaining matches.
+        page.get_by_role("button", name="Add Hunter Adventure", exact=True).click()
+        selected_hash = page.evaluate("location.hash")
+        page.locator("#search").fill("adventure")
+        check(case, "already-selected title stays disclosed among other addable matches",
+              "Already in basket: Hunter Adventure." in hint.inner_text()
+              and "matching catalog profiles" in hint.inner_text()
+              and page.get_by_role("button", name="Add Hunter Adventure", exact=True).count() == 0
+              and page.get_by_role("button", name="Add Infamous 2", exact=True).count() == 1
+              and page.locator("#seeds > li").count() == 3
+              and page.evaluate("location.hash") == selected_hash
+              and page.evaluate("document.activeElement.id") == "search")
+        page.get_by_role("button", name="Remove Hunter Adventure", exact=True).click()
+        check(case, "removing selected search identity restores basket without hidden state change",
+              page.locator("#seeds > li").count() == 2
+              and page.get_by_role("button", name="Add Hunter Adventure", exact=True).count() == 1)
         # Guard the real deployed player, not merely the offline Gameplay Facts
         # explorer or synthetic fixture. Source-backed positives are partial
         # discovery evidence; a missing observation must never imply absence.
