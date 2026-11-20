@@ -641,6 +641,13 @@ function drawEmptyRecovery(result) {
     });
     actions.append(button);
   };
+  // Offer an evidence inspection path without making unknown candidates eligible.
+  if (result.uncertain.length) {
+    const inspect = element("button", `Review ${result.uncertain.length} uncertain games`);
+    inspect.setAttribute("aria-controls", "uncertainty");
+    inspect.onclick = () => { $("uncertainty").open = true; $("uncertainty-title").focus(); };
+    actions.append(inspect);
+  }
   if (hidden.length) addAction(`Restore ${hidden.length} hidden ${hidden.length === 1 ? "profile" : "profiles"}`, () => { state.excluded = []; });
   // Strict constraints change only by explicit player action.
   if ((failed.length || unknown.length) && state.platform !== "any") addAction("Allow any platform", () => { state.platform = "any"; });
