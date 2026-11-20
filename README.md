@@ -40,6 +40,30 @@ saved link. Unrecognized storefront URLs retain an explicit no-fetch warning.
 > Automated browser checks and screenshots do not certify spoken screen-reader behavior
 > or actual browser zoom ([#14](https://github.com/drevendev/Playmancer/issues/14)).
 
+### When Pages is unavailable: run the verified player locally
+
+The production Pages URL can temporarily serve an unbuilt source template while
+[the dual-publisher configuration issue](https://github.com/drevendev/Playmancer/issues/124)
+remains open. A successful build or deployment API response does **not** mean
+Pages is live. The normal public revision/worker/browser gates remain mandatory.
+
+For a separate, runnable copy of the **same checked five-file production payload**:
+
+1. Open [Publish Playmancer Pages runs](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
+   and choose a `master` run where **Verify and package exact master** passed.
+   In **Artifacts**, download `playmancer-player-<40-character SHA>` (GitHub sign-in
+   may be required; retained for 14 days), even if the later Pages publish failed.
+2. Unzip the artifact into a directory containing `index.html`, `player.css`,
+   `bridge-worker.js`, `observations.html` and `.nojekyll`. Confirm the artifact's
+   SHA matches the run's `master` commit; do not substitute older versions.
+3. In that directory run `python3 -m http.server 8000 --bind 127.0.0.1` and open
+   `http://127.0.0.1:8000/`. Serve over HTTP, not `file://`, so the same-origin
+   Bridge worker and versioned basket links work normally. Stop with Ctrl-C.
+
+This is a **manual local player**, not a second public host or proof of a
+LIVE_VERIFIED Pages release. The verified payload has no account, tracking or
+runtime API dependency; external storefront links open only when selected.
+
 ### Current real-catalog pilot
 
 The public build selects immutable snapshot
