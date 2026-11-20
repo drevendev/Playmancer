@@ -138,6 +138,13 @@ for (const [index, path] of modules.entries()) {
     if ((source.match(urlHintPattern) ?? []).length !== 3)
       throw new Error("Unexpected real-only storefront recovery hint branches");
     source = source.replace(urlHintPattern, "");
+    // Only the real player reports selected identity alongside other addable
+    // search matches. Drop its suffix from the synthetic-sized bundle after
+    // removing the real-only selected-game binding above.
+    const selectedSearchSuffix = " + selectedSearchNote)";
+    if (source.split(selectedSearchSuffix).length !== 2)
+      throw new Error("Unexpected real-only selected-match suffix boundary");
+    source = source.replace(selectedSearchSuffix, ")");
     // The synthetic preview has no store selector options to recover from.
     // Remove real-only recovery instead of relaxing the fixed HTML size gate.
     const genericHintStart = source.indexOf('    : !matches.length && store !== "all" && candidates.length');
