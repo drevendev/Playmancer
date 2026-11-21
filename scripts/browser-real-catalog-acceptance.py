@@ -562,6 +562,27 @@ try:
                   and "not proof the game is unavailable there" in partition
                   and "Excluded · Hades" not in partition
                   and page.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
+            # Inspect a listed store without treating it as Android/co-op evidence.
+            hades_row = page.locator("#partition-list li").filter(has_text="Uncertain · Hades:")
+            hades_store = hades_row.locator(".storefront-links a")
+            strict_hash = page.evaluate("location.hash")
+            check(label + ": uncertain game exposes only recorded store navigation, not compatibility",
+                  hades_row.count() == 1
+                  and "Store listing (not compatibility proof)" in hades_row.inner_text()
+                  and hades_store.count() == 1
+                  and hades_store.get_attribute("href") == "https://store.steampowered.com/app/1145360"
+                  and hades_store.get_attribute("aria-label") == "View Hades on Steam"
+                  and hades_store.get_attribute("target") == "_blank"
+                  and "noopener" in (hades_store.get_attribute("rel") or "")
+                  and "noreferrer" in (hades_store.get_attribute("rel") or "")
+                  and hades_store.evaluate("el => el.getBoundingClientRect().height >= 44")
+                  and page.evaluate("location.hash") == strict_hash
+                  and page.locator("#platform").input_value() == "android"
+                  and page.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
+            no_store_row = page.locator("#partition-list li").filter(has_text="Uncertain · Infamous 2:")
+            check(label + ": missing storefront URLs remain unknown rather than fabricated",
+                  no_store_row.count() == 1
+                  and no_store_row.locator(".storefront-links a").count() == 0)
             # Unknown non-exhaustive platform receipts and unknown required
             # co-op evidence both abstain; neither is proven incompatible.
             page.locator("#coop").check()
