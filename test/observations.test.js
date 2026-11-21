@@ -59,8 +59,8 @@ test('search discovers mechanics without modifying ranker constraints or treatin
   assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:building').map(g => g.id), [a]);
   assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:dashing'), []);
   assert.deepEqual(searchObservations(model, 'Factorio Telegraphed'), []);
-  assert.deepEqual(searchObservations(model, 'vertical traversal').map(g => g.name),
-    ['Sekiro: Shadows Die Twice']);
+  assert.deepEqual(searchObservations(model, 'Automating production').map(g => g.name),
+    ['Factorio']);
   const combinedFacts = { ...state(), pair: [], query: 'Factorio Automating', tag: 'mechanic:building' };
   assert.deepEqual(decodeObservationState(model, encodeObservationState(model, combinedFacts)), combinedFacts);
   assert.deepEqual(searchObservations(model, '<script>'), []);
