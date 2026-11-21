@@ -541,6 +541,21 @@ function drawSearch() {
     // These links are optional navigation only, never ranking or share inputs.
     const storeLinks = renderStoreLinks(game);
     if (storeLinks) row.append(storeLinks);
+    // In a real release, reveal how many *selected positive observations* were
+    // reviewed before players spend a favorite slot. Zero is an evidence gap,
+    // never a claim that the game lacks those gameplay features.
+    const evidenceEntry = $("observation-explorer-entry");
+    if (!syntheticCatalog && evidenceEntry?.dataset.observationCatalog === CATALOG_VERSION && !matchedFactId) {
+      const count = inlineGameplayFacts?.get(game.id)?.size ?? 0;
+      row.append(element("span", count
+        ? `${count} selected gameplay facts (partial evidence; unrecorded facts unknown).`
+        : "No reviewed gameplay facts yet (unknown, not absent).", "hint"));
+      const inspect = element("a", `Inspect ${game.name} gameplay evidence (new tab)`, "fact-compare-link");
+      inspect.href = pinnedFactsSearchLink(game.id, evidenceEntry);
+      inspect.target = "_blank";
+      inspect.rel = "noopener noreferrer";
+      row.append(inspect);
+    }
     $("search-results").append(row);
   }
   if (shown.length < matches.length) {
