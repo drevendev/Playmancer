@@ -702,6 +702,20 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("location.hash") == strict_hash
               and page.locator("#coop").is_checked()
               and page.locator("#platform").input_value() == "windows")
+        # Source-backed outbound navigation never converts an unknown filter
+        # into a passing candidate or changes the exact shared basket.
+        hades_row = page.locator("#partition-list li").filter(has_text="Uncertain · Hades:")
+        hades_store = hades_row.locator(".storefront-links a")
+        check(case, "strict-filter unknown Hades has a safe recorded store inspection link",
+              hades_row.count() == 1
+              and hades_store.count() == 1
+              and hades_store.get_attribute("href") == "https://store.steampowered.com/app/1145360"
+              and hades_store.get_attribute("target") == "_blank"
+              and "noopener" in (hades_store.get_attribute("rel") or "")
+              and "noreferrer" in (hades_store.get_attribute("rel") or "")
+              and page.evaluate("location.hash") == strict_hash
+              and page.locator("#results > li").count() == 0
+              and page.locator("#coop").is_checked())
         page.locator("#coop").uncheck()
         page.locator("#platform").select_option("any")
         summary = page.locator("#results > li .explanation summary").first

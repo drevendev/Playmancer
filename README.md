@@ -154,6 +154,7 @@ of silently substituting games from a different snapshot.
 - Compare harmonic **Intersection**, diversified list-level **Blend**, and a weighted
   arithmetic baseline. Union is an evaluation baseline, not an Intersection label.
 - Require platform/co-op support. Missing required evidence is unknown, never a pass.
+- Inspect a recorded storefront directly from the **Uncertain / Excluded** disclosure even when strict filters abstain. A store page is optional outbound context, **not evidence** that the required platform or co-op feature is supported. Games without recorded store links receive none; inspecting one does not change eligibility, favorites or the shared basket.
 - Inspect per-seed affinities, evidence coverage, shared features and mismatches.
 - In a real-catalog basket containing at least two favorites, expand **Compare recorded facts between favorites** to inspect every favorite pair (up to ten pairs for five games) in the separate version-pinned Gameplay Facts explorer. Pair links preserve selection order, source revisions and the original weighted basket; missing observations remain unknown. The fictional preview does not invent comparisons.
 - Recommendation cards now disclose **Extra recorded gameplay overlap** where

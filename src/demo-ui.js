@@ -800,6 +800,12 @@ function drawResults() {
     // The mixed partition must identify each row's status without relying
     // on its position, color, or the collapsed disclosure heading.
     const row = element("li", `${item.status === "excluded" ? "Excluded" : "Uncertain"} · ${BY_ID.get(item.id).name}: ${reason}.`);
+    // A recorded store page helps investigate an uncertain or excluded game;
+    // it does not establish the required platform or co-op compatibility.
+    if (item.reason !== "seed") {
+      const stores = renderStoreLinks(BY_ID.get(item.id));
+      if (stores) row.append(" · Store listing (not compatibility proof): ", stores);
+    }
     // A mistaken hide must be reversible without also restoring every other
     // exclusion. This is an explicit player action, never a filter fallback.
     if (state.excluded.includes(item.id)) {
