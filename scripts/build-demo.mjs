@@ -62,6 +62,19 @@ for (const [index, path] of modules.entries()) {
     if (source.split(searchStoreLinks).length !== 2)
       throw new Error("Unexpected real-only catalog search link boundary");
     source = source.replace(searchStoreLinks, "");
+    // Do not ship real-only partition store navigation in fictional previews.
+    const partitionStoreLinks = [
+      "    // A recorded store page helps investigate an uncertain or excluded game;",
+      "    // it does not establish the required platform or co-op compatibility.",
+      "    if (item.reason !== \"seed\") {",
+      "      const stores = renderStoreLinks(BY_ID.get(item.id));",
+      "      if (stores) row.append(\" · Store listing (not compatibility proof): \", stores);",
+      "    }",
+      ""
+    ].join("\n");
+    if (source.split(partitionStoreLinks).length !== 2)
+      throw new Error("Unexpected real-only uncertain-store link boundary");
+    source = source.replace(partitionStoreLinks, "");
     // Fictional games have no recorded external storefront links. Retain an
     // inert call site without shipping the real-only link builder.
     const storeLinksStart = source.indexOf("function renderStoreLinks(game) {");
