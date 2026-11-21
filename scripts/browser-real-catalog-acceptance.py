@@ -369,6 +369,12 @@ try:
             # required platform is unknown, without ever relaxing eligibility.
             fact_lookup.locator("#platform").select_option("android")
             uncertain_hash = fact_lookup.evaluate("location.hash")
+            # Playwright role locators intentionally exclude links inside closed
+            # <details>. Open the disclosure as a player would before inspecting it.
+            fact_lookup.locator("#uncertainty-title").click()
+            check(label + ": uncertainty disclosure opens without rewriting the basket",
+                  fact_lookup.locator("#uncertainty").evaluate("node => node.open")
+                  and fact_lookup.evaluate("location.hash") == uncertain_hash)
             uncertain_hades = fact_lookup.locator("#partition-list > li").filter(has_text="Uncertain · Hades:")
             inspect = uncertain_hades.get_by_role("link", name="Inspect available gameplay evidence for Hades (new tab)")
             evidence_href = inspect.get_attribute("href") if inspect.count() == 1 else ""
