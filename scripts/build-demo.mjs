@@ -62,6 +62,14 @@ for (const [index, path] of modules.entries()) {
     if (source.split(searchStoreLinks).length !== 2)
       throw new Error("Unexpected real-only catalog search link boundary");
     source = source.replace(searchStoreLinks, "");
+    // The real player includes a browsable positive-fact inventory; invented
+    // games cannot expose reviewed public evidence. Strip this exact block
+    // before compiling the strict-size fictional player.
+    const searchFactsStart = source.indexOf("    // In a real release, reveal how many");
+    const searchFactsEnd = source.indexOf('    $("search-results").append(row);', searchFactsStart);
+    if (searchFactsStart < 0 || searchFactsEnd <= searchFactsStart)
+      throw new Error("Unexpected real-only browse-fact boundary");
+    source = source.slice(0, searchFactsStart) + source.slice(searchFactsEnd);
     // Do not ship real-only partition store navigation in fictional previews.
     const partitionStoreLinks = [
       "    // Optional source inspection does not qualify unknown hard-filter support.",

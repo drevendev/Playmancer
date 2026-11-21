@@ -170,6 +170,24 @@ def exercise(browser, base_url, engine, label, width, height):
               and store_link.evaluate("el => el.getBoundingClientRect().height >= 44")
               and page.locator("#seeds > li").count() == 2
               and page.evaluate("location.hash") == browse_hash)
+        # Review partial observation coverage before adding a favorite; a
+        # versioned evidence lookup is not a ranking or compatibility claim.
+        evidence_link = first_browse.get_by_role(
+            "link", name="Inspect Mortal Shell gameplay evidence (new tab)")
+        evidence_state = json.loads(unquote(urlsplit(evidence_link.get_attribute("href")).fragment.split("facts=", 1)[1]))
+        facts_entry = page.locator("#observation-explorer-entry")
+        check(case, "real browse shows partial fact inventory and safe revision-pinned inspection",
+              "selected gameplay facts (partial evidence" in first_browse.inner_text()
+              and evidence_link.get_attribute("target") == "_blank"
+              and "noopener" in (evidence_link.get_attribute("rel") or "")
+              and "noreferrer" in (evidence_link.get_attribute("rel") or "")
+              and evidence_state["query"] == "wikidata:q96991833"
+              and evidence_state["pair"] == [] and evidence_state["tag"] == ""
+              and evidence_state["catalog"] == facts_entry.get_attribute("data-observation-catalog")
+              and evidence_state["version"] == facts_entry.get_attribute("data-observation-version")
+              and evidence_state["evidence"] == facts_entry.get_attribute("data-observation-evidence")
+              and page.evaluate("location.hash") == browse_hash
+              and not external_requests)
         page.locator("#search").focus()
         page.locator("#search").press("Escape")
         check(case, "closing store discovery preserves exact ordered favorites and share",
@@ -337,7 +355,9 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "catalog browser starts with eight unselected games and observed genres",
               browse.get_attribute("aria-expanded") == "true"
               and items.count() == 9
-              and page.locator("#search-results .hint").count() == 8
+              and page.locator("#search-results > li > span.hint").filter(has_text="Recorded genres:").count() == 8
+              and page.locator("#search-results > li > span.hint").filter(
+                  has_text=re.compile(r"selected gameplay facts|No reviewed gameplay facts yet")).count() == 8
               and "Recorded genres:" in page.locator("#search-results").inner_text()
               and "8 of 28 available catalog profiles" in page.locator("#search-hint").inner_text()
               and page.locator("#seeds > li").count() == 2)
