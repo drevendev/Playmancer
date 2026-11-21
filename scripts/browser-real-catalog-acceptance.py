@@ -364,12 +364,12 @@ try:
             jump_url = source_jump.get_attribute("href")
             jump_state = json.loads(unquote(urlsplit(jump_url).fragment.split("facts=", 1)[1]))
             entry = fact_lookup.locator("#observation-explorer-entry")
-            check(label + ": favorite exposes separate partial facts and exact-version source search",
+            check(label + ": favorite opens its canonical identity in exact-version source search",
                   "Catalog mechanics: unknown" in favorite_evidence.inner_text()
                   and "Separately reviewed gameplay facts (4 selected, partial)" in favorite_evidence.inner_text()
                   and "Automating production" in favorite_evidence.inner_text()
                   and "not used for ranking" in favorite_evidence.inner_text()
-                  and jump_state["query"] == "Factorio" and jump_state["pair"] == []
+                  and jump_state["query"] == "wikidata:q16972008" and jump_state["pair"] == []
                   and jump_state["tag"] == ""
                   and jump_state["catalog"] == entry.get_attribute("data-observation-catalog")
                   and jump_state["version"] == entry.get_attribute("data-observation-version")
@@ -388,10 +388,23 @@ try:
             fact_lookup.get_by_role("button", name="Add DevMatch").click()
             devmatch_evidence = fact_lookup.locator("#seeds .basket-evidence").last
             devmatch_evidence.locator("summary").click()
-            check(label + ": unreviewed favorite does not invent absent mechanics",
+            devmatch_source = devmatch_evidence.get_by_role(
+                "link", name="Inspect gameplay fact sources for DevMatch (new tab)")
+            devmatch_url = devmatch_source.get_attribute("href") if devmatch_source.count() == 1 else ""
+            devmatch_fragment = urlsplit(devmatch_url).fragment
+            devmatch_state = (json.loads(unquote(devmatch_fragment.split("facts=", 1)[1]))
+                              if devmatch_fragment.startswith("facts=") else {})
+            check(label + ": unreviewed favorite links to its exact identity without inventing facts",
                   "No separately reviewed gameplay facts for this game" in devmatch_evidence.inner_text()
                   and "Unrecorded features remain unknown" in devmatch_evidence.inner_text()
-                  and devmatch_evidence.get_by_role("link", name="Inspect gameplay fact sources for DevMatch (new tab)").count() == 1)
+                  and devmatch_source.count() == 1
+                  and devmatch_state.get("query") == "dreven:devmatch"
+                  and devmatch_state.get("pair") == [] and devmatch_state.get("tag") == ""
+                  and devmatch_state.get("catalog") == entry.get_attribute("data-observation-catalog")
+                  and devmatch_state.get("version") == entry.get_attribute("data-observation-version")
+                  and devmatch_state.get("evidence") == entry.get_attribute("data-observation-evidence")
+                  and devmatch_source.get_attribute("target") == "_blank"
+                  and devmatch_source.get_attribute("rel") == "noopener noreferrer")
             # Source-backed evidence inspection is available even when a strict
             # required platform is unknown, without ever relaxing eligibility.
             fact_lookup.locator("#platform").select_option("android")
