@@ -139,6 +139,8 @@ rather than silently substituting newer entries.
 
 ## Player capabilities — 30-game pilot
 
+Catalog search prefers whole-name/phrase and exact recorded store-link matches. If a multi-word search finds no whole-phrase match, it can match **all** words across recorded game names/IDs, genre labels and selected positive gameplay facts (for example `Factorio Automating`). Each such result is explicitly marked as partial evidence rather than a recommendation-fit score; unrecorded facts remain unknown. Search neither alters ranking nor relaxes hard filters. The 30-game catalog still has limited, non-exhaustive coverage.
+
 The currently published 30-game snapshot powers the player capabilities below.
 The earlier 17-game release is historical, not the current Pages catalog.
 For isolated tests, `node scripts/build-demo.mjs` builds a fictional

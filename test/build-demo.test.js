@@ -33,6 +33,8 @@ test("static build is self-contained and byte-identical on repeat", async () => 
       "fictional bundle omits the real-catalog store-link renderer");
     assert.doesNotMatch(html, /selectedNameMatches|Already in basket:/,
       "fictional bundle must omit real-catalog-only selected-game recovery");
+    assert.doesNotMatch(html, /combinedTermFallback|All search words appear in recorded name/,
+      "fictional bundle must omit real-catalog-only partial-fact AND search");
     assert.doesNotMatch(html, /search-recovery|search-all-stores|const candidates = query \|\| browseAll/,
       "fictional bundle must not ship real-only filter recovery controls or state");
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);

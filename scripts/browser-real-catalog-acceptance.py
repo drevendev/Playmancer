@@ -344,6 +344,22 @@ try:
                   and unreviewed_row.get_by_role(
                       "link", name="Inspect DevMatch gameplay evidence (new tab)").count() == 1
                   and fact_lookup.evaluate("location.hash") == browse_facts_hash)
+            # A multi-word fallback can span a canonical name and a separately
+            # reviewed positive fact. No new ranking input or inferred negative.
+            fact_lookup.locator("#search").fill("Factorio Automating")
+            combined_rows = fact_lookup.locator("#search-results > li")
+            check(label + ": multi-word discovery finds separate recorded source terms without affecting basket",
+                  combined_rows.count() == 1
+                  and combined_rows.first.get_by_role("button", name="Add Factorio").count() == 1
+                  and "All search words appear in recorded name, ID, genre or selected positive gameplay facts" in combined_rows.first.inner_text()
+                  and "not a recommendation fit score" in combined_rows.first.inner_text()
+                  and fact_lookup.locator("#seeds > li").count() == 2
+                  and fact_lookup.evaluate("location.hash") == browse_facts_hash)
+            fact_lookup.locator("#search").fill("Factorio definitelynotrecorded")
+            check(label + ": missing positive facts remain unknown, not fabricated as matches",
+                  fact_lookup.locator("#search-results > li").count() == 0
+                  and "unrecorded facts remain unknown" in fact_lookup.locator("#search-hint").inner_text()
+                  and fact_lookup.locator("#seeds > li").count() == 2)
             fact_lookup.locator("#clear").click()
             fact_lookup.locator("#search").fill("Automating production")
             fact_result = fact_lookup.locator("#search-results li")
