@@ -68,6 +68,22 @@ test('search discovers mechanics without modifying ranker constraints or treatin
   assert.throws(() => searchObservations(model, '', 'mechanic:unreviewed'));
   assert.throws(() => searchObservations(model, 'a'.repeat(121)));
 });
+test('whole phrase outranks split-field AND results within the eligible fact filter', () => {
+  const miniature = { tags: [{ id: 'mechanic:building' }], games: [
+    { id: 'demo:phrase', name: 'Copper Bridge', facts: [] },
+    { id: 'demo:split', name: 'Copper', facts: [
+      { id: 'mechanic:building', label: 'Bridge' },
+    ] },
+    { id: 'demo:other', name: 'Bridge', facts: [] },
+  ] };
+  assert.deepEqual(searchObservations(miniature, 'Copper Bridge').map(g => g.id),
+    ['demo:phrase']);
+  assert.deepEqual(searchObservations(miniature, 'Bridge Copper').map(g => g.id),
+    ['demo:phrase', 'demo:split']);
+  assert.deepEqual(searchObservations(miniature, 'Copper Bridge', 'mechanic:building').map(g => g.id),
+    ['demo:split']);
+  assert.deepEqual(searchObservations(miniature, 'Copper missing'), []);
+});
 test('projection is byte-stable under catalog, taxonomy, receipt and fact reordering', () => {
   const changed = clone(observations);
   changed.taxonomy.tags.reverse(); changed.receipts.reverse(); changed.games.reverse();
