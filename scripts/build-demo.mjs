@@ -145,7 +145,24 @@ for (const [index, path] of modules.entries()) {
     source = source.slice(0, factSearchStart) +
       "      return direct || matchedTag ? { game, matchedTag, matchedFact: null } : null;\n" +
       source.slice(factSearchEnd);
-    const factSearchDestructure = "for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {";
+    // The cross-field partial-fact fallback is real-catalog-only. Synthetic
+    // fixtures use the preexisting simple name/feature-tag search contract;
+    // remove the unused fallback and its copy before size-limited bundling.
+    const termFallbackStart = source.indexOf("  // A phrase/URL hit always wins.");
+    const termFallbackEnd = source.indexOf("  // Source order breaks ties:", termFallbackStart);
+    if (termFallbackStart < 0 || termFallbackEnd <= termFallbackStart)
+      throw new Error("Unexpected real-only cross-field fallback boundary");
+    source = source.slice(0, termFallbackStart) + source.slice(termFallbackEnd);
+    const termNoteStart = source.indexOf("    if (combinedTerms) {");
+    const termNoteEnd = source.indexOf("    // Let players inspect recorded storefronts", termNoteStart);
+    if (termNoteStart < 0 || termNoteEnd <= termNoteStart)
+      throw new Error("Unexpected real-only cross-field explanation boundary");
+    source = source.slice(0, termNoteStart) + source.slice(termNoteEnd);
+    const phraseBinding = "  const phraseCandidates = query || browseAll";
+    if (source.split(phraseBinding).length !== 2)
+      throw new Error("Unexpected cross-field phrase-binding boundary");
+    source = source.replace(phraseBinding, "  const candidates = query || browseAll");
+    const factSearchDestructure = "for (const [index, { game, matchedTag, matchedFact, matchedFactId, combinedTerms }] of shown.entries()) {";
     if (source.split(factSearchDestructure).length !== 2)
       throw new Error("Unexpected real-only fact-ID binding");
     source = source.replace(factSearchDestructure,
