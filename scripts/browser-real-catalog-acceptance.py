@@ -317,6 +317,33 @@ try:
             # never act as negative evidence or change the recommendation mode.
             fact_lookup = ctx.new_page()
             fact_lookup.set_content(FACTS_HTML, wait_until="load")
+            browse_facts_hash = fact_lookup.evaluate("location.hash")
+            fact_lookup.locator("#intro-browse").click()
+            first_fact_row = fact_lookup.locator("#search-results > li").first
+            inspect_before_add = first_fact_row.get_by_role(
+                "link", name="Inspect Mortal Shell gameplay evidence (new tab)")
+            inspect_state = json.loads(unquote(urlsplit(inspect_before_add.get_attribute("href")).fragment.split("facts=", 1)[1]))
+            facts_entry = fact_lookup.locator("#observation-explorer-entry")
+            check(label + ": browsed real game discloses partial selected-fact coverage before adding",
+                  first_fact_row.get_by_role("button", name="Add Mortal Shell").count() == 1
+                  and "selected gameplay facts (partial evidence" in first_fact_row.inner_text()
+                  and inspect_before_add.get_attribute("target") == "_blank"
+                  and "noopener" in (inspect_before_add.get_attribute("rel") or "")
+                  and "noreferrer" in (inspect_before_add.get_attribute("rel") or "")
+                  and inspect_state["query"] == "wikidata:q96991833"
+                  and inspect_state["pair"] == [] and inspect_state["tag"] == ""
+                  and inspect_state["catalog"] == facts_entry.get_attribute("data-observation-catalog")
+                  and inspect_state["version"] == facts_entry.get_attribute("data-observation-version")
+                  and inspect_state["evidence"] == facts_entry.get_attribute("data-observation-evidence")
+                  and fact_lookup.evaluate("location.hash") == browse_facts_hash)
+            fact_lookup.locator("#search").fill("DevMatch")
+            unreviewed_row = fact_lookup.locator("#search-results > li").first
+            check(label + ": unreviewed owner game stays unknown and can open a pinned lookup",
+                  unreviewed_row.get_by_role("button", name="Add DevMatch").count() == 1
+                  and "No reviewed gameplay facts yet (unknown, not absent)" in unreviewed_row.inner_text()
+                  and unreviewed_row.get_by_role(
+                      "link", name="Inspect DevMatch gameplay evidence (new tab)").count() == 1
+                  and fact_lookup.evaluate("location.hash") == browse_facts_hash)
             fact_lookup.locator("#clear").click()
             fact_lookup.locator("#search").fill("Automating production")
             fact_result = fact_lookup.locator("#search-results li")
