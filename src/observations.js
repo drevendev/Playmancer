@@ -117,9 +117,20 @@ export function searchObservations(model, query = '', tag = '') {
   if (typeof query !== 'string' || query.length > 120 || typeof tag !== 'string' || (tag && !model.tags.some(t => t.id === tag)))
     throw new Error('Invalid observation search');
   const needle = query.trim().normalize('NFC').toLowerCase();
-  return model.games.filter(game => (!tag || game.facts.some(fact => fact.id === tag)) &&
-    (!needle || [game.id, game.name, ...game.facts.flatMap(fact => [fact.label, fact.id])]
-      .some(text => text.normalize('NFC').toLowerCase().includes(needle))));
+  // Keep whole-phrase name/ID/fact matches first. Only when none exist,
+  // allow AND matching across distinct positive observation fields, just as
+  // the main catalog does. Do not infer missing facts or loosen a tag filter.
+  const eligible = model.games.filter(game => !tag || game.facts.some(fact => fact.id === tag));
+  const fields = game => [game.id, game.name, ...game.facts.flatMap(fact => [fact.label, fact.id])]
+    .map(text => text.normalize('NFC').toLowerCase());
+  if (!needle) return eligible;
+  const phrase = eligible.filter(game => fields(game).some(text => text.includes(needle)));
+  if (phrase.length || !/\s/u.test(needle)) return phrase;
+  const terms = needle.split(/\s+/u).filter(Boolean);
+  return eligible.filter(game => {
+    const recorded = fields(game);
+    return terms.every(term => recorded.some(text => text.includes(term)));
+  });
 }
 export function validateObservationState(model, state) {
   if (!state || Array.isArray(state) || typeof state !== 'object' ||

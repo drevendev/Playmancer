@@ -314,6 +314,33 @@ try:
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
                 check('118 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                # The explorer now mirrors main-player discovery: no entire
+                # phrase hit -> every word must occur in this game's recorded
+                # identity or selected positive facts. Strict fact filters
+                # remain in force; share/restore preserves the exact query.
+                explore.locator('#query').fill('Factorio Automating')
+                check(explore.locator('.game-card').count() == 1 and
+                      explore.locator('.game-card[data-game-id="wikidata:q16972008"]').count() == 1,
+                      f'{engine}/{width}: cross-field name and sourced automation fact')
+                explore.locator('#tag').select_option('mechanic:dashing')
+                check(explore.locator('.game-card').count() == 0 and
+                      'No recorded facts match' in explore.locator('#observation-games').inner_text(),
+                      f'{engine}/{width}: tag filter cannot be relaxed by fallback search')
+                explore.locator('#tag').select_option('mechanic:building')
+                check(explore.locator('.game-card').count() == 1,
+                      f'{engine}/{width}: supported tag and mixed search combine as AND')
+                explore.locator('#show-link').click()
+                multi_link = explore.locator('#share-url').input_value()
+                explore.goto(multi_link, wait_until='networkidle')
+                check(explore.locator('#query').input_value() == 'Factorio Automating' and
+                      explore.locator('#tag').input_value() == 'mechanic:building' and
+                      explore.locator('.game-card[data-game-id="wikidata:q16972008"]').count() == 1 and
+                      not explore.locator('#link-error').is_visible(),
+                      f'{engine}/{width}: cross-field query and fact filter survive share')
+                explore.locator('#tag').select_option('')
+                explore.locator('#query').fill('Factorio telegraphed')
+                check(explore.locator('.game-card').count() == 0,
+                      f'{engine}/{width}: terms from different games never falsely match')
                 explore.locator('#query').fill('telegraphed')
                 check(explore.locator('.game-card').count() == 1 and
                       'Into the Breach' in explore.locator('.game-card').first.inner_text(),

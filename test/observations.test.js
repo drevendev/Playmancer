@@ -52,10 +52,37 @@ test('search discovers mechanics without modifying ranker constraints or treatin
   const pinnedFact = { ...state(), pair: [], query: a, tag: 'mechanic:automation' };
   assert.deepEqual(decodeObservationState(model, encodeObservationState(model, pinnedFact)), pinnedFact);
   assert.deepEqual(searchObservations(model, 'FARMING').map(g => g.name), ['Spiritfarer','Stardew Valley']);
+  // Same discovery semantics as the main player: preserve phrase hits, then
+  // require every term, even when words live in different sourced fields.
+  assert.deepEqual(searchObservations(model, 'Factorio Automating').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'FACTORIO   AUTOMATING').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:building').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:dashing'), []);
+  assert.deepEqual(searchObservations(model, 'Factorio Telegraphed'), []);
+  assert.deepEqual(searchObservations(model, 'Automating production').map(g => g.name),
+    ['Factorio']);
+  const combinedFacts = { ...state(), pair: [], query: 'Factorio Automating', tag: 'mechanic:building' };
+  assert.deepEqual(decodeObservationState(model, encodeObservationState(model, combinedFacts)), combinedFacts);
   assert.deepEqual(searchObservations(model, '<script>'), []);
   assert.equal(searchObservations(model, 'DevMatch')[0].coverage, 'unknown');
   assert.throws(() => searchObservations(model, '', 'mechanic:unreviewed'));
   assert.throws(() => searchObservations(model, 'a'.repeat(121)));
+});
+test('whole phrase outranks split-field AND results within the eligible fact filter', () => {
+  const miniature = { tags: [{ id: 'mechanic:building' }], games: [
+    { id: 'demo:phrase', name: 'Copper Bridge', facts: [] },
+    { id: 'demo:split', name: 'Copper', facts: [
+      { id: 'mechanic:building', label: 'Bridge' },
+    ] },
+    { id: 'demo:other', name: 'Bridge', facts: [] },
+  ] };
+  assert.deepEqual(searchObservations(miniature, 'Copper Bridge').map(g => g.id),
+    ['demo:phrase']);
+  assert.deepEqual(searchObservations(miniature, 'Bridge Copper').map(g => g.id),
+    ['demo:phrase', 'demo:split']);
+  assert.deepEqual(searchObservations(miniature, 'Copper Bridge', 'mechanic:building').map(g => g.id),
+    ['demo:split']);
+  assert.deepEqual(searchObservations(miniature, 'Copper missing'), []);
 });
 test('projection is byte-stable under catalog, taxonomy, receipt and fact reordering', () => {
   const changed = clone(observations);
