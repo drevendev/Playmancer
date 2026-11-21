@@ -470,7 +470,7 @@ function drawSearch() {
   $("catalog-browse").setAttribute("aria-expanded", String(browseAll && !query));
   // Explicit catalog genre labels improve discovery without inventing a
   // mechanic, co-op flag or source-backed match where none is recorded.
-  const candidates = query || browseAll
+  const phraseCandidates = query || browseAll
     ? CATALOG.filter((game) => !chosen.has(game.id)).map((game) => {
       if (!query) return { game, matchedTag: null };
       const nameMatch = [game.name, ...game.aliases].some(value => titleNameMatches(value, query));
@@ -494,12 +494,27 @@ function drawSearch() {
           searchPriority: nameMatch ? 0 : direct ? 1 : matchedTag ? 2 : 3 } : null;
     }).filter(Boolean)
     : [];
+  // A phrase/URL hit always wins. Only when no whole-phrase hit exists,
+  // permit AND-search across independently recorded catalog fields.
+  // This is discovery over partial positive facts, never inferred similarity.
+  const searchTerms = query.split(/\s+/).filter(Boolean);
+  const combinedTermFallback = searchTerms.length > 1 && !entered.includes("://") &&
+    phraseCandidates.length === 0;
+  const candidates = combinedTermFallback
+    ? CATALOG.filter(game => !chosen.has(game.id)).filter(game => {
+      const fields = [game.name, ...(game.aliases ?? []), game.id,
+        ...(game.themes ?? []), ...(syntheticCatalog ? (game.mechanics ?? []) :
+          [...(inlineGameplayFacts?.get(game.id)?.values() ?? [])])];
+      return searchTerms.every(term => fields.some(value =>
+        value.normalize("NFC").toLowerCase().includes(term)));
+    }).map(game => ({ game, matchedTag: null, combinedTerms: true, searchPriority: 4 }))
+    : phraseCandidates;
   // Source order breaks ties: identity/URL lookups precede genres and partial facts.
   const matches = candidates.filter(({ game }) => store === "all" ||
     game.storeLinks?.some(link => link.store === store))
     .sort((a, b) => (a.searchPriority ?? 0) - (b.searchPriority ?? 0));
   const shown = matches.slice(0, query ? searchLimit : browseLimit);
-  for (const [index, { game, matchedTag, matchedFact, matchedFactId }] of shown.entries()) {
+  for (const [index, { game, matchedTag, matchedFact, matchedFactId, combinedTerms }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
     button.type = "button";
@@ -549,6 +564,11 @@ function drawSearch() {
       row.append(button, element("span", `${syntheticCatalog ? "Recorded themes" : "Recorded genres"}: ${game.themes?.join(", ") || "unknown"}`, "hint"));
     } else {
       row.append(button);
+    }
+    if (combinedTerms) {
+      row.append(element("span",
+        "All search words appear in recorded name, ID, genre or selected positive gameplay facts. Partial evidence, not a recommendation fit score.",
+        "hint"));
     }
     // Let players inspect recorded storefronts before using a favorite slot.
     // These links are optional navigation only, never ranking or share inputs.
