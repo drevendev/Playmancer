@@ -800,11 +800,20 @@ function drawResults() {
     // The mixed partition must identify each row's status without relying
     // on its position, color, or the collapsed disclosure heading.
     const row = element("li", `${item.status === "excluded" ? "Excluded" : "Uncertain"} · ${BY_ID.get(item.id).name}: ${reason}.`);
-    // A recorded store page helps investigate an uncertain or excluded game;
-    // it does not establish the required platform or co-op compatibility.
+    // Optional source inspection does not qualify unknown hard-filter support.
+    // A pinned fact lookup also works when no reviewed observation is available.
     if (item.reason !== "seed") {
-      const stores = renderStoreLinks(BY_ID.get(item.id));
+      const game = BY_ID.get(item.id);
+      const stores = renderStoreLinks(game);
       if (stores) row.append(" · Store listing (not compatibility proof): ", stores);
+      const entry = $("observation-explorer-entry");
+      if (!syntheticCatalog && entry?.dataset.observationCatalog === CATALOG_VERSION) {
+        const facts = element("a", `Inspect available gameplay evidence for ${game.name} (new tab)`, "fact-compare-link");
+        facts.href = pinnedFactsSearchLink(game.id, entry);
+        facts.target = "_blank";
+        facts.rel = "noopener noreferrer";
+        row.append(" · Gameplay facts (partial or unknown; not compatibility proof): ", facts);
+      }
     }
     // A mistaken hide must be reversible without also restoring every other
     // exclusion. This is an explicit player action, never a filter fallback.
