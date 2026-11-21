@@ -199,9 +199,21 @@ function recommendationFactComparison(game) {
       entry.dataset.observationCatalog !== CATALOG_VERSION) return null;
   const favorites = state.seeds.filter(seed => seed.id !== game.id && BY_ID.has(seed.id));
   if (!favorites.length) return null;
+  // This independently reviewed positive inventory is not the recommendation
+  // coverage percentage or a ranking input; never treat unreviewed as zero fit.
+  const reviewed = inlineGameplayFacts?.get(game.id);
+  const inventory = reviewed?.size
+    ? `${reviewed.size} selected positive gameplay facts (partial)`
+    : "gameplay facts unreviewed (unknown, not absent)";
   const chooser = element("details", undefined, "fact-compare-menu");
-  chooser.append(element("summary", "Compare recorded facts with your favorites"));
-  chooser.append(element("p", "Selected observations are partial; unrecorded is unknown, not a mismatch.", "hint"));
+  chooser.append(element("summary", `Compare recorded facts with your favorites · ${inventory}`));
+  chooser.append(element("p", "Selected observations are partial; unrecorded is unknown, not a mismatch. These facts do not change ranking.", "hint"));
+  // Pairwise links and this exact-game inventory lookup have different meanings.
+  const direct = element("a", `Inspect gameplay fact sources for ${game.name} (new tab)`, "basket-fact-link");
+  direct.href = pinnedFactsSearchLink(game.id, entry);
+  direct.target = "_blank";
+  direct.rel = "noopener noreferrer";
+  chooser.append(direct);
   const list = element("ul");
   for (const favorite of favorites) {
     const link = element("a", `With ${BY_ID.get(favorite.id).name} (new tab)`, "fact-compare-link");
