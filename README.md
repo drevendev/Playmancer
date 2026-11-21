@@ -168,7 +168,7 @@ of silently substituting games from a different snapshot.
   never enter fit scores, hard filters, rankings, or basket shares. The data
   are pinned to the same catalog/observation revision as the separate explorer;
   no runtime data requests are made.
-- From each real-catalog recommendation, expand **Compare recorded facts with your favorites**, then choose **any selected favorite** for an individually pinned Gameplay Facts pair comparison in a new tab. Links keep basket order, catalog and observation revisions, preserve the original basket, and show unknown evidence explicitly; they do **not** alter rankings or filters.
+- Each real-catalog recommendation's **Compare recorded facts with your favorites** disclosure shows the candidate's independently reviewed selected positive fact count (**partial**, or **unreviewed / unknown**), separate from the genre-based fit coverage. Expand it to inspect the candidate's own exact-ID, exact-revision Gameplay Facts sources directly, or choose **any selected favorite** for a pinned two-game comparison in a new tab. Links keep basket order and versions, preserve the original basket, and do **not** alter rankings or hard filters.
 - On real-game result cards, expand the **Why [game] matches your basket** / **Why [game] appears in this list** explanation for an additional equal-weight, source-recorded genre-mass proxy per favorite. It reports residual genre emphasis, including shared labels with unequal shares, but **does not change ranking** and does not claim that uniform tag weights are source-supplied importance.
 - Hide/restore results and recover explicitly from empty results without silent
   filter relaxation.

@@ -153,6 +153,44 @@ try:
                 chooser = first_result.locator('details.fact-compare-menu')
                 check(chooser.count() == 1, f'{engine}/{width}: per-favorite comparison disclosure')
                 chooser.locator('summary').click()
+                # A recommendation must disclose its independently selected
+                # positive facts, distinct from the fit evidence coverage.
+                first_id = first_result.get_attribute('data-game-id')
+                inventory = json.loads(page.locator('#inline-gameplay-facts').text_content())
+                selected_count = next((len(game['facts']) for game in inventory['games']
+                                       if game['id'] == first_id), 0)
+                count_copy = (f'{selected_count} selected positive gameplay facts (partial)'
+                              if selected_count else 'gameplay facts unreviewed (unknown, not absent)')
+                check(count_copy in chooser.locator('summary').inner_text(),
+                      f'{engine}/{width}: ranked candidate discloses partial or unknown fact inventory')
+                direct = chooser.locator('a.basket-fact-link')
+                check(direct.count() == 1 and direct.inner_text() ==
+                      f'Inspect gameplay fact sources for {first_result.locator("h3").inner_text()} (new tab)' and
+                      direct.get_attribute('target') == '_blank' and
+                      direct.get_attribute('rel') == 'noopener noreferrer' and
+                      direct.bounding_box()['height'] >= 44,
+                      f'{engine}/{width}: ranked candidate has a safe touch-sized direct source action')
+                direct_hash = urlsplit(direct.get_attribute('href')).fragment
+                check(direct_hash.startswith('facts='),
+                      f'{engine}/{width}: ranked fact inspection carries versioned state')
+                direct_state = json.loads(unquote(direct_hash[len('facts='):]))
+                check(direct_state == {
+                    'version': entry.get_attribute('data-observation-version'),
+                    'catalog': entry.get_attribute('data-observation-catalog'),
+                    'evidence': entry.get_attribute('data-observation-evidence'),
+                    'pair': [], 'query': first_id, 'tag': ''
+                }, f'{engine}/{width}: ranked fact lookup uses canonical ID and exact evidence versions')
+                with page.expect_popup() as direct_popup:
+                    direct.click()
+                inspected = direct_popup.value
+                inspected.wait_for_load_state('networkidle')
+                check(inspected.locator(f'#observation-games article[data-game-id="{first_id}"]').count() == 1 and
+                      not inspected.locator('#link-error').is_visible(),
+                      f'{engine}/{width}: ranked candidate opens its own source-backed inventory')
+                inspected.close()
+                check(page.url == original and
+                      first_result.get_attribute('data-game-id') == first_id,
+                      f'{engine}/{width}: source inspection preserves the original basket and result')
                 check(chooser.locator('summary').bounding_box()['height'] >= 44,
                       f'{engine}/{width}: comparison disclosure is touch accessible')
                 compare = chooser.locator('a.fact-compare-link')
