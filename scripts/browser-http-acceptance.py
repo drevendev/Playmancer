@@ -355,7 +355,9 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "catalog browser starts with eight unselected games and observed genres",
               browse.get_attribute("aria-expanded") == "true"
               and items.count() == 9
-              and page.locator("#search-results .hint").count() == 8
+              and page.locator("#search-results > li > span.hint").filter(has_text="Recorded genres:").count() == 8
+              and page.locator("#search-results > li > span.hint").filter(
+                  has_text=re.compile(r"selected gameplay facts|No reviewed gameplay facts yet")).count() == 8
               and "Recorded genres:" in page.locator("#search-results").inner_text()
               and "8 of 28 available catalog profiles" in page.locator("#search-hint").inner_text()
               and page.locator("#seeds > li").count() == 2)
