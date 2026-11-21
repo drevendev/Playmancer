@@ -154,7 +154,9 @@ for (const [index, path] of modules.entries()) {
       throw new Error("Unexpected real-only cross-field fallback boundary");
     source = source.slice(0, termFallbackStart) + source.slice(termFallbackEnd);
     const termNoteStart = source.indexOf("    if (combinedTerms) {");
-    const termNoteEnd = source.indexOf("    // Let players inspect recorded storefronts", termNoteStart);
+    // Storefront and positive-fact browse blocks were already removed above;
+    // the retained row append is the stable boundary for synthetic stripping.
+    const termNoteEnd = source.indexOf('    $("search-results").append(row);', termNoteStart);
     if (termNoteStart < 0 || termNoteEnd <= termNoteStart)
       throw new Error("Unexpected real-only cross-field explanation boundary");
     source = source.slice(0, termNoteStart) + source.slice(termNoteEnd);
