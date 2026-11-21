@@ -125,8 +125,8 @@ export function searchObservations(model, query = '', tag = '') {
     .map(text => text.normalize('NFC').toLowerCase());
   if (!needle) return eligible;
   const phrase = eligible.filter(game => fields(game).some(text => text.includes(needle)));
-  if (phrase.length || !/\\s/u.test(needle)) return phrase;
-  const terms = needle.split(/\\s+/u).filter(Boolean);
+  if (phrase.length || !/\s/u.test(needle)) return phrase;
+  const terms = needle.split(/\s+/u).filter(Boolean);
   return eligible.filter(game => {
     const recorded = fields(game);
     return terms.every(term => recorded.some(text => text.includes(term)));
