@@ -716,6 +716,25 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("location.hash") == strict_hash
               and page.locator("#results > li").count() == 0
               and page.locator("#coop").is_checked())
+        # Hosted/loopback Chromium, Firefox and WebKit inspect the same
+        # version-pinned evidence jump from an abstained game.
+        fact_jump = hades_row.get_by_role("link", name="Inspect available gameplay evidence for Hades (new tab)")
+        fact_href = fact_jump.get_attribute("href") if fact_jump.count() == 1 else ""
+        fact_state = (json.loads(unquote(fact_href.split("#facts=", 1)[1]))
+                      if "#facts=" in fact_href else {})
+        fact_entry = page.locator("#observation-explorer-entry")
+        check(case, "strict-filter unknown exposes pinned gameplay evidence without becoming eligible",
+              fact_jump.count() == 1
+              and "partial or unknown; not compatibility proof" in hades_row.inner_text()
+              and fact_state.get("query") == "wikidata:q59756366"
+              and fact_state.get("pair") == [] and fact_state.get("tag") == ""
+              and fact_state.get("catalog") == fact_entry.get_attribute("data-observation-catalog")
+              and fact_state.get("version") == fact_entry.get_attribute("data-observation-version")
+              and fact_state.get("evidence") == fact_entry.get_attribute("data-observation-evidence")
+              and fact_jump.get_attribute("target") == "_blank"
+              and fact_jump.get_attribute("rel") == "noopener noreferrer"
+              and page.evaluate("location.hash") == strict_hash
+              and page.locator("#results > li").count() == 0)
         page.locator("#coop").uncheck()
         page.locator("#platform").select_option("any")
         summary = page.locator("#results > li .explanation summary").first
