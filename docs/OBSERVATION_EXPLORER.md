@@ -7,6 +7,19 @@ retain both per-field source URLs and review dates. One-sided records mean
 **unreviewed for the other game**, never a proven mismatch. Games without
 records remain selectable and explicitly unknown.
 
+## Mixed-field discovery (partial facts only)
+
+A whole-phrase match in a recorded game name, canonical ID or selected fact
+takes precedence. If no game matches the full phrase, a multiword query
+requires **every word** to appear somewhere in the same game's recorded
+identity or positively reviewed facts. For example, `Factorio Automating`
+combines the game's name with its sourced automation observation. An optional
+fact dropdown remains a strict AND filter. Unreviewed traits do not satisfy
+a search and are never treated as absent, unsupported or an inferred mismatch.
+The versioned `#facts=` link restores the exact query and dropdown selection.
+This changes discovery only; no player ranking, Bridge or hard constraints.
+
+
 The current 29-game selected-fact snapshot has 118 independently authored,
 source-attributed observations across 29 of 30 games. Circlanoid adds four
 selected facts on 11 November 2026; DevMatch remains unreviewed, not proven
