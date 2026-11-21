@@ -365,6 +365,37 @@ try:
                   "No separately reviewed gameplay facts for this game" in devmatch_evidence.inner_text()
                   and "Unrecorded features remain unknown" in devmatch_evidence.inner_text()
                   and devmatch_evidence.get_by_role("link", name="Inspect gameplay fact sources for DevMatch (new tab)").count() == 1)
+            # Source-backed evidence inspection is available even when a strict
+            # required platform is unknown, without ever relaxing eligibility.
+            fact_lookup.locator("#platform").select_option("android")
+            uncertain_hash = fact_lookup.evaluate("location.hash")
+            # Playwright role locators intentionally exclude links inside closed
+            # <details>. Open the disclosure as a player would before inspecting it.
+            fact_lookup.locator("#uncertainty-title").click()
+            check(label + ": uncertainty disclosure opens without rewriting the basket",
+                  fact_lookup.locator("#uncertainty").evaluate("node => node.open")
+                  and fact_lookup.evaluate("location.hash") == uncertain_hash)
+            uncertain_hades = fact_lookup.locator("#partition-list > li").filter(has_text="Uncertain · Hades:")
+            inspect = uncertain_hades.get_by_role("link", name="Inspect available gameplay evidence for Hades (new tab)")
+            evidence_href = inspect.get_attribute("href") if inspect.count() == 1 else ""
+            evidence_state = (json.loads(unquote(evidence_href.split("#facts=", 1)[1]))
+                              if "#facts=" in evidence_href else {})
+            check(label + ": uncertain game links to exact-version gameplay evidence without passing platform filters",
+                  uncertain_hades.count() == 1
+                  and inspect.count() == 1
+                  and "partial or unknown; not compatibility proof" in uncertain_hades.inner_text()
+                  and evidence_href.startswith("./observations.html#facts=")
+                  and evidence_state.get("query") == "wikidata:q59756366"
+                  and evidence_state.get("pair") == []
+                  and evidence_state.get("tag") == ""
+                  and evidence_state.get("catalog") == entry.get_attribute("data-observation-catalog")
+                  and evidence_state.get("version") == entry.get_attribute("data-observation-version")
+                  and evidence_state.get("evidence") == entry.get_attribute("data-observation-evidence")
+                  and inspect.get_attribute("target") == "_blank"
+                  and inspect.get_attribute("rel") == "noopener noreferrer"
+                  and fact_lookup.evaluate("location.hash") == uncertain_hash
+                  and fact_lookup.locator("#platform").input_value() == "android"
+                  and fact_lookup.locator('#results > li[data-game-id="wikidata:q59756366"]').count() == 0)
             fact_lookup.close()
             check(label + ": real catalog exposes only recorded store options",
                   not page.locator("#store-filter-wrap").is_hidden()
@@ -573,6 +604,7 @@ try:
                   and hades_store.get_attribute("href") == "https://store.steampowered.com/app/1145360"
                   and hades_store.get_attribute("aria-label") == "View Hades on Steam"
                   and hades_store.get_attribute("target") == "_blank"
+                  and hades_row.locator('a[href^="./observations.html#facts="]').count() == 0
                   and "noopener" in (hades_store.get_attribute("rel") or "")
                   and "noreferrer" in (hades_store.get_attribute("rel") or "")
                   and hades_store.evaluate("el => el.getBoundingClientRect().height >= 44")
