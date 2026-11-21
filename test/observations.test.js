@@ -52,6 +52,17 @@ test('search discovers mechanics without modifying ranker constraints or treatin
   const pinnedFact = { ...state(), pair: [], query: a, tag: 'mechanic:automation' };
   assert.deepEqual(decodeObservationState(model, encodeObservationState(model, pinnedFact)), pinnedFact);
   assert.deepEqual(searchObservations(model, 'FARMING').map(g => g.name), ['Spiritfarer','Stardew Valley']);
+  // Same discovery semantics as the main player: preserve phrase hits, then
+  // require every term, even when words live in different sourced fields.
+  assert.deepEqual(searchObservations(model, 'Factorio Automating').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'FACTORIO   AUTOMATING').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:building').map(g => g.id), [a]);
+  assert.deepEqual(searchObservations(model, 'Factorio Automating', 'mechanic:dashing'), []);
+  assert.deepEqual(searchObservations(model, 'Factorio Telegraphed'), []);
+  assert.deepEqual(searchObservations(model, 'vertical traversal').map(g => g.name),
+    ['Sekiro: Shadows Die Twice']);
+  const combinedFacts = { ...state(), pair: [], query: 'Factorio Automating', tag: 'mechanic:building' };
+  assert.deepEqual(decodeObservationState(model, encodeObservationState(model, combinedFacts)), combinedFacts);
   assert.deepEqual(searchObservations(model, '<script>'), []);
   assert.equal(searchObservations(model, 'DevMatch')[0].coverage, 'unknown');
   assert.throws(() => searchObservations(model, '', 'mechanic:unreviewed'));
