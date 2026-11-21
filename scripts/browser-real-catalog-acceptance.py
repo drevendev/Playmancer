@@ -60,6 +60,32 @@ try:
                   and "dreven games" not in observed["badge"].casefold()
                   and "Stardew Valley" in observed["seeds"]
                   and "Terraria" in observed["seeds"])
+            # Player can inspect a recorded store before adding a discovery
+            # result, with no network request, favorite mutation or ranking change.
+            browse_hash = page.evaluate("location.hash")
+            page.locator("#intro-browse").click()
+            first_browse = page.locator("#search-results > li").first
+            first_link = first_browse.locator(".storefront-links a")
+            check(label + ": first browsed game has its recorded, touch-sized Steam link",
+                  first_browse.get_by_role("button", name="Add Mortal Shell").count() == 1
+                  and first_link.count() == 1
+                  and first_link.inner_text() == "Steam"
+                  and first_link.get_attribute("href") == "https://store.steampowered.com/app/1110910"
+                  and first_link.get_attribute("target") == "_blank"
+                  and "noopener" in (first_link.get_attribute("rel") or "")
+                  and "noreferrer" in (first_link.get_attribute("rel") or "")
+                  and first_link.evaluate("el => el.getBoundingClientRect().height >= 44"))
+            page.locator("#search").fill("DevMatch")
+            owner_link = page.locator("#search-results > li .storefront-links a")
+            check(label + ": searched owner game exposes only its recorded itch.io store",
+                  page.get_by_role("button", name="Add DevMatch").count() == 1
+                  and owner_link.count() == 1
+                  and owner_link.inner_text() == "itch.io"
+                  and owner_link.get_attribute("href") == "https://drevengames.itch.io/devmatch"
+                  and page.evaluate("location.hash") == browse_hash
+                  and page.locator("#seeds > li").count() == 2
+                  and not requests)
+            page.locator("#search").fill("")
             # Let players inspect original per-favorite evidence before assigning
             # more weight; browsing to source receipts is not a ranking feature.
             check(label + ": selected real favorites have on-demand source disclosures",

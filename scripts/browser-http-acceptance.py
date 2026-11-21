@@ -153,6 +153,29 @@ def exercise(browser, base_url, engine, label, width, height):
                   and "noreferrer" in (receipts.nth(i).get_attribute("rel") or "")
                   for i, path in enumerate(expected_receipt_paths)
               ))
+        # Pre-selection store navigation is optional and must never rewrite
+        # the pinned basket, load third-party data, or force a favorite choice.
+        browse_hash = page.evaluate("location.hash")
+        page.locator("#intro-browse").click()
+        first_browse = page.locator("#search-results > li").first
+        store_link = first_browse.locator(".storefront-links a")
+        check(case, "real browse exposes a safe, touch-sized recorded store link",
+              first_browse.get_by_role("button", name="Add Mortal Shell").count() == 1
+              and store_link.count() == 1
+              and store_link.inner_text() == "Steam"
+              and store_link.get_attribute("href") == "https://store.steampowered.com/app/1110910"
+              and store_link.get_attribute("target") == "_blank"
+              and "noopener" in (store_link.get_attribute("rel") or "")
+              and "noreferrer" in (store_link.get_attribute("rel") or "")
+              and store_link.evaluate("el => el.getBoundingClientRect().height >= 44")
+              and page.locator("#seeds > li").count() == 2
+              and page.evaluate("location.hash") == browse_hash)
+        page.locator("#search").focus()
+        page.locator("#search").press("Escape")
+        check(case, "closing store discovery preserves exact ordered favorites and share",
+              page.locator("#search-results > li").count() == 0
+              and page.locator("#catalog-browse").get_attribute("aria-expanded") == "false"
+              and page.evaluate("location.hash") == browse_hash)
         check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
             "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
         check(case, "list-first results and explanatory evidence",

@@ -50,6 +50,18 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // Keep the fictional preview's strict fixed-size budget: storefront
+    // browse links exist only for rights-reviewed real catalog entries.
+    const searchStoreLinks = [
+      '    // Let players inspect recorded storefronts before using a favorite slot.',
+      '    // These links are optional navigation only, never ranking or share inputs.',
+      '    const storeLinks = renderStoreLinks(game);',
+      '    if (storeLinks) row.append(storeLinks);',
+      ''
+    ].join("\n");
+    if (source.split(searchStoreLinks).length !== 2)
+      throw new Error("Unexpected real-only catalog search link boundary");
+    source = source.replace(searchStoreLinks, "");
     // Fictional games have no recorded external storefront links. Retain an
     // inert call site without shipping the real-only link builder.
     const storeLinksStart = source.indexOf("function renderStoreLinks(game) {");
