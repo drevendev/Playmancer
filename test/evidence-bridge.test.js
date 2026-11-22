@@ -231,3 +231,43 @@ test("mistyped curated Bridge controls fail closed rather than discarding strict
   Object.defineProperty(injected, "__proto__", { value: {}, enumerable: true });
   assert.throws(() => findCuratedBridge(m, injected), /unknown Bridge option field: __proto__/);
 });
+
+test("Bridge ignores polluted Object.prototype hard controls but honors own controls", () => {
+  const m = model([edge("demo:a", "demo:d")], { "demo:d": { coop: null } });
+  const options = { from: "demo:a", to: "demo:d" };
+  assert.equal(findCuratedBridge(m, options).status, "route");
+  for (const [key, value, explicitStatus] of [
+    ["excluded", ["demo:d"], "excluded"],
+    ["coopOnly", true, "uncertain"],
+    ["platform", "future-console", "uncertain"],
+  ]) {
+    const previous = Object.getOwnPropertyDescriptor(Object.prototype, key);
+    Object.defineProperty(Object.prototype, key, { configurable: true, value });
+    try {
+      assert.equal(findCuratedBridge(m, options).status, "route",
+        `inherited ${key} must not control eligibility`);
+      assert.equal(findCuratedBridge(m, { ...options, [key]: value }).status,
+        explicitStatus, `explicit ${key} must still be enforced`);
+    } finally {
+      if (previous) Object.defineProperty(Object.prototype, key, previous);
+      else delete Object.prototype[key];
+    }
+  }
+});
+
+test("Bridge validates hidden and symbol fields and accepts explicit non-enumerable controls", () => {
+  const m = model([edge("demo:a", "demo:d")], { "demo:d": { coop: null } });
+  const options = { from: "demo:a", to: "demo:d" };
+  const misspelled = { ...options };
+  Object.defineProperty(misspelled, "cooponly", { value: true });
+  assert.throws(() => findCuratedBridge(m, misspelled),
+    /unknown Bridge option field: cooponly/);
+  const symbolOption = { ...options, [Symbol("constraint")]: true };
+  assert.throws(() => findCuratedBridge(m, symbolOption),
+    /unknown Bridge option field: Symbol\\(constraint\\)/);
+  const explicit = { ...options };
+  Object.defineProperty(explicit, "coopOnly", { value: true });
+  assert.equal(findCuratedBridge(m, explicit).status, "uncertain");
+  const nullPrototype = Object.assign(Object.create(null), options);
+  assert.equal(findCuratedBridge(m, nullPrototype).status, "route");
+});
