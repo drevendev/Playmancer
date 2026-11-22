@@ -226,18 +226,20 @@ export function prepareEvidenceModel(input = {}) {
   const modelInput = record(input, "evidence model");
   rejectUnknownFields(modelInput, MODEL_FIELDS, "evidence model");
   const { games, relations = [] } = modelInput;
-  if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
+  const gameList = denseIndexSnapshot(games);
+  if (!gameList || gameList.length === 0 || gameList.length > MAX_GAMES)
     throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
-  for (const input of games) {
+  for (const input of gameList) {
     const game = normalizeProfile(input);
     if (profiles.has(game.id)) throw new TypeError(`duplicate game: ${game.id}`);
     profiles.set(game.id, game);
   }
-  if (!Array.isArray(relations) || relations.length > 4096) throw new TypeError("invalid relation list");
+  const relationList = denseIndexSnapshot(relations);
+  if (!relationList || relationList.length > 4096) throw new TypeError("invalid relation list");
   const edges = new Map([...profiles.keys()].map(id => [id, new Map()]));
   const seen = new Set();
-  for (const input of relations) {
+  for (const input of relationList) {
     const relation = record(input, "relation");
     rejectUnknownFields(relation, RELATION_FIELDS, "relation");
     const from = canonicalId(relation.from), to = canonicalId(relation.to);
@@ -464,11 +466,12 @@ export function rankEvidenceBasket(model, options = {}) {
   rejectUnknownFields(input, BASKET_FIELDS, "basket option");
   const { seeds, mode = "intersection", lambda = 0.3,
     limit = 6, platform = "any", coopOnly = false, excluded = [] } = input;
-  if (!Array.isArray(seeds) || !seeds.length)
+  const seedList = denseIndexSnapshot(seeds);
+  if (!seedList || !seedList.length)
     throw new TypeError("seeds must reference known catalog games");
   // A misspelled per-favorite weight must not silently become the default 1.
   // Validate the same records later consumed by normalizeSeeds before ranking.
-  for (const seed of seeds) {
+  for (const seed of seedList) {
     rejectUnknownFields(record(seed, "basket seed"), BASKET_SEED_FIELDS, "basket seed");
     if (!model.profiles.has(seed.id))
       throw new TypeError("seeds must reference known catalog games");
@@ -482,7 +485,7 @@ export function rankEvidenceBasket(model, options = {}) {
   // Build pair evidence from the same positive-weight, deduplicated basket used
   // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
   // for coverage, explanations, or eligibility.
-  const activeSeeds = normalizeSeeds(seeds);
+  const activeSeeds = normalizeSeeds(seedList);
   // Keep the experimental ranker within the same one-to-five *active*
   // favorites contract as the player. Duplicate IDs and zero-weight entries
   // are normalized before checking, so inert inputs cannot change the basket.
