@@ -355,6 +355,26 @@ try:
                   and "not a recommendation fit score" in combined_rows.first.inner_text()
                   and fact_lookup.locator("#seeds > li").count() == 2
                   and fact_lookup.evaluate("location.hash") == browse_facts_hash)
+            # Phrase priority must respect the *selected storefront*.
+            # Steam has a complete "simulation game" genre phrase (FTL), while
+            # itch.io's Idle Fantasy Shop has the separate recorded terms.
+            # An out-of-store phrase must not hide a valid in-store AND result.
+            fact_lookup.locator("#store-filter").select_option("itch")
+            fact_lookup.locator("#search").fill("simulation game")
+            scoped_rows = fact_lookup.locator("#search-results > li")
+            check(label + ": chosen itch.io storefront keeps cross-field multiword discovery",
+                  scoped_rows.count() == 1
+                  and scoped_rows.first.get_by_role("button", name="Add Idle Fantasy Shop").count() == 1
+                  and "All search words appear" in scoped_rows.first.inner_text()
+                  and fact_lookup.locator("#store-filter").input_value() == "itch"
+                  and fact_lookup.locator("#seeds > li").count() == 2
+                  and fact_lookup.evaluate("location.hash") == browse_facts_hash)
+            fact_lookup.locator("#store-filter").select_option("all")
+            check(label + ": all-store phrase priority remains ahead of partial AND-term matches",
+                  fact_lookup.get_by_role("button", name="Add FTL: Faster Than Light").count() == 1
+                  and fact_lookup.get_by_role("button", name="Add Idle Fantasy Shop").count() == 0
+                  and fact_lookup.locator("#store-filter").input_value() == "all"
+                  and fact_lookup.evaluate("location.hash") == browse_facts_hash)
             fact_lookup.locator("#search").fill("Factorio definitelynotrecorded")
             check(label + ": missing positive facts remain unknown, not fabricated as matches",
                   fact_lookup.locator("#search-results > li").count() == 0

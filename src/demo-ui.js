@@ -498,8 +498,13 @@ function drawSearch() {
   // permit AND-search across independently recorded catalog fields.
   // This is discovery over partial positive facts, never inferred similarity.
   const searchTerms = query.split(/\s+/).filter(Boolean);
+  // Whole-phrase priority applies within the chosen discovery storefront.
+  // A phrase found only in another store must not suppress recorded AND-term
+  // matches in this one (store filtering is not a ranking hard constraint).
+  const phraseInChosenStore = phraseCandidates.some(({ game }) => store === "all" ||
+    game.storeLinks?.some(link => link.store === store));
   const combinedTermFallback = searchTerms.length > 1 && !entered.includes("://") &&
-    phraseCandidates.length === 0;
+    !phraseInChosenStore;
   const candidates = combinedTermFallback
     ? CATALOG.filter(game => !chosen.has(game.id)).filter(game => {
       const fields = [game.name, ...(game.aliases ?? []), game.id,
