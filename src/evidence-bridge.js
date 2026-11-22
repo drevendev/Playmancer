@@ -42,10 +42,18 @@ function response(from, to, status, reason, nodes = [], hops = [], evidenceStren
 // Favor an authored direct connection over a transitive explanation. If no
 // direct edge exists, choose the strongest eligible two-hop path, breaking
 // exact ties by canonical middle ID. No tag/metadata affinity creates edges.
-export function findCuratedBridge(model, {
-  from, to, platform = "any", coopOnly = false, excluded = [],
-} = {}) {
+const BRIDGE_OPTIONS = new Set(["from", "to", "platform", "coopOnly", "excluded"]);
+
+export function findCuratedBridge(model, options = {}) {
   requireModel(model);
+  if (!options || typeof options !== "object" || Array.isArray(options) ||
+      (Object.getPrototypeOf(options) !== Object.prototype && Object.getPrototypeOf(options) !== null)) {
+    throw new TypeError("Bridge options must be a plain record");
+  }
+  for (const key of Object.keys(options)) {
+    if (!BRIDGE_OPTIONS.has(key)) throw new TypeError(`unknown Bridge option field: ${key}`);
+  }
+  const { from, to, platform = "any", coopOnly = false, excluded = [] } = options;
   if (typeof from !== "string" || typeof to !== "string" ||
       !model.profiles.has(from) || !model.profiles.has(to) || from === to) {
     throw new TypeError("Bridge endpoints must be two distinct catalog IDs");
