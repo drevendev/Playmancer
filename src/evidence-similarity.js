@@ -44,6 +44,15 @@ function rejectUnknownFields(input, allowed, label) {
       throw new TypeError(`inherited ${label} field: ${field}`);
   }
 }
+// Arrays of sourced observations must be dense: array iteration helpers skip
+// holes, including holes that can read inherited numeric properties.
+function isDenseArray(value) {
+  if (!Array.isArray(value)) return false;
+  for (let index = 0; index < value.length; index++) {
+    if (!Object.hasOwn(value, index)) return false;
+  }
+  return true;
+}
 function text(value, label) {
   if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} must be nonempty text`);
   return value;
@@ -80,7 +89,7 @@ function normalizeMetadata(input, id) {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
           throw new TypeError(`${id}.releaseYear must be a year`);
       } else if (name === "platforms") {
-        if (!Array.isArray(field.value) || field.value.length === 0 ||
+        if (!isDenseArray(field.value) || field.value.length === 0 ||
             field.value.some(v => typeof v !== "string" || v.length > 32 ||
               !PLATFORM_ID.test(v) || v === "any") ||
             new Set(field.value).size !== field.value.length) {
@@ -99,7 +108,7 @@ function normalizeProfile(input) {
   const id = canonicalId(game.id);
   let tags = null;
   if (game.tags !== undefined && game.tags !== null) {
-    if (!Array.isArray(game.tags) || game.tags.length === 0 || game.tags.length > MAX_TAGS)
+    if (!isDenseArray(game.tags) || game.tags.length === 0 || game.tags.length > MAX_TAGS)
       throw new TypeError(`${id}.tags must have 1-${MAX_TAGS} entries or be null`);
     const seen = new Set();
     tags = game.tags.map((item) => {
@@ -461,7 +470,7 @@ export function rankEvidenceBasket(model, options = {}) {
   }
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
-      !Array.isArray(excluded) || new Set(excluded).size !== excluded.length ||
+      !isDenseArray(excluded) || new Set(excluded).size !== excluded.length ||
       excluded.some(id => !model.profiles.has(id))) throw new TypeError("invalid hard filters");
   if (!Number.isInteger(limit) || limit < 0) throw new RangeError("limit must be a nonnegative integer");
   // Build pair evidence from the same positive-weight, deduplicated basket used
