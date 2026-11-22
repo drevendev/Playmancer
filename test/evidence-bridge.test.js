@@ -264,7 +264,7 @@ test("Bridge validates hidden and symbol fields and accepts explicit non-enumera
     /unknown Bridge option field: cooponly/);
   const symbolOption = { ...options, [Symbol("constraint")]: true };
   assert.throws(() => findCuratedBridge(m, symbolOption),
-    /unknown Bridge option field: Symbol\\(constraint\\)/);
+    /unknown Bridge option field: Symbol\(constraint\)/);
   const explicit = { ...options };
   Object.defineProperty(explicit, "coopOnly", { value: true });
   assert.equal(findCuratedBridge(m, explicit).status, "uncertain");
