@@ -46,10 +46,14 @@ function rejectUnknownFields(input, allowed, label) {
 }
 // Snapshot only own, dense data slots: iterators, accessors and inherited
 // numeric values cannot change which sourced observations are consumed.
-function denseIndexSnapshot(value) {
+function denseIndexSnapshot(value, expectedLength) {
   if (!Array.isArray(value)) return null;
+  // A Proxy may change its reported length between validation and copying.
+  // Capture it once, or reuse the exact bounded length already validated.
+  const length = expectedLength === undefined ? value.length : expectedLength;
+  if (!Number.isSafeInteger(length) || length < 0) return null;
   const items = [];
-  for (let index = 0; index < value.length; index++) {
+  for (let index = 0; index < length; index++) {
     const slot = Object.getOwnPropertyDescriptor(value, index);
     if (!slot || !Object.hasOwn(slot, "value")) return null;
     items.push(slot.value);
@@ -226,11 +230,12 @@ export function prepareEvidenceModel(input = {}) {
   const modelInput = record(input, "evidence model");
   rejectUnknownFields(modelInput, MODEL_FIELDS, "evidence model");
   const { games, relations = [] } = modelInput;
-  // Enforce catalog size *before* copying indexed descriptors. This also
-  // keeps maliciously oversized Proxy arrays on the constant-time reject path.
-  if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
+  // Validate one fixed count before any indexed descriptor reads; reuse it
+  // during copying so a length-changing Proxy cannot expand the work bound.
+  const gameCount = Array.isArray(games) ? games.length : 0;
+  if (!Number.isSafeInteger(gameCount) || gameCount < 1 || gameCount > MAX_GAMES)
     throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
-  const gameList = denseIndexSnapshot(games);
+  const gameList = denseIndexSnapshot(games, gameCount);
   if (!gameList) throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
   for (const input of gameList) {
@@ -238,10 +243,11 @@ export function prepareEvidenceModel(input = {}) {
     if (profiles.has(game.id)) throw new TypeError(`duplicate game: ${game.id}`);
     profiles.set(game.id, game);
   }
-  // Reject excessive edge lists before the own-index snapshot allocates.
-  if (!Array.isArray(relations) || relations.length > 4096)
+  // Apply the same fixed-count guard to editorial edges.
+  const relationCount = Array.isArray(relations) ? relations.length : -1;
+  if (!Number.isSafeInteger(relationCount) || relationCount < 0 || relationCount > 4096)
     throw new TypeError("invalid relation list");
-  const relationList = denseIndexSnapshot(relations);
+  const relationList = denseIndexSnapshot(relations, relationCount);
   if (!relationList) throw new TypeError("invalid relation list");
   const edges = new Map([...profiles.keys()].map(id => [id, new Map()]));
   const seen = new Set();
