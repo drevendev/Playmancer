@@ -25,7 +25,10 @@ lowercase canonical IDs containing letters, digits and hyphens (maximum 32
 characters); `any` is the only wildcard. Whitespace, case-shifted, overlong
 or punctuation-bearing selectors are rejected rather than silently treated as
 new platform IDs. A syntactically valid but unrecorded platform still cannot
-pass a mandatory filter without positive support. This only tightens offline
+pass a mandatory filter without positive support. Bridge options must also be a plain record with only `from`, `to`, `platform`,
+`coopOnly` and `excluded`. Misspelled controls (such as `cooponly`,
+`platfrom` or `exclude`) and inherited controls are rejected rather than
+quietly dropping a mandatory filter or an exclusion. This only tightens offline
 input validation; curated route semantics, the experimental method version,
 the public player and Pages output are unchanged.
 
