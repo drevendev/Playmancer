@@ -469,13 +469,21 @@ export function rankEvidenceBasket(model, options = {}) {
   const seedList = denseIndexSnapshot(seeds);
   if (!seedList || !seedList.length)
     throw new TypeError("seeds must reference known catalog games");
-  // A misspelled per-favorite weight must not silently become the default 1.
-  // Validate the same records later consumed by normalizeSeeds before ranking.
-  for (const seed of seedList) {
-    rejectUnknownFields(record(seed, "basket seed"), BASKET_SEED_FIELDS, "basket seed");
-    if (!model.profiles.has(seed.id))
+  // Validate once and consume only own data fields: getter-backed IDs or
+  // weights must not change after membership validation, before ranking.
+  const checkedSeeds = seedList.map(seed => {
+    const entry = record(seed, "basket seed");
+    rejectUnknownFields(entry, BASKET_SEED_FIELDS, "basket seed");
+    const id = Object.getOwnPropertyDescriptor(entry, "id");
+    const weight = Object.getOwnPropertyDescriptor(entry, "weight");
+    if (!id || !Object.hasOwn(id, "value") ||
+        (weight && !Object.hasOwn(weight, "value"))) {
+      throw new TypeError("basket seed id/weight must be own data fields");
+    }
+    if (!model.profiles.has(id.value))
       throw new TypeError("seeds must reference known catalog games");
-  }
+    return weight ? { id: id.value, weight: weight.value } : { id: id.value };
+  });
   const exclusionIds = denseIndexSnapshot(excluded);
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
@@ -485,7 +493,7 @@ export function rankEvidenceBasket(model, options = {}) {
   // Build pair evidence from the same positive-weight, deduplicated basket used
   // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
   // for coverage, explanations, or eligibility.
-  const activeSeeds = normalizeSeeds(seedList);
+  const activeSeeds = normalizeSeeds(checkedSeeds);
   // Keep the experimental ranker within the same one-to-five *active*
   // favorites contract as the player. Duplicate IDs and zero-weight entries
   // are normalized before checking, so inert inputs cannot change the basket.
