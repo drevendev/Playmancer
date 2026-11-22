@@ -109,6 +109,32 @@ class PagesProbeTests(unittest.TestCase):
                 self.assertIn('index_served_sha=' + SHA, detail)
                 self.assertEqual(client.calls, [BASE])
 
+    def test_unbuilt_source_url_variants_fail_closed_without_blocking_valid_bundles(self):
+        # Native Jekyll may serve the source path with the project prefix or a
+        # cache-busting query. A matching release marker is not a compiled UI.
+        for src in (
+            './src/demo-ui.js?v=3',
+            'src/demo-ui.js#legacy',
+            '/Playmancer/src/demo-ui.js',
+            '/Playmancer/src/demo-ui.js?v=3#script',
+        ):
+            with self.subTest(src=src):
+                client = FakeFetch(index_body=index() + f'<script src="{src}"></script>')
+                ok, detail = probe(BASE, SHA, client)
+                self.assertFalse(ok)
+                self.assertIn('index=UNBUILT_SOURCE_TEMPLATE', detail)
+                self.assertIn('index_served_sha=' + SHA, detail)
+                self.assertEqual(client.calls, [BASE])
+
+        # A compiled script's comment or an unrelated asset name must not
+        # become a false source-template alarm.
+        for src in ('./assets/demo-ui.js', '/Playmancer/src/demo-ui.jsx',
+                    'https://cdn.example.net/src/demo-ui.js'):
+            with self.subTest(src=src):
+                client = FakeFetch(index_body=index() + f'<script src="{src}"></script>')
+                self.assertEqual(probe(BASE, SHA, client)[0], True)
+                self.assertEqual(len(client.calls), 4)
+
     def test_unbuilt_source_reports_http_and_only_validated_observed_revision(self):
         for body, expected in [
             ('<script src="./src/demo-ui.js"></script>', 'UNKNOWN'),

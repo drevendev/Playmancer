@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from hosted_validation import validate_hosted_identity
@@ -74,6 +75,19 @@ def revision_diagnostic(html):
     return value, None
 
 
+def is_local_demo_source(value):
+    """Recognize raw source scripts under the Pages subpath and with cache keys.
+
+    Work on the parsed URL path, not a loose substring of compiled JS source.
+    External origins and unrelated bundle filenames are not raw local templates.
+    """
+    if not isinstance(value, str):
+        return False
+    ref = urlsplit(value.strip())
+    return not ref.scheme and not ref.netloc and (
+        ref.path == 'src/demo-ui.js' or ref.path.endswith('/src/demo-ui.js'))
+
+
 class SourceScriptMarker(HTMLParser):
     """Only actual source-template script tags count, not bundle source comments."""
 
@@ -87,7 +101,7 @@ class SourceScriptMarker(HTMLParser):
         self.found = (
             self.found or
             ('type', 'application/x-playmancer-source') in attrs or
-            any(name == 'src' and value in ('./src/demo-ui.js', 'src/demo-ui.js')
+            any(name == 'src' and is_local_demo_source(value)
                 for name, value in attrs)
         )
 
