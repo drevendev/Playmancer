@@ -995,3 +995,33 @@ test("basket validates and ranks the same own-index favorite snapshot", () => {
   assert.throws(() => rankEvidenceBasket(model(), { seeds: accessorSeeds }),
     /seeds must reference known catalog games/);
 });
+
+test("basket seed record accessors cannot change validated favorite identity or weight", () => {
+  let idReads = 0;
+  const changingId = {};
+  Object.defineProperty(changingId, "id", {
+    enumerable: true, get() { return ++idReads === 1 ? a.id : b.id; },
+  });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingId] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.equal(idReads, 0);
+
+  let weightReads = 0;
+  const changingWeight = { id: a.id };
+  Object.defineProperty(changingWeight, "weight", {
+    enumerable: true, get() { return ++weightReads === 1 ? 1 : 0; },
+  });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingWeight] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.equal(weightReads, 0);
+
+  const hiddenId = {};
+  Object.defineProperty(hiddenId, "id", { get() { return a.id; } });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [hiddenId] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.deepEqual(rankEvidenceBasket(model(), { seeds: [{ id: a.id, weight: 1 }] }),
+    rankEvidenceBasket(model(), { seeds: [{ id: a.id }] }));
+  assert.ok(rankEvidenceBasket(model(), {
+    seeds: [Object.assign(Object.create(null), { id: a.id, weight: 1 })],
+  }).ranked.length > 0);
+});
