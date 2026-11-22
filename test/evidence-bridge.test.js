@@ -202,3 +202,32 @@ test("invalid endpoints and constraints fail visibly", () => {
   assert.equal(route(linked, { platform: "future-console" }).status, "uncertain");
   assert.throws(() => route(m, { coopOnly: "yes" }), /invalid Bridge/);
 });
+
+test("mistyped curated Bridge controls fail closed rather than discarding strict filters", () => {
+  const m = model([edge("demo:a", "demo:d")], {
+    "demo:d": { coop: null },
+  });
+  assert.equal(route(m).status, "route");
+  assert.equal(route(m, { coopOnly: true }).status, "uncertain");
+  assert.equal(route(m, { excluded: ["demo:d"] }).status, "excluded");
+  for (const [label, controls] of [
+    ["cooponly", { cooponly: true }],
+    ["coOpOnly", { coOpOnly: true }],
+    ["platfrom", { platfrom: "linux" }],
+    ["excldued", { excldued: ["demo:d"] }],
+    ["exclude", { exclude: ["demo:d"] }],
+    ["extra", { coopOnly: true, cooponly: false }],
+    ["unexpected from", { frm: "demo:b" }],
+  ]) {
+    assert.throws(() => route(m, controls), /unknown Bridge option field:/, label);
+  }
+  const inherited = Object.assign(Object.create({ coopOnly: true }), {
+    from: "demo:a", to: "demo:d",
+  });
+  assert.throws(() => findCuratedBridge(m, inherited), /Bridge options must be a plain record/);
+  assert.throws(() => findCuratedBridge(m, null), /Bridge options must be a plain record/);
+  assert.throws(() => findCuratedBridge(m, []), /Bridge options must be a plain record/);
+  const injected = { from: "demo:a", to: "demo:d" };
+  Object.defineProperty(injected, "__proto__", { value: {}, enumerable: true });
+  assert.throws(() => findCuratedBridge(m, injected), /unknown Bridge option field: __proto__/);
+});
