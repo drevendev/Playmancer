@@ -34,8 +34,14 @@ const MODEL_FIELDS = new Set(["games", "relations"]);
 const FIELD_RECEIPT_FIELDS = new Set(["value", "source"]);
 const RELATION_FIELDS = new Set(["from", "to", "type", "strength", "source"]);
 function rejectUnknownFields(input, allowed, label) {
-  for (const field of Object.keys(input)) {
-    if (!allowed.has(field)) throw new TypeError(`unknown ${label} field: ${field}`);
+  // Enumerable-only inspection silently drops hidden/symbol keys. Ordinary
+  // property reads also consult Object.prototype for allowlisted evidence keys.
+  for (const field of Reflect.ownKeys(input)) {
+    if (!allowed.has(field)) throw new TypeError(`unknown ${label} field: ${String(field)}`);
+  }
+  for (const field of allowed) {
+    if (field in input && !Object.hasOwn(input, field))
+      throw new TypeError(`inherited ${label} field: ${field}`);
   }
 }
 function text(value, label) {
@@ -64,9 +70,7 @@ function property(value, label, receiptContext) {
 }
 function normalizeMetadata(input, id) {
   const metadata = record(input ?? {}, `${id}.metadata`);
-  for (const name of Object.keys(metadata)) {
-    if (!Object.hasOwn(METADATA_WEIGHTS, name)) throw new TypeError(`unknown metadata field: ${name}`);
-  }
+  rejectUnknownFields(metadata, new Set(Object.keys(METADATA_WEIGHTS)), `${id}.metadata`);
   const result = {};
   for (const name of Object.keys(METADATA_WEIGHTS)) {
     const field = property(metadata[name], `${id}.${name}`,
