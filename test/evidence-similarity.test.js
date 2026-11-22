@@ -953,3 +953,45 @@ test("basket two-hop taste paths cannot borrow excluded or unknown-hard-filter i
   assert.ok(Math.abs(unknown.scores.intersection -
     candidate(withoutEdges, { platform: "windows" }).scores.intersection) < 1e-12);
 });
+
+
+test("model uses dense own-index catalog and relation snapshots, not replacement iterators", () => {
+  const games = [a, b];
+  games[Symbol.iterator] = function* () { yield c; };
+  const prepared = model(games);
+  assert.deepEqual([...prepared.profiles.keys()], [a.id, b.id]);
+
+  const relations = [relation(a.id, b.id)];
+  relations[Symbol.iterator] = function* () { yield relation(a.id, c.id); };
+  const withRelation = model([a, b, c], relations);
+  assert.equal(withRelation.edges.get(a.id).has(b.id), true);
+  assert.equal(withRelation.edges.get(a.id).has(c.id), false);
+
+  assert.throws(() => model([a, , b]), /games must contain/);
+  const accessorGames = [a, b];
+  Object.defineProperty(accessorGames, 1, { get() { return c; } });
+  assert.throws(() => model(accessorGames), /games must contain/);
+  assert.throws(() => model([a, b], new Array(1)), /invalid relation list/);
+  const accessorRelations = [relation(a.id, b.id)];
+  Object.defineProperty(accessorRelations, 0, { get() { return relation(a.id, c.id); } });
+  assert.throws(() => model([a, b, c], accessorRelations), /invalid relation list/);
+  assert.equal(model([a, b], []).edges.get(a.id).size, 0);
+});
+
+test("basket validates and ranks the same own-index favorite snapshot", () => {
+  const seeds = [{ id: a.id }, { id: b.id }];
+  seeds[Symbol.iterator] = function* () { yield { id: c.id }; };
+  const expected = rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }, { id: b.id }],
+  });
+  assert.deepEqual(rankEvidenceBasket(model(), { seeds }), expected);
+
+  const sparseSeeds = [{ id: a.id }];
+  sparseSeeds.length = 2;
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: sparseSeeds }),
+    /seeds must reference known catalog games/);
+  const accessorSeeds = [{ id: a.id }];
+  Object.defineProperty(accessorSeeds, 0, { get() { return { id: c.id }; } });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: accessorSeeds }),
+    /seeds must reference known catalog games/);
+});
