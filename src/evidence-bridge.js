@@ -50,10 +50,19 @@ export function findCuratedBridge(model, options = {}) {
       (Object.getPrototypeOf(options) !== Object.prototype && Object.getPrototypeOf(options) !== null)) {
     throw new TypeError("Bridge options must be a plain record");
   }
-  for (const key of Object.keys(options)) {
-    if (!BRIDGE_OPTIONS.has(key)) throw new TypeError(`unknown Bridge option field: ${key}`);
+  for (const key of Reflect.ownKeys(options)) {
+    if (!BRIDGE_OPTIONS.has(key)) {
+      throw new TypeError(`unknown Bridge option field: ${String(key)}`);
+    }
   }
-  const { from, to, platform = "any", coopOnly = false, excluded = [] } = options;
+  // Destructuring walks Object.prototype. Only explicit own fields may alter
+  // route eligibility, even if Object.prototype contains polluted hard controls.
+  const own = (key, fallback) => Object.hasOwn(options, key) ? options[key] : fallback;
+  const from = own("from", undefined);
+  const to = own("to", undefined);
+  const platform = own("platform", "any");
+  const coopOnly = own("coopOnly", false);
+  const excluded = own("excluded", []);
   if (typeof from !== "string" || typeof to !== "string" ||
       !model.profiles.has(from) || !model.profiles.has(to) || from === to) {
     throw new TypeError("Bridge endpoints must be two distinct catalog IDs");
