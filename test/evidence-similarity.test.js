@@ -36,7 +36,7 @@ test("evidence keys reject hidden, symbol and inherited observations without inv
   Object.defineProperty(hiddenGame, "tagCovreage", { value: "complete", enumerable: false });
   assert.throws(() => model([hiddenGame]), /unknown game field: tagCovreage/);
   const marker = Symbol("extra-control");
-  assert.throws(() => model([{ ...a, [marker]: true }]), /unknown game field: Symbol\\(extra-control\\)/);
+  assert.throws(() => model([{ ...a, [marker]: true }]), /unknown game field: Symbol\(extra-control\)/);
 
   const hiddenMetadata = { ...a.metadata };
   Object.defineProperty(hiddenMetadata, "platfroms", {
