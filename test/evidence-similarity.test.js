@@ -31,6 +31,49 @@ test("weighted tags allocate exactly one unit per game", () => {
   assert.throws(() => model([{ ...a, tags: [tag("genre:rpg", 1, "")] }]), /source/);
   assert.equal(model().version, EVIDENCE_METHOD_VERSION);
 });
+test("evidence keys reject hidden, symbol and inherited observations without inventing support", () => {
+  const hiddenGame = { ...a };
+  Object.defineProperty(hiddenGame, "tagCovreage", { value: "complete", enumerable: false });
+  assert.throws(() => model([hiddenGame]), /unknown game field: tagCovreage/);
+  const marker = Symbol("extra-control");
+  assert.throws(() => model([{ ...a, [marker]: true }]), /unknown game field: Symbol\\(extra-control\\)/);
+
+  const hiddenMetadata = { ...a.metadata };
+  Object.defineProperty(hiddenMetadata, "platfroms", {
+    value: field(["windows"]), enumerable: false,
+  });
+  assert.throws(() => model([{ ...a, metadata: hiddenMetadata }]),
+    /unknown demo:a.metadata field: platfroms/);
+  const hiddenReceipt = { ...a.metadata.creator };
+  Object.defineProperty(hiddenReceipt, "soruce", { value: "fixture:bogus", enumerable: false });
+  assert.throws(() => model([{ ...a, metadata: { creator: hiddenReceipt } }]),
+    /unknown demo:a.creator field: soruce/);
+
+  // A polluted shared prototype must not turn an absent platform receipt into
+  // an asserted hard-filter pass. An explicit own receipt remains valid.
+  const previous = Object.getOwnPropertyDescriptor(Object.prototype, "platforms");
+  try {
+    Object.defineProperty(Object.prototype, "platforms", {
+      configurable: true, writable: true, value: field(["windows"]),
+    });
+    const absent = { ...a, metadata: { creator: field("A") } };
+    assert.throws(() => model([absent]),
+      /inherited demo:a.metadata field: platforms/);
+    const explicit = { ...absent, metadata: {
+      creator: field("A"), platforms: field(["linux"]),
+    } };
+    assert.deepEqual(model([explicit]).profiles.get(a.id).metadata.platforms.value,
+      ["linux"]);
+  } finally {
+    if (previous) Object.defineProperty(Object.prototype, "platforms", previous);
+    else delete Object.prototype.platforms;
+  }
+  const nullProtoMetadata = Object.assign(Object.create(null), {
+    platforms: field(["windows"]),
+  });
+  assert.equal(model([{ ...a, metadata: nullProtoMetadata }]).profiles.has(a.id), true);
+});
+
 test("platform source observations must not disguise missing or noncanonical eligibility", () => {
   for (const value of [[], ["any"], ["Windows"], [" windows"], [""],
     ["windows", "Windows"], ["windows", "windows"], ["x".repeat(33)]]) {
