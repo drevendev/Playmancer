@@ -953,3 +953,141 @@ test("basket two-hop taste paths cannot borrow excluded or unknown-hard-filter i
   assert.ok(Math.abs(unknown.scores.intersection -
     candidate(withoutEdges, { platform: "windows" }).scores.intersection) < 1e-12);
 });
+
+
+test("model uses dense own-index catalog and relation snapshots, not replacement iterators", () => {
+  const games = [a, b];
+  games[Symbol.iterator] = function* () { yield c; };
+  const prepared = model(games);
+  assert.deepEqual([...prepared.profiles.keys()], [a.id, b.id]);
+
+  const relations = [relation(a.id, b.id)];
+  relations[Symbol.iterator] = function* () { yield relation(a.id, c.id); };
+  const withRelation = model([a, b, c], relations);
+  assert.equal(withRelation.edges.get(a.id).has(b.id), true);
+  assert.equal(withRelation.edges.get(a.id).has(c.id), false);
+
+  assert.throws(() => model([a, , b]), /games must contain/);
+  const accessorGames = [a, b];
+  Object.defineProperty(accessorGames, 1, { get() { return c; } });
+  assert.throws(() => model(accessorGames), /games must contain/);
+  assert.throws(() => model([a, b], new Array(1)), /invalid relation list/);
+  const accessorRelations = [relation(a.id, b.id)];
+  Object.defineProperty(accessorRelations, 0, { get() { return relation(a.id, c.id); } });
+  assert.throws(() => model([a, b, c], accessorRelations), /invalid relation list/);
+  assert.equal(model([a, b], []).edges.get(a.id).size, 0);
+});
+
+test("basket validates and ranks the same own-index favorite snapshot", () => {
+  const seeds = [{ id: a.id }, { id: b.id }];
+  seeds[Symbol.iterator] = function* () { yield { id: c.id }; };
+  const expected = rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }, { id: b.id }],
+  });
+  assert.deepEqual(rankEvidenceBasket(model(), { seeds }), expected);
+
+  const sparseSeeds = [{ id: a.id }];
+  sparseSeeds.length = 2;
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: sparseSeeds }),
+    /seeds must reference known catalog games/);
+  const accessorSeeds = [{ id: a.id }];
+  Object.defineProperty(accessorSeeds, 0, { get() { return { id: c.id }; } });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: accessorSeeds }),
+    /seeds must reference known catalog games/);
+});
+
+test("basket seed record accessors cannot change validated favorite identity or weight", () => {
+  let idReads = 0;
+  const changingId = {};
+  Object.defineProperty(changingId, "id", {
+    enumerable: true, get() { return ++idReads === 1 ? a.id : b.id; },
+  });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingId] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.equal(idReads, 0);
+
+  let weightReads = 0;
+  const changingWeight = { id: a.id };
+  Object.defineProperty(changingWeight, "weight", {
+    enumerable: true, get() { return ++weightReads === 1 ? 1 : 0; },
+  });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingWeight] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.equal(weightReads, 0);
+
+  const hiddenId = {};
+  Object.defineProperty(hiddenId, "id", { get() { return a.id; } });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: [hiddenId] }),
+    /basket seed id\/weight must be own data fields/);
+  assert.deepEqual(rankEvidenceBasket(model(), { seeds: [{ id: a.id, weight: 1 }] }),
+    rankEvidenceBasket(model(), { seeds: [{ id: a.id }] }));
+  assert.ok(rankEvidenceBasket(model(), {
+    seeds: [Object.assign(Object.create(null), { id: a.id, weight: 1 })],
+  }).ranked.length > 0);
+});
+
+test("oversized catalog and relation arrays fail before indexed-descriptor reads", () => {
+  let gameReads = 0;
+  const tooManyGames = new Proxy(Array(251).fill(a), {
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") gameReads++;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.throws(() => model(tooManyGames), /games must contain 1-250 profiles/);
+  assert.equal(gameReads, 0, "over-limit games must be rejected before the snapshot");
+
+  let relationReads = 0;
+  const tooManyRelations = new Proxy(Array(4097).fill(relation(a.id, b.id)), {
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") relationReads++;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.throws(() => model([a, b], tooManyRelations), /invalid relation list/);
+  assert.equal(relationReads, 0, "over-limit relations must be rejected before the snapshot");
+
+  assert.throws(() => model(Array(251).fill(a)), /games must contain 1-250 profiles/);
+  assert.throws(() => model([a, b], Array(4097).fill(relation(a.id, b.id))),
+    /invalid relation list/);
+});
+
+test("changing Proxy length cannot expand the validated catalog or relation snapshot", () => {
+  let gameLengthReads = 0;
+  let gameSlots = 0;
+  const games = new Proxy(Array(300).fill(a), {
+    get(target, key, receiver) {
+      if (key === "length") return ++gameLengthReads === 1 ? 1 : 300;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") {
+        gameSlots++;
+        if (Number(key) >= 1) throw new Error("unchecked catalog slot visited");
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.deepEqual([...model(games).profiles.keys()], [a.id]);
+  assert.equal(gameLengthReads, 1, "catalog count must be captured only once");
+  assert.equal(gameSlots, 1, "catalog snapshot must stop at validated count");
+
+  let relationLengthReads = 0;
+  let relationSlots = 0;
+  const relations = new Proxy(Array(4097).fill(relation(a.id, b.id)), {
+    get(target, key, receiver) {
+      if (key === "length") return ++relationLengthReads === 1 ? 1 : 4097;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") {
+        relationSlots++;
+        if (Number(key) >= 1) throw new Error("unchecked relation slot visited");
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.equal(model([a, b], relations).edges.get(a.id).has(b.id), true);
+  assert.equal(relationLengthReads, 1, "relation count must be captured only once");
+  assert.equal(relationSlots, 1, "relation snapshot must stop at validated count");
+});

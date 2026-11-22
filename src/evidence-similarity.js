@@ -46,10 +46,14 @@ function rejectUnknownFields(input, allowed, label) {
 }
 // Snapshot only own, dense data slots: iterators, accessors and inherited
 // numeric values cannot change which sourced observations are consumed.
-function denseIndexSnapshot(value) {
+function denseIndexSnapshot(value, expectedLength) {
   if (!Array.isArray(value)) return null;
+  // A Proxy may change its reported length between validation and copying.
+  // Capture it once, or reuse the exact bounded length already validated.
+  const length = expectedLength === undefined ? value.length : expectedLength;
+  if (!Number.isSafeInteger(length) || length < 0) return null;
   const items = [];
-  for (let index = 0; index < value.length; index++) {
+  for (let index = 0; index < length; index++) {
     const slot = Object.getOwnPropertyDescriptor(value, index);
     if (!slot || !Object.hasOwn(slot, "value")) return null;
     items.push(slot.value);
@@ -226,18 +230,28 @@ export function prepareEvidenceModel(input = {}) {
   const modelInput = record(input, "evidence model");
   rejectUnknownFields(modelInput, MODEL_FIELDS, "evidence model");
   const { games, relations = [] } = modelInput;
-  if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
+  // Validate one fixed count before any indexed descriptor reads; reuse it
+  // during copying so a length-changing Proxy cannot expand the work bound.
+  const gameCount = Array.isArray(games) ? games.length : 0;
+  if (!Number.isSafeInteger(gameCount) || gameCount < 1 || gameCount > MAX_GAMES)
     throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
+  const gameList = denseIndexSnapshot(games, gameCount);
+  if (!gameList) throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
-  for (const input of games) {
+  for (const input of gameList) {
     const game = normalizeProfile(input);
     if (profiles.has(game.id)) throw new TypeError(`duplicate game: ${game.id}`);
     profiles.set(game.id, game);
   }
-  if (!Array.isArray(relations) || relations.length > 4096) throw new TypeError("invalid relation list");
+  // Apply the same fixed-count guard to editorial edges.
+  const relationCount = Array.isArray(relations) ? relations.length : -1;
+  if (!Number.isSafeInteger(relationCount) || relationCount < 0 || relationCount > 4096)
+    throw new TypeError("invalid relation list");
+  const relationList = denseIndexSnapshot(relations, relationCount);
+  if (!relationList) throw new TypeError("invalid relation list");
   const edges = new Map([...profiles.keys()].map(id => [id, new Map()]));
   const seen = new Set();
-  for (const input of relations) {
+  for (const input of relationList) {
     const relation = record(input, "relation");
     rejectUnknownFields(relation, RELATION_FIELDS, "relation");
     const from = canonicalId(relation.from), to = canonicalId(relation.to);
@@ -464,15 +478,24 @@ export function rankEvidenceBasket(model, options = {}) {
   rejectUnknownFields(input, BASKET_FIELDS, "basket option");
   const { seeds, mode = "intersection", lambda = 0.3,
     limit = 6, platform = "any", coopOnly = false, excluded = [] } = input;
-  if (!Array.isArray(seeds) || !seeds.length)
+  const seedList = denseIndexSnapshot(seeds);
+  if (!seedList || !seedList.length)
     throw new TypeError("seeds must reference known catalog games");
-  // A misspelled per-favorite weight must not silently become the default 1.
-  // Validate the same records later consumed by normalizeSeeds before ranking.
-  for (const seed of seeds) {
-    rejectUnknownFields(record(seed, "basket seed"), BASKET_SEED_FIELDS, "basket seed");
-    if (!model.profiles.has(seed.id))
+  // Validate once and consume only own data fields: getter-backed IDs or
+  // weights must not change after membership validation, before ranking.
+  const checkedSeeds = seedList.map(seed => {
+    const entry = record(seed, "basket seed");
+    rejectUnknownFields(entry, BASKET_SEED_FIELDS, "basket seed");
+    const id = Object.getOwnPropertyDescriptor(entry, "id");
+    const weight = Object.getOwnPropertyDescriptor(entry, "weight");
+    if (!id || !Object.hasOwn(id, "value") ||
+        (weight && !Object.hasOwn(weight, "value"))) {
+      throw new TypeError("basket seed id/weight must be own data fields");
+    }
+    if (!model.profiles.has(id.value))
       throw new TypeError("seeds must reference known catalog games");
-  }
+    return weight ? { id: id.value, weight: weight.value } : { id: id.value };
+  });
   const exclusionIds = denseIndexSnapshot(excluded);
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
@@ -482,7 +505,7 @@ export function rankEvidenceBasket(model, options = {}) {
   // Build pair evidence from the same positive-weight, deduplicated basket used
   // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
   // for coverage, explanations, or eligibility.
-  const activeSeeds = normalizeSeeds(seeds);
+  const activeSeeds = normalizeSeeds(checkedSeeds);
   // Keep the experimental ranker within the same one-to-five *active*
   // favorites contract as the player. Duplicate IDs and zero-weight entries
   // are normalized before checking, so inert inputs cannot change the basket.
