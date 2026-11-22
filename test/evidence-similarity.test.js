@@ -1025,3 +1025,29 @@ test("basket seed record accessors cannot change validated favorite identity or 
     seeds: [Object.assign(Object.create(null), { id: a.id, weight: 1 })],
   }).ranked.length > 0);
 });
+
+test("oversized catalog and relation arrays fail before indexed-descriptor reads", () => {
+  let gameReads = 0;
+  const tooManyGames = new Proxy(Array(251).fill(a), {
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") gameReads++;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.throws(() => model(tooManyGames), /games must contain 1-250 profiles/);
+  assert.equal(gameReads, 0, "over-limit games must be rejected before the snapshot");
+
+  let relationReads = 0;
+  const tooManyRelations = new Proxy(Array(4097).fill(relation(a.id, b.id)), {
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") relationReads++;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.throws(() => model([a, b], tooManyRelations), /invalid relation list/);
+  assert.equal(relationReads, 0, "over-limit relations must be rejected before the snapshot");
+
+  assert.throws(() => model(Array(251).fill(a)), /games must contain 1-250 profiles/);
+  assert.throws(() => model([a, b], Array(4097).fill(relation(a.id, b.id))),
+    /invalid relation list/);
+});

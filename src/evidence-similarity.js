@@ -226,17 +226,23 @@ export function prepareEvidenceModel(input = {}) {
   const modelInput = record(input, "evidence model");
   rejectUnknownFields(modelInput, MODEL_FIELDS, "evidence model");
   const { games, relations = [] } = modelInput;
-  const gameList = denseIndexSnapshot(games);
-  if (!gameList || gameList.length === 0 || gameList.length > MAX_GAMES)
+  // Enforce catalog size *before* copying indexed descriptors. This also
+  // keeps maliciously oversized Proxy arrays on the constant-time reject path.
+  if (!Array.isArray(games) || games.length === 0 || games.length > MAX_GAMES)
     throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
+  const gameList = denseIndexSnapshot(games);
+  if (!gameList) throw new TypeError(`games must contain 1-${MAX_GAMES} profiles`);
   const profiles = new Map();
   for (const input of gameList) {
     const game = normalizeProfile(input);
     if (profiles.has(game.id)) throw new TypeError(`duplicate game: ${game.id}`);
     profiles.set(game.id, game);
   }
+  // Reject excessive edge lists before the own-index snapshot allocates.
+  if (!Array.isArray(relations) || relations.length > 4096)
+    throw new TypeError("invalid relation list");
   const relationList = denseIndexSnapshot(relations);
-  if (!relationList || relationList.length > 4096) throw new TypeError("invalid relation list");
+  if (!relationList) throw new TypeError("invalid relation list");
   const edges = new Map([...profiles.keys()].map(id => [id, new Map()]));
   const seen = new Set();
   for (const input of relationList) {
