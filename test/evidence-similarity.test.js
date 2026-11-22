@@ -1051,3 +1051,43 @@ test("oversized catalog and relation arrays fail before indexed-descriptor reads
   assert.throws(() => model([a, b], Array(4097).fill(relation(a.id, b.id))),
     /invalid relation list/);
 });
+
+test("changing Proxy length cannot expand the validated catalog or relation snapshot", () => {
+  let gameLengthReads = 0;
+  let gameSlots = 0;
+  const games = new Proxy(Array(300).fill(a), {
+    get(target, key, receiver) {
+      if (key === "length") return ++gameLengthReads === 1 ? 1 : 300;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") {
+        gameSlots++;
+        if (Number(key) >= 1) throw new Error("unchecked catalog slot visited");
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.deepEqual([...model(games).profiles.keys()], [a.id]);
+  assert.equal(gameLengthReads, 1, "catalog count must be captured only once");
+  assert.equal(gameSlots, 1, "catalog snapshot must stop at validated count");
+
+  let relationLengthReads = 0;
+  let relationSlots = 0;
+  const relations = new Proxy(Array(4097).fill(relation(a.id, b.id)), {
+    get(target, key, receiver) {
+      if (key === "length") return ++relationLengthReads === 1 ? 1 : 4097;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      if (key !== "length") {
+        relationSlots++;
+        if (Number(key) >= 1) throw new Error("unchecked relation slot visited");
+      }
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+  });
+  assert.equal(model([a, b], relations).edges.get(a.id).has(b.id), true);
+  assert.equal(relationLengthReads, 1, "relation count must be captured only once");
+  assert.equal(relationSlots, 1, "relation snapshot must stop at validated count");
+});
