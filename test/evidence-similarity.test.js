@@ -74,6 +74,31 @@ test("evidence keys reject hidden, symbol and inherited observations without inv
   assert.equal(model([{ ...a, metadata: nullProtoMetadata }]).profiles.has(a.id), true);
 });
 
+test("sparse observation arrays cannot masquerade as complete weighted tags or platform receipts", () => {
+  const sparseTags = new Array(2);
+  sparseTags[1] = tag("genre:rpg", 1);
+  assert.throws(() => model([{ ...a, tags: sparseTags }]), /tags must have/);
+  // A hole after a recorded positive platform used to survive .some() and
+  // Set-size validation, leaving an incomplete claim in a seemingly valid model.
+  const sparsePlatforms = ["windows"];
+  sparsePlatforms.length = 2;
+  assert.throws(() => model([{ ...a, metadata: { platforms: field(sparsePlatforms) } }]),
+    /platforms must be nonempty unique canonical IDs/);
+  assert.throws(() => model([{ ...a, metadata: { platforms: field(new Array(1)) } }]),
+    /platforms must be nonempty unique canonical IDs/);
+  const dense = model([{ ...a, tags: [tag("genre:rpg", 1)],
+    metadata: { platforms: field(["windows", "linux"]) } }]);
+  assert.deepEqual(dense.profiles.get(a.id).metadata.platforms.value, ["linux", "windows"]);
+});
+
+test("sparse exclusion arrays are invalid instead of silently ignoring absent IDs", () => {
+  const opts = { seeds: [{ id: a.id }] };
+  assert.throws(() => rankEvidenceBasket(model(), { ...opts, excluded: new Array(1) }),
+    /invalid hard filters/);
+  const dense = rankEvidenceBasket(model(), { ...opts, excluded: [b.id] });
+  assert.equal(dense.excluded.find(item => item.id === b.id)?.reason, "hard-constraint-fail");
+});
+
 test("platform source observations must not disguise missing or noncanonical eligibility", () => {
   for (const value of [[], ["any"], ["Windows"], [" windows"], [""],
     ["windows", "Windows"], ["windows", "windows"], ["x".repeat(33)]]) {
