@@ -99,6 +99,44 @@ test("sparse exclusion arrays are invalid instead of silently ignoring absent ID
   assert.equal(dense.excluded.find(item => item.id === b.id)?.reason, "hard-constraint-fail");
 });
 
+test("platform receipts use indexed facts even when a custom iterator claims another platform", () => {
+  const redirected = ["windows"];
+  redirected[Symbol.iterator] = function* () { yield "linux"; };
+  const sourced = model([c, { ...b, metadata: { platforms: field(redirected) } }]);
+  assert.deepEqual(sourced.profiles.get(b.id).metadata.platforms.value, ["windows"]);
+  const filtered = rankEvidenceBasket(sourced, {
+    seeds: [{ id: c.id }], platform: "linux",
+  });
+  assert.ok(filtered.uncertain.some(item =>
+    item.id === b.id && item.reason === "hard-constraint-unknown"));
+  assert.ok(!filtered.ranked.some(item => item.id === b.id));
+
+  // Data-slot snapshots never execute accessor properties as receipts.
+  const accessor = ["windows"];
+  Object.defineProperty(accessor, 0, { get() { return "linux"; } });
+  assert.throws(() => model([{ ...a, metadata: { platforms: field(accessor) } }]),
+    /platforms must be nonempty unique canonical IDs/);
+  const redirectedTags = [tag("genre:rpg", 1)];
+  redirectedTags[Symbol.iterator] = function* () { yield tag("genre:puzzle", 1); };
+  assert.deepEqual(model([{ ...a, tags: redirectedTags }]).profiles.get(a.id).tags.map(t => t.id),
+    ["genre:rpg"]);
+});
+
+test("explicit exclusions use validated indexed IDs rather than an overridden iterator", () => {
+  const redirected = [b.id];
+  redirected[Symbol.iterator] = function* () { yield c.id; };
+  const result = rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }], excluded: redirected,
+  });
+  assert.equal(result.excluded.find(item => item.id === b.id)?.reason, "hard-constraint-fail");
+  assert.ok(result.ranked.some(item => item.id === c.id));
+  const accessor = [b.id];
+  Object.defineProperty(accessor, 0, { get() { return c.id; } });
+  assert.throws(() => rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }], excluded: accessor,
+  }), /invalid hard filters/);
+});
+
 test("platform source observations must not disguise missing or noncanonical eligibility", () => {
   for (const value of [[], ["any"], ["Windows"], [" windows"], [""],
     ["windows", "Windows"], ["windows", "windows"], ["x".repeat(33)]]) {
