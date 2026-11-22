@@ -44,6 +44,18 @@ function rejectUnknownFields(input, allowed, label) {
       throw new TypeError(`inherited ${label} field: ${field}`);
   }
 }
+// Snapshot only own, dense data slots: iterators, accessors and inherited
+// numeric values cannot change which sourced observations are consumed.
+function denseIndexSnapshot(value) {
+  if (!Array.isArray(value)) return null;
+  const items = [];
+  for (let index = 0; index < value.length; index++) {
+    const slot = Object.getOwnPropertyDescriptor(value, index);
+    if (!slot || !Object.hasOwn(slot, "value")) return null;
+    items.push(slot.value);
+  }
+  return items;
+}
 function text(value, label) {
   if (typeof value !== "string" || !value.trim()) throw new TypeError(`${label} must be nonempty text`);
   return value;
@@ -80,13 +92,14 @@ function normalizeMetadata(input, id) {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
           throw new TypeError(`${id}.releaseYear must be a year`);
       } else if (name === "platforms") {
-        if (!Array.isArray(field.value) || field.value.length === 0 ||
-            field.value.some(v => typeof v !== "string" || v.length > 32 ||
+        const platforms = denseIndexSnapshot(field.value);
+        if (!platforms || platforms.length === 0 ||
+            platforms.some(v => typeof v !== "string" || v.length > 32 ||
               !PLATFORM_ID.test(v) || v === "any") ||
-            new Set(field.value).size !== field.value.length) {
+            new Set(platforms).size !== platforms.length) {
           throw new TypeError(`${id}.platforms must be nonempty unique canonical IDs (not 'any')`);
         }
-        field.value = [...field.value].sort();
+        field.value = platforms.sort();
       } else text(field.value, `${id}.${name}.value`);
     }
     result[name] = field;
@@ -99,10 +112,11 @@ function normalizeProfile(input) {
   const id = canonicalId(game.id);
   let tags = null;
   if (game.tags !== undefined && game.tags !== null) {
-    if (!Array.isArray(game.tags) || game.tags.length === 0 || game.tags.length > MAX_TAGS)
+    const entries = denseIndexSnapshot(game.tags);
+    if (!entries || entries.length === 0 || entries.length > MAX_TAGS)
       throw new TypeError(`${id}.tags must have 1-${MAX_TAGS} entries or be null`);
     const seen = new Set();
-    tags = game.tags.map((item) => {
+    tags = entries.map((item) => {
       const tag = record(item, `${id}.tag`);
       rejectUnknownFields(tag, TAG_FIELDS, `${id}.tag`);
       const key = text(tag.id, `${id}.tag.id`);
@@ -459,10 +473,11 @@ export function rankEvidenceBasket(model, options = {}) {
     if (!model.profiles.has(seed.id))
       throw new TypeError("seeds must reference known catalog games");
   }
+  const exclusionIds = denseIndexSnapshot(excluded);
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
-      !Array.isArray(excluded) || new Set(excluded).size !== excluded.length ||
-      excluded.some(id => !model.profiles.has(id))) throw new TypeError("invalid hard filters");
+      !exclusionIds || new Set(exclusionIds).size !== exclusionIds.length ||
+      exclusionIds.some(id => !model.profiles.has(id))) throw new TypeError("invalid hard filters");
   if (!Number.isInteger(limit) || limit < 0) throw new RangeError("limit must be a nonnegative integer");
   // Build pair evidence from the same positive-weight, deduplicated basket used
   // by the scalar/Blend ranker. Zero-weight or repeated inputs are not seeds
@@ -473,7 +488,7 @@ export function rankEvidenceBasket(model, options = {}) {
   // are normalized before checking, so inert inputs cannot change the basket.
   // This also bounds pairwise evidence work before a future browser rollout.
   if (activeSeeds.length > 5) throw new RangeError("at most five active favorites are supported");
-  const hidden = new Set(excluded);
+  const hidden = new Set(exclusionIds);
   // A selected favorite cannot simultaneously be a hard-excluded candidate.
   // Check the normalized active basket so inert zero-weight entries stay inert.
   if (activeSeeds.some(seed => hidden.has(seed.id))) {
