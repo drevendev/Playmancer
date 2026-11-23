@@ -1026,6 +1026,57 @@ test("basket seed record accessors cannot change validated favorite identity or 
   }).ranked.length > 0);
 });
 
+test("oversized nested arrays fail before any untrusted index is inspected", () => {
+  const observed = (length, item) => {
+    let indices = 0;
+    let sizeReads = 0;
+    const values = new Proxy(Array(length).fill(item), {
+      get(target, key, receiver) {
+        if (key === "length") sizeReads++;
+        return Reflect.get(target, key, receiver);
+      },
+      getOwnPropertyDescriptor(target, key) {
+        if (key !== "length") indices++;
+        return Reflect.getOwnPropertyDescriptor(target, key);
+      },
+    });
+    return { values, indexReads: () => indices, sizeReads: () => sizeReads };
+  };
+
+  const tags = observed(129, tag("genre:rpg", 1));
+  assert.throws(() => model([{ ...a, tags: tags.values }]), /tags must have 1-128 entries/);
+  assert.equal(tags.indexReads(), 0);
+  assert.equal(tags.sizeReads(), 1);
+
+  const platforms = observed(251, "windows");
+  assert.throws(() => model([{ ...a, metadata: {
+    platforms: field(platforms.values),
+  } }]), /platforms must be nonempty unique canonical IDs/);
+  assert.equal(platforms.indexReads(), 0);
+  assert.equal(platforms.sizeReads(), 1);
+
+  const seeds = observed(251, { id: a.id });
+  assert.throws(() => rankEvidenceBasket(model(), { seeds: seeds.values }),
+    /seeds must reference known catalog games/);
+  assert.equal(seeds.indexReads(), 0);
+  assert.equal(seeds.sizeReads(), 1);
+
+  const excluded = observed(251, b.id);
+  assert.throws(() => rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }], excluded: excluded.values,
+  }), /invalid hard filters/);
+  assert.equal(excluded.indexReads(), 0);
+  assert.equal(excluded.sizeReads(), 1);
+
+  // Ordinary bounded records keep the existing ranking and abstention behavior.
+  const ranked = rankEvidenceBasket(model(), {
+    seeds: [{ id: a.id }], excluded: [b.id], platform: "windows",
+  });
+  assert.equal(ranked.excluded.find(item => item.id === b.id)?.reason,
+    "hard-constraint-fail");
+  assert.ok(ranked.ranked.every(item => item.id !== b.id));
+});
+
 test("oversized catalog and relation arrays fail before indexed-descriptor reads", () => {
   let gameReads = 0;
   const tooManyGames = new Proxy(Array(251).fill(a), {
