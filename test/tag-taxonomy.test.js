@@ -132,3 +132,66 @@ test('taxonomy normalization orders punctuation-bearing canonical IDs without lo
       expected.map(id => weights.get(id)));
   }
 });
+
+test('taxonomy rejects sparse and accessor-backed arrays before complete-vector projection', () => {
+  const sparseTaxonomy = vocabulary();
+  delete sparseTaxonomy.tags[1];
+  assert.throws(() => prepareTagTaxonomy(sparseTaxonomy), /dense own data elements/);
+  const sparseAliases = vocabulary();
+  sparseAliases.tags[0].aliases.length = 2;
+  assert.throws(() => prepareTagTaxonomy(sparseAliases), /dense own data elements/);
+  const taxonomy = prepareTagTaxonomy(vocabulary());
+  const sparseGames = samples();
+  delete sparseGames[1];
+  assert.throws(() => projectWeightedTagProfiles(taxonomy, sparseGames), /dense own data elements/);
+  const sparseTags = samples();
+  sparseTags[0].tags = [{ id: 'genre:rpg', weight: 1, source }, ,];
+  assert.throws(() => projectWeightedTagProfiles(taxonomy, sparseTags), /dense own data elements/);
+  const accessorIndex = vocabulary();
+  let read = false;
+  Object.defineProperty(accessorIndex.tags, 0, { get() { read = true; return {}; } });
+  assert.throws(() => prepareTagTaxonomy(accessorIndex), /dense own data elements/);
+  assert.equal(read, false);
+});
+
+test('taxonomy rejects hidden and accessor-backed record fields without invoking getters', () => {
+  const hidden = vocabulary();
+  Object.defineProperty(hidden.tags[0], 'unknownReceipt', { value: true });
+  assert.throws(() => prepareTagTaxonomy(hidden), /unknown taxonomy tag fields/);
+  const symbol = vocabulary();
+  symbol.tags[0][Symbol('source')] = 'fictional';
+  assert.throws(() => prepareTagTaxonomy(symbol), /unknown taxonomy tag fields/);
+  const accessor = vocabulary();
+  let read = false;
+  Object.defineProperty(accessor.tags[0], 'label', { get() { read = true; return 'invented'; } });
+  assert.throws(() => prepareTagTaxonomy(accessor), /own data property/);
+  assert.equal(read, false);
+  const taxonomy = prepareTagTaxonomy(vocabulary());
+  const weighted = samples();
+  Object.defineProperty(weighted[0].tags[0], 'weight', { get() { read = true; return .4; } });
+  assert.throws(() => projectWeightedTagProfiles(taxonomy, weighted), /own data property/);
+  assert.equal(read, false);
+});
+
+test('taxonomy ignores redirected iterators and reads Proxy length just once', () => {
+  const baseline = prepareTagTaxonomy(vocabulary());
+  const redirected = vocabulary();
+  redirected.tags[Symbol.iterator] = function* () { throw Error('iterator called'); };
+  assert.deepEqual(prepareTagTaxonomy(redirected).tags, baseline.tags);
+  const taxonomy = prepareTagTaxonomy(vocabulary());
+  const gameList = samples();
+  gameList[0].tags[Symbol.iterator] = function* () { throw Error('tag iterator called'); };
+  assert.deepEqual(projectWeightedTagProfiles(taxonomy, gameList).games,
+    projectWeightedTagProfiles(taxonomy, samples()).games);
+  const proxy = vocabulary();
+  let lengthReads = 0;
+  proxy.tags = new Proxy(proxy.tags, {
+    get(target, key, receiver) {
+      if (key === 'length') lengthReads++;
+      if (key === Symbol.iterator) throw Error('Proxy iterator called');
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  assert.deepEqual(prepareTagTaxonomy(proxy).tags, baseline.tags);
+  assert.equal(lengthReads, 1);
+});
