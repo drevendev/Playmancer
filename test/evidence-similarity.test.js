@@ -31,6 +31,48 @@ test("weighted tags allocate exactly one unit per game", () => {
   assert.throws(() => model([{ ...a, tags: [tag("genre:rpg", 1, "")] }]), /source/);
   assert.equal(model().version, EVIDENCE_METHOD_VERSION);
 });
+test("record snapshots reject accessor-backed evidence before a getter can claim completeness or filter support", () => {
+  let getterCalls = 0;
+  const accessor = (object, key, value) => Object.defineProperty({ ...object }, key, {
+    enumerable: true, configurable: true,
+    get() { getterCalls++; return value; },
+  });
+  const changingCoverage = accessor(a, "tagCoverage", "complete");
+  assert.throws(() => model([changingCoverage]), /game\.tagCoverage must be an own data field/);
+  // An observed partial vector may never be promoted to a complete one.
+  assert.equal(getterCalls, 0);
+
+  const platformReceipt = accessor(field(["windows"]), "value", ["windows"]);
+  assert.throws(() => model([{ ...a, metadata: { platforms: platformReceipt } }]),
+    /demo:a\.platforms\.value must be an own data field/);
+  const coopReceipt = accessor(a, "coop", true);
+  assert.throws(() => model([coopReceipt]), /game\.coop must be an own data field/);
+  const edge = accessor(relation(a.id, b.id), "strength", 1);
+  assert.throws(() => model([a, b], [edge]), /relation\.strength must be an own data field/);
+  assert.equal(getterCalls, 0, "rejected getters are not executed");
+
+  const basket = accessor({ seeds: [{ id: a.id }], platform: "any" }, "platform", "windows");
+  assert.throws(() => rankEvidenceBasket(model(), basket),
+    /basket options\.platform must be an own data field/);
+  assert.equal(getterCalls, 0, "hard filters must not be sourced from getters");
+
+  // A data-only Proxy can redirect property reads. Descriptor snapshots must
+  // use its fixed own values, rather than consulting a caller-controlled get().
+  const source = { ...a, tagCoverage: "partial" };
+  const noReads = new Proxy(source, {
+    get(target, key, receiver) {
+      if (key === "tagCoverage" || key === "tags" || key === "id")
+        throw new Error("untrusted property read");
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  const observed = model([noReads, b]);
+  assert.equal(observed.profiles.get(a.id).tagCoverage, "partial");
+  assert.equal(compareEvidenceGames(observed, a.id, b.id).status, "uncertain");
+  const ordinary = model([a, b]);
+  assert.equal(compareEvidenceGames(ordinary, a.id, b.id).status, "rankable");
+});
+
 test("evidence keys reject hidden, symbol and inherited observations without inventing support", () => {
   const hiddenGame = { ...a };
   Object.defineProperty(hiddenGame, "tagCovreage", { value: "complete", enumerable: false });
