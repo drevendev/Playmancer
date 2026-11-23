@@ -14,9 +14,36 @@ function record(value, label, allowed) {
       (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
     throw new TypeError(`${label} must be a plain record`);
   }
-  const extra = Object.keys(value).filter(key => !allowed.includes(key));
-  if (extra.length) throw new TypeError(`unknown ${label} fields: ${extra.join(', ')}`);
-  return value;
+  // Snapshot only own data descriptors. A hidden or inherited key must not
+  // upgrade partial evidence or redirect validation through a getter.
+  const result = {};
+  for (const key of Reflect.ownKeys(value)) {
+    if (!allowed.includes(key)) throw new TypeError(`unknown ${label} fields: ${String(key)}`);
+    const slot = Object.getOwnPropertyDescriptor(value, key);
+    if (!slot || !Object.hasOwn(slot, 'value'))
+      throw new TypeError(`${label}.${String(key)} must be an own data property`);
+    result[key] = slot.value;
+  }
+  for (const key of allowed) {
+    if (key in value && !Object.hasOwn(value, key))
+      throw new TypeError(`inherited ${label} field: ${key}`);
+  }
+  return result;
+}
+// Capture one bounded length and only dense own data elements. Caller-provided
+// iterators, sparse slots and accessor-backed indices are not evidence.
+function denseArray(value, min, max, error) {
+  if (!Array.isArray(value)) throw new TypeError(error);
+  const length = value.length;
+  if (!Number.isSafeInteger(length) || length < min || length > max) throw new TypeError(error);
+  const result = [];
+  for (let i = 0; i < length; i++) {
+    const slot = Object.getOwnPropertyDescriptor(value, i);
+    if (!slot || !Object.hasOwn(slot, 'value'))
+      throw new TypeError(error + ' (dense own data elements required)');
+    result.push(slot.value);
+  }
+  return result;
 }
 function string(value, label) {
   if (typeof value !== 'string' || !value.trim() || value !== value.trim()) {
@@ -35,19 +62,15 @@ function tagId(value, label) {
 export function prepareTagTaxonomy(input) {
   const data = record(input, 'taxonomy', ['version', 'tags']);
   if (data.version !== TAG_TAXONOMY_VERSION) throw new TypeError('unsupported tag taxonomy version');
-  if (!Array.isArray(data.tags) || data.tags.length < 1 || data.tags.length > 2048) {
-    throw new TypeError('taxonomy must contain 1-2048 tags');
-  }
+  const sourceTags = denseArray(data.tags, 1, 2048, 'taxonomy must contain 1-2048 tags');
   const resolver = Object.create(null);
   const entries = [];
-  for (const raw of data.tags) {
+  for (const raw of sourceTags) {
     const entry = record(raw, 'taxonomy tag', ['id', 'label', 'aliases']);
     const id = tagId(entry.id, 'tag ID');
     const label = string(entry.label, `${id}.label`);
-    const aliases = entry.aliases ?? [];
-    if (!Array.isArray(aliases) || aliases.length > 32) {
-      throw new TypeError(`${id}.aliases must be an array of at most 32 IDs`);
-    }
+    const aliases = denseArray(entry.aliases ?? [], 0, 32,
+      `${id}.aliases must be an array of at most 32 IDs`);
     const ids = [id, ...aliases.map(value => tagId(value, `${id}.alias`))];
     const namespace = id.split(':', 1)[0];
     for (const key of ids) {
@@ -76,11 +99,9 @@ export function prepareTagTaxonomy(input) {
 // cross-namespace guessing, alias-based evidence multiplication, or zero fill.
 export function projectWeightedTagProfiles(taxonomy, games) {
   if (!taxonomyBrand.has(taxonomy)) throw new TypeError('prepare a validated taxonomy first');
-  if (!Array.isArray(games) || games.length < 1 || games.length > 250) {
-    throw new TypeError('games must contain 1-250 profiles');
-  }
+  const inputs = denseArray(games, 1, 250, 'games must contain 1-250 profiles');
   const seenGames = new Set();
-  const result = games.map(raw => {
+  const result = inputs.map(raw => {
     const game = record(raw, 'game', ['id', 'tags', 'tagCoverage', 'metadata', 'coop', 'coopSource']);
     const id = string(game.id, 'game ID');
     if (!GAME_ID.test(id) || id.length > 96) throw new TypeError(`invalid game ID: ${id}`);
@@ -94,11 +115,10 @@ export function projectWeightedTagProfiles(taxonomy, games) {
     }
     let tags = null;
     if (game.tags !== null) {
-      if (!Array.isArray(game.tags) || game.tags.length < 1 || game.tags.length > 128) {
-        throw new TypeError(`${id}.tags must have 1-128 entries or be null`);
-      }
+      const sourceTags = denseArray(game.tags, 1, 128,
+        `${id}.tags must have 1-128 entries or be null`);
       const seenTags = new Set();
-      tags = game.tags.map(rawTag => {
+      tags = sourceTags.map(rawTag => {
         const item = record(rawTag, `${id}.tag`, ['id', 'weight', 'source']);
         const suppliedId = tagId(item.id, `${id}.tag.id`);
         const canonical = taxonomy.canonicalById[suppliedId];
