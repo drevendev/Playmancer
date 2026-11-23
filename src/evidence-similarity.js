@@ -12,6 +12,9 @@ const PLATFORM_ID = /^[a-z][a-z0-9-]*$/;
 const EDGE_TYPES = new Set(["similar", "inspired-by", "references"]);
 const MAX_GAMES = 250;
 const MAX_TAGS = 128;
+// Nested caller-provided arrays must also be bounded before reading any slots.
+const MAX_OBSERVED_PLATFORMS = 250;
+const MAX_RAW_BASKET_ITEMS = 250;
 const TWO_HOP_DECAY = 0.5;
 
 function record(value, label) {
@@ -46,12 +49,12 @@ function rejectUnknownFields(input, allowed, label) {
 }
 // Snapshot only own, dense data slots: iterators, accessors and inherited
 // numeric values cannot change which sourced observations are consumed.
-function denseIndexSnapshot(value, expectedLength) {
+function denseIndexSnapshot(value, expectedLength, maxLength = Number.MAX_SAFE_INTEGER) {
   if (!Array.isArray(value)) return null;
   // A Proxy may change its reported length between validation and copying.
   // Capture it once, or reuse the exact bounded length already validated.
   const length = expectedLength === undefined ? value.length : expectedLength;
-  if (!Number.isSafeInteger(length) || length < 0) return null;
+  if (!Number.isSafeInteger(length) || length < 0 || length > maxLength) return null;
   const items = [];
   for (let index = 0; index < length; index++) {
     const slot = Object.getOwnPropertyDescriptor(value, index);
@@ -96,7 +99,7 @@ function normalizeMetadata(input, id) {
         if (!Number.isInteger(field.value) || field.value < 1950 || field.value > 2100)
           throw new TypeError(`${id}.releaseYear must be a year`);
       } else if (name === "platforms") {
-        const platforms = denseIndexSnapshot(field.value);
+        const platforms = denseIndexSnapshot(field.value, undefined, MAX_OBSERVED_PLATFORMS);
         if (!platforms || platforms.length === 0 ||
             platforms.some(v => typeof v !== "string" || v.length > 32 ||
               !PLATFORM_ID.test(v) || v === "any") ||
@@ -116,7 +119,7 @@ function normalizeProfile(input) {
   const id = canonicalId(game.id);
   let tags = null;
   if (game.tags !== undefined && game.tags !== null) {
-    const entries = denseIndexSnapshot(game.tags);
+    const entries = denseIndexSnapshot(game.tags, undefined, MAX_TAGS);
     if (!entries || entries.length === 0 || entries.length > MAX_TAGS)
       throw new TypeError(`${id}.tags must have 1-${MAX_TAGS} entries or be null`);
     const seen = new Set();
@@ -478,7 +481,8 @@ export function rankEvidenceBasket(model, options = {}) {
   rejectUnknownFields(input, BASKET_FIELDS, "basket option");
   const { seeds, mode = "intersection", lambda = 0.3,
     limit = 6, platform = "any", coopOnly = false, excluded = [] } = input;
-  const seedList = denseIndexSnapshot(seeds);
+  // Bound raw lists before Proxy/index reads; active favorites remain capped at five.
+  const seedList = denseIndexSnapshot(seeds, undefined, MAX_RAW_BASKET_ITEMS);
   if (!seedList || !seedList.length)
     throw new TypeError("seeds must reference known catalog games");
   // Validate once and consume only own data fields: getter-backed IDs or
@@ -496,7 +500,7 @@ export function rankEvidenceBasket(model, options = {}) {
       throw new TypeError("seeds must reference known catalog games");
     return weight ? { id: id.value, weight: weight.value } : { id: id.value };
   });
-  const exclusionIds = denseIndexSnapshot(excluded);
+  const exclusionIds = denseIndexSnapshot(excluded, undefined, MAX_RAW_BASKET_ITEMS);
   if (typeof platform !== "string" || (platform !== "any" &&
       (platform.length > 32 || !PLATFORM_ID.test(platform))) || typeof coopOnly !== "boolean" ||
       !exclusionIds || new Set(exclusionIds).size !== exclusionIds.length ||
