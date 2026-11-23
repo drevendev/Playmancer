@@ -1045,7 +1045,7 @@ test("basket seed record accessors cannot change validated favorite identity or 
     enumerable: true, get() { return ++idReads === 1 ? a.id : b.id; },
   });
   assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingId] }),
-    /basket seed id\/weight must be own data fields/);
+    /basket seed\.id must be an own data field/);
   assert.equal(idReads, 0);
 
   let weightReads = 0;
@@ -1054,13 +1054,13 @@ test("basket seed record accessors cannot change validated favorite identity or 
     enumerable: true, get() { return ++weightReads === 1 ? 1 : 0; },
   });
   assert.throws(() => rankEvidenceBasket(model(), { seeds: [changingWeight] }),
-    /basket seed id\/weight must be own data fields/);
+    /basket seed\.weight must be an own data field/);
   assert.equal(weightReads, 0);
 
   const hiddenId = {};
   Object.defineProperty(hiddenId, "id", { get() { return a.id; } });
   assert.throws(() => rankEvidenceBasket(model(), { seeds: [hiddenId] }),
-    /basket seed id\/weight must be own data fields/);
+    /basket seed\.id must be an own data field/);
   assert.deepEqual(rankEvidenceBasket(model(), { seeds: [{ id: a.id, weight: 1 }] }),
     rankEvidenceBasket(model(), { seeds: [{ id: a.id }] }));
   assert.ok(rankEvidenceBasket(model(), {
