@@ -18,11 +18,26 @@ const MAX_RAW_BASKET_ITEMS = 250;
 const TWO_HOP_DECAY = 0.5;
 
 function record(value, label) {
+  const proto = value && typeof value === "object" ? Object.getPrototypeOf(value) : undefined;
   if (!value || typeof value !== "object" || Array.isArray(value) ||
-      (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)) {
+      (proto !== Object.prototype && proto !== null)) {
     throw new TypeError(`${label} must be a plain record`);
   }
-  return value;
+  // A key whitelist alone does not make accessor-backed observations safe:
+  // getters can change an asserted partial tag vector to "complete" between
+  // validation and ranking, or fabricate a strict platform/co-op receipt.
+  // Capture each own value exactly once, preserving enumerable/hidden keys
+  // and the original prototype so inherited allowlisted fields still fail.
+  const snapshot = Object.create(proto);
+  for (const key of Reflect.ownKeys(value)) {
+    const field = Object.getOwnPropertyDescriptor(value, key);
+    if (!field || !Object.hasOwn(field, "value"))
+      throw new TypeError(`${label}.${String(key)} must be an own data field`);
+    Object.defineProperty(snapshot, key, {
+      value: field.value, enumerable: field.enumerable, configurable: true, writable: true,
+    });
+  }
+  return snapshot;
 }
 // Typos in observation keys must not silently upgrade selected facts to
 // complete affinity vectors (notably misspelled tagCoverage).
