@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-genre-pilot-35-2026-11-24",
+  "reviewedAt": "2026-11-24",
+  "games": [
+    {
+      "qid": "Q193581",
+      "name": "Half-Life 2",
+      "steamAppId": "220",
+      "storeUrl": "https://store.steampowered.com/app/220",
+      "reviewedBaseGame": true,
+      "genres": [
+        "first-person shooter",
+        "science fiction video game",
+        "post-apocalyptic video game"
+      ]
+    },
+    {
+      "qid": "Q274897",
+      "name": "Portal",
+      "steamAppId": "400",
+      "storeUrl": "https://store.steampowered.com/app/400",
+      "reviewedBaseGame": true,
+      "genres": [
+        "puzzle video game",
+        "first-person shooter",
+        "science fiction video game"
+      ]
+    },
+    {
+      "qid": "Q323981",
+      "name": "Left 4 Dead",
+      "steamAppId": "500",
+      "storeUrl": "https://store.steampowered.com/app/500",
+      "reviewedBaseGame": true,
+      "genres": [
+        "first-person shooter",
+        "survival horror"
+      ]
+    },
+    {
+      "qid": "Q472909",
+      "name": "Left 4 Dead 2",
+      "steamAppId": "550",
+      "storeUrl": "https://store.steampowered.com/app/550",
+      "reviewedBaseGame": true,
+      "genres": [
+        "first-person shooter",
+        "survival horror"
+      ]
+    }
+  ]
+}
