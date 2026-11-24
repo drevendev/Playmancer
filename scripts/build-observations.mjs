@@ -2,21 +2,33 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { Script } from 'node:vm';
-import { prepareObservations, REVIEWED_OBSERVATIONS_SHA, REVIEWED_CATALOG_SHA, OBSERVATION_VERSION } from '../src/observations.js';
+import { prepareObservations, REVIEWED_OBSERVATIONS_SHA, REVIEWED_CATALOG_SHA, OBSERVATION_VERSION,
+  CANDIDATE_CATALOG_ID, CANDIDATE_CATALOG_SHA, CANDIDATE_OBSERVATIONS_SHA } from '../src/observations.js';
 
 export const OBSERVATION_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
+// Exact bindings; the candidate never aliases the live snapshot.
+const bindings = new Map([
+  [OBSERVATION_CATALOG_ID, { catalogSha: REVIEWED_CATALOG_SHA, evidence: REVIEWED_OBSERVATIONS_SHA,
+    file: 'examples/semantic-tags-reviewed-29.v1.json' }],
+  [CANDIDATE_CATALOG_ID, { catalogSha: CANDIDATE_CATALOG_SHA, evidence: CANDIDATE_OBSERVATIONS_SHA,
+    file: 'examples/semantic-tags-reviewed-30.catalog31.v1.json' }],
+]);
 export const gitObservationBlob = bytes => createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
 const observationJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,
   character => '\\u' + character.charCodeAt(0).toString(16).padStart(4, '0'));
-export async function buildObservationPage(root, catalog, catalogBytes, revision) {
-  // Do not attach this evidence to a synthetic or differently versioned catalog.
-  if (catalog.snapshotId !== OBSERVATION_CATALOG_ID) return null;
-  if (!catalogBytes || gitObservationBlob(catalogBytes) !== REVIEWED_CATALOG_SHA)
+export async function readReleaseObservations(root, catalog, catalogBytes) {
+  const binding = bindings.get(catalog.snapshotId);
+  if (!binding) return null;
+  if (!catalogBytes || gitObservationBlob(catalogBytes) !== binding.catalogSha)
     throw new Error('Observation catalog blob mismatch');
-  const raw = await readFile(join(root, 'examples/semantic-tags-reviewed-29.v1.json'));
-  if (gitObservationBlob(raw) !== REVIEWED_OBSERVATIONS_SHA) throw new Error('Reviewed observation blob mismatch');
+  const raw = await readFile(join(root, binding.file));
+  if (gitObservationBlob(raw) !== binding.evidence) throw new Error('Reviewed observation blob mismatch');
+  return prepareObservations(JSON.parse(catalogBytes.toString('utf8')), JSON.parse(raw.toString('utf8')), binding.evidence);
+}
+export async function buildObservationPage(root, catalog, catalogBytes, revision) {
+  const model = await readReleaseObservations(root, catalog, catalogBytes);
+  if (model === null) return null;
   if (revision !== 'unpublished' && !/^[a-f0-9]{40}$/.test(revision)) throw new Error('Invalid observation publication revision');
-  const model = prepareObservations(catalog, JSON.parse(raw.toString('utf8')));
   let core = await readFile(join(root, 'src/observations.js'), 'utf8');
   let ui = await readFile(join(root, 'src/observations-ui.js'), 'utf8');
   const importLine = "import { compareObservations, searchObservations, encodeObservationState, decodeObservationState } from './observations.js';\n";
@@ -32,23 +44,23 @@ export async function buildObservationPage(root, catalog, catalogBytes, revision
   if (template.split(entry).length !== 2 || template.split('</head>').length !== 2)
     throw new Error('Unexpected observation HTML template');
   const html = template.replace(entry, () => '<script type="module">\n' + script + '\n</script>')
-    .replace('</head>', `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${OBSERVATION_CATALOG_ID}">\n<meta name="playmancer-observations" content="${REVIEWED_OBSERVATIONS_SHA}">\n</head>`);
+    .replace('</head>', `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${model.catalog}">\n<meta name="playmancer-observations" content="${model.evidence}">\n</head>`);
   if (Buffer.byteLength(html) > 100000) throw new Error('Observation explorer exceeds 100 kB budget');
   return html;
 }
 export function linkObservationExplorer(template, model = null) {
   const marker = '<div class="section"><label for="mode">';
   if (template.split(marker).length !== 2) throw new Error('Observation entry anchor missing or ambiguous');
-  const entry = `<p class="storefront-links"><a id="observation-explorer-entry" data-observation-version="${OBSERVATION_VERSION}" data-observation-catalog="${OBSERVATION_CATALOG_ID}" data-observation-evidence="${REVIEWED_OBSERVATIONS_SHA}" href="./observations.html" target="_blank" rel="noopener noreferrer">Explore gameplay facts (new tab)</a></p>`;
+  const catalog = model === null ? OBSERVATION_CATALOG_ID : model.catalog;
+  const binding = bindings.get(catalog);
+  if (!binding || (model !== null && (model.version !== OBSERVATION_VERSION || model.evidence !== binding.evidence)))
+    throw new Error('Inline observation/release revision mismatch');
+  const entry = `<p class="storefront-links"><a id="observation-explorer-entry" data-observation-version="${OBSERVATION_VERSION}" data-observation-catalog="${catalog}" data-observation-evidence="${binding.evidence}" href="./observations.html" target="_blank" rel="noopener noreferrer">Explore gameplay facts (new tab)</a></p>`;
   // A compact, version-pinned positive-fact subset helps players inspect
   // shared recorded mechanics in recommendation cards. It is neither a
   // ranking input nor a claim of full-game feature coverage.
   let inline = '';
   if (model !== null) {
-    if (model.version !== OBSERVATION_VERSION || model.catalog !== OBSERVATION_CATALOG_ID ||
-        model.evidence !== REVIEWED_OBSERVATIONS_SHA) {
-      throw new Error('Inline observation/release revision mismatch');
-    }
     const subset = { version: model.version, catalog: model.catalog, evidence: model.evidence,
       games: model.games.filter(game => game.facts.length).map(game => ({
         id: game.id, facts: game.facts.map(fact => ({ id: fact.id, label: fact.label })),

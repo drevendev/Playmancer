@@ -31,7 +31,14 @@ class ObservationAssets(HTMLParser):
         if tag in ('script','link','img','iframe','video','audio','source'):
             self.assets.extend(value for key,value in attrs.items() if key in ('src','href','srcset','poster') and value)
 
-site = Path(sys.argv[1] if len(sys.argv) > 1 else '_site').resolve()
+args = sys.argv[1:]
+candidate = len(args) == 2 and args[1] == '--candidate-31'
+assert len(args) <= 2 and (len(args) < 2 or candidate) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-31]]'
+site = Path(args[0] if args else '_site').resolve()
+expected_catalog = ('multi-store-genre-pilot-31-2026-11-24' if candidate
+                    else 'multi-store-genre-pilot-30-2026-10-28')
+expected_evidence = ('db1591ae8691adbf2cf375476db93bc1281c057a' if candidate
+                     else 'aec15a40ed968916f4120d04aab53731740ee82d')
 root = Path(__file__).resolve().parents[1]
 base = {'index.html','.nojekyll','bridge-worker.js','player.css'}
 expected = base | {'observations.html'}
@@ -45,11 +52,13 @@ assert not parser.assets, 'Observation explorer must be self-contained'
 assert not re.search(r'\bfetch\s*\(|XMLHttpRequest\s*\(|sendBeacon\s*\(|importScripts\s*\(|new\s+WebSocket\s*\(', text), 'Unexpected observation network API'
 styles = re.findall(r'<style>([\s\S]*?)</style>', text)
 assert len(styles) == 1 and not re.search(r'@import\b|url\s*\(', styles[0], re.I), 'Unexpected observation stylesheet assets'
-assert parser.meta.get('playmancer-observations') == 'aec15a40ed968916f4120d04aab53731740ee82d', 'Observation fingerprint missing'
+assert parser.meta.get('playmancer-observations') == expected_evidence, 'Observation fingerprint missing or wrong for selected release'
+assert parser.meta.get('playmancer-catalog') == expected_catalog, 'Wrong selected release catalog'
 main = ObservationAssets(); main_text = (site / 'index.html').read_text(encoding='utf-8'); main.feed(main_text)
 for key in ('playmancer-revision','playmancer-catalog'):
     assert parser.meta.get(key) and parser.meta[key] == main.meta.get(key), f'Observation {key} differs from player'
 assert 'href="./observations.html" target="_blank" rel="noopener noreferrer"' in main_text, 'Explorer entry or basket isolation missing'
+assert f'data-observation-catalog="{expected_catalog}" data-observation-evidence="{expected_evidence}"' in main_text, 'Player observation binding differs from selected release'
 # The legacy validator still receives EXACT player bytes; only the separately
 # validated new page is outside its four-file contract. Nothing is stripped.
 with tempfile.TemporaryDirectory(prefix='playmancer-core-preflight-') as directory:
