@@ -2,6 +2,10 @@
 export const OBSERVATION_VERSION = 'observations-2';
 export const REVIEWED_OBSERVATIONS_SHA = 'aec15a40ed968916f4120d04aab53731740ee82d';
 export const REVIEWED_CATALOG_SHA = '0570fd610b14fb336c0de65e6cc3062892abe301';
+// Candidate is pinned separately; the 30-game release remains the default.
+export const CANDIDATE_CATALOG_ID = 'multi-store-genre-pilot-31-2026-11-24';
+export const CANDIDATE_CATALOG_SHA = 'c25441023dc73f6650e6a780e3a6405237848ce8';
+export const CANDIDATE_OBSERVATIONS_SHA = 'db1591ae8691adbf2cf375476db93bc1281c057a';
 const observationOrder = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function observationText(value, name, max = 160) {
   if (typeof value !== 'string' || !value.trim() || value.length > max || /[\u0000-\u001f]/u.test(value))
@@ -45,7 +49,9 @@ function freezeObservations(value) {
 export function prepareObservations(catalog, reviewed, evidenceId = REVIEWED_OBSERVATIONS_SHA) {
   if (!catalog || !reviewed || reviewed.schemaVersion !== 1 ||
       catalog.snapshotId !== reviewed.catalogSnapshotId ||
-      reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA ||
+      (catalog.snapshotId === CANDIDATE_CATALOG_ID
+        ? reviewed.catalogGitBlobSha1 !== CANDIDATE_CATALOG_SHA || evidenceId !== CANDIDATE_OBSERVATIONS_SHA
+        : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || evidenceId === CANDIDATE_OBSERVATIONS_SHA) ||
       !/^[a-f0-9]{40}$/.test(evidenceId)) throw new Error('Observation/catalog revision mismatch');
   const records = observationList(catalog.games, 'catalog games', 250);
   if (!records.length) throw new Error('Empty catalog');
