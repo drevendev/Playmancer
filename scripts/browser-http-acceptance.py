@@ -354,21 +354,26 @@ def exercise(browser, base_url, engine, label, width, height):
         items = page.locator("#search-results li > button")
         check(case, "catalog browser starts with eight unselected games and observed genres",
               browse.get_attribute("aria-expanded") == "true"
-              and items.count() == 9
+              and items.count() == 8
               and page.locator("#search-results > li > span.hint").filter(has_text="Recorded genres:").count() == 8
               and page.locator("#search-results > li > span.hint").filter(
                   has_text=re.compile(r"selected gameplay facts|No reviewed gameplay facts yet")).count() == 8
               and "Recorded genres:" in page.locator("#search-results").inner_text()
-              and "8 of 28 available catalog profiles" in page.locator("#search-hint").inner_text()
+              and "1–8 of 28 available catalog profiles" in page.locator("#search-hint").inner_text()
               and page.locator("#seeds > li").count() == 2)
-        more = page.get_by_role("button", name="Show 8 more games")
+        first_page = items.all_text_contents()
+        more = page.get_by_role("button", name="Next page", exact=True)
         more.focus()
         more.press("Enter")
-        check(case, "show more preserves keyboard focus on the first new game",
-              page.locator("#search-results li > button").count() == 17
-              and page.locator("#search-results li > button").nth(8).evaluate(
-                  "node => document.activeElement === node")
-              and "16 of 28 available catalog profiles" in page.locator("#search-hint").inner_text())
+        check(case, "next page bounds the DOM and focuses the first new game",
+              items.count() == 8 and set(first_page).isdisjoint(items.all_text_contents())
+              and items.first.evaluate("node => document.activeElement === node")
+              and "9–16 of 28 available catalog profiles" in page.locator("#search-hint").inner_text())
+        page.get_by_role("button", name="Previous page", exact=True).click()
+        check(case, "previous page restores original order without changing the basket",
+              items.all_text_contents() == first_page
+              and page.get_by_role("button", name="Previous page", exact=True).is_disabled()
+              and page.locator("#seeds > li").count() == 2)
         browse.click()
         check(case, "closing catalog browser restores compact search without altering basket",
               browse.get_attribute("aria-expanded") == "false"
