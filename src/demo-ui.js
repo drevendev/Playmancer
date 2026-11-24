@@ -312,9 +312,9 @@ function showCatalogIdentity() {
 }
 let state;
 let browseAll = false;
-const SEARCH_PAGE_SIZE = 8;
-let searchPage = 0;
-let searchMatchCount = 0;
+const PAGE_SIZE = 8;
+let pageNo = 0;
+let matchCount = 0;
 let compactResults = false;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
@@ -338,7 +338,7 @@ function readLocation() {
   }
   $("search").value = "";
   $("store-filter").value = "all";
-  browseAll = false; searchPage = 0; compactResults = false;
+  browseAll = false; pageNo = 0; compactResults = false;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -428,7 +428,7 @@ function addFavorite(game, resultIndex = null) {
   state.seeds.push({ id: game.id, weight: 1 });
   state.excluded = state.excluded.filter(id => id !== game.id);
   if (resultIndex === null) {
-    if ($("search").value) searchPage = 0;
+    if ($("search").value) pageNo = 0;
     $("search").value = "";
     if ($("store-filter").value !== "all") browseAll = true;
   }
@@ -521,13 +521,13 @@ function drawSearch() {
   const matches = candidates.filter(({ game }) => store === "all" ||
     game.storeLinks?.some(link => link.store === store))
     .sort((a, b) => (a.searchPriority ?? 0) - (b.searchPriority ?? 0));
-  searchMatchCount = matches.length;
+  matchCount = matches.length;
   // Keep the DOM bounded even when a broad search matches the whole catalog.
   // Clamp if a favorite or a changed basket removes the last row on this page.
-  const lastPage = Math.max(0, Math.ceil(searchMatchCount / SEARCH_PAGE_SIZE) - 1);
-  searchPage = Math.min(searchPage, lastPage);
-  const start = searchPage * SEARCH_PAGE_SIZE;
-  const shown = matches.slice(start, start + SEARCH_PAGE_SIZE);
+  const lastPage = Math.max(0, Math.ceil(matchCount / PAGE_SIZE) - 1);
+  pageNo = Math.min(pageNo, lastPage);
+  const start = pageNo * PAGE_SIZE;
+  const shown = matches.slice(start, start + PAGE_SIZE);
   const range = `${start + 1}–${start + shown.length}`;
   for (const [index, { game, matchedTag, matchedFact, matchedFactId, combinedTerms }] of shown.entries()) {
     const row = element("li");
@@ -614,9 +614,9 @@ function drawSearch() {
     for (const [step, label] of [[-1, "Previous page"], [1, "Next page"]]) {
       const button = element("button", label);
       button.type = "button";
-      button.disabled = step < 0 ? searchPage === 0 : searchPage === lastPage;
+      button.disabled = step < 0 ? pageNo === 0 : pageNo === lastPage;
       button.addEventListener("click", () => {
-        searchPage += step;
+        pageNo += step;
         drawSearch();
         ($("search-results").querySelector("li > button:not(:disabled)") ?? $("search")).focus();
       });
@@ -922,15 +922,15 @@ function render(rebuildSeeds) {
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", () => {
-  searchPage = 0;
+  pageNo = 0;
   browseAll = !$("search").value.trim() && $("store-filter").value !== "all";
   drawSearch();
 });
-$("store-filter").addEventListener("change", () => { browseAll = true; searchPage = 0; drawSearch(); });
+$("store-filter").addEventListener("change", () => { browseAll = true; pageNo = 0; drawSearch(); });
 $("search-all-stores").addEventListener("click", () => {
   const browse = $("search-all-stores").dataset.mode === "browse";
   $("store-filter").value = "all";
-  searchPage = 0;
+  pageNo = 0;
   if (browse) {
     // A failed search becomes explicit catalog discovery; only the search
     // controls change, never the weighted basket, filters, exclusions or URL.
@@ -952,7 +952,7 @@ $("search").addEventListener("keydown", (event) => {
     event.preventDefault();
     $("search").value = "";
     browseAll = false;
-    searchPage = 0;
+    pageNo = 0;
     drawSearch();
     return;
   }
@@ -962,7 +962,7 @@ $("search").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && $("search").value.trim()) {
     event.preventDefault();
     // An ambiguous search must not silently pick the first catalog entry.
-    if (searchMatchCount === 1) first.click();
+    if (matchCount === 1) first.click();
     else first.focus();
   } else if (event.key === "ArrowDown") {
     event.preventDefault();
@@ -996,12 +996,12 @@ bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(
 $("catalog-browse").addEventListener("click", () => {
   const filtered = $("store-filter").value !== "all";
   $("store-filter").value = "all";
-  browseAll = filtered || !browseAll; searchPage = 0;
+  browseAll = filtered || !browseAll; pageNo = 0;
   $("search").value = "";
   drawSearch();
 });
 $("dreven-browse").addEventListener("click", () => {
-  browseAll = false; searchPage = 0;
+  browseAll = false; pageNo = 0;
   $("store-filter").value = "all";
   $("search").value = "Dreven Games";
   drawSearch();
@@ -1014,7 +1014,7 @@ $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recom
 // Reuse the accessible Clear action to preserve share and focus behavior.
 $("intro-empty").addEventListener("click", () => { $("clear").click(); });
 $("intro-browse").addEventListener("click", () => {
-  browseAll = true; searchPage = 0;
+  browseAll = true; pageNo = 0;
   $("store-filter").value = "all";
   $("search").value = "";
   drawSearch();

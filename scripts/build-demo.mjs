@@ -215,7 +215,8 @@ for (const [index, path] of modules.entries()) {
     source = source.slice(0, genericHintStart) + source.slice(genericHintEnd);
     const candidatesBinding = "  const candidates = query || browseAll";
     const storeFilterStart = source.indexOf('  const matches = candidates.filter(({ game }) => store === "all" ||');
-    const storeFilterEnd = source.indexOf('  const shown =', storeFilterStart);
+    // Keep shared page-count/clamping initialization in both build variants.
+    const storeFilterEnd = source.indexOf('  matchCount = matches.length;', storeFilterStart);
     if (source.split(candidatesBinding).length !== 2 || storeFilterStart < 0 || storeFilterEnd <= storeFilterStart)
       throw new Error("Unexpected real-only store-search binding");
     source = source.slice(0, storeFilterStart) + source.slice(storeFilterEnd);

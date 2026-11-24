@@ -529,7 +529,8 @@ def exercise(browser, base_url, engine, label, width, height):
               page.locator("#search").input_value() == ""
               and page.locator("#store-filter").input_value() == "all"
               and page.locator("#catalog-browse").get_attribute("aria-expanded") == "true"
-              and page.locator("#search-results li > button").count() == 9
+              and page.locator("#search-results li > button").count() == 8
+              and page.get_by_role("button", name="Next page", exact=True).is_enabled()
               and page.locator("#search-results li > button").first.evaluate(
                   "node => document.activeElement === node")
               and page.evaluate("location.hash") == no_match_hash
@@ -566,15 +567,18 @@ def exercise(browser, base_url, engine, label, width, height):
         # Paging is discovery-only: the shared basket must remain untouched.
         first_page = page.locator("#search-results li > button")
         hash_before_search_paging = page.evaluate("location.hash")
-        check(case, "broad search starts with eight options and an explicit show-more action",
-              first_page.count() == 9
-              and "more matches" in first_page.last.inner_text()
-              and "8 of " in page.locator("#search-hint").inner_text())
-        first_page.last.click()
-        check(case, "showing more matches preserves search and focuses the first new game",
-              page.locator("#search-results li > button").count() > 9
-              and page.locator("#search-results li > button").nth(8).evaluate(
-                  "node => document.activeElement === node")
+        next_page = page.get_by_role("button", name="Next page", exact=True)
+        check(case, "broad search starts with eight options and an explicit next-page action",
+              first_page.count() == 8
+              and next_page.is_enabled()
+              and "1–8 of " in page.locator("#search-hint").inner_text())
+        first_labels = first_page.all_text_contents()
+        next_page.click()
+        check(case, "next search page preserves the query and focuses the first new game",
+              0 < first_page.count() <= 8
+              and set(first_labels).isdisjoint(first_page.all_text_contents())
+              and first_page.first.evaluate("node => document.activeElement === node")
+              and "9–" in page.locator("#search-hint").inner_text()
               and page.locator("#search").input_value() == "e"
               and page.evaluate("location.hash") == hash_before_search_paging)
         page.locator("#search").fill("Hades")
