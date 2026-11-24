@@ -112,15 +112,16 @@ function catalogReceiptBase() {
 // Keep the three receipt documents explicit so the original twelve Wikidata
 // entries are not misrepresented as evidence for the seven later additions.
 function renderCatalogReceipts() {
-  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24"].includes(CATALOG_VERSION)) return null;
+  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION)) return null;
   const base = catalogReceiptBase();
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
     ["Original Wikidata games", "docs/REAL_PILOT.md"],
     ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
-    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
-    ...(CATALOG_VERSION === "multi-store-genre-pilot-31-2026-11-24" ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
+    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
+    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
+    ...(CATALOG_VERSION === "multi-store-genre-pilot-35-2026-11-24" ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
   ];
   for (const [index, [label, path]] of references.entries()) {

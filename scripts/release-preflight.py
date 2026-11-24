@@ -32,13 +32,14 @@ class ObservationAssets(HTMLParser):
             self.assets.extend(value for key,value in attrs.items() if key in ('src','href','srcset','poster') and value)
 
 args = sys.argv[1:]
-candidate = len(args) == 2 and args[1] == '--candidate-31'
-assert len(args) <= 2 and (len(args) < 2 or candidate) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-31]]'
+candidates = {
+    '--candidate-31': ('multi-store-genre-pilot-31-2026-11-24', 'db1591ae8691adbf2cf375476db93bc1281c057a'),
+    '--candidate-35': ('multi-store-genre-pilot-35-2026-11-24', 'a49eb238b3f18fc0aa2d8e2d3be913a4862c336c'),
+}
+assert len(args) <= 2 and (len(args) < 2 or args[1] in candidates) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-31|--candidate-35]]'
 site = Path(args[0] if args else '_site').resolve()
-expected_catalog = ('multi-store-genre-pilot-31-2026-11-24' if candidate
-                    else 'multi-store-genre-pilot-30-2026-10-28')
-expected_evidence = ('db1591ae8691adbf2cf375476db93bc1281c057a' if candidate
-                     else 'aec15a40ed968916f4120d04aab53731740ee82d')
+expected_catalog, expected_evidence = candidates[args[1]] if len(args) == 2 else (
+    'multi-store-genre-pilot-30-2026-10-28', 'aec15a40ed968916f4120d04aab53731740ee82d')
 root = Path(__file__).resolve().parents[1]
 base = {'index.html','.nojekyll','bridge-worker.js','player.css'}
 expected = base | {'observations.html'}
