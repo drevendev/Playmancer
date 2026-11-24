@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { linkObservationExplorer } from '../scripts/build-observations.mjs';
-import { prepareObservations } from '../src/observations.js';
+import { prepareObservations, OBSERVATIONS_35_SHA } from '../src/observations.js';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from '../scripts/build-basket-library.mjs';
 import { appendToSealedStylesheet } from '../scripts/stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -29,7 +29,7 @@ test('production adds explicit tools without changing player scoring/worker byte
     /Missing or corrupt stylesheet seal/);
   const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-35.real.json'),'utf8'));
   const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-30.catalog35.v1.json'),'utf8'));
-  const pinnedPositiveFacts = prepareObservations(catalog, observations);
+  const pinnedPositiveFacts = prepareObservations(catalog, observations, OBSERVATIONS_35_SHA);
   assert.equal(await readFile(join(release,'index.html'),'utf8'),
     await addBasketLibrary(root, linkObservationExplorer(baseIndex, pinnedPositiveFacts)));
   const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
