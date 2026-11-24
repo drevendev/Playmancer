@@ -6,6 +6,9 @@ export const REVIEWED_CATALOG_SHA = '0570fd610b14fb336c0de65e6cc3062892abe301';
 export const CANDIDATE_CATALOG_ID = 'multi-store-genre-pilot-31-2026-11-24';
 export const CANDIDATE_CATALOG_SHA = 'c25441023dc73f6650e6a780e3a6405237848ce8';
 export const CANDIDATE_OBSERVATIONS_SHA = 'db1591ae8691adbf2cf375476db93bc1281c057a';
+export const CATALOG_35_ID = 'multi-store-genre-pilot-35-2026-11-24';
+export const CATALOG_35_SHA = 'a994db70f4bdf9a02dfec2336fa768de255474e5';
+export const OBSERVATIONS_35_SHA = 'a49eb238b3f18fc0aa2d8e2d3be913a4862c336c';
 const observationOrder = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function observationText(value, name, max = 160) {
   if (typeof value !== 'string' || !value.trim() || value.length > max || /[\u0000-\u001f]/u.test(value))
@@ -49,9 +52,11 @@ function freezeObservations(value) {
 export function prepareObservations(catalog, reviewed, evidenceId = REVIEWED_OBSERVATIONS_SHA) {
   if (!catalog || !reviewed || reviewed.schemaVersion !== 1 ||
       catalog.snapshotId !== reviewed.catalogSnapshotId ||
-      (catalog.snapshotId === CANDIDATE_CATALOG_ID
-        ? reviewed.catalogGitBlobSha1 !== CANDIDATE_CATALOG_SHA || evidenceId !== CANDIDATE_OBSERVATIONS_SHA
-        : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || evidenceId === CANDIDATE_OBSERVATIONS_SHA) ||
+      (catalog.snapshotId === CATALOG_35_ID
+        ? reviewed.catalogGitBlobSha1 !== CATALOG_35_SHA || evidenceId !== OBSERVATIONS_35_SHA
+        : catalog.snapshotId === CANDIDATE_CATALOG_ID
+          ? reviewed.catalogGitBlobSha1 !== CANDIDATE_CATALOG_SHA || evidenceId !== CANDIDATE_OBSERVATIONS_SHA
+          : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || [CANDIDATE_OBSERVATIONS_SHA, OBSERVATIONS_35_SHA].includes(evidenceId)) ||
       !/^[a-f0-9]{40}$/.test(evidenceId)) throw new Error('Observation/catalog revision mismatch');
   const records = observationList(catalog.games, 'catalog games', 250);
   if (!records.length) throw new Error('Empty catalog');
