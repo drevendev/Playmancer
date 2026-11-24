@@ -312,8 +312,9 @@ function showCatalogIdentity() {
 }
 let state;
 let browseAll = false;
-let browseLimit = 8;
-let searchLimit = 8;
+const PAGE_SIZE = 8;
+let pageNo = 0;
+let matchCount = 0;
 let compactResults = false;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
@@ -337,7 +338,7 @@ function readLocation() {
   }
   $("search").value = "";
   $("store-filter").value = "all";
-  browseAll = false; browseLimit = 8; searchLimit = 8; compactResults = false;
+  browseAll = false; pageNo = 0; compactResults = false;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -427,6 +428,7 @@ function addFavorite(game, resultIndex = null) {
   state.seeds.push({ id: game.id, weight: 1 });
   state.excluded = state.excluded.filter(id => id !== game.id);
   if (resultIndex === null) {
+    if ($("search").value) pageNo = 0;
     $("search").value = "";
     if ($("store-filter").value !== "all") browseAll = true;
   }
@@ -519,7 +521,14 @@ function drawSearch() {
   const matches = candidates.filter(({ game }) => store === "all" ||
     game.storeLinks?.some(link => link.store === store))
     .sort((a, b) => (a.searchPriority ?? 0) - (b.searchPriority ?? 0));
-  const shown = matches.slice(0, query ? searchLimit : browseLimit);
+  matchCount = matches.length;
+  // Keep the DOM bounded even when a broad search matches the whole catalog.
+  // Clamp if a favorite or a changed basket removes the last row on this page.
+  const lastPage = Math.max(0, Math.ceil(matchCount / PAGE_SIZE) - 1);
+  pageNo = Math.min(pageNo, lastPage);
+  const start = pageNo * PAGE_SIZE;
+  const shown = matches.slice(start, start + PAGE_SIZE);
+  const range = `${start + 1}–${start + shown.length}`;
   for (const [index, { game, matchedTag, matchedFact, matchedFactId, combinedTerms }] of shown.entries()) {
     const row = element("li");
     const button = element("button", `+ ${game.name}`);
@@ -533,7 +542,7 @@ function drawSearch() {
       if (!["ArrowDown", "ArrowUp", "Escape"].includes(event.key)) return;
       event.preventDefault();
       if (event.key === "Escape") { $("search").focus(); return; }
-      const choices = [...$("search-results").querySelectorAll("button:not(:disabled)")];
+      const choices = [...$("search-results").querySelectorAll("li > button:not(:disabled)")];
       const index = choices.indexOf(button);
       if (index < 0) return;
       if (event.key === "ArrowUp" && index === 0) $("search").focus();
@@ -597,17 +606,24 @@ function drawSearch() {
     }
     $("search-results").append(row);
   }
-  if (shown.length < matches.length) {
+  if (lastPage) {
     const row = element("li");
-    const more = element("button", `Show ${Math.min(8, matches.length - shown.length)} more ${query ? "matches" : "games"}`);
-    more.type = "button";
-    more.addEventListener("click", () => {
-      const firstNew = shown.length;
-      if (query) searchLimit += 8; else browseLimit += 8;
-      drawSearch();
-      $("search-results").querySelectorAll("li > button")[firstNew]?.focus();
-    });
-    row.append(more); $("search-results").append(row);
+    const nav = element("div");
+    nav.setAttribute("role", "group");
+    nav.setAttribute("aria-label", "Catalog result pages");
+    for (const [step, label] of [[-1, "Previous page"], [1, "Next page"]]) {
+      const button = element("button", label);
+      button.type = "button";
+      button.disabled = step < 0 ? pageNo === 0 : pageNo === lastPage;
+      button.addEventListener("click", () => {
+        pageNo += step;
+        drawSearch();
+        ($("search-results").querySelector("li > button:not(:disabled)") ?? $("search")).focus();
+      });
+      nav.append(button);
+    }
+    row.append(nav);
+    $("search-results").append(row);
   }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   const fromStore = store === "all" ? "" : ` with a recorded ${storeNames[store]} link`;
@@ -622,7 +638,7 @@ function drawSearch() {
     : "";
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
-    : browseAll && !query ? `${shown.length} of ${matches.length} available ${noun}${fromStore} shown. Add a favorite or show more games.`
+    : browseAll && !query ? `${range} of ${matches.length} available ${noun}${fromStore}.`
     : !query ? `Search names, IDs, aliases${syntheticCatalog ? "" : ", recorded store URLs"} or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
     : !matches.length && selectedStoreUrl ? `${recordedStoreUrlGame.name} is already in your basket. Adjust its weight or remove it above.`
     : !matches.length && filteredStoreUrl ? `${recordedStoreUrlGame.name} is in the catalog, but the ${storeNames[store]} store filter hides it. Choose All games to add it.`
@@ -631,8 +647,8 @@ function drawSearch() {
     : !matches.length && unknownStoreUrl ? "This URL is not a recorded HTTPS store link in our catalog. Search by game name or choose Browse games; no external URLs are fetched."
     : !matches.length && store !== "all" && candidates.length
       ? `${candidates.length} matching ${candidates.length === 1 ? "game is" : "games are"} hidden by the ${storeNames[store]} store filter. Search all stores to see ${candidates.length === 1 ? "it" : "them"}.`
-    : matches.length ? ((shown.length < matches.length
-      ? `${shown.length} of ${matches.length} matching ${noun}${fromStore} shown. Show more matches to continue.`
+    : matches.length ? ((lastPage
+      ? `${range} of ${matches.length} matching ${noun}${fromStore}.`
       : `${matches.length} matching ${noun}${fromStore}. Enter adds a single match; for multiple matches, Enter or Arrow Down focuses the first choice.`) + selectedSearchNote)
     : store === "all" ? (syntheticCatalog ? "No profiles match. Try another name or recorded tag." :
         "No profiles match. Try another name, genre, gameplay fact or recorded store URL; unrecorded facts remain unknown.")
@@ -906,21 +922,20 @@ function render(rebuildSeeds) {
   drawSearch(); drawResults(); renderBridge(state);
 }
 $("search").addEventListener("input", () => {
-  searchLimit = 8;
+  pageNo = 0;
   browseAll = !$("search").value.trim() && $("store-filter").value !== "all";
   drawSearch();
 });
-$("store-filter").addEventListener("change", () => { browseAll = true; browseLimit = 8; searchLimit = 8; drawSearch(); });
+$("store-filter").addEventListener("change", () => { browseAll = true; pageNo = 0; drawSearch(); });
 $("search-all-stores").addEventListener("click", () => {
   const browse = $("search-all-stores").dataset.mode === "browse";
   $("store-filter").value = "all";
-  searchLimit = 8;
+  pageNo = 0;
   if (browse) {
     // A failed search becomes explicit catalog discovery; only the search
     // controls change, never the weighted basket, filters, exclusions or URL.
     $("search").value = "";
     browseAll = true;
-    browseLimit = 8;
   }
   drawSearch();
   // Move focus off the vanished recovery button onto the first available game.
@@ -937,8 +952,7 @@ $("search").addEventListener("keydown", (event) => {
     event.preventDefault();
     $("search").value = "";
     browseAll = false;
-    browseLimit = 8;
-    searchLimit = 8;
+    pageNo = 0;
     drawSearch();
     return;
   }
@@ -948,7 +962,7 @@ $("search").addEventListener("keydown", (event) => {
   if (event.key === "Enter" && $("search").value.trim()) {
     event.preventDefault();
     // An ambiguous search must not silently pick the first catalog entry.
-    if (choices.length === 1) first.click();
+    if (matchCount === 1) first.click();
     else first.focus();
   } else if (event.key === "ArrowDown") {
     event.preventDefault();
@@ -982,12 +996,12 @@ bindBridgeControls(() => state, (settings) => { state.bridge = settings; commit(
 $("catalog-browse").addEventListener("click", () => {
   const filtered = $("store-filter").value !== "all";
   $("store-filter").value = "all";
-  browseAll = filtered || !browseAll; browseLimit = 8; searchLimit = 8;
+  browseAll = filtered || !browseAll; pageNo = 0;
   $("search").value = "";
   drawSearch();
 });
 $("dreven-browse").addEventListener("click", () => {
-  browseAll = false;
+  browseAll = false; pageNo = 0;
   $("store-filter").value = "all";
   $("search").value = "Dreven Games";
   drawSearch();
@@ -1000,7 +1014,7 @@ $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recom
 // Reuse the accessible Clear action to preserve share and focus behavior.
 $("intro-empty").addEventListener("click", () => { $("clear").click(); });
 $("intro-browse").addEventListener("click", () => {
-  browseAll = true; browseLimit = 8;
+  browseAll = true; pageNo = 0;
   $("store-filter").value = "all";
   $("search").value = "";
   drawSearch();

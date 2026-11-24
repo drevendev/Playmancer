@@ -121,6 +121,40 @@ with tempfile.TemporaryDirectory(prefix="playmancer-bridge-worker-") as tmp:
                     page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
                     check("large synthetic catalog explicitly identified",
                           "250 invented profiles" in page.locator(".intro").inner_text())
+                    game_choices = page.locator("#search-results li > button")
+                    page.locator("#search").fill("Synthetic worker profile")
+                    seen = []
+                    next_page = page.get_by_role("button", name="Next page", exact=True)
+                    for _ in range(31):
+                        labels = game_choices.all_text_contents()
+                        check("broad search keeps at most eight ordered unique results on each page",
+                              0 < len(labels) <= 8 and set(labels).isdisjoint(seen), labels)
+                        seen.extend(labels)
+                        if next_page.is_disabled():
+                            break
+                        next_page.press("Enter")
+                    check("every available profile was reachable in source order",
+                          seen == [f"+ Synthetic worker profile {i:03d}" for i in range(2, 250)],
+                          len(seen))
+                    # A broad query can have one visible result on its final page.
+                    # The 000–009 prefix yields nine matches with seed 000 selected.
+                    page.locator("#clear").click()
+                    page.locator("#search").fill("worker:game000")
+                    page.locator("#search").press("Enter")
+                    page.locator("#search").fill("worker:game00")
+                    next_page.press("Enter")
+                    check("last page preserves search order",
+                          game_choices.count() == 1 and "9–9 of 9" in page.locator("#search-hint").inner_text())
+                    page.locator("#search").press("Enter")
+                    check("one visible result from an ambiguous search remains focus-only",
+                          page.locator("#seeds > li").count() == 1
+                          and game_choices.first.evaluate("node => document.activeElement === node"))
+                    page.locator("#search").fill("worker:game249")
+                    page.locator("#search").press("Enter")
+                    check("new exact search resets pagination and adds the only match",
+                          page.locator("#seeds > li").count() == 2
+                          and "249" in page.locator("#seeds").inner_text())
+                    page.locator("#reset").click()
                     page.locator("#bridge-start").select_option("worker:game000")
                     page.locator("#bridge-end").select_option("worker:game001")
                     page.wait_for_function(

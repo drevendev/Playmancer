@@ -37,6 +37,18 @@ test("static build is self-contained and byte-identical on repeat", async () => 
       "fictional bundle must omit real-catalog-only partial-fact AND search");
     assert.doesNotMatch(html, /search-recovery|search-all-stores|const candidates = query \|\| browseAll/,
       "fictional bundle must not ship real-only filter recovery controls or state");
+    // Execute the shared pagination statements from the emitted fictional bundle.
+    // The real-only storefront stripping must not erase these initializers.
+    const pagination = html.match(/matchCount = matches\.length;[\s\S]*?const shown = matches\.slice\(start, start \+ PAGE_SIZE\);/);
+    assert.ok(pagination, "emitted search keeps pagination initialization");
+    const paginate = new Function("matches", "pageNo", "PAGE_SIZE",
+      "let matchCount;" + pagination[0] + "return { matchCount, lastPage, pageNo, shown };");
+    assert.deepEqual(paginate([], 12, 8), { matchCount: 0, lastPage: 0, pageNo: 0, shown: [] });
+    const games = Array.from({ length: 9 }, (_, i) => i);
+    assert.deepEqual(paginate(games, 0, 8).shown, games.slice(0, 8));
+    assert.deepEqual(paginate(games, 10, 8), { matchCount: 9, lastPage: 1, pageNo: 1, shown: [8] });
+    assert.deepEqual(paginate(Array.from({ length: 248 }, (_, i) => i), 30, 8).shown,
+      [240, 241, 242, 243, 244, 245, 246, 247]);
     assert.ok(firstCss.byteLength > 0 && firstCss.byteLength < 20_000);
     assert.match(html, /id="results-view"/);
     // The fictional bundle must keep basket comparisons inert and must not

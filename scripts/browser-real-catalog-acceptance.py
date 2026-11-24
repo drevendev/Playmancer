@@ -597,8 +597,8 @@ try:
                   and "Shadow Runner" in page.locator("#search-results").inner_text())
             page.locator("#store-filter").select_option("steam")
             check(label + ": Steam discovery paginates rather than dropping entries",
-                  page.locator("#search-results li > button").count() == 9
-                  and page.get_by_role("button", name="Show 8 more games").count() == 1)
+                  page.locator("#search-results li > button").count() == 8
+                  and page.get_by_role("button", name="Next page", exact=True).is_enabled())
             page.locator("#catalog-browse").click()
             check(label + ": storefront discovery never changes basket or ranking",
                   page.locator("#store-filter").input_value() == "all"
