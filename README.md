@@ -21,10 +21,10 @@ saved link. Unrecognized storefront URLs retain an explicit no-fetch warning.
 ## Play in your browser — GitHub Pages
 
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
-[30-game source receipts](docs/REAL_EXPANSION_30.md) ·
+[35-game source receipts](docs/REAL_EXPANSION_35.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Public pilot:** 30 real games, with first-screen browsing. The
+> **Default build:** 35 real games (34 with supported store links), with first-screen browsing. Live availability depends on the deployed revision. The
 > [Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 > tests the served `master` revision, same-origin Bridge worker, and hosted desktop/mobile
 > player journeys after each successful deployment. **This README is not a live
@@ -80,12 +80,10 @@ runtime API dependency; external storefront links open only when selected.
 
 ### Current real-catalog pilot
 
-The public build selects immutable snapshot
-`multi-store-genre-pilot-30-2026-10-28`: **30 identifiable games** (25 sourced
-Wikidata CC0 items and five owner-associated Dreven Games titles). The six most
-recent additions are **Dwarf Fortress, FTL: Faster Than Light, Super Meat Boy,
-Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**. See
-[their item-level source receipts](docs/REAL_EXPANSION_30.md), the
+The default build selects immutable snapshot
+`multi-store-genre-pilot-35-2026-11-24`: **35 identifiable games** (34 with supported storefront links, 29 sourced Wikidata CC0 items and six owner-associated Dreven Games titles). The latest additions are **Bellbloom, Half-Life 2, Portal, Left 4 Dead and Left 4 Dead 2**. See
+[the 35-game release receipts](docs/REAL_EXPANSION_35.md), the
+[30-game expansion](docs/REAL_EXPANSION_30.md), the
 [previous expansion](docs/REAL_EXPANSION.md), the
 [original Wikidata pilot](docs/REAL_PILOT.md), and
 [storefront sources/limits](docs/STOREFRONTS.md).
@@ -93,9 +91,8 @@ Papers, Please, Inscryption, and Sekiro: Shadows Die Twice**. See
 The **ranking interface** uses source-backed genres, selected platform facts and
 carefully normalized publisher-authored tags; mechanics and co-op remain unknown
 in its scoring snapshot. A **separate source-backed gameplay fact explorer**
-(`observations.html`) exposes 118 independently written, dated non-genre facts for
-29 real games. DevMatch remains unreviewed, never verified lacking
-those features. [Latest dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_29.md) and
+(`observations.html`) exposes 122 independently written, dated non-genre facts for
+30 real games. DevMatch and the four newly imported Steam games remain unreviewed, never verified lacking those features. [Bellbloom source receipts](docs/SEMANTIC_TAGS_BELLBLOOM_CANDIDATE.md) and [earlier dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_29.md) and
 [latest 29-profile v2 release-gate audit](docs/REVIEWED_TAG_READINESS_29.md).
 This inventory is not a new recommendation mode or a claim of
 improved ranking quality. Artwork and third-party descriptions are not copied.
@@ -137,11 +134,11 @@ The 12-item Wikidata-only and fictional sample fixtures also remain separate.
 Share links pin catalog and method versions; incompatible versions fail visibly
 rather than silently substituting newer entries.
 
-## Player capabilities — 30-game pilot
+## Player capabilities — 35-game pilot
 
-Catalog search prefers whole-name/phrase and exact recorded store-link matches. If a multi-word search finds no whole-phrase match, it can match **all** words across recorded game names/IDs, genre labels and selected positive gameplay facts (for example `Factorio Automating`). Each such result is explicitly marked as partial evidence rather than a recommendation-fit score; unrecorded facts remain unknown. Search neither alters ranking nor relaxes hard filters. The 30-game catalog still has limited, non-exhaustive coverage.
+Catalog search prefers whole-name/phrase and exact recorded store-link matches. If a multi-word search finds no whole-phrase match, it can match **all** words across recorded game names/IDs, genre labels and selected positive gameplay facts (for example `Factorio Automating`). Each such result is explicitly marked as partial evidence rather than a recommendation-fit score; unrecorded facts remain unknown. Search neither alters ranking nor relaxes hard filters. The 35-game catalog still has limited, non-exhaustive coverage.
 
-The currently published 30-game snapshot powers the player capabilities below.
+The default 35-game snapshot powers the player capabilities below.
 The earlier 17-game release is historical, not the current Pages catalog.
 For isolated tests, `node scripts/build-demo.mjs` builds a fictional
 twelve-profile fixture; a separate six-profile synthetic fixture covers aliases,
@@ -149,7 +146,7 @@ editions/DLC and unknown metadata. Share links preserve catalog and method
 versions: the current site visibly rejects incompatible historical links instead
 of silently substituting games from a different snapshot.
 
-- Browse the 30 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time, inspect recorded Steam/Google Play/itch.io links **before adding a favorite**, and add games without losing existing choices. Store links are optional outbound navigation, never automatic requests or a ranking signal. The **Browse by store** selector narrows *catalog discovery* to games with recorded Steam, Google Play or itch.io links; it combines with name/genre search, does not constrain recommendations, and is deliberately not part of shared-basket state. In the production release, catalog discovery also shows the count of individually reviewed **selected positive gameplay facts** and a version-pinned evidence lookup before adding a favorite. A zero-count/unreviewed game is explicitly **unknown**, not known to lack features. Matching a particular fact already provides its more specific source link. The independent fact inventory does not affect ranking, filters or shares; fictional and legacy previews do not invent it.
+- Browse the 35 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time, inspect recorded Steam/Google Play/itch.io links **before adding a favorite**, and add games without losing existing choices. Store links are optional outbound navigation, never automatic requests or a ranking signal. The **Browse by store** selector narrows *catalog discovery* to games with recorded Steam, Google Play or itch.io links; it combines with name/genre search, does not constrain recommendations, and is deliberately not part of shared-basket state. In the production release, catalog discovery also shows the count of individually reviewed **selected positive gameplay facts** and a version-pinned evidence lookup before adding a favorite. A zero-count/unreviewed game is explicitly **unknown**, not known to lack features. Matching a particular fact already provides its more specific source link. The independent fact inventory does not affect ranking, filters or shares; fictional and legacy previews do not invent it.
 - Search names (including titles typed without punctuation, such as `Papers Please`), canonical IDs, declared aliases and source-recorded genre labels. Name and alias matches are shown before generic genre or partial gameplay-fact matches, with source-catalog order preserved within each class; this only changes discovery, not recommendation ranking. The real pilot also finds games by independently reviewed **positive gameplay facts** (for example, “Automating production”) and labels that match as **partial evidence**, not verified complete tags; a missing observation is unknown, not a negative. A matched positive fact links to its version-pinned original source in the Gameplay Facts explorer before adding a game. These facts affect catalog discovery only, never fit scores, hard constraints or shared-basket state. Synthetic profiles retain their authored feature-tag search. Add/remove up to five profiles.
 - Promote any visible recommendation directly into a new favorite with **Add to favorites**; it receives weight 1, disappears from the candidate list, and preserves filters, share state and keyboard focus. At five favorites the add action is disabled until one is removed.
 - Edit explicit integer weights with keyboard controls.
@@ -164,7 +161,7 @@ of silently substituting games from a different snapshot.
   a candidate shares independently written, positive Gameplay Facts with an
   explicit favorite. The compact details panel names each supported favorite
   and trait and offers a direct source-receipt link for that favorite in the
-  revision-pinned Gameplay Facts explorer (new tab); 29 partially reviewed
+  revision-pinned Gameplay Facts explorer (new tab); 30 partially reviewed
   profiles are available. Absence of this
   disclosure is **not** a mismatch: missing facts remain unknown. These facts
   never enter fit scores, hard filters, rankings, or basket shares. The data
@@ -201,7 +198,7 @@ python3 scripts/pages-preflight.py _site-real
 python3 -m http.server 8080 --directory _site-real
 ```
 
-Use the current `npm run build` command below for the published 30-game input.
+Use the current `npm run build` command below for the default 35-game input.
 All snapshots retain their own catalog versions and provenance.
 
 ## Run and verify
@@ -219,7 +216,7 @@ python3 scripts/release-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-With this build configuration, `npm run build` selects the current live-verified 30-game multistore snapshot. To build
+With this build configuration, `npm run build` selects the 35-game multistore snapshot. Rebuild the historical 30-game full release with `node scripts/build-release.mjs _site-30 --candidate-30` and validate it with `python3 scripts/release-preflight.py _site-30 --candidate-30`. Historical links are not silently migrated. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently

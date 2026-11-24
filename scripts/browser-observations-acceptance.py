@@ -313,7 +313,7 @@ try:
                 explore.on('pageerror', lambda error: errors.append(str(error)))
                 explore.on('request', lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(base).netloc else None)
                 check(page.url == original, f'{engine}/{width}: original basket URL unchanged')
-                check('118 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
+                check('122 dated facts' in explore.locator('#coverage').inner_text(), f'{engine}/{width}: honest coverage')
                 # The explorer now mirrors main-player discovery: no entire
                 # phrase hit -> every word must occur in this game's recorded
                 # identity or selected positive facts. Strict fact filters
@@ -373,7 +373,12 @@ try:
                       explore.locator('#comparison a[href="https://www.bay12games.com/dwarves/features.html"]').count() >= 1,
                       f'{engine}/{width}: Dwarf Fortress / Terraria shared digging retains source receipt')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == 30, f'{engine}/{width}: complete catalog with unknowns')
+                check(explore.locator('.game-card').count() == 35, f'{engine}/{width}: complete catalog with unknowns')
+                explore.locator('#query').fill('Half-Life 2')
+                late_card = explore.locator('.game-card[data-game-id="wikidata:q193581"]')
+                check(late_card.count() == 1 and late_card.locator('.fact-list a').count() == 0,
+                      f'{engine}/{width}: new game has no invented fact receipts')
+                explore.locator('#query').fill('')
                 explore.locator('#sample').click()
                 for side, expected in (('left', 'Factorio'), ('right', 'Terraria')):
                     current = explore.locator(f'#{side}-current')

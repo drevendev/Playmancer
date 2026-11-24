@@ -40,7 +40,7 @@ test('explicit candidate packages all five files deterministically; default shar
     for (const output of [a, b]) {
       const result = run(output, '--candidate-31'); assert.equal(result.status, 0, result.stderr);
     }
-    const original = run(old); assert.equal(original.status, 0, original.stderr);
+    const original = run(old, '--candidate-30'); assert.equal(original.status, 0, original.stderr);
     const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
     assert.deepEqual(readdirSync(a).sort(), files);
     for (const file of files) assert.deepEqual(readFileSync(join(a,file)),readFileSync(join(b,file)),file);

@@ -15,7 +15,7 @@ test('production adds explicit tools without changing player scoring/worker byte
   t.after(() => rm(dir, { recursive:true, force:true }));
   const base = join(dir,'base'), release = join(dir,'release');
   const run = args => execFileSync(process.execPath,args,{cwd:root,stdio:'pipe'});
-  run(['scripts/build-demo.mjs',base,'--catalog','examples/catalog.multistore-30.real.json']);
+  run(['scripts/build-demo.mjs',base,'--catalog','examples/catalog.multistore-35.real.json']);
   run(['scripts/build-release.mjs',release]);
   assert.deepEqual((await readdir(release)).sort(), ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css']);
   for (const file of ['.nojekyll','bridge-worker.js'])
@@ -27,8 +27,8 @@ test('production adds explicit tools without changing player scoring/worker byte
     appendToSealedStylesheet(baseCss, BASKET_LIBRARY_CSS));
   assert.throws(() => appendToSealedStylesheet(baseCss.slice(0,150), BASKET_LIBRARY_CSS),
     /Missing or corrupt stylesheet seal/);
-  const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-30.real.json'),'utf8'));
-  const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-29.v1.json'),'utf8'));
+  const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-35.real.json'),'utf8'));
+  const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-30.catalog35.v1.json'),'utf8'));
   const pinnedPositiveFacts = prepareObservations(catalog, observations);
   assert.equal(await readFile(join(release,'index.html'),'utf8'),
     await addBasketLibrary(root, linkObservationExplorer(baseIndex, pinnedPositiveFacts)));
