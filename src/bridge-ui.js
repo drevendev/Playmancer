@@ -156,6 +156,12 @@ export function renderBridge(state) {
   diagnostics.open = false;
   bridgeEl("bridge-diagnostics-text").textContent = "";
   steps.replaceChildren();
+  if (CATALOG.length > 250) {
+    cancelPendingBridge();
+    steps.removeAttribute("aria-busy");
+    status.textContent = "Bridge unavailable: this catalog exceeds the 250-profile route limit. Basket ranking and sharing remain available.";
+    return;
+  }
   if (state.seeds.length < 2) {
     cancelPendingBridge();
     steps.removeAttribute("aria-busy");

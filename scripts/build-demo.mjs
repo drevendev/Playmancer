@@ -26,10 +26,10 @@ for (let i = 0; i < args.length; i++) {
 // the validator checks recorded field approvals, not their legal truth.
 let selectedSnapshot = null;
 if (catalogPath !== null) {
-  if ((await stat(catalogPath)).size > 1048576) throw new Error("Catalog input exceeds the 1 MiB limit");
+  if ((await stat(catalogPath)).size > 8 * 1024 * 1024) throw new Error("Catalog input exceeds the 8 MiB limit");
   const input = JSON.parse(await readFile(catalogPath, "utf8"));
+  if (Array.isArray(input?.games) && input.games.length > 2000) throw new Error("Catalog exceeds the 2000-profile engineering bound");
   selectedSnapshot = validateCatalogSnapshot(input, { requirePublishable: true });
-  if (selectedSnapshot.games.length > 250) throw new Error("Catalog exceeds the 250-profile engineering bound");
 }
 const modules = ["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js", "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"];
 const expectedImports = [
@@ -46,6 +46,23 @@ const inlineJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
+  // The immutable validated snapshot fixes the profile count at build time.
+  // Keep the explicit abstention in large builds and source-mode execution,
+  // but do not spend the strict small-player budget on an unreachable branch.
+  if (path === "src/bridge-ui.js") {
+    const largeCatalogGuard = [
+      "  if (CATALOG.length > 250) {",
+      "    cancelPendingBridge();",
+      "    steps.removeAttribute(\"aria-busy\");",
+      "    status.textContent = \"Bridge unavailable: this catalog exceeds the 250-profile route limit. Basket ranking and sharing remain available.\";",
+      "    return;",
+      "  }",
+      ""
+    ].join("\n");
+    if (source.split(largeCatalogGuard).length !== 2)
+      throw new Error("Unexpected large-catalog Bridge guard boundary");
+    if (effectiveSnapshot.games.length <= 250) source = source.replace(largeCatalogGuard, "");
+  }
   // Fictional/alternative synthetic previews have no publication-bound
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.

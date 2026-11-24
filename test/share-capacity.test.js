@@ -10,12 +10,12 @@ import { Script } from 'node:vm';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const fixture = JSON.parse(readFileSync(join(root, 'examples/catalog.alternative.synthetic.json'), 'utf8'));
 
-test('250-profile exclusion links round-trip with/without Bridge and preserve hard constraints', () => {
+for (const count of [250, 1000]) test(`${count}-profile exclusion links round-trip with/without Bridge and preserve hard constraints`, () => {
   const dir = mkdtempSync(join(tmpdir(), 'playmancer-share-capacity-'));
   try {
     const snapshot = structuredClone(fixture);
-    snapshot.snapshotId = 'synthetic-share-capacity-250';
-    snapshot.games = Array.from({ length: 250 }, (_, index) => ({
+    snapshot.snapshotId = `synthetic-share-capacity-${count}`;
+    snapshot.games = Array.from({ length: count }, (_, index) => ({
       ...fixture.games[index % fixture.games.length],
       id: 'capacity:g' + String(index).padStart(3, '0'),
       name: 'Synthetic Capacity ' + index,
@@ -23,12 +23,20 @@ test('250-profile exclusion links round-trip with/without Bridge and preserve ha
       sourceId: fixture.sources[0].id,
     }));
     const path = join(dir, 'snapshot.json');
-    writeFileSync(path, JSON.stringify(snapshot));
+    // Exercise the former byte ceiling using inert JSON whitespace, not invented real data.
+    writeFileSync(path, JSON.stringify(snapshot) + (count === 1000 ? ' '.repeat(1048576) : ''));
     const built = spawnSync(process.execPath,
       [join(root, 'scripts/build-demo.mjs'), join(dir, 'site'), '--catalog', path],
       { encoding: 'utf8' });
     assert.equal(built.status, 0, built.stderr || built.stdout);
     const html = readFileSync(join(dir, 'site/index.html'), 'utf8');
+    if (count <= 250) assert.doesNotMatch(html, /250-profile route limit/);
+    else assert.match(html, /250-profile route limit/);
+    const second = spawnSync(process.execPath, [join(root, 'scripts/build-demo.mjs'), join(dir, 'second'), '--catalog', path], { encoding: 'utf8' });
+    assert.equal(second.status, 0, second.stderr);
+    for (const name of ['index.html', 'bridge-worker.js', 'player.css', '.nojekyll']) {
+      assert.deepEqual(readFileSync(join(dir, 'site', name)), readFileSync(join(dir, 'second', name)));
+    }
     const match = html.match(/<script type="module">\n([\s\S]*?)\n<\/script>/);
     assert.ok(match, 'the production builder must include its inline module');
     const marker = '// src/bridge-ui.js';
@@ -54,8 +62,8 @@ test('250-profile exclusion links round-trip with/without Bridge and preserve ha
       filename: 'capacity-share-compiled.js',
     }).runInNewContext(context);
     const result = context.__shareCheck;
-    assert.equal(result.count, 250);
-    assert.equal(result.exclusions, 248);
+    assert.equal(result.count, count);
+    assert.equal(result.exclusions, count - 2);
     assert.ok(result.hashLength > 6000 && result.plainLength > 6000,
       'the fixture must reproduce the old hardcoded 6000-character rejection');
     assert.ok(result.hashLength <= result.max);

@@ -20,8 +20,10 @@ python3 -m http.server 8080 --directory _site-pilot
 
 One optional output directory and one `--catalog` path are accepted. Missing files,
 malformed JSON, duplicate options and unknown flags fail; they never substitute
-the default catalog. Input JSON is limited to 1 MiB and 250 profiles, matching the
-existing Bridge engineering bound. This is not a latency guarantee; #15 tracks
+the default catalog. Input JSON is limited to 8 MiB and 2,000 profiles. The separately bounded Bridge
+solver still supports at most 250 profiles; larger builds visibly abstain from
+route computation without truncating the graph. Search, ranking and versioned
+basket state remain available. The 1,000-profile fixture is not real coverage. This is not a latency guarantee; #15 tracks
 remaining main-thread responsiveness. The GitHub Pages publication now selects the versioned real Wikidata pilot through `npm run build`; plain `node scripts/build-demo.mjs` intentionally retains the authored synthetic fixture for isolated regression tests.
 
 ## Data path and publication safety

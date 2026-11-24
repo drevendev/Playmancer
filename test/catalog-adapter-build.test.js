@@ -112,7 +112,7 @@ test('invalid refreshes and missing snapshots never replace last-valid output', 
     x => { x.games[1].aliases = x.games[0].aliases; },
     x => { x.games[3].parentId = 'pilot:absent'; },
     x => { x.kind = 'real'; },
-    x => { x.games = Array.from({ length: 251 }, (_, i) => ({ ...x.games[0], id: `large:${i}`, aliases: [] })); }
+    x => { x.games = Array.from({ length: 2001 }, (_, i) => ({ ...x.games[0], id: `large:${i}`, aliases: [] })); }
   ];
   for (const mutate of mutations) {
     const input = structuredClone(fixture); mutate(input);
@@ -123,7 +123,7 @@ test('invalid refreshes and missing snapshots never replace last-valid output', 
     assert.deepEqual(readFileSync(join(site, 'bridge-worker.js')), workerBefore);
     assert.deepEqual(readFileSync(join(site, 'player.css')), cssBefore);
   }
-  for (const text of ['not JSON', ' '.repeat(1048577)]) {
+  for (const text of ['not JSON', ' '.repeat(8 * 1024 * 1024 + 1)]) {
     writeFileSync(path, text);
     assert.notEqual(run(site, '--catalog', path).status, 0);
     assert.deepEqual(readFileSync(join(site, 'index.html')), before);
