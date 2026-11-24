@@ -4,24 +4,24 @@ import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
-import { buildObservationPage, linkObservationExplorer, gitObservationBlob } from './build-observations.mjs';
-import { prepareObservations, REVIEWED_OBSERVATIONS_SHA } from '../src/observations.js';
+import { buildObservationPage, linkObservationExplorer, readReleaseObservations } from './build-observations.mjs';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from './build-basket-library.mjs';
 import { appendToSealedStylesheet } from './stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
-if (process.argv.length > 3 || process.argv[2]?.startsWith('--')) throw new Error('Usage: node scripts/build-release.mjs [output-directory]');
-const output = resolve(process.argv[2] ?? join(root, '_site'));
-const catalogPath = join(root, 'examples/catalog.multistore-30.real.json');
+const args = process.argv.slice(2);
+const candidate = args.length === 2 && args[1] === '--candidate-31';
+if (args.length > 2 || (args.length === 2 && !candidate) || args[0]?.startsWith('-'))
+  throw new Error('Usage: node scripts/build-release.mjs [output-directory [--candidate-31]]');
+const output = resolve(args[0] ?? join(root, '_site'));
+const catalogPath = join(root, candidate ? 'examples/catalog.multistore-31.real.json' : 'examples/catalog.multistore-30.real.json');
 const bytes = await readFile(catalogPath);
 const revision = process.env.PLAYMANCER_REVISION ?? process.env.GITHUB_SHA ?? 'unpublished';
 // All source/bundle validation happens before touching a previous release.
 const catalog = JSON.parse(bytes);
 const explorer = await buildObservationPage(root, catalog, bytes, revision);
 if (explorer === null) throw new Error('Production catalog has no approved observation binding');
-const factsBytes = await readFile(join(root, 'examples/semantic-tags-reviewed-29.v1.json'));
-if (gitObservationBlob(factsBytes) !== REVIEWED_OBSERVATIONS_SHA)
-  throw new Error('Inline Gameplay Facts source revision mismatch');
-const inlineFacts = prepareObservations(catalog, JSON.parse(factsBytes.toString('utf8')));
+const inlineFacts = await readReleaseObservations(root, catalog, bytes);
+if (inlineFacts === null) throw new Error('Production catalog has no approved inline observation binding');
 const stage = await mkdtemp(join(tmpdir(), 'playmancer-release-'));
 const pending = [];
 try {

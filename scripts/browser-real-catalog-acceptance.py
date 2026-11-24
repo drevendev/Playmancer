@@ -849,12 +849,53 @@ try:
               and legacy_page.locator("#seeds .storefront-links a").count() == 0)
         legacy_page.screenshot(path=str(ARTIFACTS / "wikidata-only-mobile.png"), full_page=True)
         legacy_ctx.close()
+        candidate_site = ARTIFACTS / "bellbloom-candidate-site"
+        subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site), "--candidate-31"], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site), "--candidate-31"], cwd=ROOT, check=True)
+        candidate_id = "multi-store-genre-pilot-31-2026-11-24"
+        for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
+            ctx = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
+            page = ctx.new_page()
+            errors, requests = [], []
+            page.on("pageerror", lambda err: errors.append(str(err)))
+            page.on("request", lambda request: requests.append(request.url))
+            page.set_content(offline_html(candidate_site), wait_until="load")
+            page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+            check(label + ": candidate first screen and evidence binding",
+                  "31 real games" in page.locator(".intro").inner_text()
+                  and candidate_id in page.locator("#versions").inner_text()
+                  and page.locator("#observation-explorer-entry").get_attribute("data-observation-catalog") == candidate_id)
+            page.locator("#search").fill("Bellbloom")
+            row = page.locator("#search-results > li").filter(has=page.get_by_role("button", name="Add Bellbloom", exact=True))
+            check(label + ": Bellbloom is discoverable with store and partial facts",
+                  row.count() == 1 and "4 selected gameplay facts" in row.inner_text()
+                  and row.locator('a[href="https://drevengames.itch.io/bellbloom"]').count() == 1)
+            page.get_by_role("button", name="Add Bellbloom", exact=True).click()
+            page.locator("#share").click()
+            saved_hash = "#" + urlsplit(page.locator("#share-link").input_value()).fragment
+            state = json.loads(unquote(saved_hash.split("#basket=", 1)[1]))
+            check(label + ": Bellbloom share preserves the exact candidate version and identity",
+                  state["catalog"] == candidate_id and state["seeds"][-1]["id"] == "dreven:bellbloom")
+            page.screenshot(path=str(ARTIFACTS / f"bellbloom-candidate-{label}.png"), full_page=True)
+            page.evaluate("value => { location.hash = '#basket=' + encodeURIComponent(JSON.stringify(value)); }",
+                          {**state, "catalog": SNAPSHOT, "seeds": state["seeds"][:-1]})
+            page.wait_for_function("!document.getElementById('error').hidden")
+            check(label + ": previous catalog link fails visibly without replacement basket",
+                  "unavailable catalog" in page.locator("#error").inner_text()
+                  and page.locator("#seeds > li").count() == 0)
+            page.evaluate("hash => { location.hash = hash; }", saved_hash)
+            page.wait_for_function("document.querySelectorAll('#seeds > li').length === 3")
+            check(label + ": candidate share restores Bellbloom and reflows without remote requests/errors",
+                  "Bellbloom" in page.locator("#seeds").inner_text()
+                  and page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                  and not errors and not requests)
+            ctx.close()
         browser.close()
 finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "multistore and legacy real HTML / Chromium; NOT Pages or measured usefulness",
+        "scope": "multistore, legacy and opt-in 31-game candidate HTML / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))

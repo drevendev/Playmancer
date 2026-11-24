@@ -36,9 +36,22 @@ node --test test/catalog-bellbloom-candidate.test.js
 npm test
 ```
 
-Next adoption gate: establish a versioned observation binding for the new
-catalog, update production selection and related versioned compatibility and
-browser acceptance tests in a focused change, and independently verify Pages.
+The reviewed Gameplay Facts binding is in
+`examples/semantic-tags-reviewed-30.catalog31.v1.json` (30 partial profiles,
+122 selected positive facts; DevMatch remains unknown). Facts are not ranking inputs.
+
+Build the complete local candidate, including the same player, Bridge worker,
+basket library and evidence explorer as production:
+
+```sh
+node scripts/build-release.mjs _site-candidate --candidate-31
+python3 scripts/release-preflight.py _site-candidate --candidate-31
+python3 -m http.server 8000 --directory _site-candidate
+```
+
+The explicit opt-in does not switch the default Pages build. The next adoption
+gate is independent candidate acceptance, then production selection, all hosted
+compatibility assertions and exact-revision Pages verification.
 Compare the candidate against the genre baseline using a shared eligibility
 set. Owner association adds no ranking preference. No claim of v2 readiness.
 
