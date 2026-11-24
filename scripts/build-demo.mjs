@@ -26,10 +26,10 @@ for (let i = 0; i < args.length; i++) {
 // the validator checks recorded field approvals, not their legal truth.
 let selectedSnapshot = null;
 if (catalogPath !== null) {
-  if ((await stat(catalogPath)).size > 1048576) throw new Error("Catalog input exceeds the 1 MiB limit");
+  if ((await stat(catalogPath)).size > 8 * 1024 * 1024) throw new Error("Catalog input exceeds the 8 MiB limit");
   const input = JSON.parse(await readFile(catalogPath, "utf8"));
+  if (Array.isArray(input?.games) && input.games.length > 2000) throw new Error("Catalog exceeds the 2000-profile engineering bound");
   selectedSnapshot = validateCatalogSnapshot(input, { requirePublishable: true });
-  if (selectedSnapshot.games.length > 250) throw new Error("Catalog exceeds the 250-profile engineering bound");
 }
 const modules = ["src/ranking.js", "src/catalog.js", "src/bridge.js", "src/bridge-preview.js", "src/demo.js", "src/bridge-ui.js", "src/demo-ui.js"];
 const expectedImports = [
