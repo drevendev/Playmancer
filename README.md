@@ -263,8 +263,10 @@ This is not the source-backed weighted-tag recommender v2 (issue #76).
 field rights, canonical game IDs, aliases, external-ID collisions and distinct
 edition/DLC/remake relations. Unknown metadata is `null`; empty lists and `false`
 co-op values are observations, not missing data. Arbitrary extras/artwork are omitted.
-The build input limit is 1 MiB and 250 profiles; this is an engineering bound, not a
-mobile latency guarantee. The first two selected-snapshot records form the sample.
+The alternate static builder accepts up to 8 MiB and 2,000 profiles. Bridge
+retains its 250-profile route limit; larger builds explicitly abstain without
+truncating the catalog. These are engineering bounds, not a mobile latency
+or 1,000-game real-release guarantee. The first two selected-snapshot records form the sample.
 
 The selected public-build input retains the original 12 Wikidata CC0 items, seven
 previously added Wikidata items and five owner-associated Dreven Games entries,

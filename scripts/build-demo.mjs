@@ -46,6 +46,23 @@ const inlineJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,
 const parts = [];
 for (const [index, path] of modules.entries()) {
   let source = await readFile(join(root, path), "utf8");
+  // The immutable validated snapshot fixes the profile count at build time.
+  // Keep the explicit abstention in large builds and source-mode execution,
+  // but do not spend the strict small-player budget on an unreachable branch.
+  if (path === "src/bridge-ui.js") {
+    const largeCatalogGuard = [
+      "  if (CATALOG.length > 250) {",
+      "    cancelPendingBridge();",
+      "    steps.removeAttribute(\"aria-busy\");",
+      "    status.textContent = \"Bridge unavailable: this catalog exceeds the 250-profile route limit. Basket ranking and sharing remain available.\";",
+      "    return;",
+      "  }",
+      ""
+    ].join("\n");
+    if (source.split(largeCatalogGuard).length !== 2)
+      throw new Error("Unexpected large-catalog Bridge guard boundary");
+    if (effectiveSnapshot.games.length <= 250) source = source.replace(largeCatalogGuard, "");
+  }
   // Fictional/alternative synthetic previews have no publication-bound
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.

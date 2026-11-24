@@ -30,6 +30,8 @@ for (const count of [250, 1000]) test(`${count}-profile exclusion links round-tr
       { encoding: 'utf8' });
     assert.equal(built.status, 0, built.stderr || built.stdout);
     const html = readFileSync(join(dir, 'site/index.html'), 'utf8');
+    if (count <= 250) assert.doesNotMatch(html, /250-profile route limit/);
+    else assert.match(html, /250-profile route limit/);
     const second = spawnSync(process.execPath, [join(root, 'scripts/build-demo.mjs'), join(dir, 'second'), '--catalog', path], { encoding: 'utf8' });
     assert.equal(second.status, 0, second.stderr);
     for (const name of ['index.html', 'bridge-worker.js', 'player.css', '.nojekyll']) {
