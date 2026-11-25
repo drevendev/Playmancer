@@ -135,6 +135,10 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 .seed{padding:8px;margin-bottom:6px}
 .seed .actions{margin-top:6px}
 @media(max-width:800px){.wrap{padding:14px}.intro{padding:12px 0}.layout{gap:14px}}
+#browse-options{margin-top:8px;border:1px solid var(--line);padding:10px;border-radius:12px}
+#store-scope{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#store-scope button,#browse-close{background:transparent;color:var(--accent);border-color:transparent;text-decoration:underline}
+#search-results:empty{margin:0}
 </style>
 </head>
 <body>
@@ -144,9 +148,10 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 <header class="top"><div class="logo">Play<span>mancer</span></div><span class="badge">Game catalog · loading source</span></header>
 <div class="intro"><h1>Find your next game</h1>
 <div class="game-picker"><label for="search">Add a real game</label><input id="search" type="search" placeholder="Search catalog…" autocomplete="off" aria-describedby="search-hint">
-<p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><div id="search-recovery" hidden><button id="search-all-stores" type="button">Search all stores</button></div><ul id="search-results" aria-label="Available games"></ul>
-<button id="catalog-browse" type="button" aria-controls="search-results" aria-expanded="false">Browse all games</button><button id="dreven-browse" type="button">Browse Dreven Games (5)</button>
+<p id="search-hint" class="hint" role="status" aria-live="polite" aria-atomic="true">Choose a result below. No account or network needed.</p><div id="store-scope" class="hint" hidden><span id="store-scope-label"></span> <button id="store-scope-reset" type="button">Search all stores</button></div><div id="search-recovery" hidden><button id="search-all-stores" type="button">Search all stores</button></div><ul id="search-results" aria-label="Available games"></ul>
+<div id="browse-options" hidden><button id="catalog-browse" type="button" aria-controls="search-results" aria-expanded="false">Browse all games</button><button id="dreven-browse" type="button">Browse Dreven Games (5)</button>
 <div id="store-filter-wrap" hidden><label for="store-filter">Browse by store</label><select id="store-filter" aria-describedby="store-filter-note"><option value="all">All games</option></select><p id="store-filter-note" class="hint">Only recorded links are used. This changes discovery, not ranking, required platforms, or your shared basket.</p></div>
+<button id="browse-close" type="button">Close browse options</button></div>
 </div>
 <div class="actions intro-actions"><button id="intro-sample" type="button">Try a sample</button><button id="intro-browse" type="button">Browse games</button><button id="intro-empty" type="button">Start empty</button></div><p class="muted">Choose favorites to discover similar games.</p></div>
 <nav id="quick-nav" aria-label="Page sections"><button id="jump-basket" type="button">Basket</button><button id="jump-results" class="primary" type="button">Results</button><button id="jump-bridge" type="button">Bridge</button></nav>

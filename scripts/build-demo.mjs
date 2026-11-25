@@ -248,6 +248,14 @@ for (const [index, path] of modules.entries()) {
     if (recoveryActionStart < 0 || recoveryActionEnd <= recoveryActionStart)
       throw new Error("Unexpected search recovery action boundary");
     source = source.slice(0, recoveryActionStart) + source.slice(recoveryActionEnd);
+    for (const line of ["  if ($(\"browse-options\")) $(\"browse-options\").hidden = !syntheticCatalog;\n", "  if ($(\"browse-options\")) $(\"browse-options\").hidden = false;\n"]) {
+      if (source.split(line).length !== 2) throw new Error("Unexpected real-only browse options boundary");
+      source = source.replace(line, "");
+    }
+    // The fictional search copy is identical; omit the unreachable real-only helper.
+    const idleHint = "    : !query ? (syntheticCatalog ? `Search names, IDs, aliases or recorded feature tags to find ${noun}.` : \"Search titles, genres, gameplay facts or store links.\")";
+    if (source.split(idleHint).length !== 2) throw new Error("Unexpected idle search helper boundary");
+    source = source.replace(idleHint, "    : !query ? `Search names, IDs, aliases or recorded feature tags to find ${noun}.`");
     // The new empty-state evidence jump is a real-catalog recovery path.
     // Keep the fictional fixture below its fixed 95 kB budget without dropping
     // the live player's strict-filter explanation control.
@@ -410,6 +418,10 @@ if (effectiveSnapshot.kind === "synthetic") {
   if (template.split(realOnlyRecovery).length !== 2)
     throw new Error("Unexpected real-only search recovery DOM boundary");
   template = template.replace(realOnlyRecovery, "");
+  for (const fragment of ["<div id=\"store-scope\" class=\"hint\" hidden><span id=\"store-scope-label\"></span> <button id=\"store-scope-reset\" type=\"button\">Search all stores</button></div>", "<div id=\"browse-options\" hidden>", "<button id=\"browse-close\" type=\"button\">Close browse options</button></div>"]) {
+    if (template.split(fragment).length !== 2) throw new Error("Unexpected real-only browse DOM boundary");
+    template = template.replace(fragment, "");
+  }
 }
 const sourceNotice = "<div id=\"unbuilt-source-notice\" class=\"notice\" role=\"alert\" tabindex=\"-1\" style=\"max-width:42rem;margin:2rem auto\"><strong>Player temporarily unavailable.</strong> This page is an unbuilt repository source template, not a verified Playmancer release. <p>To play locally, open <a href=\"https://github.com/drevendev/Playmancer/actions/workflows/pages.yml\">master Pages runs</a>, choose a run where <strong>Verify and package exact master</strong> passed, and download its <code>playmancer-player-[SHA]</code> ZIP artifact (GitHub sign-in may be required). Follow the <a href=\"https://github.com/drevendev/Playmancer#when-pages-is-unavailable-run-the-verified-player-locally\">local player instructions</a> to serve it over HTTP. This does not mean the public site is live.</p></div>";
 const sourceWrap = '<div class="wrap" hidden>';

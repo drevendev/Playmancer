@@ -292,7 +292,7 @@ function showCatalogIdentity() {
     "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : "");
   document.querySelector(".intro > p").replaceChildren(
     "Explore ", element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
-    syntheticCatalog ? " in this demo." : " using limited recorded genres. Usefulness is unmeasured."
+    syntheticCatalog ? " in this demo." : " · limited genre evidence; usefulness unmeasured."
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
   document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";
@@ -303,6 +303,7 @@ function showCatalogIdentity() {
     return option;
   }));
   $("dreven-browse").hidden = !hasDreven;
+  if ($("browse-options")) $("browse-options").hidden = !syntheticCatalog;
   $("catalog-browse").textContent = `Browse all ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"}`;
   const versions = $("versions");
   const receipts = renderCatalogReceipts();
@@ -660,7 +661,7 @@ function drawSearch() {
   $("search-hint").textContent = state.seeds.length >= 5 ? "Five games selected. Remove one before adding another."
     : browseAll && !query && !matches.length ? `No available ${noun}${fromStore}. Choose another store or remove a favorite.`
     : browseAll && !query ? `${range} of ${matches.length} available ${noun}${fromStore}.`
-    : !query ? `Search names, IDs, aliases${syntheticCatalog ? "" : ", recorded store URLs"} or ${syntheticCatalog ? "recorded feature tags" : "recorded genres and positive gameplay facts"} to find ${noun}.`
+    : !query ? (syntheticCatalog ? `Search names, IDs, aliases or recorded feature tags to find ${noun}.` : "Search titles, genres, gameplay facts or store links.")
     : !matches.length && selectedStoreUrl ? `${recordedStoreUrlGame.name} is already in your basket. Adjust its weight or remove it above.`
     : !matches.length && filteredStoreUrl ? `${recordedStoreUrlGame.name} is in the catalog, but the ${storeNames[store]} store filter hides it. Choose All games to add it.`
     : !matches.length && selectedNameMatches.length
@@ -686,6 +687,9 @@ function drawSearch() {
   $("search-recovery").hidden = !(filteredRecovery || browseRecovery);
   $("search-all-stores").dataset.mode = filteredRecovery ? "all-stores" : "browse";
   $("search-all-stores").textContent = filteredRecovery ? "Search all stores" : "Browse available games";
+  $("store-scope").hidden = store === "all";
+  $("store-scope-label").textContent = store === "all" ? "" : `Searching: ${storeNames[store]}`;
+  $("store-scope-reset").hidden = filteredRecovery;
 }
 function drawEmptyRecovery(result) {
   const empty = $("empty");
@@ -976,6 +980,16 @@ $("search-all-stores").addEventListener("click", () => {
   const first = $("search-results").querySelector("li > button:not(:disabled)");
   (first ?? $("search")).focus();
 });
+$("browse-close").addEventListener("click", () => {
+  $("browse-options").hidden = true;
+  $("intro-browse").focus();
+});
+$("store-scope-reset").addEventListener("click", () => {
+  $("store-filter").value = "all";
+  pageNo = 0;
+  drawSearch();
+  ($("search-results").querySelector("li > button:not(:disabled)") ?? $("search")).focus();
+});
 $("search").addEventListener("keydown", (event) => {
   // Composition keys belong to the input method, not catalog navigation.
   if (event.isComposing || event.keyCode === 229) return;
@@ -1048,6 +1062,7 @@ $("intro-sample").addEventListener("click", () => { $("reset").click(); $("recom
 // Reuse the accessible Clear action to preserve share and focus behavior.
 $("intro-empty").addEventListener("click", () => { $("clear").click(); });
 $("intro-browse").addEventListener("click", () => {
+  if ($("browse-options")) $("browse-options").hidden = false;
   browseAll = true; pageNo = 0;
   $("store-filter").value = "all";
   $("search").value = "";

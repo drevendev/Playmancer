@@ -89,6 +89,10 @@ def exercise_candidate_51(browser):
                 check(label + ": candidate footer preserves all pinned receipts",
                       page.locator(".source-receipts a").evaluate_all("nodes => nodes.map(n => n.href)") ==
                       [prefix + path for path in expected_paths])
+                check(label + ": default discovery has no secondary controls or scope row",
+                      page.locator("#browse-options").is_hidden()
+                      and page.locator("#store-scope").is_hidden()
+                      and page.locator("#intro-browse").is_visible())
                 page.locator("#intro-browse").click()
                 check(label + ": 49 unselected profiles and eight visible choices",
                       "1–8 of 49 available catalog profiles" in page.locator("#search-hint").inner_text()
@@ -104,7 +108,28 @@ def exercise_candidate_51(browser):
                       page.get_by_role("button", name="Add Hades", exact=True).count() == 1
                       and page.get_by_role("button", name="Add Hades II", exact=True).count() == 1)
                 url = "https://store.steampowered.com/app/1145350"
+                scope_hash = page.evaluate("location.hash")
+                scope_platform = page.locator("#platform").input_value()
+                scope_coop = page.locator("#coop").is_checked()
+                page.locator("#store-filter").select_option("googleplay")
+                page.locator("#browse-close").focus()
+                page.locator("#browse-close").press("Enter")
                 page.fill("#search", url)
+                check(label + ": closed browse options retain visible discovery scope and exact URL filter",
+                      page.locator("#browse-options").is_hidden()
+                      and "Google Play" in page.locator("#store-scope").inner_text()
+                      and page.locator("#search-results li > button").count() == 0
+                      and page.get_by_role("button", name="Search all stores", exact=True).is_visible())
+                recovery = page.get_by_role("button", name="Search all stores", exact=True)
+                recovery.focus()
+                recovery.press("Enter")
+                check(label + ": scope recovery is keyboard accessible and does not mutate ranking state",
+                      page.locator("#store-scope").is_hidden()
+                      and page.locator("#store-filter").input_value() == "all"
+                      and page.get_by_role("button", name="Add Hades II", exact=True).evaluate("n => n === document.activeElement")
+                      and page.evaluate("location.hash") == scope_hash
+                      and page.locator("#platform").input_value() == scope_platform
+                      and page.locator("#coop").is_checked() == scope_coop)
                 row = page.locator("#search-results > li")
                 check(label + ": exact sequel URL only and unknown facts",
                       row.count() == 1 and row.get_by_role("button", name="Add Hades II", exact=True).count() == 1
@@ -382,7 +407,7 @@ try:
                   and key_search.locator("#search").evaluate(
                       "node => document.activeElement === node")
                   and not key_errors)
-            key_search.locator("#catalog-browse").click()
+            key_search.locator("#intro-browse").click()
             check(label + ": Browse games shows remaining catalog games",
                   key_search.locator("#search-results li > button:not(:disabled)").count() > 0
                   and key_search.locator("#catalog-browse").get_attribute("aria-expanded") == "true")
@@ -658,6 +683,7 @@ try:
             check(label + ": five favorites fill the real basket",
                   full_basket.locator("#seeds > li").count() == 5
                   and "5 / 5 games" in full_basket.locator("#seed-count").inner_text())
+            full_basket.locator("#intro-browse").click()
             full_basket.locator("#store-filter").select_option("googleplay")
             full_basket.locator("#search").fill("Hades")
             check(label + ": full basket hides non-actionable store recovery",
@@ -945,6 +971,7 @@ try:
             owner_page.on("request", lambda request: owner_requests.append(request.url))
             owner_page.on("pageerror", lambda error: owner_errors.append(str(error)))
             owner_page.set_content(HTML, wait_until="load")
+            owner_page.locator("#intro-browse").click()
             owner_page.locator("#dreven-browse").click()
             check(label + ": all five Dreven Games titles are discoverable without ranking promotion",
                   owner_page.locator("#search-results button").count() == 5
