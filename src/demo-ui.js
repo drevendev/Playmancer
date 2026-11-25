@@ -290,12 +290,9 @@ function showCatalogIdentity() {
   // Present actionable storefronts, not catalog-data provenance, in the hero.
   document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
     "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : "");
-  document.querySelector(".intro p").replaceChildren(
-    syntheticCatalog ? "Build a basket, adjust what matters, and see why each result appears. This snapshot contains " :
-      hasDreven ? "Combine real favorites, see sourced genre overlap and visit official game stores. This multistore pilot contains " :
-      "Explore real favorites with transparent genre overlap. This Wikidata CC0 pilot contains ",
-    element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
-    syntheticCatalog ? " — not a real game catalog or measured recommendation quality." : ". No third-party descriptions or artwork are copied. Genre comparisons cover 30% of the full feature model; usefulness is unmeasured."
+  document.querySelector(".intro > p").replaceChildren(
+    "Explore ", element("strong", `${CATALOG.length} ${syntheticCatalog ? "fictional profiles" : "real games"}`),
+    syntheticCatalog ? " in this demo." : " using limited recorded genres. Usefulness is unmeasured."
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
   document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";

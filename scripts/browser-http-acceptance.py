@@ -148,6 +148,30 @@ def exercise(browser, base_url, engine, label, width, height):
               and "Stardew Valley" in page.locator("#seeds").inner_text()
               and "Terraria" in page.locator("#seeds").inner_text()
               and page.locator("#intro-sample").is_visible())
+        def initial_picker(probe, name):
+            probe.wait_for_function("document.querySelector('#seed-count').textContent.includes('/ 5')")
+            geometry = probe.locator("#search").evaluate("""el => {
+                const b = el.getBoundingClientRect();
+                return {top: b.top, bottom: b.bottom, width: b.width,
+                        viewport: innerHeight, scrollY, overflow: document.documentElement.scrollWidth - innerWidth};
+            }""")
+            check(case, name + " search visible before any scrolling",
+                  geometry["scrollY"] == 0 and geometry["top"] >= 0
+                  and geometry["bottom"] <= geometry["viewport"]
+                  and geometry["width"] > 0 and geometry["overflow"] <= 1,
+                  details=geometry)
+            probe.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-{name}-first-screen.png"),
+                             full_page=False, animations="disabled")
+
+        initial_picker(page, "default")
+        check(case, "search precedes secondary actions, recommendations precede advanced tools",
+              page.evaluate("""() => {
+                  const before = (a,b) => !!(document.querySelector(a).compareDocumentPosition(
+                      document.querySelector(b)) & Node.DOCUMENT_POSITION_FOLLOWING);
+                  return before('#search','#intro-sample') && before('#search','#seeds')
+                      && before('#recommendations','#player-tools')
+                      && before('#recommendations','#observation-explorer-entry');
+              }"""))
         receipts = page.locator(".source-receipts a")
         expected_receipt_paths = (
             "docs/REAL_PILOT.md",
@@ -304,6 +328,35 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator('#intro-empty').evaluate('el => el.getBoundingClientRect().height >= 44')
               and page.evaluate("JSON.parse(decodeURIComponent(location.hash.slice(8))).seeds.length === 0"))
         empty_share = page.evaluate('location.hash')
+        # Use a fresh document so an interaction cannot scroll the picker into view
+        # before measuring. Do not modify the main journey's shared state.
+        probe = context.new_page()
+        try:
+            probe.goto(base_url + "/" + empty_share, wait_until="load")
+            initial_picker(probe, "empty")
+            probe.locator("#search").focus()
+            probe.keyboard.type("Stardew Valley")
+            probe.keyboard.press("Enter")
+            # The deliberate empty basket retained hard filters; explicitly remove
+            # those for this standalone positive journey rather than relaxing them in ranking.
+            check(case, "native keyboard adds the named favorite from the empty basket",
+                  probe.locator("#seeds .seed-name").all_text_contents() == ["Stardew Valley"])
+            probe.locator("#platform").select_option("any")
+            probe.locator("#coop").uncheck()
+            check(case, "named favorite yields an actionable recommendation",
+                  probe.locator("#results > li").count() > 0
+                  and probe.locator("#results > li .storefront-links a").first.is_visible())
+            restored_url = probe.url
+            fresh = context.new_page()
+            try:
+                fresh.goto(restored_url, wait_until="load")
+                initial_picker(fresh, "restored")
+                check(case, "fresh restored picker retains the favorite",
+                      fresh.locator("#seeds .seed-name").all_text_contents() == ["Stardew Valley"])
+            finally:
+                fresh.close()
+        finally:
+            probe.close()
         empty_browse = page.get_by_role('button', name='Browse available games')
         check(case, 'empty results includes a native touch-sized browse recovery',
               empty_browse.is_visible()
@@ -1002,7 +1055,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and all(float(value.strip().removesuffix("s")) == 0
                       for value in motion["transition"].split(","))
               and motion["scroll"] == "auto", details=motion)
-        original_copy = restored.locator(".intro p").evaluate(
+        original_copy = restored.locator(".intro > p").evaluate(
             "node => parseFloat(getComputedStyle(node).fontSize)")
         original_button = restored.locator("#intro-sample").evaluate(
             "node => parseFloat(getComputedStyle(node).fontSize)")
@@ -1043,7 +1096,7 @@ def exercise(browser, base_url, engine, label, width, height):
                 const doc = document.documentElement;
                 return {
                     root: parseFloat(getComputedStyle(doc).fontSize),
-                    copy: parseFloat(getComputedStyle(document.querySelector('.intro p')).fontSize),
+                    copy: parseFloat(getComputedStyle(document.querySelector('.intro > p')).fontSize),
                     button: parseFloat(getComputedStyle(document.querySelector('#intro-sample')).fontSize),
                     heroLines: (() => {
                         const title = document.querySelector('.intro h1');
@@ -1100,8 +1153,8 @@ def exercise(browser, base_url, engine, label, width, height):
                         }).filter(node => node.right > innerWidth + 1 || node.left < -1)
                           .slice(0, 12),
                     firstAction: (() => {
-                        const button = document.querySelector('#intro-sample');
-                        const copy = document.querySelector('.intro p');
+                        const button = document.querySelector('#search');
+                        const copy = document.querySelector('.intro > p');
                         const bounds = button.getBoundingClientRect();
                         return {
                             top: bounds.top, bottom: bounds.bottom, height: bounds.height,
@@ -1151,7 +1204,7 @@ def exercise(browser, base_url, engine, label, width, height):
                 # Large text must not bury the working start action below the
                 # initial mobile viewport. This is root-font scaling, NOT browser zoom.
                 first = enlarged["firstAction"]
-                check(case, "400% mobile sample action is fully visible before lengthy copy",
+                check(case, "400% mobile search is fully visible before secondary copy",
                       first["precedesCopy"] and first["top"] >= 0
                       and first["height"] >= 44
                       and first["bottom"] <= first["viewportHeight"] + 1,

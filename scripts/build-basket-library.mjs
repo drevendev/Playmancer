@@ -35,7 +35,7 @@ export async function addBasketLibrary(root, html) {
   if (end < start || !html.includes('id="basket-title"') || !html.includes('id="share-status"'))
     throw new Error('Unexpected production player structure');
   const addition = `\n${marker}\n(() => {\n${source}\nmountBasketLibrary({
-    host: document.querySelector('aside[aria-labelledby="basket-title"]'),
+    host: document.getElementById('player-tools'),
     getState: () => {
       if (!document.getElementById('error').hidden) throw new Error('Recover the invalid basket link first.');
       return validateState(state);
