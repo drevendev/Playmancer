@@ -126,7 +126,10 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        is_real_pilot = catalog_id == "multi-store-genre-pilot-35-2026-11-24"
+        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "35"))
+        expected_catalog = {35: "multi-store-genre-pilot-35-2026-11-24",
+                            51: "multi-store-genre-pilot-51-2026-11-25"}[expected_count]
+        is_real_pilot = catalog_id == expected_catalog
         check(case, "real catalog sample and honest data provenance",
               is_real_pilot and page.locator("#seeds > li").count() >= 2
               and "real games" in page.locator(".badge").inner_text().lower()
@@ -140,13 +143,14 @@ def exercise(browser, base_url, engine, label, width, height):
             "docs/REAL_EXPANSION_30.md",
             "docs/REAL_EXPANSION_31.md",
             "examples/reviewed-steam-batch-2026-11-24.json",
+            *(("docs/REAL_EXPANSION_51.md", "examples/reviewed-steam-batch-2026-11-25.json") if expected_count == 51 else ()),
             "docs/STOREFRONTS.md",
         )
         # A published player's receipts must not drift when master advances.
         # Unpublished local fixture builds intentionally retain master navigation.
         receipt_ref = served_sha if served_sha and re.fullmatch(r"[0-9a-f]{40}", served_sha) else "master"
         receipt_prefix = "https://github.com/drevendev/Playmancer/blob/" + receipt_ref + "/"
-        check(case, "35-game footer links every catalog expansion and publisher receipt",
+        check(case, f"{expected_count}-game footer links every catalog expansion and publisher receipt",
               receipts.count() == len(expected_receipt_paths)
               and all(
                   receipts.nth(i).get_attribute("href") == receipt_prefix + path
@@ -361,7 +365,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#search-results > li > span.hint").filter(
                   has_text=re.compile(r"selected gameplay facts|No reviewed gameplay facts yet")).count() == 8
               and "Recorded genres:" in page.locator("#search-results").inner_text()
-              and "1–8 of 33 available catalog profiles" in page.locator("#search-hint").inner_text()
+              and f"1–8 of {expected_count - 2} available catalog profiles" in page.locator("#search-hint").inner_text()
               and page.locator("#seeds > li").count() == 2)
         first_page = items.all_text_contents()
         more = page.get_by_role("button", name="Next page", exact=True)
@@ -370,7 +374,7 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "next page bounds the DOM and focuses the first new game",
               items.count() == 8 and set(first_page).isdisjoint(items.all_text_contents())
               and items.first.evaluate("node => document.activeElement === node")
-              and "9–16 of 33 available catalog profiles" in page.locator("#search-hint").inner_text())
+              and f"9–16 of {expected_count - 2} available catalog profiles" in page.locator("#search-hint").inner_text())
         page.get_by_role("button", name="Previous page", exact=True).click()
         check(case, "previous page restores original order without changing the basket",
               items.all_text_contents() == first_page
