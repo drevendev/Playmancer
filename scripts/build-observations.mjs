@@ -48,7 +48,12 @@ export async function buildObservationPage(root, catalog, catalogBytes, revision
     throw new Error('Unexpected observation HTML template');
   const html = template.replace(entry, () => '<script type="module">\n' + script + '\n</script>')
     .replace('</head>', `<meta name="playmancer-revision" content="${revision}">\n<meta name="playmancer-catalog" content="${model.catalog}">\n<meta name="playmancer-observations" content="${model.evidence}">\n</head>`);
-  if (Buffer.byteLength(html) > 100000) throw new Error('Observation explorer exceeds 100 kB budget');
+  // Keep the existing small-release ceiling. Sparse scale measurements on the
+  // 35-game evidence set were 146,752 bytes at 1,000 and 237,752 at 2,000.
+  // Separate tiers leave room for normal titles and UI without relaxing inline facts.
+  const budget = model.games.length <= 250 ? 100000 : model.games.length <= 1000 ? 200000 : 320000;
+  const size = Buffer.byteLength(html);
+  if (size >= budget) throw new Error(`Observation explorer exceeds budget: ${size} bytes (must be below ${budget})`);
   return html;
 }
 export function linkObservationExplorer(template, model = null) {

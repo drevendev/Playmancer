@@ -156,6 +156,19 @@ test('reject local, IP and reserved receipt hosts even when per-field source ori
 
 test('reject duplicate or oversized catalog and malformed search state', () => {
   assert.throws(() => prepareObservations({ ...catalog, games: [catalog.games[0],catalog.games[0]] }, observations));
-  assert.throws(() => prepareObservations({ ...catalog, games: Array(251).fill(catalog.games[0]) }, observations));
+  const games = [...catalog.games, ...Array.from({length: 2001 - catalog.games.length}, (_, i) =>
+    ({id: 'fixture:scale-' + i, name: 'Scale fixture ' + i}))];
+  assert.throws(() => prepareObservations({ ...catalog, games }, observations), /Invalid catalog games/);
+  const sparse = prepareObservations({ ...catalog, games: games.slice(0, 2000) }, observations);
+  assert.equal(sparse.games.length, 2000);
+  assert.equal(sparse.observedGames, model.observedGames);
+  assert.equal(sparse.factCount, model.factCount);
+  assert.equal(sparse.games.filter(game => game.coverage === 'unknown').length, 1988);
+  for (const field of ['receipts', 'games']) {
+    const oversized = clone(observations);
+    oversized[field] = Array(251).fill(oversized[field][0]);
+    assert.throws(() => prepareObservations({ ...catalog, games: games.slice(0, 1000) }, oversized),
+      field === 'receipts' ? /Invalid receipts/ : /Invalid observed games/);
+  }
   assert.throws(() => prepareObservations(catalog, observations, 'invalid'));
 });
