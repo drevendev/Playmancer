@@ -177,6 +177,8 @@ for (const [id, delta, alternate] of [['observation-prev', -1, 'observation-next
     observationPage += delta;
     drawObservationResults();
     if (observationById(id).disabled) observationById(alternate).focus();
+    // Keep repeat paging available while showing the newly rendered batch.
+    observationById('observation-pages').scrollIntoView({ block: 'start', behavior: 'auto' });
   });
 }
 for (const tag of observationModel.tags) {
