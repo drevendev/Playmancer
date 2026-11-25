@@ -11,6 +11,37 @@ const observationById = id => document.getElementById(id);
 const observationBaseState = () => ({ version: observationModel.version, catalog: observationModel.catalog,
   evidence: observationModel.evidence, pair: [], query: '', tag: '' });
 let observationState = observationBaseState();
+// Keep the existing small-catalog controls; large snapshots never mount all
+// matching cards or all game options at once.
+const observationLarge = observationModel.games.length > 64;
+const observationPageSize = 24;
+let observationPage = 0;
+function updateObservationOptions(side, selected = observationById(side).value) {
+  const select = observationById(side);
+  const needle = observationById(side + '-filter').value.trim().normalize('NFC').toLowerCase();
+  const matches = observationModel.games.filter(game => !needle ||
+    [game.id, game.name].some(value => value.normalize('NFC').toLowerCase().includes(needle)));
+  const visible = observationLarge ? matches.slice(0, observationPageSize) : matches;
+  const retained = observationModel.games.find(game => game.id === selected);
+  const options = retained && !visible.some(game => game.id === selected) ? [retained, ...visible] : visible;
+  select.replaceChildren(observationElement('option', side === 'left' ? 'Choose a game…' : 'Choose a different game…'));
+  select.firstChild.value = '';
+  for (const game of options) {
+    const option = observationElement('option', game.name + (game.coverage === 'unknown' ? ' — observations unknown' : ''));
+    option.value = game.id; select.append(option);
+  }
+  select.value = retained ? selected : '';
+  observationById(side + '-filter-status').textContent =
+    `${visible.length} of ${matches.length} matching games. Refine by name or ID to find more.` +
+    (options.length > visible.length ? ' Current selection retained.' : '');
+}
+function setObservationSelection(side, id) {
+  updateObservationOptions(side, id);
+}
+function resetObservationFilters() {
+  for (const side of ['left', 'right']) observationById(side + '-filter').value = '';
+  observationPage = 0;
+}
 function observationSource(fact, name) {
   const link = observationElement('a', `${name} · ${fact.publisher} · reviewed ${fact.reviewedOn}`);
   link.href = fact.source; link.target = '_blank'; link.rel = 'noopener noreferrer';
@@ -56,10 +87,19 @@ function drawObservationComparison() {
 }
 function drawObservationResults() {
   const games = searchObservations(observationModel, observationState.query, observationState.tag);
-  observationById('search-status').textContent = `${games.length} of ${observationModel.games.length} games shown. A fact filter shows recorded evidence, not proof that other games lack it.`;
+  const pageCount = observationLarge ? Math.max(1, Math.ceil(games.length / observationPageSize)) : 1;
+  observationPage = Math.min(observationPage, pageCount - 1);
+  const start = observationLarge ? observationPage * observationPageSize : 0;
+  const visible = observationLarge ? games.slice(start, start + observationPageSize) : games;
+  observationById('search-status').textContent = observationLarge
+    ? `${games.length} of ${observationModel.games.length} games match. Showing ${games.length ? start + 1 : 0}–${start + visible.length}. A fact filter shows recorded evidence, not proof that other games lack it.`
+    : `${games.length} of ${observationModel.games.length} games shown. A fact filter shows recorded evidence, not proof that other games lack it.`;
+  observationById('observation-pages').hidden = !observationLarge || pageCount <= 1;
+  observationById('observation-prev').disabled = observationPage === 0;
+  observationById('observation-next').disabled = observationPage + 1 >= pageCount;
   const results = observationById('observation-games'); results.replaceChildren();
   if (!games.length) results.append(observationElement('p', 'No recorded facts match this search. Try another word or clear the fact filter.'));
-  for (const game of games) {
+  for (const game of visible) {
     const card = observationElement('article', undefined, 'game-card'); card.dataset.gameId = game.id;
     card.append(observationElement('h3', game.name), observationElement('p', game.coverage === 'unknown'
       ? 'No reviewed gameplay observations. Unrecorded is unknown, not absent.'
@@ -69,7 +109,7 @@ function drawObservationResults() {
       const button = observationElement('button', `Compare on ${side}`); button.type = 'button';
       button.setAttribute('aria-label', `Compare ${game.name} on ${side}`);
       button.addEventListener('click', () => {
-        observationById(side).value = game.id;
+        setObservationSelection(side, game.id);
         const other = observationById(index === 0 ? 'right' : 'left');
         if (other.value === game.id) other.value = '';
         chooseObservationPair(); observationById(side).focus();
@@ -117,8 +157,9 @@ function restoreObservationState() {
     observationById('link-error-message').textContent = `${error.message}. No games were substituted. Choose a pair or reset explicitly.`;
     observationById('link-error').hidden = false;
   }
-  observationById('left').value = observationState.pair[0] ?? '';
-  observationById('right').value = observationState.pair[1] ?? '';
+  resetObservationFilters();
+  setObservationSelection('left', observationState.pair[0] ?? '');
+  setObservationSelection('right', observationState.pair[1] ?? '');
   updateSelectedGameLabels();
   observationById('query').value = observationState.query;
   observationById('tag').value = observationState.tag;
@@ -127,24 +168,29 @@ function restoreObservationState() {
   if (!observationById('link-error').hidden) observationById('link-error').focus();
 }
 for (const side of ['left', 'right']) {
-  for (const game of observationModel.games) {
-    const option = observationElement('option', game.name + (game.coverage === 'unknown' ? ' — observations unknown' : ''));
-    option.value = game.id; observationById(side).append(option);
-  }
+  observationById(side + '-filter-wrap').hidden = !observationLarge;
+  observationById(side + '-filter').addEventListener('input', () => updateObservationOptions(side));
   observationById(side).addEventListener('change', chooseObservationPair);
+}
+for (const [id, delta, alternate] of [['observation-prev', -1, 'observation-next'], ['observation-next', 1, 'observation-prev']]) {
+  observationById(id).addEventListener('click', () => {
+    observationPage += delta;
+    drawObservationResults();
+    if (observationById(id).disabled) observationById(alternate).focus();
+  });
 }
 for (const tag of observationModel.tags) {
   const option = observationElement('option', tag.label); option.value = tag.id; observationById('tag').append(option);
 }
 observationById('coverage').textContent = `${observationModel.observedGames} of ${observationModel.games.length} games have selected observations; ${observationModel.factCount} dated facts. The remaining ${observationModel.games.length - observationModel.observedGames} games are unreviewed.`;
 observationById('query').addEventListener('input', () => {
-  observationState.query = observationById('query').value; saveObservationState(); drawObservationResults();
+  observationPage = 0; observationState.query = observationById('query').value; saveObservationState(); drawObservationResults();
 });
 observationById('tag').addEventListener('change', () => {
-  observationState.tag = observationById('tag').value; saveObservationState(); drawObservationResults();
+  observationPage = 0; observationState.tag = observationById('tag').value; saveObservationState(); drawObservationResults();
 });
 observationById('sample').addEventListener('click', () => {
-  observationById('left').value = 'wikidata:q16972008'; observationById('right').value = 'wikidata:q332697';
+  setObservationSelection('left', 'wikidata:q16972008'); setObservationSelection('right', 'wikidata:q332697');
   chooseObservationPair(); observationById('comparison-title').focus();
 });
 observationById('reset').addEventListener('click', () => {

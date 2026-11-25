@@ -72,6 +72,10 @@ jobs:
         run: python scripts/browser-real-catalog-acceptance.py
       - name: Exercise 1,000-profile synthetic catalog discovery and share restoration
         run: python scripts/browser-large-catalog-acceptance.py
+      - name: Exercise bounded Gameplay Facts on the validated sparse release fixture
+        env:
+          PLAYMANCER_SCALE_BROWSER: "1"
+        run: node --test test/sparse-release-scale.test.js
       - name: Retain actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
