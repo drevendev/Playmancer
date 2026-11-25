@@ -417,6 +417,10 @@ try:
                           and page.evaluate("location.hash") == initial_hash)
             # Storefront discovery is an editorial catalog view, not ranking or
             # a platform requirement. Exercise both viewports with real link data.
+            # These exhaustive rank comparisons intentionally use the explicit full view.
+            view = page.locator("#results-view")
+            if view.is_visible() and view.get_attribute("aria-pressed") == "true":
+                view.click()
             initial_ranks = page.locator("#results > li").evaluate_all(
                 "cards => cards.map(card => card.dataset.gameId)")
             # A hidden result needs a reversible per-game action. Undoing one
@@ -777,6 +781,10 @@ try:
             sparse.get_by_role("button", name="Add Factorio").click()
             sparse.locator("#search").fill("Into the Breach")
             sparse.get_by_role("button", name="Add Into the Breach").click()
+            # Compact cards must visibly distinguish zero recorded overlap from unknown gameplay.
+            check(label + ": compact zero-overlap reason stays visible",
+                  "No recorded genre overlap; gameplay similarity remains unknown." in
+                  sparse.locator("#results > li").first.inner_text())
             zero_scores = sparse.locator("#results .fit strong").all_inner_texts()
             check(label + ": zero-overlap real basket openly discloses unsupported suggestions",
                   len(zero_scores) > 0

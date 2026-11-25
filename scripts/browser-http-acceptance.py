@@ -238,36 +238,41 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("location.hash") == browse_hash)
         check(case, "native touch-sized sample action", page.locator("#intro-sample").evaluate(
             "el => el.tagName === 'BUTTON' && el.getBoundingClientRect().height >= 44"))
-        check(case, "list-first results and explanatory evidence",
-              page.locator("#results > li").count() > 0
-              and "Evidence coverage" in page.locator("#results > li").first.inner_text())
-        # A visual preference changes only the displayed slice, never ranking or share state.
+        # A fresh real-player entry shows the deterministic prefix, with an explicit expansion.
         view = page.locator("#results-view")
-        all_ids = page.locator("#results > li").evaluate_all(
-            "cards => cards.map(card => card.dataset.gameId)")
-        before_hash = page.evaluate("location.hash")
-        check(case, "full eligible ranking remains the default",
-              len(all_ids) > 5 and view.is_visible()
-              and view.get_attribute("aria-pressed") == "false")
-        view.focus()
-        view.press("Enter")
         compact_ids = page.locator("#results > li").evaluate_all(
             "cards => cards.map(card => card.dataset.gameId)")
-        check(case, "keyboard toggles top five without hiding evidence or changing basket",
-              compact_ids == all_ids[:5]
+        before_hash = page.evaluate("location.hash")
+        check(case, "five recommendations by default with visible match reason and store",
+              len(compact_ids) == 5 and view.is_visible()
               and view.get_attribute("aria-pressed") == "true"
               and page.locator("#status").inner_text().startswith("5 of ")
-              and page.locator("#results > li").first.locator(".affinity").count() >= 2
-              and page.evaluate("document.activeElement.id") == "results-view"
-              and page.evaluate("location.hash") == before_hash)
+              and "Recorded genre overlap" in page.locator("#results > li").first.inner_text()
+              and page.locator("#results > li .storefront-links a").first.is_visible())
         page.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-top-five.png"),
                         full_page=True, animations="disabled")
+        view.focus()
+        view.press("Enter")
+        all_ids = page.locator("#results > li").evaluate_all(
+            "cards => cards.map(card => card.dataset.gameId)")
+        check(case, "keyboard expands complete ranking with unchanged prefix and basket",
+              len(all_ids) > 5 and compact_ids == all_ids[:5]
+              and view.get_attribute("aria-pressed") == "false"
+              and page.evaluate("document.activeElement.id") == "results-view"
+              and page.evaluate("location.hash") == before_hash)
+        view.press("Enter")
+        check(case, "keyboard returns to identical five without changing basket",
+              page.locator("#results > li").evaluate_all(
+                  "cards => cards.map(card => card.dataset.gameId)") == compact_ids
+              and view.get_attribute("aria-pressed") == "true"
+              and page.evaluate("location.hash") == before_hash)
         view.press("Enter")
         check(case, "keyboard restores every result in original order",
               page.locator("#results > li").evaluate_all(
                   "cards => cards.map(card => card.dataset.gameId)") == all_ids
               and view.get_attribute("aria-pressed") == "false"
-              and page.evaluate("document.activeElement.id") == "results-view")
+              and page.evaluate("document.activeElement.id") == "results-view"
+              and page.evaluate("location.hash") == before_hash)
         labels = page.locator("#results > li").evaluate_all(
             "nodes => nodes.map(card => ({game: card.querySelector('h3')?.textContent, "
             "summary: card.querySelector('summary')?.textContent}))")
@@ -277,15 +282,15 @@ def exercise(browser, base_url, engine, label, width, height):
               and all(item["game"] and item["summary"] and item["game"] in item["summary"]
                       for item in labels))
 
-        # Technical identifiers are discoverable but do not crowd the default
-        # mobile result list; scores, seed evidence and coverage stay visible.
+        # Quantitative evidence remains reachable but is not visible until requested.
         first_card = page.locator("#results > li").first
         technical = first_card.locator(".explanation .metadata")
         why_summary = first_card.locator(".explanation summary")
-        check(case, "compact result keeps visible seed support, fit and coverage",
+        check(case, "compact result keeps seed support, fit and coverage behind details",
               first_card.locator(".affinity").count() >= 2
-              and first_card.locator(".fit strong").is_visible()
-              and first_card.locator(".card-footer > span.hint").is_visible()
+              and not first_card.locator(".fit strong").is_visible()
+              and not first_card.locator(".affinity").first.is_visible()
+              and not first_card.locator(".explanation > span.hint").is_visible()
               and technical.count() == 1
               and not technical.is_visible())
         why_summary.focus()
@@ -293,6 +298,9 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "keyboard reveals technical details with named explanation",
               first_card.locator(".explanation").evaluate("el => el.open")
               and technical.is_visible()
+              and first_card.locator(".fit strong").is_visible()
+              and first_card.locator(".affinity").first.is_visible()
+              and first_card.locator(".explanation > span.hint").is_visible()
               and "Entity:" in technical.inner_text()
               and "Recorded platforms (not exhaustive):" in technical.inner_text()
               and page.evaluate("document.activeElement.tagName") == "SUMMARY")
@@ -300,7 +308,7 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "keyboard closes details without removing evidence or focus",
               not first_card.locator(".explanation").evaluate("el => el.open")
               and not technical.is_visible()
-              and first_card.locator(".affinity").first.is_visible()
+              and not first_card.locator(".affinity").first.is_visible()
               and page.evaluate("document.activeElement.tagName") == "SUMMARY")
 
         # From the hero, browse without discarding the sample basket or share state.
@@ -351,8 +359,10 @@ def exercise(browser, base_url, engine, label, width, height):
             try:
                 fresh.goto(restored_url, wait_until="load")
                 initial_picker(fresh, "restored")
-                check(case, "fresh restored picker retains the favorite",
-                      fresh.locator("#seeds .seed-name").all_text_contents() == ["Stardew Valley"])
+                check(case, "fresh restored picker retains the favorite and compact view",
+                      fresh.locator("#seeds .seed-name").all_text_contents() == ["Stardew Valley"]
+                      and fresh.locator("#results > li").count() <= 5
+                      and fresh.locator("#results-view").get_attribute("aria-pressed") == "true")
             finally:
                 fresh.close()
         finally:
