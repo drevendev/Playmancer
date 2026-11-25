@@ -113,12 +113,14 @@ def exercise_candidate_51(browser):
                 row.get_by_role("button", name="Add Hades II", exact=True).click()
                 page.fill("#search", "https://store.steampowered.com/app/220")
                 page.get_by_role("button", name="Add Half-Life 2", exact=True).click()
-                for game, qid, date in (("Hades II", "Q115641620", "2026-11-25"),
-                                        ("Half-Life 2", "Q193581", "2026-11-24")):
+                for game, qid, date, genres in (
+                        ("Hades II", "Q115641620", "2026-11-25", "unknown"),
+                        ("Half-Life 2", "Q193581", "2026-11-24",
+                         "first-person shooter, science fiction video game, post-apocalyptic video game")):
                     details = page.locator("#seeds .basket-evidence").filter(has=page.get_by_text(f"Inspect evidence for {game}", exact=True))
                     details.locator("summary").click()
                     check(label + ": correct per-game receipts " + game,
-                          "Recorded genres (Wikidata genre statements): unknown." in details.inner_text()
+                          f"Recorded genres (Wikidata genre statements): {genres}." in details.inner_text()
                           and "Catalog mechanics: unknown. Co-op: unknown." in details.inner_text()
                           and details.locator(f'a[href="https://www.wikidata.org/wiki/{qid}"]').count() == 1
                           and details.locator(f'a[href="{prefix}examples/reviewed-steam-batch-{date}.json"]').count() == 1)
@@ -143,10 +145,19 @@ def exercise_candidate_51(browser):
                 check(label + ": both catalog versions exported intact",
                       len(mixed["baskets"]) == 2 and original in mixed["baskets"]
                       and next(x for x in mixed["baskets"] if x["name"] == "Current 51")["hash"] == saved_hash)
-                page.fill("#library-json", json.dumps(mixed))
+                # Fresh names rule out duplicate-name rejection; the compatible
+                # entry sorts first so a partial import would be observable.
+                mixed_import = dict(mixed, baskets=[
+                    dict(entry, name="A Fresh 51" if entry["name"] == "Current 51" else "Z Fresh 35")
+                    for entry in mixed["baskets"]
+                ])
+                page.fill("#library-json", json.dumps(mixed_import))
                 page.click("#library-import")
                 settled(page)
-                check(label + ": mixed-version import atomically rejected", backup(page) == mixed)
+                check(label + ": mixed-version import visibly rejected for catalog incompatibility",
+                      "unavailable catalog or method version" in page.locator("#library-status").inner_text())
+                check(label + ": mixed-version import atomically rejected",
+                      backup(page) == mixed and page.evaluate("location.hash") == saved_hash)
                 page.goto(origin + "/35/", wait_until="load")
                 panel(page)
                 page.once("dialog", lambda dialog: dialog.accept())
