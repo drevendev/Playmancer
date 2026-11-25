@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { Script } from 'node:vm';
 import { prepareObservations, REVIEWED_OBSERVATIONS_SHA, REVIEWED_CATALOG_SHA, OBSERVATION_VERSION,
   CANDIDATE_CATALOG_ID, CANDIDATE_CATALOG_SHA, CANDIDATE_OBSERVATIONS_SHA,
-  CATALOG_35_ID, CATALOG_35_SHA, OBSERVATIONS_35_SHA } from '../src/observations.js';
+  CATALOG_35_ID, CATALOG_35_SHA, OBSERVATIONS_35_SHA,
+  CATALOG_51_ID, CATALOG_51_SHA, OBSERVATIONS_51_SHA } from '../src/observations.js';
 
 export const OBSERVATION_CATALOG_ID = 'multi-store-genre-pilot-30-2026-10-28';
 // Exact bindings; the candidate never aliases the live snapshot.
@@ -15,6 +16,8 @@ const bindings = new Map([
     file: 'examples/semantic-tags-reviewed-30.catalog31.v1.json' }],
   [CATALOG_35_ID, { catalogSha: CATALOG_35_SHA, evidence: OBSERVATIONS_35_SHA,
     file: 'examples/semantic-tags-reviewed-30.catalog35.v1.json' }],
+  [CATALOG_51_ID, { catalogSha: CATALOG_51_SHA, evidence: OBSERVATIONS_51_SHA,
+    file: 'examples/semantic-tags-reviewed-30.catalog51.v1.json' }],
 ]);
 export const gitObservationBlob = bytes => createHash('sha1').update('blob ' + bytes.length + '\0').update(bytes).digest('hex');
 const observationJSON = value => JSON.stringify(value).replace(/[<>&\u2028\u2029]/g,

@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-genre-pilot-51-2026-11-25",
+  "reviewedAt": "2026-11-25",
+  "games": [
+    {
+      "qid": "Q55381944",
+      "name": "Deep Rock Galactic",
+      "steamAppId": "548430",
+      "storeUrl": "https://store.steampowered.com/app/548430",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q20030150",
+      "name": "XCOM 2",
+      "steamAppId": "268500",
+      "storeUrl": "https://store.steampowered.com/app/268500",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q24050047",
+      "name": "Civilization VI",
+      "steamAppId": "289070",
+      "storeUrl": "https://store.steampowered.com/app/289070",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q18149274",
+      "name": "Cities: Skylines",
+      "steamAppId": "255710",
+      "storeUrl": "https://store.steampowered.com/app/255710",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q29016907",
+      "name": "Euro Truck Simulator 2",
+      "steamAppId": "227300",
+      "storeUrl": "https://store.steampowered.com/app/227300",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q1471545",
+      "name": "Kerbal Space Program",
+      "steamAppId": "220200",
+      "storeUrl": "https://store.steampowered.com/app/220200",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q21039915",
+      "name": "Subnautica",
+      "steamAppId": "264710",
+      "storeUrl": "https://store.steampowered.com/app/264710",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q18620506",
+      "name": "The Talos Principle",
+      "steamAppId": "257510",
+      "storeUrl": "https://store.steampowered.com/app/257510",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q66035140",
+      "name": "A Short Hike",
+      "steamAppId": "1055540",
+      "storeUrl": "https://store.steampowered.com/app/1055540",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q640567",
+      "name": "Castle Crashers",
+      "steamAppId": "204360",
+      "storeUrl": "https://store.steampowered.com/app/204360",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q16259371",
+      "name": "Crypt of the NecroDancer",
+      "steamAppId": "247080",
+      "storeUrl": "https://store.steampowered.com/app/247080",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q105427208",
+      "name": "Total War: Warhammer III",
+      "steamAppId": "1142710",
+      "storeUrl": "https://store.steampowered.com/app/1142710",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q91573142",
+      "name": "Trackmania",
+      "steamAppId": "2225070",
+      "storeUrl": "https://store.steampowered.com/app/2225070",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q110999026",
+      "name": "Street Fighter 6",
+      "steamAppId": "1364780",
+      "storeUrl": "https://store.steampowered.com/app/1364780",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q43541160",
+      "name": "Human: Fall Flat",
+      "steamAppId": "477160",
+      "storeUrl": "https://store.steampowered.com/app/477160",
+      "reviewedBaseGame": true,
+      "genres": null
+    },
+    {
+      "qid": "Q115641620",
+      "name": "Hades II",
+      "steamAppId": "1145350",
+      "storeUrl": "https://store.steampowered.com/app/1145350",
+      "reviewedBaseGame": true,
+      "genres": null
+    }
+  ]
+}
