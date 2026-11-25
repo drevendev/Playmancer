@@ -19,7 +19,7 @@ HTML = offline_html(SITE)
 # Gameplay Facts are embedded only in the production release; the lightweight
 # optional-catalog preview above deliberately has no observation inventory.
 FACTS_SITE = ARTIFACTS / "real-catalog-facts-release"
-subprocess.run(["node", "scripts/build-release.mjs", str(FACTS_SITE)], cwd=ROOT, check=True)
+subprocess.run(["node", "scripts/build-release.mjs", str(FACTS_SITE), "--candidate-30"], cwd=ROOT, check=True)
 FACTS_HTML = offline_html(FACTS_SITE)
 SNAPSHOT = "multi-store-genre-pilot-30-2026-10-28"
 results = []
@@ -891,8 +891,8 @@ try:
                   and not errors and not requests)
             ctx.close()
         candidate_site = ARTIFACTS / "steam35-candidate-site"
-        subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
-        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
+        subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site)], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site)], cwd=ROOT, check=True)
         candidate_id = "multi-store-genre-pilot-35-2026-11-24"
         for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
             ctx = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
@@ -936,7 +936,7 @@ finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "multistore, legacy and opt-in 31/35-game candidate HTML / Chromium; NOT Pages or measured usefulness",
+        "scope": "historical multistore, legacy, opt-in 31 and default 35-game HTML / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))

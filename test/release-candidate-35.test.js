@@ -35,11 +35,11 @@ test('35-game binding preserves every reviewed fact and marks new identities unk
   await assert.rejects(readReleaseObservations(root, catalog, Buffer.concat([bytes, Buffer.from(' ')])), /blob mismatch/);
   assert.throws(() => linkObservationExplorer('<div class="section"><label for="mode">', {...model, evidence: CANDIDATE_OBSERVATIONS_SHA}), /revision mismatch/);
 });
-test('35-game candidate packages the same five files deterministically and pins share state', () => {
+test('35-game default packages the same five files deterministically and pins share state', () => {
   const dir = mkdtempSync(join(tmpdir(), 'playmancer-release35-'));
   try {
     const a = join(dir,'a'), b = join(dir,'b'), old = join(dir,'old');
-    for (const output of [a,b]) { const result = run(output,'--candidate-35'); assert.equal(result.status,0,result.stderr); }
+    for (const [output, flags] of [[a, []], [b, ['--candidate-35']]]) { const result = run(output,...flags); assert.equal(result.status,0,result.stderr); }
     const result = run(old,'--candidate-31'); assert.equal(result.status,0,result.stderr);
     const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
     assert.deepEqual(readdirSync(a).sort(), files);
