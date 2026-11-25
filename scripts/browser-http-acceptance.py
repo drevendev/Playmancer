@@ -126,7 +126,7 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "35"))
+        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "51"))
         expected_catalog = {35: "multi-store-genre-pilot-35-2026-11-24",
                             51: "multi-store-genre-pilot-51-2026-11-25"}[expected_count]
         is_real_pilot = catalog_id == expected_catalog
@@ -402,7 +402,8 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("document.activeElement.id") == "search")
         # Verify each appended identity on the same default release, by exact store URL.
         late_hash = page.evaluate("location.hash")
-        for name, app in (("Half-Life 2", 220), ("Portal", 400), ("Left 4 Dead", 500), ("Left 4 Dead 2", 550)):
+        for name, app in (("Half-Life 2", 220), ("Portal", 400), ("Left 4 Dead", 500), ("Left 4 Dead 2", 550),
+                          *([("Hades II", 1145350), ("Deep Rock Galactic", 548430)] if expected_count == 51 else [])):
             url = f"https://store.steampowered.com/app/{app}"
             page.locator("#search").fill(url)
             row = page.locator("#search-results > li")
@@ -600,9 +601,10 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#search").input_value() == "e"
               and page.evaluate("location.hash") == hash_before_search_paging)
         page.locator("#search").fill("Hades")
-        check(case, "typing a new query resets pagination and returns the unique match",
-              page.locator("#search-results li > button").count() == 1
-              and page.locator("#search-results li > button").first.inner_text().endswith("Hades"))
+        check(case, "typing a new query resets pagination and preserves distinct title matches",
+              page.locator("#search-results li > button").count() == (2 if expected_count == 51 else 1)
+              and page.get_by_role("button", name="Add Hades", exact=True).count() == 1
+              and (expected_count != 51 or page.get_by_role("button", name="Add Hades II", exact=True).count() == 1))
         page.locator("#search").fill("e")
         choices = page.locator("#search-results button:not([disabled])")
         check(case, "search exposes multiple keyboard-navigable suggestions",
@@ -823,6 +825,8 @@ def exercise(browser, base_url, engine, label, width, height):
                   "Selected: " + (page.locator(f"#{control} option:checked").text_content() or "").strip()
                   and page.locator(f"#{control}-readback").get_attribute("aria-hidden") == "true"
                   for control in bridge_controls))
+        # The 51-profile release uses the asynchronous same-origin Bridge worker.
+        page.wait_for_function("document.querySelector('#bridge-steps').getAttribute('aria-busy') !== 'true'")
         check(case, "sample Bridge exposes supported steps and evidence",
               page.locator("#bridge-steps li").count() > 0
               and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
@@ -1358,7 +1362,7 @@ def exercise(browser, base_url, engine, label, width, height):
         sparse.goto(base_url + "/", wait_until="load")
         sparse.locator("#clear").click()
         sparse.locator("#search").fill("Hades")
-        sparse_add = sparse.get_by_role("button", name="Add Hades")
+        sparse_add = sparse.get_by_role("button", name="Add Hades", exact=True)
         sparse_add.focus()
         sparse_add.press("Enter")
         sparse.locator("#coop").check()
