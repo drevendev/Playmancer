@@ -108,20 +108,23 @@ function catalogReceiptBase() {
   const ref = /^[0-9a-f]{40}$/.test(revision) ? revision : "master";
   return `https://github.com/drevendev/Playmancer/blob/${ref}/`;
 }
-// This exact snapshot has three separately documented data-source receipts.
-// Keep the three receipt documents explicit so the original twelve Wikidata
-// entries are not misrepresented as evidence for the seven later additions.
+// Keep historical source receipts explicit for each immutable snapshot.
+// Later reviewed Steam identities do not acquire earlier genre evidence.
 function renderCatalogReceipts() {
-  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION)) return null;
+  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25"].includes(CATALOG_VERSION)) return null;
   const base = catalogReceiptBase();
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
     ["Original Wikidata games", "docs/REAL_PILOT.md"],
     ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
-    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
-    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
-    ...(CATALOG_VERSION === "multi-store-genre-pilot-35-2026-11-24" ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
+    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
+    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
+    ...(["multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25"].includes(CATALOG_VERSION) ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
+    ...(CATALOG_VERSION === "multi-store-genre-pilot-51-2026-11-25" ? [
+      ["51-game expansion receipts", "docs/REAL_EXPANSION_51.md"],
+      ["Sixteen reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-25.json"],
+    ] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
   ];
   for (const [index, [label, path]] of references.entries()) {
@@ -140,8 +143,12 @@ function renderBasketEvidence(game) {
   if (syntheticCatalog) return null;
   const details = element("details", undefined, "basket-evidence");
   details.append(element("summary", `Inspect evidence for ${game.name}`));
-  const genreOrigin = game.sourceId === "wikidata-cc0"
-    ? "Wikidata genre statements" : "publisher-authored tags";
+  const steamBatchReceipt = new Map([
+    ["wikidata-cc0-multi-store-genre-pilot-35-2026-11-24", "examples/reviewed-steam-batch-2026-11-24.json"],
+    ["wikidata-cc0-multi-store-genre-pilot-51-2026-11-25", "examples/reviewed-steam-batch-2026-11-25.json"],
+  ]).get(game.sourceId);
+  const fromWikidata = game.sourceId === "wikidata-cc0" || Boolean(steamBatchReceipt);
+  const genreOrigin = fromWikidata ? "Wikidata genre statements" : "publisher-authored tags";
   details.append(element("p", `Recorded genres (${genreOrigin}): ${game.themes?.length ? game.themes.join(", ") : "unknown"}.`));
   details.append(element("p", `Recorded platforms (positive observations, not an exhaustive support list): ${game.platforms?.length ? game.platforms.join(", ") : "unknown"}.`));
   details.append(element("p", `Catalog mechanics: ${game.mechanics?.length ? game.mechanics.join(", ") : "unknown"}. Co-op: ${game.coop === null ? "unknown" : game.coop ? "recorded yes" : "recorded no"}.`));
@@ -161,15 +168,21 @@ function renderBasketEvidence(game) {
     inspect.rel = "noopener noreferrer";
     details.append(inspect);
   }
-  const wikidataQid = game.sourceId === "wikidata-cc0"
+  const wikidataQid = fromWikidata
     ? game.externalIds.find(item => item.provider === "wikidata")?.id : null;
-  const source = element("a", wikidataQid ? "Inspect Wikidata item" : "Inspect publisher/storefront receipts");
-  source.href = wikidataQid && /^Q[1-9][0-9]*$/.test(wikidataQid)
-    ? `https://www.wikidata.org/wiki/${wikidataQid}`
-    : catalogReceiptBase() + (game.sourceId === "dreven-owned-bellbloom" ? "docs/REAL_EXPANSION_31.md" : "docs/STOREFRONTS.md");
-  source.target = "_blank";
-  source.rel = "noopener noreferrer";
-  details.append(source);
+  const validQid = typeof wikidataQid === "string" && /^Q[1-9][0-9]*$/.test(wikidataQid);
+  const addSource = (label, href) => {
+    const source = element("a", label);
+    source.href = href;
+    source.target = "_blank";
+    source.rel = "noopener noreferrer";
+    if (details.lastElementChild?.tagName === "A") details.append(" ");
+    details.append(source);
+  };
+  if (validQid) addSource("Inspect Wikidata item", `https://www.wikidata.org/wiki/${wikidataQid}`);
+  if (steamBatchReceipt) addSource("Inspect reviewed Steam batch receipts", catalogReceiptBase() + steamBatchReceipt);
+  else if (!validQid) addSource("Inspect publisher/storefront receipts", catalogReceiptBase() +
+    (game.sourceId === "dreven-owned-bellbloom" ? "docs/REAL_EXPANSION_31.md" : "docs/STOREFRONTS.md"));
   return details;
 }
 // Choose which favorite to compare with a recommendation rather than

@@ -216,7 +216,7 @@ python3 scripts/release-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-With this build configuration, `npm run build` selects the 35-game multistore snapshot. Rebuild the historical 30-game full release with `node scripts/build-release.mjs _site-30 --candidate-30` and validate it with `python3 scripts/release-preflight.py _site-30 --candidate-30`. Historical links are not silently migrated. To build
+With this build configuration, `npm run build` selects the 35-game multistore snapshot. Rebuild the historical 30-game full release with `node scripts/build-release.mjs _site-30 --candidate-30` and validate it with `python3 scripts/release-preflight.py _site-30 --candidate-30`. Historical links are not silently migrated. For a saved-basket library spanning catalog versions, retain the original exported JSON backup. Restore each basket on its matching version: build 35 with `node scripts/build-release.mjs _site-35 --candidate-35` or 51 with `node scripts/build-release.mjs _site-51 --candidate-51` and serve the build over local HTTP. The library is origin-scoped; use different paths on the same origin to retain the same local saves. Mixed-version backups are rejected atomically on import; retain the original and import version-specific copies without rewriting any stored share hash. The 51 build is still opt-in. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently

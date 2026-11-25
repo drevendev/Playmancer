@@ -1,5 +1,8 @@
 """Real Chromium acceptance for multistore and legacy Wikidata snapshots, not Pages."""
 from pathlib import Path
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 import json
 import os
 import re
@@ -29,6 +32,144 @@ def check(name, condition):
     results.append({"name": name, "passed": bool(condition)})
     if not condition:
         raise AssertionError(name)
+
+
+
+def exercise_candidate_51(browser):
+    sites = ARTIFACTS / "candidate51-http"
+    for count in (35, 51):
+        site = sites / str(count)
+        flag = f"--candidate-{count}"
+        subprocess.run(["node", "scripts/build-release.mjs", str(site), flag], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(site), flag], cwd=ROOT, check=True)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(SimpleHTTPRequestHandler, directory=str(sites)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    origin = f"http://127.0.0.1:{server.server_port}"
+    candidate_id = "multi-store-genre-pilot-51-2026-11-25"
+    def settled(page):
+        page.wait_for_function("document.querySelector('#basket-library')?.getAttribute('aria-busy') === 'false'")
+    def panel(page):
+        page.locator("#intro-library").click()
+        settled(page)
+    def save(page, name):
+        page.fill("#library-name", name)
+        page.click("#library-save")
+        settled(page)
+    def backup(page):
+        page.locator("#library-transfer").evaluate("node => node.open = true")
+        page.click("#library-export-all")
+        settled(page)
+        return json.loads(page.locator("#library-json").input_value())
+    try:
+        for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
+            ctx = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
+            errors, external = [], []
+            ctx.on("request", lambda req: external.append(req.url) if urlsplit(req.url).netloc != urlsplit(origin).netloc else None)
+            page = ctx.new_page()
+            page.on("pageerror", lambda err: errors.append(str(err)))
+            try:
+                page.goto(origin + "/35/", wait_until="load")
+                panel(page)
+                save(page, "Original 35")
+                original = backup(page)["baskets"][0]
+                page.goto(origin + "/51/", wait_until="load")
+                page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+                revision = page.locator('meta[name="playmancer-revision"]').get_attribute("content")
+                receipt_ref = revision if revision and re.fullmatch(r"[0-9a-f]{40}", revision) else "master"
+                prefix = f"https://github.com/drevendev/Playmancer/blob/{receipt_ref}/"
+                check(label + ": exact candidate HTTP version and facts",
+                      "51 real games" in page.locator(".intro").inner_text()
+                      and candidate_id in page.locator("#versions").inner_text()
+                      and page.locator("#observation-explorer-entry").get_attribute("data-observation-catalog") == candidate_id)
+                expected_paths = ["docs/REAL_PILOT.md", "docs/REAL_EXPANSION.md", "docs/REAL_EXPANSION_30.md",
+                                  "docs/REAL_EXPANSION_31.md", "examples/reviewed-steam-batch-2026-11-24.json",
+                                  "docs/REAL_EXPANSION_51.md", "examples/reviewed-steam-batch-2026-11-25.json",
+                                  "docs/STOREFRONTS.md"]
+                check(label + ": candidate footer preserves all pinned receipts",
+                      page.locator(".source-receipts a").evaluate_all("nodes => nodes.map(n => n.href)") ==
+                      [prefix + path for path in expected_paths])
+                page.locator("#intro-browse").click()
+                check(label + ": 49 unselected profiles and eight visible choices",
+                      "1–8 of 49 available catalog profiles" in page.locator("#search-hint").inner_text()
+                      and page.locator("#search-results li > button").count() == 8)
+                next_page = page.get_by_role("button", name="Next page", exact=True)
+                next_page.focus()
+                next_page.press("Enter")
+                check(label + ": keyboard pagination focuses first new choice",
+                      "9–16 of 49 available catalog profiles" in page.locator("#search-hint").inner_text()
+                      and page.locator("#search-results li > button").first.evaluate("n => n === document.activeElement"))
+                page.fill("#search", "Hades")
+                check(label + ": title search resets paging and distinguishes sequel",
+                      page.get_by_role("button", name="Add Hades", exact=True).count() == 1
+                      and page.get_by_role("button", name="Add Hades II", exact=True).count() == 1)
+                url = "https://store.steampowered.com/app/1145350"
+                page.fill("#search", url)
+                row = page.locator("#search-results > li")
+                check(label + ": exact sequel URL only and unknown facts",
+                      row.count() == 1 and row.get_by_role("button", name="Add Hades II", exact=True).count() == 1
+                      and row.locator(f'a[href="{url}"]').count() == 1
+                      and "No reviewed gameplay facts yet (unknown, not absent)" in row.inner_text())
+                row.get_by_role("button", name="Add Hades II", exact=True).click()
+                page.fill("#search", "https://store.steampowered.com/app/220")
+                page.get_by_role("button", name="Add Half-Life 2", exact=True).click()
+                for game, qid, date, genres in (
+                        ("Hades II", "Q115641620", "2026-11-25", "unknown"),
+                        ("Half-Life 2", "Q193581", "2026-11-24",
+                         "first-person shooter, science fiction video game, post-apocalyptic video game")):
+                    details = page.locator("#seeds .basket-evidence").filter(has=page.get_by_text(f"Inspect evidence for {game}", exact=True))
+                    details.locator("summary").click()
+                    check(label + ": correct per-game receipts " + game,
+                          f"Recorded genres (Wikidata genre statements): {genres}." in details.inner_text()
+                          and "Catalog mechanics: unknown. Co-op: unknown." in details.inner_text()
+                          and details.locator(f'a[href="https://www.wikidata.org/wiki/{qid}"]').count() == 1
+                          and details.locator(f'a[href="{prefix}examples/reviewed-steam-batch-{date}.json"]').count() == 1)
+                page.click("#share")
+                saved_hash = "#" + urlsplit(page.locator("#share-link").input_value()).fragment
+                state = json.loads(unquote(saved_hash.split("#basket=", 1)[1]))
+                check(label + ": exact candidate ordered share", state["catalog"] == candidate_id
+                      and [s["id"] for s in state["seeds"]][-2:] == ["wikidata:q115641620", "wikidata:q193581"])
+                page.reload(wait_until="load")
+                page.evaluate("hash => { location.hash = hash; }", saved_hash)
+                page.wait_for_function("document.querySelectorAll('#seeds > li').length === 4")
+                check(label + ": candidate replay and narrow reflow",
+                      page.evaluate("location.hash") == saved_hash
+                      and page.evaluate("document.documentElement.scrollWidth <= innerWidth"))
+                page.screenshot(path=str(ARTIFACTS / f"candidate51-http-{label}.png"), full_page=True)
+                panel(page)
+                check(label + ": incompatible 35 save retained without restore",
+                      page.get_by_role("button", name="Restore saved basket Original 35", exact=True).is_disabled()
+                      and backup(page)["baskets"] == [original])
+                save(page, "Current 51")
+                mixed = backup(page)
+                check(label + ": both catalog versions exported intact",
+                      len(mixed["baskets"]) == 2 and original in mixed["baskets"]
+                      and next(x for x in mixed["baskets"] if x["name"] == "Current 51")["hash"] == saved_hash)
+                # Fresh names rule out duplicate-name rejection; the compatible
+                # entry sorts first so a partial import would be observable.
+                mixed_import = dict(mixed, baskets=[
+                    dict(entry, name="A Fresh 51" if entry["name"] == "Current 51" else "Z Fresh 35")
+                    for entry in mixed["baskets"]
+                ])
+                page.fill("#library-json", json.dumps(mixed_import))
+                page.click("#library-import")
+                settled(page)
+                check(label + ": mixed-version import visibly rejected for catalog incompatibility",
+                      "unavailable catalog or method version" in page.locator("#library-status").inner_text())
+                check(label + ": mixed-version import atomically rejected",
+                      backup(page) == mixed and page.evaluate("location.hash") == saved_hash)
+                page.goto(origin + "/35/", wait_until="load")
+                panel(page)
+                page.once("dialog", lambda dialog: dialog.accept())
+                page.get_by_role("button", name="Restore saved basket Original 35", exact=True).click()
+                check(label + ": original snapshot restores exact hash; no external requests/errors",
+                      page.evaluate("location.hash") == original["hash"] and not errors and not external)
+            finally:
+                ctx.close()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
 
 
 try:
@@ -931,12 +1072,15 @@ try:
                   and page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                   and not errors and not requests)
             ctx.close()
+        # A separate exact candidate journey uses real HTTP, including same-origin
+        # IndexedDB replay across snapshot versions. Never changes default publication.
+        exercise_candidate_51(browser)
         browser.close()
 finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "historical multistore, legacy, opt-in 31 and default 35-game HTML / Chromium; NOT Pages or measured usefulness",
+        "scope": "historical multistore, legacy, opt-in 31 and default 35-game HTML and opt-in 51 loopback HTTP / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))
