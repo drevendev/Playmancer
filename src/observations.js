@@ -58,7 +58,8 @@ export function prepareObservations(catalog, reviewed, evidenceId = REVIEWED_OBS
           ? reviewed.catalogGitBlobSha1 !== CANDIDATE_CATALOG_SHA || evidenceId !== CANDIDATE_OBSERVATIONS_SHA
           : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || [CANDIDATE_OBSERVATIONS_SHA, OBSERVATIONS_35_SHA].includes(evidenceId)) ||
       !/^[a-f0-9]{40}$/.test(evidenceId)) throw new Error('Observation/catalog revision mismatch');
-  const records = observationList(catalog.games, 'catalog games', 250);
+  // Match the player build's identity capacity, not the separate reviewed evidence cap.
+  const records = observationList(catalog.games, 'catalog games', 2000);
   if (!records.length) throw new Error('Empty catalog');
   const catalogIds = new Set();
   for (const game of records) {
