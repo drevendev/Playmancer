@@ -85,6 +85,12 @@ test('nonpublished 1,000-profile sparse release passes the complete five-file bu
   assert.deepEqual(decodeObservationState(model, encodeObservationState(model, state)), state);
   run();
   for (const [i, file] of files.entries()) assert.deepEqual(await readFile(join(output, file)), first[i]);
+  if (process.env.PLAYMANCER_SCALE_BROWSER === '1') {
+    const browser = spawnSync('python3', ['scripts/browser-observations-scale.py', output],
+      { cwd: root, encoding: 'utf8' });
+    assert.equal(browser.status, 0, browser.stdout + browser.stderr);
+    console.log(browser.stdout);
+  }
   // A forged lower model count may not bypass the strict selected binding.
   await writeFile(join(output, 'observations.html'), explorer.replace(
     /^const OBSERVATION_DATA = (.+);$/m, (_, json) => {
