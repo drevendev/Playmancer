@@ -289,6 +289,12 @@ for (const [index, path] of modules.entries()) {
     if (unknownStart < 0 || unknownEnd <= unknownStart)
       throw new Error("Unexpected real-only unknown-genre explanation boundary");
     source = source.slice(0, unknownStart) + source.slice(unknownEnd);
+    // Real-player compact cards do not change the fictional acceptance surface.
+    const compactStart = source.indexOf("    // Real-player compact cards keep quantitative evidence in a native disclosure.");
+    const compactEnd = source.indexOf('    $("results").append(card);', compactStart);
+    if (compactStart < 0 || compactEnd <= compactStart)
+      throw new Error("Unexpected compact real-card boundary");
+    source = source.slice(0, compactStart) + source.slice(compactEnd);
     // Fictional previews retain their own footer copy; the real-only override
     // is unreachable. Keep the strict synthetic HTML budget without changing
     // real releases or the shared keyboard-navigation behavior.

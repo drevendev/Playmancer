@@ -326,7 +326,7 @@ let browseAll = false;
 const PAGE_SIZE = 8;
 let pageNo = 0;
 let matchCount = 0;
-let compactResults = false;
+let compactResults = !syntheticCatalog;
 function announceBasketAction(action, name) {
   const count = state.seeds.length;
   const summary = `${count} of 5 ${count === 1 ? "game" : "games"} selected.`;
@@ -349,7 +349,7 @@ function readLocation() {
   }
   $("search").value = "";
   $("store-filter").value = "all";
-  browseAll = false; pageNo = 0; compactResults = false;
+  browseAll = false; pageNo = 0; compactResults = !syntheticCatalog;
   clearShareFeedback();
   render(true);
   // A newly opened or navigated invalid link should announce the error and
@@ -866,7 +866,20 @@ function drawResults() {
       const nextCard = cards[Math.min(index, cards.length - 1)];
       (nextCard?.querySelector(".card-footer button:not(:disabled)") ?? $("recommendations")).focus();
     });
-    footer.append(hide); card.append(footer); $("results").append(card);
+    footer.append(hide); card.append(footer);
+    // Real-player compact cards keep quantitative evidence in a native disclosure.
+    if (!syntheticCatalog) {
+      const positive = item.evidence.filter(pair => pair.affinity > 0).length;
+      title.querySelector("p.hint").textContent = positive
+        ? `Recorded genre overlap with ${positive} of ${item.evidence.length} favorites.`
+        : "No recorded genre overlap; gameplay similarity remains unknown.";
+      const source = title.querySelector('a[href^="https://www.wikidata.org/"]');
+      if (source) why.append(source);
+      why.insertBefore(fit, why.children[1]);
+      why.insertBefore(affinities, why.children[2]);
+      why.append(footer.querySelector("span.hint"));
+    }
+    $("results").append(card);
   });
   drawEmptyRecovery(result);
   const view = $("results-view");

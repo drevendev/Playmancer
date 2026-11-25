@@ -417,6 +417,10 @@ try:
                           and page.evaluate("location.hash") == initial_hash)
             # Storefront discovery is an editorial catalog view, not ranking or
             # a platform requirement. Exercise both viewports with real link data.
+            # These exhaustive rank comparisons intentionally use the explicit full view.
+            view = page.locator("#results-view")
+            if view.is_visible() and view.get_attribute("aria-pressed") == "true":
+                view.click()
             initial_ranks = page.locator("#results > li").evaluate_all(
                 "cards => cards.map(card => card.dataset.gameId)")
             # A hidden result needs a reversible per-game action. Undoing one
@@ -777,24 +781,62 @@ try:
             sparse.get_by_role("button", name="Add Factorio").click()
             sparse.locator("#search").fill("Into the Breach")
             sparse.get_by_role("button", name="Add Into the Breach").click()
-            zero_scores = sparse.locator("#results .fit strong").all_inner_texts()
-            check(label + ": zero-overlap real basket openly discloses unsupported suggestions",
-                  len(zero_scores) > 0
+            # Compact cards must visibly distinguish zero recorded overlap from unknown gameplay.
+            check(label + ": compact zero-overlap reason stays visible",
+                  "No recorded genre overlap; gameplay similarity remains unknown." in
+                  sparse.locator("#results > li").first.inner_text())
+            # Closed details deliberately hide diagnostics. inner_text() is not
+            # a reliable way to read those DOM values until the disclosure opens.
+            sparse_cards = sparse.locator("#results > li")
+            sparse_first = sparse_cards.first
+            zero_scores = sparse.locator("#results .fit strong").all_text_contents()
+            sparse_status = sparse.locator("#status").inner_text().lower()
+            check(label + ": compact zero-overlap scope and DOM scores",
+                  sparse_cards.count() == len(zero_scores) == 5
                   and all(score == "0.000" for score in zero_scores)
-                  and sparse.locator("#results .fit .fit-warning").count() == len(zero_scores)
-                  and "zero demonstrated basket fit" in sparse.locator("#status").inner_text().lower()
-                  and "No recorded genre overlap with any favorite" in sparse.locator("#results .fit-warning").first.inner_text()
-                  and "appears in this list" in sparse.locator("#results .explanation summary").first.inner_text())
+                  and sparse.locator("#results .fit .fit-warning").count() == 5
+                  and "5 of 6 ranked shown" in sparse_status
+                  and "5 shown with zero demonstrated basket fit" in sparse_status)
+            check(label + ": compact zero-overlap diagnostics start hidden",
+                  sparse_first.locator(".fit strong").is_hidden()
+                  and sparse_first.locator(".fit-warning").is_hidden()
+                  and sparse_first.locator(".affinities").is_hidden()
+                  and sparse_first.locator(".explanation span.hint").is_hidden()
+                  and "appears in this list" in sparse_first.locator("summary").first.inner_text())
             # A zero on the positive-only genre snapshot is not proof that
             # unreviewed mechanics or other gameplay features are disjoint.
-            sparse.locator("#results .explanation summary").first.click()
-            zero_explanation = sparse.locator("#results .explanation").first.inner_text()
+            sparse_summary = sparse_first.locator(".explanation summary")
+            sparse_summary.focus()
+            sparse_summary.press("Enter")
+            zero_explanation = sparse_first.locator(".explanation").inner_text()
+            check(label + ": zero-overlap real basket openly discloses unsupported suggestions",
+                  sparse_first.locator(".fit strong").is_visible()
+                  and sparse_first.locator(".fit strong").inner_text() == "0.000"
+                  and sparse_first.locator(".fit-warning").is_visible()
+                  and "No recorded genre overlap with any favorite" in sparse_first.locator(".fit-warning").inner_text()
+                  and sparse_first.locator(".explanation span.hint").is_visible()
+                  and "Evidence coverage: 30%" in sparse_first.locator(".explanation span.hint").inner_text())
             check(label + ": zero genre overlap is explicitly limited to recorded evidence",
-                  "Recorded genre score vs" in sparse.locator("#results .affinity").first.inner_text()
+                  sparse_first.locator(".affinity").first.is_visible()
+                  and "Recorded genre score vs" in sparse_first.locator(".affinity").first.inner_text()
                   and "No recorded genre overlap with at least one favorite" in zero_explanation
                   and "not a demonstrated whole-basket match" in zero_explanation
                   and "Unrecorded mechanics and other facts remain unknown" in zero_explanation
                   and "No shared genres with any favorite" not in zero_explanation)
+            compact_ids = sparse_cards.evaluate_all("cards => cards.map(card => card.dataset.gameId)")
+            sparse_hash = sparse.evaluate("location.hash")
+            sparse.locator("#results-view").click()
+            full_ids = sparse_cards.evaluate_all("cards => cards.map(card => card.dataset.gameId)")
+            full_scores = sparse.locator("#results .fit strong").all_text_contents()
+            full_status = sparse.locator("#status").inner_text().lower()
+            check(label + ": expanded zero-overlap scope preserves prefix and counts",
+                  len(full_ids) == len(full_scores) == 6 and full_ids[:5] == compact_ids
+                  and all(score == "0.000" for score in full_scores)
+                  and sparse.locator("#results .fit .fit-warning").count() == 6
+                  and "6 of 6 ranked shown" in full_status
+                  and "6 shown with zero demonstrated basket fit" in full_status
+                  and sparse.evaluate("location.hash") == sparse_hash)
+            sparse.locator("#results .explanation summary").first.click()
             sparse.screenshot(path=str(ARTIFACTS / f"real-catalog-zero-overlap-{label}.png"), full_page=True)
             sparse.close()
             # Selected P400/platform listings prove observed support, not universal
@@ -854,23 +896,40 @@ try:
             page.locator("#mode").select_option("blend")
             page.locator("#lambda").evaluate(
                 "(slider) => { slider.value = '0'; slider.dispatchEvent(new Event('input', {bubbles: true})); }")
+            blend_view = page.locator("#results-view")
+            if blend_view.is_visible() and blend_view.get_attribute("aria-pressed") == "true":
+                blend_view.click()
             shell = page.locator('[data-game-id="wikidata:q96991833"]')
+            blend_cards = page.locator("#results > li")
+            check(label + ": Blend exhaustive view includes Mortal Shell",
+                  blend_cards.count() == 6 and shell.count() == 1
+                  and "6 of 6 ranked shown" in page.locator("#status").inner_text())
+            check(label + ": Blend diagnostics are initially hidden",
+                  shell.locator(".fit strong").is_hidden() and shell.locator(".affinities").is_hidden()
+                  and shell.locator(".fit-warning").is_hidden())
+            shell.locator(".explanation summary").click()
             shell_affinities = [float(value) for value in shell.locator(".affinity b").all_inner_texts()]
             shell_warning = shell.locator(".fit-warning").inner_text().lower()
-            zero_overlap_cards = page.locator("#results > li").evaluate_all(
-                "cards => cards.filter(card => [...card.querySelectorAll('.affinity b')].every(value => Number(value.textContent) === 0)).length")
+            rendered_affinities = blend_cards.evaluate_all(
+                "cards => cards.map(card => [...card.querySelectorAll('.affinity b')].map(value => Number(value.textContent)))")
+            zero_overlap_cards = sum(all(value == 0 for value in affinities) for affinities in rendered_affinities)
             blend_status = page.locator("#status").inner_text().lower()
             check(label + ": Blend lambda zero retains real affinities despite zero marginal objective",
-                  shell.count() == 1
+                  shell.locator(".fit strong").is_visible()
                   and shell.locator(".fit strong").inner_text() == "0.000"
                   and len(shell_affinities) == 2
                   and all(value > 0 for value in shell_affinities)
+                  and shell.locator(".affinity b").first.is_visible()
+                  and shell.locator(".affinity b").last.is_visible()
+                  and shell.locator(".fit-warning").is_visible()
                   and "no additional uncovered-strand gain" in shell_warning
                   and "no recorded genre overlap" not in shell_warning
                   and "appears in this list" in shell.locator(".explanation summary").inner_text())
             check(label + ": Blend status counts source-backed zero overlaps, not zero objectives",
-                  (f"{zero_overlap_cards} shown with zero demonstrated basket fit" in blend_status
-                   if zero_overlap_cards else "shown with zero demonstrated basket fit" not in blend_status))
+                  len(rendered_affinities) == blend_cards.count() == 6
+                  and all(len(affinities) == 2 for affinities in rendered_affinities)
+                  and (f"{zero_overlap_cards} shown with zero demonstrated basket fit" in blend_status
+                       if zero_overlap_cards else "shown with zero demonstrated basket fit" not in blend_status))
             page.screenshot(path=str(ARTIFACTS / f"real-catalog-blend-zero-marginal-{label}.png"), full_page=True)
             page.locator("#mode").select_option("intersection")
             page.locator("#lambda").evaluate(
