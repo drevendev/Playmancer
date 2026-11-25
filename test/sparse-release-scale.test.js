@@ -55,11 +55,11 @@ test('nonpublished 1,000-profile sparse release passes the complete five-file bu
     await writeFile(join(isolated, path), text);
   }
   const output = join(isolated, 'site');
-  const run = () => execFileSync(process.execPath, ['scripts/build-release.mjs', output],
+  const run = () => execFileSync(process.execPath, ['scripts/build-release.mjs', output, '--candidate-35'],
     { cwd: isolated, env: { ...process.env, PLAYMANCER_REVISION: 'unpublished' }, stdio: 'pipe' });
   run();
   assert.deepEqual((await readdir(output)).sort(), files);
-  const preflight = () => spawnSync('python3', ['scripts/release-preflight.py', output],
+  const preflight = () => spawnSync('python3', ['scripts/release-preflight.py', output, '--candidate-35'],
     { cwd: isolated, encoding: 'utf8' });
   const result = preflight();
   assert.equal(result.status, 0, result.stdout + result.stderr);

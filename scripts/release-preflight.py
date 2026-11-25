@@ -40,8 +40,7 @@ candidates = {
 }
 assert len(args) <= 2 and (len(args) < 2 or args[1] in candidates) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-30|--candidate-31|--candidate-35|--candidate-51]]'
 site = Path(args[0] if args else '_site').resolve()
-expected_catalog, expected_evidence, expected_count = candidates[args[1]] if len(args) == 2 else (
-    'multi-store-genre-pilot-35-2026-11-24', 'a49eb238b3f18fc0aa2d8e2d3be913a4862c336c', 35)
+expected_catalog, expected_evidence, expected_count = candidates[args[1]] if len(args) == 2 else candidates['--candidate-51']
 root = Path(__file__).resolve().parents[1]
 base = {'index.html','.nojekyll','bridge-worker.js','player.css'}
 expected = base | {'observations.html'}

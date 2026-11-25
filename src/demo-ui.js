@@ -639,6 +639,16 @@ function drawSearch() {
     row.append(nav);
     $("search-results").append(row);
   }
+  // Firefox can add an overflowing list to sequential focus even when its
+  // native children already provide keyboard access (Mozilla bug 1921336).
+  // Skip only the redundant container stop; keep buttons/links tabbable and
+  // retain native scrolling access when there are no actionable descendants.
+  const resultsList = $("search-results");
+  if (resultsList.querySelector("button:not(:disabled), a[href]")) {
+    resultsList.tabIndex = -1;
+  } else {
+    resultsList.removeAttribute("tabindex");
+  }
   const noun = syntheticCatalog ? "fictional profiles" : "catalog profiles";
   const fromStore = store === "all" ? "" : ` with a recorded ${storeNames[store]} link`;
   const selectedStoreUrl = recordedStoreUrlGame && chosen.has(recordedStoreUrlGame.id);

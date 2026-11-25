@@ -20,8 +20,8 @@ from playwright.sync_api import sync_playwright
 from hosted_validation import validate_hosted_identity, verified_same_origin_worker
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS = ROOT / ".test-artifacts"
-ARTIFACTS.mkdir(exist_ok=True)
+ARTIFACTS = Path(os.environ.get("PLAYMANCER_HTTP_ARTIFACTS", str(ROOT / ".test-artifacts"))).resolve()
+ARTIFACTS.mkdir(parents=True, exist_ok=True)
 OVERRIDE = os.environ.get("PLAYMANCER_HTTP_SITE")
 HOSTED_URL = os.environ.get("PLAYMANCER_HOSTED_URL")
 EXPECTED_SHA = os.environ.get("PLAYMANCER_EXPECTED_SHA")
@@ -56,6 +56,18 @@ def check(case, title, condition, details=None):
     if not result["passed"]:
         raise AssertionError(f"{case}: {title}; observed={details!r}")
 
+
+
+def search_focus_snapshot(page):
+    return page.evaluate("""() => {
+        const list = document.querySelector('#search-results');
+        const active = document.activeElement;
+        const row = active.closest('#search-results > li');
+        return {tag: active.tagName, id: active.id, label: active.getAttribute('aria-label'),
+                row: row ? [...list.children].indexOf(row) : null,
+                scrollHeight: list.scrollHeight, clientHeight: list.clientHeight,
+                scrollTop: list.scrollTop, listTabindex: list.getAttribute('tabindex')};
+    }""")
 
 
 def chromium_status_in_accessibility_tree(page, element_id, expected_text):
@@ -126,7 +138,7 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "35"))
+        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "51"))
         expected_catalog = {35: "multi-store-genre-pilot-35-2026-11-24",
                             51: "multi-store-genre-pilot-51-2026-11-25"}[expected_count]
         is_real_pilot = catalog_id == expected_catalog
@@ -402,7 +414,8 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("document.activeElement.id") == "search")
         # Verify each appended identity on the same default release, by exact store URL.
         late_hash = page.evaluate("location.hash")
-        for name, app in (("Half-Life 2", 220), ("Portal", 400), ("Left 4 Dead", 500), ("Left 4 Dead 2", 550)):
+        for name, app in (("Half-Life 2", 220), ("Portal", 400), ("Left 4 Dead", 500), ("Left 4 Dead 2", 550),
+                          *([("Hades II", 1145350), ("Deep Rock Galactic", 548430)] if expected_count == 51 else [])):
             url = f"https://store.steampowered.com/app/{app}"
             page.locator("#search").fill(url)
             row = page.locator("#search-results > li")
@@ -571,12 +584,55 @@ def exercise(browser, base_url, engine, label, width, height):
               "matching catalog profiles" in hint.inner_text()
               and page.locator("#search-results button").count() > 0
               and page.evaluate("document.activeElement.id") == "search")
-        # Browse shortcuts must not interrupt the input -> first result Tab path.
-        page.locator("#search").press("Tab")
+        # Native Tab, not a scripted focus shortcut, must enter the actionable row.
+        # Compare the browser's default scroll-container behavior with the fix.
+        # The temporary DOM mutation is diagnostic only; restore it before acceptance.
+        search = page.locator("#search")
+        result_list = page.locator("#search-results")
+        check(case, "actionable catalog list is excluded from redundant sequential focus",
+              result_list.get_attribute("tabindex") == "-1")
+        if engine == "firefox" and not HOSTED_URL:
+            result_list.evaluate("node => node.removeAttribute('tabindex')")
+            try:
+                search.focus()
+                baseline_before = search_focus_snapshot(page)
+                page.keyboard.press("Tab")
+                print(json.dumps({"case": case, "catalog": expected_count, "query": "Hades",
+                                  "native_container_control": {"before": baseline_before,
+                                                               "after": search_focus_snapshot(page)}}))
+            finally:
+                result_list.evaluate("node => node.setAttribute('tabindex', '-1')")
+        search.focus()
+        before = search_focus_snapshot(page)
+        page.keyboard.press("Tab")
+        after = search_focus_snapshot(page)
         check(case, "Tab reaches the first real-catalog search result before browse actions",
               page.locator("#search-results button").first.evaluate(
-                  "node => document.activeElement === node"))
-        page.locator("#search").focus()
+                  "node => document.activeElement === node"), {"before": before, "after": after})
+        if expected_count == 51:
+            # Tab through actual links/buttons, including the later row in the scrollport.
+            target = page.get_by_role("button", name="Add Hades II", exact=True)
+            steps = 0
+            while not target.evaluate("node => document.activeElement === node") and steps < 12:
+                page.keyboard.press("Tab")
+                steps += 1
+            check(case, "native Tab reaches and scrolls the later Hades II action",
+                  target.evaluate("""node => {
+                      const r = node.getBoundingClientRect();
+                      const list = node.closest('#search-results');
+                      const box = list.getBoundingClientRect();
+                      return document.activeElement === node && r.top >= box.top - 2
+                             && r.bottom <= box.bottom + 2;
+                  }"""), search_focus_snapshot(page))
+            search.fill("https://store.steampowered.com/app/1145350")
+            search.focus()
+            before = search_focus_snapshot(page)
+            page.keyboard.press("Tab")
+            check(case, "single exact Hades II URL retains native first-result focus",
+                  page.locator("#search-results li > button").count() == 1
+                  and target.evaluate("node => document.activeElement === node"),
+                  {"before": before, "after": search_focus_snapshot(page)})
+        search.focus()
         # Search suggestions remain native buttons: Tab still works, while
         # Arrow Down/Up/Escape provide a keyboard-only fast path without
         # fabricating combobox or active-descendant semantics.
@@ -600,9 +656,10 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#search").input_value() == "e"
               and page.evaluate("location.hash") == hash_before_search_paging)
         page.locator("#search").fill("Hades")
-        check(case, "typing a new query resets pagination and returns the unique match",
-              page.locator("#search-results li > button").count() == 1
-              and page.locator("#search-results li > button").first.inner_text().endswith("Hades"))
+        check(case, "typing a new query resets pagination and preserves distinct title matches",
+              page.locator("#search-results li > button").count() == (2 if expected_count == 51 else 1)
+              and page.get_by_role("button", name="Add Hades", exact=True).count() == 1
+              and (expected_count != 51 or page.get_by_role("button", name="Add Hades II", exact=True).count() == 1))
         page.locator("#search").fill("e")
         choices = page.locator("#search-results button:not([disabled])")
         check(case, "search exposes multiple keyboard-navigable suggestions",
@@ -705,6 +762,17 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#results > li").count() > 0
               and all(page.locator(".add-result").evaluate_all("nodes => nodes.map(n => n.disabled)"))
               and page.locator("#results > li .explanation summary").first.is_visible())
+        # A full basket disables Add but must not strand native storefront/evidence links.
+        page.locator("#search").fill("e")
+        page.locator("#search").focus()
+        active_link = page.locator("#search-results a[href]").first
+        full_before = search_focus_snapshot(page)
+        page.keyboard.press("Tab")
+        check(case, "full basket Tab skips disabled Add actions and reaches a real link",
+              active_link.count() == 1 and active_link.evaluate("node => document.activeElement === node")
+              and page.locator("#search-results").get_attribute("tabindex") == "-1"
+              and all(page.locator("#search-results li > button").evaluate_all("nodes => nodes.map(n => n.disabled)")),
+              {"before": full_before, "after": search_focus_snapshot(page)})
         page.evaluate("""s => {
             history.replaceState(null, '', '#basket=' + encodeURIComponent(JSON.stringify(s)));
             window.dispatchEvent(new Event('hashchange'));
@@ -823,6 +891,8 @@ def exercise(browser, base_url, engine, label, width, height):
                   "Selected: " + (page.locator(f"#{control} option:checked").text_content() or "").strip()
                   and page.locator(f"#{control}-readback").get_attribute("aria-hidden") == "true"
                   for control in bridge_controls))
+        # The 51-profile release uses the asynchronous same-origin Bridge worker.
+        page.wait_for_function("document.querySelector('#bridge-steps').getAttribute('aria-busy') !== 'true'")
         check(case, "sample Bridge exposes supported steps and evidence",
               page.locator("#bridge-steps li").count() > 0
               and "comparable evidence" in page.locator("#bridge-steps").first.inner_text().lower())
@@ -1358,7 +1428,7 @@ def exercise(browser, base_url, engine, label, width, height):
         sparse.goto(base_url + "/", wait_until="load")
         sparse.locator("#clear").click()
         sparse.locator("#search").fill("Hades")
-        sparse_add = sparse.get_by_role("button", name="Add Hades")
+        sparse_add = sparse.get_by_role("button", name="Add Hades", exact=True)
         sparse_add.focus()
         sparse_add.press("Enter")
         sparse.locator("#coop").check()

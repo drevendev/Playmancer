@@ -113,6 +113,18 @@ jobs:
         run: |
           python scripts/browser-http-acceptance.py
           python scripts/browser-observations-acceptance.py --engine all
+      - name: Compare historical 35-game Firefox focus in the same image
+        if: ${{ !cancelled() }}
+        env:
+          HOME: /root
+          PLAYMANCER_BROWSERS: firefox
+          PLAYMANCER_EXPECTED_CATALOG_COUNT: "35"
+          PLAYMANCER_HTTP_SITE: _site-focus35
+          PLAYMANCER_HTTP_ARTIFACTS: .test-artifacts/focus35
+        run: |
+          node scripts/build-release.mjs _site-focus35 --candidate-35
+          python scripts/release-preflight.py _site-focus35 --candidate-35
+          python scripts/browser-http-acceptance.py
       - name: Retain HTTP screenshots and per-engine results
         if: always()
         uses: actions/upload-artifact@v4
@@ -121,6 +133,8 @@ jobs:
           path: |
             .test-artifacts/http-*.png
             .test-artifacts/http-cross-browser.json
+            .test-artifacts/focus35/http-cross-browser.json
+            .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png
             .test-artifacts/observations-browser.json
           include-hidden-files: true

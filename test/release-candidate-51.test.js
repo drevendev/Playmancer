@@ -55,7 +55,7 @@ test('51-profile candidate is an exact deterministic reviewed import, with no fa
   await assert.rejects(readReleaseObservations(root, catalog, Buffer.concat([bytes, Buffer.from(' ')])), /blob mismatch/);
 });
 
-test('51-profile opt-in build packages all five files, passes strict preflight, and preserves 35 as default', () => {
+test('51-profile default packages all five files, passes strict preflight, and preserves explicit 35', () => {
   const dir = mkdtempSync(join(tmpdir(), 'playmancer-release51-'));
   const run = (command, args) => {
     const result = spawnSync(command, args, {cwd: root, encoding: 'utf8',
@@ -63,12 +63,13 @@ test('51-profile opt-in build packages all five files, passes strict preflight, 
     assert.equal(result.status, 0, result.stdout + result.stderr);
   };
   try {
-    const a = join(dir, 'a'), b = join(dir, 'b'), previous = join(dir, 'default');
-    for (const site of [a, b]) {
-      run(process.execPath, ['scripts/build-release.mjs', site, '--candidate-51']);
-      run('python3', ['scripts/release-preflight.py', site, '--candidate-51']);
+    const a = join(dir, 'a'), b = join(dir, 'b'), previous = join(dir, 'historical35');
+    for (const [site, flags] of [[a, []], [b, ['--candidate-51']]]) {
+      run(process.execPath, ['scripts/build-release.mjs', site, ...flags]);
+      run('python3', ['scripts/release-preflight.py', site, ...flags]);
     }
-    run(process.execPath, ['scripts/build-release.mjs', previous]);
+    run(process.execPath, ['scripts/build-release.mjs', previous, '--candidate-35']);
+    run('python3', ['scripts/release-preflight.py', previous, '--candidate-35']);
     const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
     assert.deepEqual(readdirSync(a).sort(), files);
     for (const f of files) assert.deepEqual(readFileSync(join(a,f)), readFileSync(join(b,f)), f);

@@ -1032,8 +1032,8 @@ try:
                   and not errors and not requests)
             ctx.close()
         candidate_site = ARTIFACTS / "steam35-candidate-site"
-        subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site)], cwd=ROOT, check=True)
-        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site)], cwd=ROOT, check=True)
+        subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
         candidate_id = "multi-store-genre-pilot-35-2026-11-24"
         for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
             ctx = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
@@ -1080,7 +1080,7 @@ finally:
     (ARTIFACTS / "real-catalog-acceptance.json").write_text(json.dumps({
         "revision": os.environ.get("GITHUB_SHA", "unpublished"),
         "snapshot": SNAPSHOT,
-        "scope": "historical multistore, legacy, opt-in 31 and default 35-game HTML and opt-in 51 loopback HTTP / Chromium; NOT Pages or measured usefulness",
+        "scope": "historical multistore, legacy, explicit 31 and 35-game HTML and explicit 51 loopback HTTP / Chromium; NOT Pages or measured usefulness",
         "checks": results,
     }, indent=2) + "\n")
 print(json.dumps({"passed": len(results), "failed": 0}))

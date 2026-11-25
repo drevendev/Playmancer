@@ -289,6 +289,17 @@ for (const [index, path] of modules.entries()) {
     if (unknownStart < 0 || unknownEnd <= unknownStart)
       throw new Error("Unexpected real-only unknown-genre explanation boundary");
     source = source.slice(0, unknownStart) + source.slice(unknownEnd);
+    // Fictional previews retain their own footer copy; the real-only override
+    // is unreachable. Keep the strict synthetic HTML budget without changing
+    // real releases or the shared keyboard-navigation behavior.
+    const realFooterStart = '  if (!syntheticCatalog) document.querySelector(".footer-note").textContent =';
+    const realFooterEnd = '  document.querySelector("#bridge-lab .eyebrow").textContent =';
+    const footerStart = source.indexOf(realFooterStart);
+    const footerEnd = source.indexOf(realFooterEnd, footerStart);
+    if (source.split(realFooterStart).length !== 2 || source.split(realFooterEnd).length !== 2 ||
+        footerStart < 0 || footerEnd <= footerStart)
+      throw new Error("Unexpected real-only footer boundary");
+    source = source.slice(0, footerStart) + source.slice(footerEnd);
   }
   if (path === "src/demo.js") {
     if (effectiveSnapshot.kind === "synthetic") {
