@@ -1033,7 +1033,7 @@ try:
             ctx.close()
         candidate_site = ARTIFACTS / "steam35-candidate-site"
         subprocess.run(["node", "scripts/build-release.mjs", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
-        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site)], cwd=ROOT, check=True)
+        subprocess.run(["python3", "scripts/release-preflight.py", str(candidate_site), "--candidate-35"], cwd=ROOT, check=True)
         candidate_id = "multi-store-genre-pilot-35-2026-11-24"
         for label, width, height in (("desktop", 1280, 800), ("mobile", 390, 844)):
             ctx = browser.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce")
