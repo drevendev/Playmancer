@@ -291,7 +291,7 @@ function showCatalogIdentity() {
   document.querySelector(".badge").textContent = syntheticCatalog ? "Preview 0.3 · fictional games" :
     "Real games" + (storeLabels.length ? " · " + storeLabels.join(" · ") : "");
   document.querySelector(".intro > p").replaceChildren(
-    "Explore ", element("strong", `${CATALOG.length} ${syntheticCatalog ? "fictional profiles" : "real games"}`),
+    "Explore ", element("strong", `${CATALOG.length} ${syntheticCatalog ? "invented profiles" : "real games"}`),
     syntheticCatalog ? " in this demo." : " using limited recorded genres. Usefulness is unmeasured."
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
