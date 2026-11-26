@@ -55,7 +55,7 @@ test('51-profile candidate is an exact deterministic reviewed import, with no fa
   await assert.rejects(readReleaseObservations(root, catalog, Buffer.concat([bytes, Buffer.from(' ')])), /blob mismatch/);
 });
 
-test('51-profile default packages all five files, passes strict preflight, and preserves explicit 35', () => {
+test('51-profile historical build packages all five files, passes strict preflight, and preserves explicit 35', () => {
   const dir = mkdtempSync(join(tmpdir(), 'playmancer-release51-'));
   const run = (command, args) => {
     const result = spawnSync(command, args, {cwd: root, encoding: 'utf8',
@@ -64,7 +64,7 @@ test('51-profile default packages all five files, passes strict preflight, and p
   };
   try {
     const a = join(dir, 'a'), b = join(dir, 'b'), previous = join(dir, 'historical35');
-    for (const [site, flags] of [[a, []], [b, ['--candidate-51']]]) {
+    for (const [site, flags] of [[a, ['--candidate-51']], [b, ['--candidate-51']]]) {
       run(process.execPath, ['scripts/build-release.mjs', site, ...flags]);
       run('python3', ['scripts/release-preflight.py', site, ...flags]);
     }

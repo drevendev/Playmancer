@@ -1,5 +1,7 @@
-"""Nonpublished candidate: exact reviewed links, real HTTP search, keyboard and replay."""
+"""Exact reviewed links, real HTTP/hosted search, keyboard and versioned replay."""
 import json
+import os
+from hosted_validation import validate_hosted_identity
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -20,13 +22,21 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs",
                     "examples/catalog.multistore-51.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-54.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-54"],cwd=ROOT,check=True)
-    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-54"],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site)],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site)],cwd=ROOT,check=True)
+    historical = work / "historical51"
+    subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-51"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-51"],cwd=ROOT,check=True)
     rows = json.loads(BATCH.read_text())["games"]
-    server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(site)))
+    server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(work)))
     thread = threading.Thread(target=server.serve_forever,daemon=True)
     thread.start()
-    origin = f"http://127.0.0.1:{server.server_port}/"
+    local = f"http://127.0.0.1:{server.server_port}/"
+    hosted = os.environ.get("PLAYMANCER_HOSTED_URL")
+    expected_sha = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+    if hosted or expected_sha:
+        validate_hosted_identity(hosted, expected_sha)
+    origin = hosted.rstrip("/") + "/" if hosted else local + "site/"
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
@@ -35,6 +45,28 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 errors, external = [], []
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(origin) else None)
+                # Create a genuine historical fragment using the preserved exact 51 catalog.
+                historical_page = page.context.new_page()
+                assert historical_page.goto(local + "historical51/").ok
+                assert historical_page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-genre-pilot-51-2026-11-25"
+                historical_page.locator("#intro-sample").click()
+                old_hash = historical_page.evaluate("location.hash")
+                old_weights = historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])")
+                assert old_hash.startswith("#basket=") and len(old_weights) == 2
+                historical_page.close()
+                assert page.goto(origin + old_hash).ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
+                assert page.locator("#error").is_visible()
+                assert "unavailable catalog" in page.locator("#error").inner_text().lower()
+                assert page.locator("#seeds > li").count() == 0
+                assert page.evaluate("location.hash") == old_hash
+                historical_page = page.context.new_page()
+                assert historical_page.goto(local + "historical51/" + old_hash).ok
+                assert historical_page.locator("#error").is_hidden()
+                assert historical_page.evaluate("location.hash") == old_hash
+                assert historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])") == old_weights
+                historical_page.close()
                 assert page.goto(origin).ok
                 page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
                 # The initial implicit sample has no fragment. Serialize the
@@ -106,7 +138,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-candidate-{width}.png"),full_page=True)
                 page.close()
-                print(f"Reviewed 54-profile nonpublished candidate: exact title/7 URLs, store scope, keyboard and replay PASS at {width}px")
+                print(f"Reviewed 54-profile {'HOSTED' if hosted else 'LOCAL_HTTP'}: exact title/7 URLs, store scope, keyboard, strict 51 rejection and recovery, and 54 replay PASS at {width}px")
             browser.close()
     finally:
         server.shutdown()
