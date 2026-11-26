@@ -41,12 +41,13 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             for width,height in ((390,844),(1280,800)):
-                page = browser.new_page(viewport={"width":width,"height":height})
+                context = browser.new_context(viewport={"width":width,"height":height})
+                page = context.new_page()
                 errors, external = [], []
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(origin) else None)
                 # Create a genuine historical fragment using the preserved exact 51 catalog.
-                historical_page = page.context.new_page()
+                historical_page = context.new_page()
                 assert historical_page.goto(local + "historical51/").ok
                 assert historical_page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-genre-pilot-51-2026-11-25"
                 historical_page.locator("#intro-sample").click()
@@ -78,7 +79,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 assert "unavailable catalog" in page.locator("#error").inner_text().lower()
                 assert page.locator("#seeds > li").count() == 0
                 assert page.evaluate("location.hash") == old_hash
-                historical_page = page.context.new_page()
+                historical_page = context.new_page()
                 assert historical_page.goto(local + "historical51/" + old_hash).ok
                 assert historical_page.locator("#error").is_hidden()
                 assert historical_page.evaluate("location.hash") == old_hash
@@ -164,7 +165,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-candidate-{width}.png"),full_page=True)
-                page.close()
+                context.close()
                 print(f"Reviewed 54-profile {'HOSTED' if hosted else 'LOCAL_HTTP'}: exact title/7 URLs, store scope, keyboard, strict 51 rejection and recovery, and 54 replay PASS at {width}px")
             browser.close()
     finally:

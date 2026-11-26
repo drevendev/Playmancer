@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { buildBridgePreview } from '../src/bridge-preview.js';
 const g=(id,mechanics,themes=['fantasy'],platforms=['linux'],coop=true)=>({id:`demo:${id}`,mechanics,themes,platforms,coop});
 const catalog=[g('a',['crafting','farming'],['spring']),g('b',['farming','combat'],['summer']),g('c',['combat','puzzle'],['autumn']),g('d',['puzzle','strategy'],['winter']),g('unknown',null,null,null,null)];
@@ -87,4 +88,35 @@ test('generic shared theme creates a direct-edge shortcut: documented negative r
 });
 test('catalog/version provenance must not be invented by the caller wrapper',()=>{
   assert.throws(()=>buildBridgePreview({...params(),snapshotId:undefined}),/snapshotId/);
+});
+
+test('exact promoted 54 snapshot retains the historical Bridge signal and strict abstention',()=>{
+  const load = count => JSON.parse(readFileSync(new URL(`../examples/catalog.multistore-${count}.real.json`, import.meta.url), 'utf8'));
+  const prior = load(51), promoted = load(54);
+  assert.equal(promoted.snapshotId,'multi-store-identity-candidate-54-2026-11-26');
+  const run = (snapshot, extra={}) => buildBridgePreview({
+    catalog:snapshot.games, snapshotId:snapshot.snapshotId,
+    startId:'wikidata:q23013817',endId:'wikidata:q332697',...extra
+  });
+  const baseline = run(prior), actual = run(promoted);
+  assert.equal(baseline.status,'route');
+  assert.equal(actual.status,'route');
+  assert.deepEqual(actual.nodes,baseline.nodes);
+  assert.deepEqual(actual.steps,baseline.steps);
+  assert.equal(actual.steps[0].evidence_coverage,.3);
+  assert.equal(actual.edge_count,baseline.edge_count);
+  assert.equal(actual.catalog_snapshot_id,promoted.snapshotId);
+  assert.ok(actual.pair_evidence.insufficient > baseline.pair_evidence.insufficient);
+  const strict = run(promoted,{platform:'android'});
+  assert.equal(strict.status,'unavailable-endpoint');
+  assert.equal(strict.reason,'unknown');
+  assert.equal(strict.eligibility.fail,0);
+  const unknown = run(promoted,{startId:'wikidata:q57206016',platform:'linux'});
+  assert.equal(unknown.status,'unavailable-endpoint');
+  assert.equal(unknown.reason,'unknown');
+  assert.equal(run(promoted,{startId:'wikidata:q57206016'}).status,'no-route');
+  // An unapproved similarly named snapshot must not inherit the exception.
+  const unapproved = run({...promoted,snapshotId:promoted.snapshotId+'-unapproved'});
+  assert.equal(unapproved.status,'no-route');
+  assert.equal(unapproved.edge_count,0);
 });
