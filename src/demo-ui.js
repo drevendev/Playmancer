@@ -296,7 +296,7 @@ function showCatalogIdentity() {
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
   document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";
-  const labels = { any: "Any platform", mac: "macOS", android: "Android", browser: "Browser (HTML5)" };
+  const labels = { any: "Any platform", windows: "Windows", linux: "Linux", mac: "macOS", android: "Android", browser: "Browser (HTML5)" };
   $("platform").replaceChildren(...PLATFORMS.map(value => {
     const option = element("option", labels[value] ?? value);
     option.value = value;
@@ -321,6 +321,32 @@ function showCatalogIdentity() {
     "Only Wikidata CC0 genres affect fit (30% coverage). Mechanics and co-op remain unknown; platform constraints stay strict.";
   document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
+}
+// Real quick-path layout: secondary evidence and guidance remain in tools.
+function prepareRealQuickPath() {
+  document.querySelector(".wrap").classList.add("real-quick-path");
+  const tools = $("player-tools");
+  tools.querySelector(".section").before(
+    document.querySelector('aside[aria-labelledby="basket-title"] > p.hint'),
+    document.querySelector(".results-head p.hint"),
+    $("basket-fact-comparisons")
+  );
+  $("results-title").textContent = "Recommendations";
+  const filters = element("button", undefined);
+  filters.id = "active-ranking-filters";
+  filters.type = "button";
+  filters.hidden = true;
+  filters.addEventListener("click", () => $("jump-tools").click());
+  $("status").before(filters);
+}
+function renderRealFilterSummary() {
+  const labels = [];
+  if (state.mode !== "intersection") labels.push($("mode").selectedOptions[0].textContent);
+  if (state.platform !== "any") labels.push($("platform").selectedOptions[0].textContent + " required");
+  if (state.coopOnly) labels.push("Co-op required");
+  const filters = $("active-ranking-filters");
+  filters.hidden = labels.length === 0;
+  filters.textContent = labels.length ? "Edit ranking: " + labels.join(" · ") : "";
 }
 let state;
 let browseAll = false;
@@ -970,6 +996,7 @@ function render(rebuildSeeds) {
   $("lambda").value = String(state.lambda); $("lambda-value").value = String(state.lambda);
   $("blend-control").hidden = state.mode !== "blend";
   $("mode-note").textContent = notes[state.mode];
+  if (!syntheticCatalog) renderRealFilterSummary();
   $("restore").hidden = state.excluded.length === 0;
   $("restore").textContent = state.excluded.length === 1 ? "Restore 1 hidden game" : `Restore all ${state.excluded.length} hidden games`;
   // Changes to weights, ranking mode and hard filters must not close the
@@ -1055,6 +1082,7 @@ $("share").addEventListener("click", async () => {
   catch { $("share-status").textContent = "Copy the selected URL manually. Your basket is fully encoded in it."; $("share-link").focus(); $("share-link").select(); }
 });
 showCatalogIdentity();
+if (!syntheticCatalog) prepareRealQuickPath();
 $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "fictional profiles or features" : "real games or genres"}…`;
 $("versions").textContent = `Catalog: ${CATALOG_VERSION} (${DEMO_SNAPSHOT.kind}) · Method: ${METHOD_VERSION} · Ranking: P03 harmonic / uncovered-strand baselines.`;
 document.querySelector(".skip").addEventListener("click", (event) => { event.preventDefault(); $("recommendations").focus(); });

@@ -267,12 +267,40 @@ try:
                 check(basket_summary.bounding_box()['height'] >= 44,
                       f'{engine}/{width}: basket pair disclosure has a touch-sized target')
                 basket_link = basket_box.locator('a.basket-fact-link')
-                check(basket_link.count() == 1 and
-                      basket_link.first.inner_text() == f'{seed_names[0]} ↔ {seed_names[1]} (new tab)' and
-                      basket_link.first.bounding_box()['height'] >= 44 and
-                      basket_link.first.get_attribute('target') == '_blank' and
-                      basket_link.first.get_attribute('rel') == 'noopener noreferrer',
-                      f'{engine}/{width}: exactly one safe, readable pair link')
+                expected_pair = f'{seed_names[0]} ↔ {seed_names[1]} (new tab)'
+                pair_count = basket_link.count()
+                pair_diagnostic = dict(engine=engine, width=width, count=pair_count,
+                                       expected=expected_pair, actual=None, target=None,
+                                       rel=None, box=None, layout=None)
+                if pair_count:
+                    pair = basket_link.first
+                    pair_diagnostic.update(actual=pair.inner_text(),
+                                           target=pair.get_attribute('target'),
+                                           rel=pair.get_attribute('rel'),
+                                           box=pair.bounding_box(),
+                                           layout=pair.evaluate("""node => ({
+                        minHeight: getComputedStyle(node).minHeight,
+                        display: getComputedStyle(node).display,
+                        detailsOpen: node.closest('details')?.open,
+                        parent: node.closest('#basket-fact-comparisons')?.parentElement.id,
+                        documentFocused: document.hasFocus(),
+                        activeElement: document.activeElement?.tagName
+                    })"""))
+                pair_box = pair_diagnostic['box']
+                pair_predicates = {
+                    'count': pair_count == 1,
+                    'text': pair_diagnostic['actual'] == expected_pair,
+                    'height': pair_box is not None and pair_box['height'] >= 44,
+                    'target': pair_diagnostic['target'] == '_blank',
+                    'rel': pair_diagnostic['rel'] == 'noopener noreferrer',
+                }
+                print('Basket pair target: ' + json.dumps(
+                    dict(pair_diagnostic, predicates=pair_predicates), ensure_ascii=False), flush=True)
+                if not all(pair_predicates.values()):
+                    page.screenshot(path=str(OUT / f'observations-pair-failure-{engine}-{width}.png'),
+                                    full_page=True)
+                check(all(pair_predicates.values()),
+                      f'{engine}/{width}: exactly one safe, readable pair link: {pair_diagnostic!r}')
                 pair_fragment = urlsplit(basket_link.first.get_attribute('href')).fragment
                 check(pair_fragment.startswith('facts='), f'{engine}/{width}: basket pair has versioned state')
                 pair_state = json.loads(unquote(pair_fragment[len('facts='):]))

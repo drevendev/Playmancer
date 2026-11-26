@@ -114,23 +114,33 @@ jobs:
         # /github/home owned by pwuser. Firefox requires $HOME owned by the user.
         env:
           HOME: /root
+        run: python scripts/browser-http-acceptance.py
+      - name: Exercise gameplay observation links in all engines
+        id: observation_acceptance
+        env:
+          HOME: /root
+        run: python scripts/browser-observations-acceptance.py --engine all
+      - name: Check out exact compact-favorites release for failure diagnosis
+        if: ${{ failure() && steps.observation_acceptance.outcome == 'failure' }}
+        uses: actions/checkout@v4
+        with:
+          ref: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+          path: .observation-baseline
+          persist-credentials: false
+      - name: Compare failed observation checks with exact public release
+        if: ${{ failure() && steps.observation_acceptance.outcome == 'failure' }}
+        env:
+          HOME: /root
+          PLAYMANCER_REVISION: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
         run: |
-          python scripts/browser-http-acceptance.py
-          if ! python scripts/browser-observations-acceptance.py --engine all; then
-            # Compare the previously accepted revision in the same Firefox image.
-            # A baseline pass must never turn a failed current-head run green.
-            baseline=c770935bb05ee416e01a7b2e59800962bb85caea
-            if git fetch --no-tags --depth=1 origin "$baseline" && git worktree add --detach /tmp/playmancer-observation-baseline "$baseline"; then
-              cp scripts/browser-observations-acceptance.py /tmp/playmancer-observation-baseline/scripts/browser-observations-acceptance.py
-              echo "Diagnostic baseline: $baseline"
-              (cd /tmp/playmancer-observation-baseline && python scripts/browser-observations-acceptance.py --engine firefox) || true
-              cp /tmp/playmancer-observation-baseline/.test-artifacts/observations-browser.json .test-artifacts/observations-baseline-browser.json || true
-              for screenshot in /tmp/playmancer-observation-baseline/.test-artifacts/observations-compare-failure-*.png; do
-                if [ -f "$screenshot" ]; then cp "$screenshot" ".test-artifacts/observations-baseline-$(basename "$screenshot")"; fi
-              done
-            fi
-            exit 1
-          fi
+          # The current-head failure remains fatal regardless of the diagnostic result.
+          cp scripts/browser-observations-acceptance.py .observation-baseline/scripts/browser-observations-acceptance.py
+          echo "Diagnostic baseline: $PLAYMANCER_REVISION"
+          (cd .observation-baseline && python scripts/browser-observations-acceptance.py --engine firefox) || true
+          cp .observation-baseline/.test-artifacts/observations-browser.json .test-artifacts/observations-baseline-browser.json || true
+          for screenshot in .observation-baseline/.test-artifacts/observations-*-failure-*.png; do
+            if [ -f "$screenshot" ]; then cp "$screenshot" ".test-artifacts/observations-baseline-$(basename "$screenshot")"; fi
+          done
       - name: Check out exact previous release for compact basket comparison
         uses: actions/checkout@v4
         with:
@@ -146,6 +156,23 @@ jobs:
         env:
           HOME: /root
         run: python scripts/browser-compact-basket-acceptance.py .compact-basket-baseline/_site
+      - name: Check out exact compact-favorites release for quick-path comparison
+        uses: actions/checkout@v4
+        with:
+          ref: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+          path: .quick-path-baseline
+          persist-credentials: false
+      - name: Build exact compact-favorites release
+        working-directory: .quick-path-baseline
+        env:
+          PLAYMANCER_REVISION: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+        run: npm run build
+      - name: Measure quick path and verify restored required filters
+        env:
+          HOME: /root
+          PLAYMANCER_GEOMETRY_BASE: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+          PLAYMANCER_GEOMETRY_LABEL: quick-path
+        run: python scripts/browser-compact-basket-acceptance.py .quick-path-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -168,6 +195,8 @@ jobs:
             .test-artifacts/http-cross-browser.json
             .test-artifacts/compact-basket-*.png
             .test-artifacts/compact-basket-geometry.json
+            .test-artifacts/quick-path-*.png
+            .test-artifacts/quick-path-geometry.json
             .test-artifacts/focus35/http-cross-browser.json
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png
