@@ -67,6 +67,18 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // The real-only quick path is not emitted into the fixed-size fictional build.
+    const quickStart = source.indexOf("// Real quick-path layout: secondary evidence and guidance remain in tools.");
+    const quickEnd = source.indexOf("let state;", quickStart);
+    if (quickStart < 0 || quickEnd <= quickStart) throw new Error("Unexpected real quick-path boundary");
+    source = source.slice(0, quickStart) + source.slice(quickEnd);
+    for (const line of [
+      'if (!syntheticCatalog) prepareRealQuickPath();\n',
+      '  if (!syntheticCatalog) renderRealFilterSummary();\n',
+    ]) {
+      if (source.split(line).length !== 2) throw new Error("Unexpected real quick-path call");
+      source = source.replace(line, "");
+    }
     // Real-only favorite layout: synthetic fixtures retain the original controls and byte budget.
     const favoriteStart = source.indexOf("// Real favorites keep one native disclosure per row");
     const favoriteEnd = source.indexOf("function drawSeeds() {", favoriteStart);

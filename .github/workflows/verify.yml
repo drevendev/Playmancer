@@ -146,6 +146,23 @@ jobs:
         env:
           HOME: /root
         run: python scripts/browser-compact-basket-acceptance.py .compact-basket-baseline/_site
+      - name: Check out exact compact-favorites release for quick-path comparison
+        uses: actions/checkout@v4
+        with:
+          ref: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+          path: .quick-path-baseline
+          persist-credentials: false
+      - name: Build exact compact-favorites release
+        working-directory: .quick-path-baseline
+        env:
+          PLAYMANCER_REVISION: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+        run: npm run build
+      - name: Measure quick path and verify restored required filters
+        env:
+          HOME: /root
+          PLAYMANCER_GEOMETRY_BASE: 0f698e4ec17e32378ba4097fc2e43c39f63d56b0
+          PLAYMANCER_GEOMETRY_LABEL: quick-path
+        run: python scripts/browser-compact-basket-acceptance.py .quick-path-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -168,6 +185,8 @@ jobs:
             .test-artifacts/http-cross-browser.json
             .test-artifacts/compact-basket-*.png
             .test-artifacts/compact-basket-geometry.json
+            .test-artifacts/quick-path-*.png
+            .test-artifacts/quick-path-geometry.json
             .test-artifacts/focus35/http-cross-browser.json
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png

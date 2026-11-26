@@ -11,7 +11,8 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / ".test-artifacts"
 OUT.mkdir(exist_ok=True)
-BASE = "a303d1379fee10c79e165fcdd2ce4438dd185677"
+BASE = os.environ.get("PLAYMANCER_GEOMETRY_BASE", "a303d1379fee10c79e165fcdd2ce4438dd185677")
+LABEL = os.environ.get("PLAYMANCER_GEOMETRY_LABEL", "compact-basket")
 CURRENT = os.environ.get("GITHUB_SHA", os.environ.get("PLAYMANCER_REVISION", "unpublished"))
 servers = []
 report = []
@@ -35,9 +36,9 @@ def geometry(page, name):
                 favorites: [...document.querySelectorAll('#seeds .seed-name')].map(n => n.textContent),
                 hash: location.hash};
     }""")
-    page.screenshot(path=str(OUT / f"compact-basket-{name}.png"), animations="disabled")
+    page.screenshot(path=str(OUT / f"{LABEL}-{name}.png"), animations="disabled")
     page.locator("#results > li").first.scroll_into_view_if_needed()
-    page.screenshot(path=str(OUT / f"compact-basket-{name}-result.png"), animations="disabled")
+    page.screenshot(path=str(OUT / f"{LABEL}-{name}-result.png"), animations="disabled")
     return result
 
 try:
@@ -66,6 +67,10 @@ try:
                     if label == "after":
                         assert page.locator("#seeds .seed-options").count() == count
                         assert all(page.locator("#seeds .seed-options").evaluate_all("nodes => nodes.map(n => !n.open)"))
+                        if LABEL == "quick-path":
+                            assert not page.locator("#active-ranking-filters").is_visible()
+                            assert page.locator("#player-tools #basket-fact-comparisons").count() == 1
+                            assert page.locator("#basket-fact-comparisons summary").is_visible()
                     records.append(geometry(page, f"{width}-{count}-{label}"))
                     page.close()
                 old, new = records
@@ -74,13 +79,40 @@ try:
                 assert old["hash"] == new["hash"] and old["scrollY"] == new["scrollY"] == 0
                 assert new["overflow"] <= 1
                 if width <= 390:
-                    assert new["cardY"] < old["cardY"] - 100, report[-1]
+                    minimum = 50 if LABEL == "quick-path" else 100
+                    assert new["cardY"] < old["cardY"] - minimum, report[-1]
+                    if LABEL == "quick-path":
+                        assert new["actionY"] < old["actionY"] - minimum, report[-1]
                     assert new["cardScroll"] <= old["cardScroll"], report[-1]
+            if LABEL == "quick-path":
+                probe = ctx.new_page()
+                probe.goto(after + "#" + two)
+                probe.wait_for_function("document.querySelector('#results > li')")
+                assert not probe.locator("#active-ranking-filters").is_visible()
+                probe.select_option("#platform", "linux")
+                probe.locator("#coop").check()
+                fragment = probe.evaluate("location.hash")
+                probe.goto(after + fragment)
+                probe.wait_for_function("document.querySelector('#active-ranking-filters').textContent.includes('Co-op required')")
+                summary = probe.locator("#active-ranking-filters")
+                assert summary.is_visible() and "Linux required" in summary.inner_text()
+                assert probe.locator("#platform").input_value() == "linux" and probe.locator("#coop").is_checked()
+                assert probe.locator("#results > li").count() == 0
+                assert probe.evaluate("location.hash") == fragment
+                summary.focus()
+                summary.press("Enter")
+                assert probe.evaluate("document.activeElement.id") == "tools-title"
+                assert probe.evaluate("location.hash") == fragment
+                probe.select_option("#platform", "any")
+                probe.locator("#coop").uncheck()
+                assert not summary.is_visible()
+                assert probe.locator("#results > li").count() > 0
+                probe.close()
             ctx.close()
         browser.close()
 finally:
     for server in servers:
         server.shutdown()
         server.server_close()
-    (OUT / "compact-basket-geometry.json").write_text(json.dumps(report, indent=2) + "\n")
+    (OUT / f"{LABEL}-geometry.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps(report, indent=2))
