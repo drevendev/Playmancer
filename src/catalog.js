@@ -46,7 +46,7 @@ function validatedStoreLink(value, gameId) {
     if (!/^[a-z0-9-]+\.itch\.io$/.test(parsed.hostname) || parsed.search ||
         !/^\/[a-z0-9][a-z0-9-]*$/.test(parsed.pathname))
       throw new Error("Invalid itch.io game link: " + gameId);
-    externalId = parsed.pathname.slice(1);
+    externalId = parsed.hostname + parsed.pathname;
   } else if (store === "googleplay") {
     if (parsed.hostname !== "play.google.com" || parsed.pathname !== "/store/apps/details" ||
         [...parsed.searchParams.keys()].length !== 1 || !parsed.searchParams.has("id") ||
@@ -111,24 +111,34 @@ export function validateCatalogSnapshot(input, { requirePublishable = false } = 
     if (own(item, "coop") != null && typeof item.coop !== "boolean") throw new Error(`Invalid co-op metadata: ${id}`);
     game.coop = own(item, "coop") ?? null;
     if (!Array.isArray(own(item, "externalIds") ?? [])) throw new Error(`Invalid externalIds: ${id}`);
+    const rawLinks = own(item, "storeLinks") ?? [];
+    if (!Array.isArray(rawLinks)) throw new Error("Invalid storeLinks: " + id);
+    const checkedLinks = rawLinks.map(link => validatedStoreLink(link, id));
     for (const external of own(item, "externalIds") ?? []) {
       catalogObject(external, "external ID", ["provider", "id"]);
       const provider = catalogText(external.provider, "external provider");
       if (!/^[a-z0-9][a-z0-9._-]*$/.test(provider)) throw new Error("Noncanonical external provider");
       const externalId = catalogText(external.id, "external id");
-      const key = JSON.stringify([provider, externalId]);
+      // Historical itch slugs retain their serialized spelling, but their
+      // collision key must include the recorded publisher host.
+      let identity = externalId;
+      if (provider === "itch") {
+        const link = checkedLinks.find(link => link.store === provider);
+        if (!link || (externalId !== link.externalId && externalId !== link.externalId.split("/")[1]))
+          throw new Error("Storefront link external ID mismatch: " + id + "/itch");
+        identity = link.externalId;
+      }
+      const key = JSON.stringify([provider, identity]);
       if (externals.has(key)) throw new Error(`External ID collision: ${provider}/${externalId}`);
       externals.add(key); game.externalIds.push({ provider, id: externalId });
     }
-    const rawLinks = own(item, "storeLinks") ?? [];
-    if (!Array.isArray(rawLinks)) throw new Error("Invalid storeLinks: " + id);
     const seenStores = new Set();
-    game.storeLinks = rawLinks.map(link => {
-      const checked = validatedStoreLink(link, id);
+    game.storeLinks = checkedLinks.map(checked => {
       if (seenStores.has(checked.store) || seenStoreUrls.has(checked.url))
         throw new Error("Duplicate storefront link: " + id);
       if (!game.externalIds.some(external =>
-          external.provider === checked.store && external.id === checked.externalId))
+          external.provider === checked.store && (external.id === checked.externalId ||
+            (checked.store === "itch" && external.id === checked.externalId.split("/")[1]))))
         throw new Error("Storefront link external ID mismatch: " + id + "/" + checked.store);
       seenStores.add(checked.store);
       seenStoreUrls.add(checked.url);
