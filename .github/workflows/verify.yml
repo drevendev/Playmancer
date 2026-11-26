@@ -131,6 +131,15 @@ jobs:
             fi
             exit 1
           fi
+      - name: Measure compact favorites against exact previous release
+        env:
+          HOME: /root
+        run: |
+          baseline=a303d1379fee10c79e165fcdd2ce4438dd185677
+          git fetch --no-tags --depth=1 origin "$baseline"
+          git worktree add --detach /tmp/playmancer-compact-baseline "$baseline"
+          (cd /tmp/playmancer-compact-baseline && PLAYMANCER_REVISION="$baseline" npm run build)
+          python scripts/browser-compact-basket-acceptance.py /tmp/playmancer-compact-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -151,6 +160,8 @@ jobs:
           path: |
             .test-artifacts/http-*.png
             .test-artifacts/http-cross-browser.json
+            .test-artifacts/compact-basket-*.png
+            .test-artifacts/compact-basket-geometry.json
             .test-artifacts/focus35/http-cross-browser.json
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png

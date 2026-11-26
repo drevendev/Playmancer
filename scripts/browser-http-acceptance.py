@@ -394,6 +394,17 @@ def exercise(browser, base_url, engine, label, width, height):
         page.locator('#mode').select_option('blend')
         page.locator('#platform').select_option('windows')
         page.locator('#coop').check()
+        favorite_options = page.locator("#seeds .seed-options")
+        check(case, "favorites start compact with removal visible and editing hidden",
+              favorite_options.count() == 2
+              and all(favorite_options.evaluate_all("nodes => nodes.map(n => !n.open)"))
+              and page.locator("#seeds .remove").first.is_visible()
+              and not page.locator('#seeds input[type="range"]').first.is_visible())
+        favorite_options.first.locator(":scope > summary").focus()
+        favorite_options.first.locator(":scope > summary").press("Enter")
+        check(case, "native favorite disclosure exposes keyboard editing",
+              favorite_options.first.evaluate("node => node.open")
+              and page.locator('#seeds input[type="range"]').first.is_visible())
         first_weight = page.locator('#seeds input[type="range"]').first
         first_weight.focus()
         first_weight.press('ArrowRight')
@@ -849,6 +860,7 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#search").input_value() == "")
 
         page.locator("#mode").select_option("blend")
+        page.locator("#seeds .seed-options > summary").first.click()
         weight = page.locator('#seeds input[type="range"]').first
         before = int(weight.input_value())
         weight.focus()
@@ -1024,6 +1036,9 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "fresh shared link announces restored basket count",
               restored.locator("#basket-feedback").inner_text().startswith(
                   "Shared basket restored. 2 of 5 games selected."))
+        check(case, "fresh shared basket keeps favorite editing collapsed",
+              all(restored.locator("#seeds .seed-options").evaluate_all("nodes => nodes.map(n => !n.open)"))
+              and not restored.locator('#seeds input[type="range"]').first.is_visible())
         observed = {
             # A fresh Firefox tab may reuse a validated cached response (HTTP 304).
             # The first page must still load via 200 and every restored field is asserted.
