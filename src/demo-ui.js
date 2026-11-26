@@ -367,6 +367,26 @@ function commit(rebuildSeeds = false) {
   catch { /* Local file browsers may prohibit History API updates; sharing still works. */ }
   render(rebuildSeeds);
 }
+// Real favorites keep one native disclosure per row, with removal always available.
+function compactFavorite(row, title) {
+  const details = element("details", undefined, "seed-options");
+  const summary = element("summary");
+  const input = row.querySelector('input[type="range"]');
+  const hint = element("span", undefined, "hint seed-edit-hint");
+  const missing = Boolean(row.querySelector(".seed-evidence-warning"));
+  const refresh = () => {
+    hint.textContent = " · Edit" + (input.value === "1" ? "" : " · Weight " + input.value)
+      + (missing ? " · Genre unknown" : "");
+  };
+  summary.append(title.querySelector(".seed-name"), hint);
+  refresh();
+  input.addEventListener("input", refresh);
+  const remove = title.querySelector(".remove");
+  remove.remove();
+  details.append(summary, ...title.children, ...[...row.children].filter(child => child !== title));
+  row.replaceChildren(details, remove);
+  row.classList.add("seed-compact");
+}
 function drawSeeds() {
   $("seeds").replaceChildren();
   for (const [index, seed] of state.seeds.entries()) {
@@ -415,6 +435,7 @@ function drawSeeds() {
         // the opposite enabled one if this favorite reached an edge.
         const buttons = $("seeds").children[index + step].querySelectorAll(".seed-order-actions button");
         const same = buttons[step < 0 ? 0 : 1];
+        if (!syntheticCatalog) same.closest(".seed-options").open = true;
         (same.disabled ? buttons[step < 0 ? 1 : 0] : same).focus();
         announceBasketAction("Moved", `${BY_ID.get(seed.id).name} ${direction}`);
       });
@@ -430,6 +451,7 @@ function drawSeeds() {
     }
     const inspected = renderBasketEvidence(BY_ID.get(seed.id));
     if (inspected) row.append(inspected);
+    if (!syntheticCatalog) compactFavorite(row, title);
     $("seeds").append(row);
   }
 }

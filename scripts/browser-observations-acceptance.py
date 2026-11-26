@@ -311,6 +311,9 @@ try:
                       five_links.all_inner_texts() == expected_labels,
                       f'{engine}/{width}: five favorites show all ten ordered pairs')
                 # Weight edits rerank but must not close an open pair chooser.
+                options = expanded.locator('#seeds .seed-options > summary')
+                if options.count():  # The exact historical diagnostic baseline predates compact favorites.
+                    options.first.click()
                 expanded.locator('#seeds input[type=range]').first.focus()
                 expanded.locator('#seeds input[type=range]').first.press('ArrowRight')
                 check(expanded_box.locator('details').get_attribute('open') is not None and

@@ -143,6 +143,7 @@ def exercise_candidate_51(browser):
                         ("Half-Life 2", "Q193581", "2026-11-24",
                          "first-person shooter, science fiction video game, post-apocalyptic video game")):
                     details = page.locator("#seeds .basket-evidence").filter(has=page.get_by_text(f"Inspect evidence for {game}", exact=True))
+                    details.locator("xpath=..").locator(":scope > summary").click()
                     details.locator("summary").click()
                     check(label + ": correct per-game receipts " + game,
                           f"Recorded genres (Wikidata genre statements): {genres}." in details.inner_text()
@@ -257,6 +258,7 @@ try:
             check(label + ": selected real favorites have on-demand source disclosures",
                   page.locator("#seeds .basket-evidence").count() == 2
                   and not page.locator("#seeds .basket-evidence").first.evaluate("node => node.open"))
+            page.locator("#seeds .seed-options > summary").first.click()
             page.locator("#seeds .basket-evidence summary").first.click()
             check(label + ": inspected favorite distinguishes genres, unknowns and exact QID",
                   "farming simulation game" in page.locator("#seeds .basket-evidence").first.inner_text()
@@ -281,6 +283,10 @@ try:
             add_devmatch.click()
             gap.locator("#search").fill("Stardew")
             gap.get_by_role("button", name="Add Stardew Valley").click()
+            check(label + ": collapsed sparse favorite exposes unknown genre",
+                  "Genre unknown" in gap.locator("#seeds .seed-options > summary").first.inner_text()
+                  and not gap.locator("#seeds .seed-options").first.evaluate("node => node.open"))
+            gap.locator("#seeds .seed-options > summary").first.click()
             check(label + ": only the genre-sparse selected favorite is flagged",
                   gap.locator("#seeds > li").count() == 2
                   and gap.locator("#seeds .seed-evidence-warning").count() == 1
@@ -564,6 +570,7 @@ try:
             # separately reviewed positive facts, and deep-link to that exact
             # observation revision without changing player ranking or filters.
             fact_button.click()
+            fact_lookup.locator("#seeds .seed-options > summary").first.click()
             fact_lookup.locator("#seeds .basket-evidence summary").first.click()
             favorite_evidence = fact_lookup.locator("#seeds .basket-evidence").first
             source_jump = favorite_evidence.get_by_role("link", name="Inspect gameplay fact sources for Factorio (new tab)")
@@ -593,6 +600,7 @@ try:
                   fact_lookup.get_by_role("button", name="Add DevMatch").count() == 1)
             fact_lookup.get_by_role("button", name="Add DevMatch").click()
             devmatch_evidence = fact_lookup.locator("#seeds .basket-evidence").last
+            devmatch_evidence.locator("xpath=..").locator(":scope > summary").click()
             devmatch_evidence.locator("summary").click()
             devmatch_source = devmatch_evidence.get_by_role(
                 "link", name="Inspect gameplay fact sources for DevMatch (new tab)")

@@ -67,6 +67,19 @@ for (const [index, path] of modules.entries()) {
   // observation explorer. Omit the real-only deep-link implementation from
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
+    // Real-only favorite layout: synthetic fixtures retain the original controls and byte budget.
+    const favoriteStart = source.indexOf("// Real favorites keep one native disclosure per row");
+    const favoriteEnd = source.indexOf("function drawSeeds() {", favoriteStart);
+    if (favoriteStart < 0 || favoriteEnd <= favoriteStart)
+      throw new Error("Unexpected compact favorite boundary");
+    source = source.slice(0, favoriteStart) + source.slice(favoriteEnd);
+    for (const line of [
+      '        if (!syntheticCatalog) same.closest(".seed-options").open = true;\n',
+      '    if (!syntheticCatalog) compactFavorite(row, title);\n',
+    ]) {
+      if (source.split(line).length !== 2) throw new Error("Unexpected compact favorite call");
+      source = source.replace(line, "");
+    }
     // Keep the fictional preview's strict fixed-size budget: storefront
     // browse links exist only for rights-reviewed real catalog entries.
     const searchStoreLinks = [
