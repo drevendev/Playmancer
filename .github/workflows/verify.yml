@@ -116,7 +116,21 @@ jobs:
           HOME: /root
         run: |
           python scripts/browser-http-acceptance.py
-          python scripts/browser-observations-acceptance.py --engine all
+          if ! python scripts/browser-observations-acceptance.py --engine all; then
+            # Compare the previously accepted revision in the same Firefox image.
+            # A baseline pass must never turn a failed current-head run green.
+            baseline=c770935bb05ee416e01a7b2e59800962bb85caea
+            if git fetch --no-tags --depth=1 origin "$baseline" && git worktree add --detach /tmp/playmancer-observation-baseline "$baseline"; then
+              cp scripts/browser-observations-acceptance.py /tmp/playmancer-observation-baseline/scripts/browser-observations-acceptance.py
+              echo "Diagnostic baseline: $baseline"
+              (cd /tmp/playmancer-observation-baseline && python scripts/browser-observations-acceptance.py --engine firefox) || true
+              cp /tmp/playmancer-observation-baseline/.test-artifacts/observations-browser.json .test-artifacts/observations-baseline-browser.json || true
+              for screenshot in /tmp/playmancer-observation-baseline/.test-artifacts/observations-compare-failure-*.png; do
+                if [ -f "$screenshot" ]; then cp "$screenshot" ".test-artifacts/observations-baseline-$(basename "$screenshot")"; fi
+              done
+            fi
+            exit 1
+          fi
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -141,6 +155,7 @@ jobs:
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png
             .test-artifacts/observations-browser.json
+            .test-artifacts/observations-baseline-browser.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
