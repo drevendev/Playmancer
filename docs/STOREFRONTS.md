@@ -81,3 +81,12 @@ do not manufacture a game page or silently link to another edition.
 The current browser consumes a frozen, rights-gated snapshot, checks
 HTTPS/host/path/ID consistency for every storefront and makes no external
 requests during normal ranking. All external pages are user-activated only.
+
+## itch.io identity compatibility
+
+New reviewed itch identities should use `publisher.itch.io/game-slug` as
+an external ID, backed by the exact canonical HTTPS store link. A slug alone
+is only accepted when the same record contains its matching canonical link.
+Collision detection uses the publisher-qualified key for both forms. Existing
+snapshot bytes, canonical game IDs and share versions are not rewritten. A
+storefront reference is identity evidence, not permission to copy its contents.

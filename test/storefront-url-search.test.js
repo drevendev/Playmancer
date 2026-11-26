@@ -49,3 +49,66 @@ test("official-host identity checking rejects lookalikes and never guesses missi
   assert.equal(matchesRecordedStorefrontUrl({ storeLinks: [], externalIds: steam.game.externalIds }, steam.link.url), false,
     "An external ID without a recorded storefront link is not sufficient evidence");
 });
+
+
+// Test-only URLs are never fetched or included in the published catalog.
+function itchFixture(first = "echoes", second = "echoes") {
+  const input = structuredClone(snapshot);
+  const owners = ["playmancer-fixture-a.itch.io", "playmancer-fixture-b.itch.io"];
+  for (const [i, id] of [first, second].entries()) {
+    input.games.push({
+      id: "fixture:echoes-" + i, kind: "game", name: "Test-only Echoes " + i,
+      sourceId: "dreven-owned", externalIds: [{ provider: "itch", id }],
+      storeLinks: [{ store: "itch", url: "https://" + owners[i] + "/echoes" }]
+    });
+  }
+  return input;
+}
+test("same itch slug on two publisher hosts resolves independently, with stable serialization", () => {
+  for (const ids of [
+    ["echoes", "echoes"],
+    ["playmancer-fixture-a.itch.io/echoes", "echoes"],
+    ["playmancer-fixture-a.itch.io/echoes", "playmancer-fixture-b.itch.io/echoes"]
+  ]) {
+    const raw = itchFixture(...ids);
+    const valid = validateCatalogSnapshot(raw, { requirePublishable: true });
+    const pair = valid.games.slice(-2);
+    assert.deepEqual(pair.map(g => g.externalIds[0].id), ids);
+    assert.deepEqual(valid.games.slice(0, -2), snapshot.games);
+    assert.deepEqual(validateCatalogSnapshot(JSON.parse(JSON.stringify(valid)), { requirePublishable: true }), valid);
+    for (const game of pair) {
+      assert.deepEqual(valid.games.filter(g => matchesRecordedStorefrontUrl(g, game.storeLinks[0].url)).map(g => g.id), [game.id]);
+    }
+  }
+});
+test("itch rejects ambiguous, unbound and mismatched identities in either legacy or qualified form", () => {
+  const cases = [
+    g => { g[1].storeLinks[0].url = g[0].storeLinks[0].url; },
+    g => { g[1].externalIds[0].id = "playmancer-fixture-a.itch.io/echoes"; },
+    g => { g[1].externalIds[0].id = "different-slug"; },
+    g => { g[1].storeLinks = []; },
+    g => { g[1].externalIds[0].id = "playmancer-fixture-b.itch.io/echoes"; g[1].storeLinks = []; },
+    g => { g[1].storeLinks[0].url = "https://playmancer-fixture-b.itch.io.invalid/echoes"; },
+    g => { g[1].storeLinks[0].url = "http://playmancer-fixture-b.itch.io/echoes"; },
+    g => { g[1].externalIds.push({provider: "itch", id: "playmancer-fixture-b.itch.io/echoes"}); },
+    g => { g[1].externalIds = []; },
+    g => { g[1].storeLinks.push(structuredClone(g[1].storeLinks[0])); }
+  ];
+  for (const mutate of cases) {
+    const raw = itchFixture();
+    mutate(raw.games.slice(-2));
+    assert.throws(() => validateCatalogSnapshot(raw, { requirePublishable: true }));
+  }
+});
+test("all historical multistore catalogs preserve canonical IDs and stored itch IDs", () => {
+  for (const suffix of ["", "-24", "-30", "-31", "-35", "-51"]) {
+    const raw = JSON.parse(readFileSync("examples/catalog.multistore" + suffix + ".real.json", "utf8"));
+    const valid = validateCatalogSnapshot(raw, {requirePublishable:true});
+    assert.deepEqual(valid.games.map(g => g.id), raw.games.map(g => g.id));
+    for (const game of valid.games) {
+      const original = raw.games.find(g => g.id === game.id);
+      assert.deepEqual(game.externalIds, original.externalIds ?? []);
+      assert.deepEqual(game.storeLinks, original.storeLinks ?? []);
+    }
+  }
+});

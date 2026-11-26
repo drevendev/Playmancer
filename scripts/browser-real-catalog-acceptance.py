@@ -252,6 +252,19 @@ try:
                   and page.evaluate("location.hash") == browse_hash
                   and page.locator("#seeds > li").count() == 2
                   and not requests)
+            page.locator("#dreven-browse").click()
+            check(label + ": Dreven collection includes DevMatch",
+                  page.get_by_role("button", name="Add DevMatch", exact=True).count() == 1)
+            for url, name in (
+                ("https://drevengames.itch.io/devmatch", "DevMatch"),
+                ("https://drevengames.itch.io/shadow-runner", "Shadow Runner"),
+                ("https://play.google.com/store/apps/details?id=com.TrilobytesStudio.ShadowRunner", "Shadow Runner"),
+            ):
+                page.locator("#search").fill(url)
+                check(label + ": exact owner URL resolves one " + name + " row",
+                      page.get_by_role("button", name="Add " + name, exact=True).count() == 1
+                      and page.locator("#search-results > li").count() == 1
+                      and page.evaluate("location.hash") == browse_hash and not requests)
             page.locator("#search").fill("")
             # Let players inspect original per-favorite evidence before assigning
             # more weight; browsing to source receipts is not a ranking feature.
