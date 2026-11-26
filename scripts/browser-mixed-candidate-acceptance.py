@@ -47,11 +47,13 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                         assert set(results.locator(".storefront-links a").evaluate_all("(nodes)=>nodes.map(n=>n.href)")) == {s["url"] for s in row["stores"]}
                         assert page.evaluate("location.hash") == original_hash
                     for store in row["stores"]:
-                        # Open the native disclosure containing the real store selector.
+                        # Use the visible Browse games action; opening it resets search and scope.
                         selector = page.locator("#store-filter")
                         if not selector.is_visible():
-                            selector.locator("xpath=ancestor::details[1]/summary").click()
+                            page.locator("#intro-browse").click()
+                        assert selector.is_visible(), (width, "Browse games did not expose store filter")
                         selector.select_option(store["store"])
+                        assert selector.input_value() == store["store"]
                         search.fill(store["url"])
                         assert results.count() == 1
                         assert results.get_by_role("button",name="Add "+row["name"],exact=True).count() == 1
