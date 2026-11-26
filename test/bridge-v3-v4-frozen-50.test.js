@@ -3,6 +3,8 @@ import test from 'node:test';
 import { compareFrozenBridgeV3V4, BRIDGE_V3_V4_PROTOCOL } from '../scripts/compare-bridge-v3-v4-frozen-50.mjs';
 import { buildBridgePreview as buildV3 } from './fixtures/bridge-preview-v3.js';
 import { buildBridgePreview as buildV4 } from '../src/bridge-preview.js';
+import { buildBridgePreview as archivedV4, BRIDGE_ROUTE_METHOD_VERSION as V4 } from './fixtures/bridge-preview-v4.js';
+import { loadFrozenBridgeRoutes } from '../scripts/evaluate-bridge-real-pilot.mjs';
 
 test('frozen v3 and v4 compare the same 50 real-catalog route tasks, no silent relaxation', () => {
   const report = compareFrozenBridgeV3V4();
@@ -66,4 +68,17 @@ test('v4 abstains instead of inventing a real-game platform incompatibility', ()
   // v4 real-pilot policy must not leak to such snapshots.
   const exhaustive = buildV4({ ...options, snapshotId: 'fictional-complete-test' });
   assert.equal(exhaustive.reason, 'fail');
+});
+
+test('frozen evaluator dispatches every task to the supplied archived builder and method', () => {
+  let calls = 0;
+  const historical = loadFrozenBridgeRoutes({
+    routeBuilder: options => { calls++; return archivedV4(options); },
+    routeMethodVersion: V4
+  });
+  assert.equal(calls, 50);
+  assert.equal(JSON.stringify(historical), JSON.stringify(loadFrozenBridgeRoutes()));
+  assert.throws(() => loadFrozenBridgeRoutes({
+    routeBuilder: buildV3, routeMethodVersion: V4
+  }), /Bridge result method mismatch/);
 });

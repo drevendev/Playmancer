@@ -26,7 +26,9 @@ const POLICY = Object.freeze({ maxHops: 3, minSimilarity: 0.31 });
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const emptyCounts = () => Object.fromEntries(STATUSES.map(status => [status, 0]));
 
-export function evaluateFrozenBridgeRoutes(catalogText, plan) {
+export function evaluateFrozenBridgeRoutes(catalogText, plan, {
+  routeBuilder = buildBridgePreview, routeMethodVersion = BRIDGE_ROUTE_METHOD_VERSION
+} = {}) {
   // Reuse the frozen comparison's full schema, license, source SHA and basket
   // checks. A changed source/plan cannot silently inherit the old evidence.
   const baseline = evaluateFrozenPilot(catalogText, plan);
@@ -34,7 +36,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
   if (JSON.stringify(plan) !== JSON.stringify(readPinnedPlan())) {
     throw new Error('Frozen basket plan changed (declare a new protocol)');
   }
-  if (BRIDGE_ROUTE_METHOD_VERSION !== 'bridge-features-preview-4') {
+  if (routeMethodVersion !== 'bridge-features-preview-4') {
     throw new Error('Bridge method changed: declare and verify a new protocol');
   }
   const catalog = JSON.parse(catalogText);
@@ -49,7 +51,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
     // all-pairs combinations or a synthetic aggregate favorite.
     const pairs = basket.seeds.slice(1).map((seed, index) => {
       const startId = basket.seeds[index].id;
-      const route = buildBridgePreview({
+      const route = routeBuilder({
         catalog: catalog.games,
         snapshotId: catalog.snapshotId,
         startId, endId: seed.id,
@@ -58,6 +60,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
         excluded: basket.excludedCandidateIds,
         ...POLICY
       });
+      if (route.route_method_version !== routeMethodVersion) throw new Error('Bridge result method mismatch');
       if (!STATUSES.includes(route.status)) throw new Error('Unexpected Bridge route status');
       totals[route.status]++;
       groupCounts[route.status]++;
@@ -83,7 +86,7 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
     catalog_snapshot_id: baseline.catalog_snapshot_id,
     catalog_git_blob_sha1: baseline.catalog_git_blob_sha1,
     basket_plan_git_blob_sha1: FROZEN_BASKETS_BLOB_SHA1,
-    route_method_version: BRIDGE_ROUTE_METHOD_VERSION,
+    route_method_version: routeMethodVersion,
     route_policy: {
       endpoint_selection: 'adjacent favorites in frozen basket order',
       max_hops: POLICY.maxHops,
@@ -96,9 +99,9 @@ export function evaluateFrozenBridgeRoutes(catalogText, plan) {
   };
 }
 
-export function loadFrozenBridgeRoutes() {
+export function loadFrozenBridgeRoutes(options) {
   return evaluateFrozenBridgeRoutes(readFileSync(CATALOG, 'utf8'),
-    JSON.parse(readFileSync(BASKETS, 'utf8')));
+    JSON.parse(readFileSync(BASKETS, 'utf8')), options);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -47,6 +47,19 @@ jobs:
           cmp /tmp/playmancer-build-a/player.css /tmp/playmancer-build-b/player.css
           cmp /tmp/playmancer-build-a/.nojekyll /tmp/playmancer-build-b/.nojekyll
 
+      - name: Check out exact pre-promotion Bridge comparison baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 64e47c3b55d843ffe95149a73c5f2c8f1a182672
+          path: .bridge-frozen-baseline
+          persist-credentials: false
+      - name: Compare full historical Bridge reports byte-for-byte
+        run: |
+          node .bridge-frozen-baseline/scripts/compare-bridge-v3-v4-frozen-50.mjs > /tmp/bridge-frozen-before.json
+          node scripts/compare-bridge-v3-v4-frozen-50.mjs > /tmp/bridge-frozen-after.json
+          cmp /tmp/bridge-frozen-before.json /tmp/bridge-frozen-after.json
+          sha256sum /tmp/bridge-frozen-before.json /tmp/bridge-frozen-after.json
+
   browser:
     name: Chromium product flow
     runs-on: ubuntu-latest

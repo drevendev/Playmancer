@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadFrozenBridgeRoutes } from './evaluate-bridge-real-pilot.mjs';
 import { buildBridgePreview as buildV3, BRIDGE_ROUTE_METHOD_VERSION as V3 } from '../test/fixtures/bridge-preview-v3.js';
-import { BRIDGE_ROUTE_METHOD_VERSION as V4 } from '../src/bridge-preview.js';
+import { buildBridgePreview as buildV4, BRIDGE_ROUTE_METHOD_VERSION as V4 } from '../test/fixtures/bridge-preview-v4.js';
 
 const CATALOG = new URL('../examples/catalog.multistore-30.real.json', import.meta.url);
 const ARCHIVED_V3 = new URL('../test/fixtures/bridge-preview-v3.js', import.meta.url);
@@ -17,7 +17,7 @@ const HISTORIC_SOURCE_COMMIT = '0b3375bc6ef92f5f58b81e2cacae566d2739c37b';
 const HISTORIC_ROUTING_ENGINE_BLOB = '00353c617fba62d1127afcafa72668d4236c013e';
 const V4_IMPLEMENTATION_BLOB = 'f1355c15c5e9f5f61ab420d63cdcf9e3fdd10a04';
 const ROUTING_ENGINE = new URL('../src/bridge.js', import.meta.url);
-const V4_IMPLEMENTATION = new URL('../src/bridge-preview.js', import.meta.url);
+const V4_IMPLEMENTATION = new URL('../test/fixtures/bridge-preview-v4.js', import.meta.url);
 export const BRIDGE_V3_V4_PROTOCOL = 'bridge-frozen-v3-v4-50-v1';
 const STATUSES = ['route', 'no-route', 'unavailable-endpoint'];
 const count = () => Object.fromEntries(STATUSES.map(status => [status, 0]));
@@ -43,17 +43,20 @@ function verifyV3Source() {
   // string must not silently inherit this frozen comparison's conclusions.
   assert(gitBlobSha1(readFileSync(ROUTING_ENGINE, 'utf8')) === HISTORIC_ROUTING_ENGINE_BLOB,
     'Shared Bridge routing engine drifted: declare a new comparison protocol');
-  assert(gitBlobSha1(readFileSync(V4_IMPLEMENTATION, 'utf8')) === V4_IMPLEMENTATION_BLOB,
-    'Bridge v4 implementation drifted: declare a new comparison protocol');
+  const copiedV4 = readFileSync(V4_IMPLEMENTATION, 'utf8');
+  assert(copiedV4.split(relocated).length === 2, 'Archived Bridge v4 import was changed');
+  const originalV4 = copiedV4.replace(relocated, "from './bridge.js'");
+  assert(gitBlobSha1(originalV4) === V4_IMPLEMENTATION_BLOB,
+    'Archived Bridge v4 implementation drifted from its historical Git blob');
   assert(V3 === 'bridge-features-preview-3' && V4 === 'bridge-features-preview-4',
     'Bridge version changed: revise the comparison protocol');
 }
 export function compareFrozenBridgeV3V4() {
   verifyV3Source();
   // The existing evaluator pins the exact CC0/owner-published catalog source,
-  // complete basket plan, 30 baskets, 50 ordered endpoints and live Bridge
-  // defaults. It executes the actual v4 implementation for all 50 tasks.
-  const current = loadFrozenBridgeRoutes();
+  // complete basket plan, 30 baskets, 50 ordered endpoints and frozen Bridge
+  // defaults. Execute the archived, blob-verified v4 implementation for every task.
+  const current = loadFrozenBridgeRoutes({ routeBuilder: buildV4, routeMethodVersion: V4 });
   assert(current.summary.pair_count === 50 &&
     current.summary.basket_count === 30 &&
     current.route_method_version === V4 &&
