@@ -296,7 +296,7 @@ function showCatalogIdentity() {
   );
   $("search").placeholder = `Search ${CATALOG.length} ${syntheticCatalog ? "profiles" : "real games"} or aliases…`;
   document.querySelector('label[for="search"]').textContent = syntheticCatalog ? "Add a fictional game" : "Add a real game";
-  const labels = { any: "Any platform", mac: "macOS", android: "Android", browser: "Browser (HTML5)" };
+  const labels = { any: "Any platform", windows: "Windows", linux: "Linux", mac: "macOS", android: "Android", browser: "Browser (HTML5)" };
   $("platform").replaceChildren(...PLATFORMS.map(value => {
     const option = element("option", labels[value] ?? value);
     option.value = value;
