@@ -53,6 +53,23 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 old_hash = historical_page.evaluate("location.hash")
                 old_weights = historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])")
                 assert old_hash.startswith("#basket=") and len(old_weights) == 2
+                def open_library(target):
+                    target.locator("#intro-library").click()
+                    target.wait_for_function("document.querySelector('#basket-library')?.getAttribute('aria-busy') === 'false'")
+
+                def export_library(target):
+                    target.locator("#library-transfer").evaluate("(node) => node.open = true")
+                    target.locator("#library-export-all").click()
+                    target.wait_for_function("document.querySelector('#basket-library')?.getAttribute('aria-busy') === 'false'")
+                    return json.loads(target.locator("#library-json").input_value())
+
+                if not hosted:
+                    open_library(historical_page)
+                    historical_page.locator("#library-name").fill("Historical 51")
+                    historical_page.locator("#library-save").click()
+                    historical_page.wait_for_function("document.querySelectorAll('.library-card').length === 1")
+                    old_backup = export_library(historical_page)
+                    assert old_backup["baskets"][0]["hash"] == old_hash
                 historical_page.close()
                 assert page.goto(origin + old_hash).ok
                 if hosted:
@@ -66,8 +83,18 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 assert historical_page.locator("#error").is_hidden()
                 assert historical_page.evaluate("location.hash") == old_hash
                 assert historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])") == old_weights
+                if not hosted:
+                    open_library(historical_page)
+                    assert export_library(historical_page) == old_backup
+                    assert historical_page.get_by_role("button", name="Restore saved basket Historical 51", exact=True).is_enabled()
                 historical_page.close()
                 assert page.goto(origin).ok
+                if not hosted:
+                    open_library(page)
+                    assert page.get_by_role("button", name="Restore saved basket Historical 51", exact=True).is_disabled()
+                    assert export_library(page) == old_backup
+                    # Keep the original old record untouched. Reload the default player.
+                    page.reload()
                 page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
                 # The initial implicit sample has no fragment. Serialize the
                 # identical sample through the real action before testing round trips.
