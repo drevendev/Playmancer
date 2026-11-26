@@ -72,6 +72,8 @@ jobs:
         run: python scripts/browser-real-catalog-acceptance.py
       - name: Exercise publisher-qualified itch URL identity in an isolated browser fixture
         run: python scripts/browser-itch-identity-acceptance.py
+      - name: Exercise reviewed mixed-store candidate on real local HTTP
+        run: python scripts/browser-mixed-candidate-acceptance.py
       - name: Exercise 1,000-profile synthetic catalog discovery and share restoration
         run: python scripts/browser-large-catalog-acceptance.py
       - name: Exercise bounded Gameplay Facts on the validated sparse release fixture
