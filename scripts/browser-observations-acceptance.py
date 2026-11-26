@@ -17,7 +17,7 @@ OUT = ROOT / '.test-artifacts'
 OUT.mkdir(exist_ok=True)
 parser = argparse.ArgumentParser()
 parser.add_argument('--site', type=Path)
-parser.add_argument('--engine', choices=('chromium','all'), default='chromium')
+parser.add_argument('--engine', choices=('chromium','firefox','all'), default='chromium')
 parser.add_argument('--chromium', help='Optional local Chromium executable; CI uses its pinned browser')
 args = parser.parse_args()
 site = args.site or OUT / 'observations-site'
@@ -47,7 +47,7 @@ def check(condition, name):
 
 try:
     with sync_playwright() as p:
-        for engine in (('chromium','firefox','webkit') if args.engine == 'all' else ('chromium',)):
+        for engine in (('chromium','firefox','webkit') if args.engine == 'all' else (args.engine,)):
             browser = getattr(p, engine).launch(headless=True, **({'executable_path': args.chromium} if args.chromium and engine == 'chromium' else {}))
             for width in (1280, 390, 320):
                 context = browser.new_context(viewport={'width': width, 'height': 900}, reduced_motion='reduce')
@@ -199,11 +199,37 @@ try:
                 pairs = []
                 for index, favorite_name in enumerate(seed_names):
                     link = compare.nth(index)
-                    check(link.inner_text() == f'With {favorite_name} (new tab)' and
-                          link.get_attribute('target') == '_blank' and
-                          link.get_attribute('rel') == 'noopener noreferrer' and
-                          link.bounding_box()['height'] >= 44,
-                          f'{engine}/{width}: favorite {index} has a keyboard/touch link')
+                    # Capture the original predicates individually before asserting.
+                    expected_text = f'With {favorite_name} (new tab)'
+                    actual_text = link.inner_text()
+                    target = link.get_attribute('target')
+                    rel = link.get_attribute('rel')
+                    box = link.bounding_box()
+                    layout = link.evaluate("""node => ({
+                        minHeight: getComputedStyle(node).minHeight,
+                        display: getComputedStyle(node).display,
+                        details: Array.from(node.closest('li[data-game-id]').querySelectorAll('details'),
+                            item => ({className: item.className, open: item.open})),
+                        documentFocused: document.hasFocus(),
+                        activeElement: document.activeElement?.tagName
+                    })""")
+                    diagnostic = dict(engine=engine, width=width, favorite=index,
+                                      expected=expected_text, actual=actual_text,
+                                      target=target, rel=rel, box=box, layout=layout,
+                                      candidate=first_result.get_attribute('data-game-id'))
+                    predicates = {
+                        'text': actual_text == expected_text,
+                        'target': target == '_blank',
+                        'rel': rel == 'noopener noreferrer',
+                        'height': box is not None and box['height'] >= 44,
+                    }
+                    print('Favorite comparison target: ' + json.dumps(
+                        dict(diagnostic, predicates=predicates), ensure_ascii=False), flush=True)
+                    if not all(predicates.values()):
+                        page.screenshot(path=str(OUT / f'observations-compare-failure-{engine}-{width}.png'),
+                                        full_page=True)
+                    check(all(predicates.values()),
+                          f'{engine}/{width}: favorite {index} has a keyboard/touch link: {diagnostic!r}')
                     fragment = urlsplit(link.get_attribute('href')).fragment
                     check(fragment.startswith('facts='), f'{engine}/{width}: pinned comparison deep link')
                     pinned = json.loads(unquote(fragment[len('facts='):]))
