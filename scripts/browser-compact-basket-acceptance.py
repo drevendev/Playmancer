@@ -92,6 +92,8 @@ try:
                 probe.select_option("#platform", "linux")
                 probe.locator("#coop").check()
                 fragment = probe.evaluate("location.hash")
+                probe.close()
+                probe = ctx.new_page()
                 probe.goto(after + fragment)
                 probe.wait_for_function("document.querySelector('#active-ranking-filters').textContent.includes('Co-op required')")
                 summary = probe.locator("#active-ranking-filters")
