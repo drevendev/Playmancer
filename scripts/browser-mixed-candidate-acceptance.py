@@ -37,7 +37,15 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(origin) else None)
                 assert page.goto(origin).ok
                 page.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+                # The initial implicit sample has no fragment. Serialize the
+                # identical sample through the real action before testing round trips.
+                weights = page.locator('#seeds input[type="range"]')
+                implicit_sample = weights.evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])")
+                assert len(implicit_sample) == 2
+                page.get_by_role("button", name="Try a sample", exact=True).click()
+                assert weights.evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])") == implicit_sample
                 original_hash = page.evaluate("location.hash")
+                assert original_hash.startswith("#basket=") and len(original_hash) > len("#basket=")
                 search = page.locator("#search")
                 results = page.locator("#search-results > li")
                 for row in rows:
