@@ -42,7 +42,7 @@ def geometry(page, name):
     return result
 
 try:
-    before, after = serve(Path(sys.argv[1]).resolve()), serve(ROOT / "_site")
+    before, after = serve(Path(sys.argv[1]).resolve()), serve(Path(os.environ.get("PLAYMANCER_GEOMETRY_SITE", str(ROOT / "_site"))).resolve())
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         for width in (320, 390, 1280):

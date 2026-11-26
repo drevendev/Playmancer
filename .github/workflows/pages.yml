@@ -162,15 +162,20 @@ jobs:
       # Avoid replacing it with setup-python's runner toolcache interpreter.
       - name: Install matching Playwright Python client
         run: python -m pip install --disable-pip-version-check playwright==1.55.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Navigate deployed Pages and verify the exact revision and player journey
         env:
           # Firefox requires an owned HOME inside this root-run container.
           HOME: /root
           PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
           PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
+          PLAYMANCER_EXPECTED_CATALOG_COUNT: "54"
         run: |
           python scripts/browser-http-acceptance.py
           python scripts/browser-observations-acceptance.py --engine all
+          python scripts/browser-mixed-candidate-acceptance.py
       # A second exact-revision check catches a native branch/Jekyll publisher
       # overwriting the validated bundle while multi-engine browser tests run.
       # Do not retry away this post-journey regression: fail on the first mismatch.
@@ -192,6 +197,7 @@ jobs:
             .test-artifacts/http-*.png
             .test-artifacts/observations-browser.json
             .test-artifacts/observations-*.png
+            .test-artifacts/mixed-candidate-*.png
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
