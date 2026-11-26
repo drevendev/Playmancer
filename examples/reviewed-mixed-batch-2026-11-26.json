@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-54-2026-11-26",
+  "reviewedAt": "2026-11-26",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q57206016",
+        "reference": "https://www.wikidata.org/wiki/Q57206016",
+        "redirectQids": [
+          "Q97961885"
+        ]
+      },
+      "name": "Mindustry",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://mindustrygame.github.io/",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1127400",
+          "url": "https://store.steampowered.com/app/1127400"
+        },
+        {
+          "store": "googleplay",
+          "id": "io.anuke.mindustry",
+          "url": "https://play.google.com/store/apps/details?id=io.anuke.mindustry"
+        },
+        {
+          "store": "itch",
+          "id": "anuke.itch.io/mindustry",
+          "url": "https://anuke.itch.io/mindustry"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "github",
+        "id": "yairm210/unciv",
+        "reference": "https://github.com/yairm210/Unciv",
+        "redirectQids": []
+      },
+      "name": "Unciv",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://yairm210.itch.io/unciv",
+      "stores": [
+        {
+          "store": "googleplay",
+          "id": "com.unciv.app",
+          "url": "https://play.google.com/store/apps/details?id=com.unciv.app"
+        },
+        {
+          "store": "itch",
+          "id": "yairm210.itch.io/unciv",
+          "url": "https://yairm210.itch.io/unciv"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q110878640",
+        "reference": "https://www.wikidata.org/wiki/Q110878640",
+        "redirectQids": []
+      },
+      "name": "Sparklite",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://playdigious.com/games/sparklite",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "943140",
+          "url": "https://store.steampowered.com/app/943140"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.playdigious.sparklite",
+          "url": "https://play.google.com/store/apps/details?id=com.playdigious.sparklite"
+        }
+      ]
+    }
+  ]
+}
