@@ -111,23 +111,26 @@ function catalogReceiptBase() {
 // Keep historical source receipts explicit for each immutable snapshot.
 // Later reviewed Steam identities do not acquire earlier genre evidence.
 function renderCatalogReceipts() {
-  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26"].includes(CATALOG_VERSION)) return null;
+  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION)) return null;
   const base = catalogReceiptBase();
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
     ["Original Wikidata games", "docs/REAL_PILOT.md"],
     ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
-    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
-    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
-    ...(["multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26"].includes(CATALOG_VERSION) ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
-    ...(["multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26"].includes(CATALOG_VERSION) ? [
+    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
+    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
+    ...(["multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION) ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
+    ...(["multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION) ? [
       ["51-game expansion receipts", "docs/REAL_EXPANSION_51.md"],
       ["Sixteen reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-25.json"],
     ] : []),
-    ...(CATALOG_VERSION === "multi-store-identity-candidate-54-2026-11-26" ? [
+    ...(["multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"].includes(CATALOG_VERSION) ? [
       ["Mixed-store expansion receipts", "docs/REVIEWED_MIXED_54.md"],
       ["Three reviewed mixed-store game receipts", "examples/reviewed-mixed-batch-2026-11-26.json"],
+    ] : []),
+    ...(CATALOG_VERSION === "multi-store-identity-candidate-58-2026-11-27" ? [
+      ["Four additional reviewed mixed-store receipts", "examples/reviewed-mixed-batch-2026-11-27.json"],
     ] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
   ];
@@ -152,6 +155,10 @@ function renderBasketEvidence(game) {
     ["wikidata-cc0-multi-store-genre-pilot-51-2026-11-25", "examples/reviewed-steam-batch-2026-11-25.json"],
   ]).get(game.sourceId);
   const mixedReceipt = new Map([
+    ["reviewed-mixed-multi-store-identity-candidate-58-2026-11-27-wikidata-q119802718", { identity: "https://www.wikidata.org/wiki/Q119802718", release: "https://gedig.itch.io/peglin", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-27.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-58-2026-11-27-wikidata-q62061666", { identity: "https://www.wikidata.org/wiki/Q62061666", release: "https://hempuli.itch.io/baba", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-27.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-58-2026-11-27-wikidata-q66311564", { identity: "https://www.wikidata.org/wiki/Q66311564", release: "https://terrycavanagh.itch.io/dicey-dungeons", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-27.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-58-2026-11-27-wikidata-q104762097", { identity: "https://www.wikidata.org/wiki/Q104762097", release: "https://fizzd.itch.io/a-dance-of-fire-and-ice", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-27.json" }],
     ["reviewed-mixed-multi-store-identity-candidate-54-2026-11-26-github-yairm210.unciv", { identity: "https://github.com/yairm210/Unciv", release: "https://yairm210.itch.io/unciv", wikidata: false }],
     ["reviewed-mixed-multi-store-identity-candidate-54-2026-11-26-wikidata-q110878640", { identity: "https://www.wikidata.org/wiki/Q110878640", release: "https://playdigious.com/games/sparklite", wikidata: true }],
     ["reviewed-mixed-multi-store-identity-candidate-54-2026-11-26-wikidata-q57206016", { identity: "https://www.wikidata.org/wiki/Q57206016", release: "https://mindustrygame.github.io/", wikidata: true }],
@@ -192,7 +199,7 @@ function renderBasketEvidence(game) {
   if (mixedReceipt) {
     addSource(mixedReceipt.wikidata ? "Inspect Wikidata item" : "Inspect developer project", mixedReceipt.identity);
     if (mixedReceipt.release !== mixedReceipt.identity) addSource("Inspect release evidence", mixedReceipt.release);
-    addSource("Inspect reviewed mixed-store receipts", catalogReceiptBase() + "examples/reviewed-mixed-batch-2026-11-26.json");
+    addSource("Inspect reviewed mixed-store receipts", catalogReceiptBase() + (mixedReceipt.receipt ?? "examples/reviewed-mixed-batch-2026-11-26.json"));
   } else if (steamBatchReceipt) addSource("Inspect reviewed Steam batch receipts", catalogReceiptBase() + steamBatchReceipt);
   else if (!validQid) addSource("Inspect publisher/storefront receipts", catalogReceiptBase() +
     (game.sourceId === "dreven-owned-bellbloom" ? "docs/REAL_EXPANSION_31.md" : "docs/STOREFRONTS.md"));
