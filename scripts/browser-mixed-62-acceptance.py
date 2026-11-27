@@ -1,4 +1,4 @@
-"""62-profile local candidate: exact search, receipts and historical replay."""
+"""62-profile full release candidate: exact evidence binding, search, receipts and historical replay."""
 import json
 import os
 from hosted_validation import validate_hosted_identity
@@ -20,7 +20,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     site = work / "site"
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs","examples/catalog.multistore-58.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-62.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-demo.mjs",str(site),"--catalog",str(snapshot)],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-62"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-62"],cwd=ROOT,check=True)
     historical = work / "historical58"
     subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-58"],cwd=ROOT,check=True)
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-58"],cwd=ROOT,check=True)
@@ -76,6 +77,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                     assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-62-2026-11-27"
+                assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "1d02909f335531ede09db8cd1665c12cf6f0f404"
                 page.get_by_role("button",name="Try a sample",exact=True).click()
                 original_hash = page.evaluate("location.hash")
                 assert original_hash.startswith("#basket=")

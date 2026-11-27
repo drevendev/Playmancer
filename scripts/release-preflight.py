@@ -39,8 +39,9 @@ candidates = {
     '--candidate-51': ('multi-store-genre-pilot-51-2026-11-25', 'f3296c542e795d691f472aa401626317e656b82a', 51),
     '--candidate-54': ('multi-store-identity-candidate-54-2026-11-26', '473884e85398c820c4453eafd1c932d56710b36c', 54),
     '--candidate-58': ('multi-store-identity-candidate-58-2026-11-27', '8ebc922447aa80c032802d7ab0709b15bafbf85f', 58),
+    '--candidate-62': ('multi-store-identity-candidate-62-2026-11-27', '1d02909f335531ede09db8cd1665c12cf6f0f404', 62),
 }
-assert len(args) <= 2 and (len(args) < 2 or args[1] in candidates) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-30|--candidate-31|--candidate-35|--candidate-51|--candidate-54|--candidate-58]]'
+assert len(args) <= 2 and (len(args) < 2 or args[1] in candidates) and (not args or not args[0].startswith('-')), 'Expected [site [--candidate-30|--candidate-31|--candidate-35|--candidate-51|--candidate-54|--candidate-58|--candidate-62]]'
 site = Path(args[0] if args else '_site').resolve()
 expected_catalog, expected_evidence, expected_count = candidates[args[1]] if len(args) == 2 else candidates['--candidate-58']
 root = Path(__file__).resolve().parents[1]

@@ -16,4 +16,11 @@ node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-58.real.json 
 node scripts/build-demo.mjs /tmp/playmancer-62 --catalog /tmp/playmancer-62.json
 ```
 
-62 unique profiles, 61 linked; 54 Steam, 11 Google Play, 12 itch (overlap). Local player candidate only; five-file observation binding and production promotion remain separate. Preserve historical versions and apply the existing reviewed genre-only policy without inventing evidence.
+62 unique profiles, 61 linked; 54 Steam, 11 Google Play, 12 itch (overlap). The opt-in full release binds the exact catalog blob `9bb65478b0b8cc4853fd6f9f252be293bff44b47` and observation blob `1d02909f335531ede09db8cd1665c12cf6f0f404` without changing any of the 30 reviewed profiles, 30 receipts or 122 recorded facts. All four added profiles have unknown gameplay observations. Build and validate the five-file release:
+
+```sh
+node scripts/build-release.mjs _site-62 --candidate-62
+python3 scripts/release-preflight.py _site-62 --candidate-62
+```
+
+Historical 58-version basket URLs remain incompatible with 62. Keep the original fragment and recover it unchanged on the matching local HTTP build created with `node scripts/build-release.mjs _site-58 --candidate-58`. A local origin is not public Pages storage; retain original exported backups. No historical hosted path is promised. Default promotion and hosted verification are separate gates.
