@@ -73,11 +73,11 @@ def main() -> int:
     assert not re.search(r"@import\b|url\s*\(", css_text, re.I), "Stylesheet must not load other assets"
     catalog_match = re.search(r'<meta name="playmancer-catalog" content="([^"]+)">', text)
     assert catalog_match, "Catalog version marker missing"
-    if catalog_match.group(1).startswith(("wikidata-genre-pilot-", "multi-store-genre-pilot-")) or catalog_match.group(1) == "multi-store-identity-candidate-54-2026-11-26":
+    if catalog_match.group(1).startswith(("wikidata-genre-pilot-", "multi-store-genre-pilot-")) or catalog_match.group(1) in ("multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"):
         assert '"kind":"real"' in text, "Real player snapshot not embedded"
         # Provenance is mandatory in the validated snapshot/footer, not the player-facing hero badge.
         assert '"id":"wikidata-cc0"' in text and "Source attribution:" in text, "Real Wikidata provenance missing"
-        if catalog_match.group(1).startswith("multi-store-genre-pilot-") or catalog_match.group(1) == "multi-store-identity-candidate-54-2026-11-26":
+        if catalog_match.group(1).startswith("multi-store-genre-pilot-") or catalog_match.group(1) in ("multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27"):
             assert '"id":"dreven-owned"' in text, "Real owner-source provenance missing"
             for name in ("Idle Fantasy Shop", "Shadow Runner", "Hunter Adventure", "DevMatch", "Circlanoid"):
                 assert name in text, "Missing Dreven Games game: " + name

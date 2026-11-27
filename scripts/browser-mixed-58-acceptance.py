@@ -1,4 +1,4 @@
-"""Opt-in 58-profile candidate: no observation binding or publication claim."""
+"""Opt-in 58-profile full release: exact evidence binding and historical recovery."""
 import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -18,7 +18,11 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     site = work / "site"
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs","examples/catalog.multistore-54.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-58.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-demo.mjs",str(site),"--catalog",str(snapshot)],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-58"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-58"],cwd=ROOT,check=True)
+    historical = work / "historical54"
+    subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-54"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-54"],cwd=ROOT,check=True)
     rows = json.loads(BATCH.read_text())["games"]
     server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(work)))
     threading.Thread(target=server.serve_forever,daemon=True).start()
@@ -32,8 +36,41 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 errors, external = [], []
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
+                historical_page = context.new_page()
+                historical_url = f"http://127.0.0.1:{server.server_port}/historical54/"
+                assert historical_page.goto(historical_url).ok
+                historical_page.locator("#intro-sample").click()
+                old_hash = historical_page.evaluate("location.hash")
+                old_weights = historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])")
+                assert old_hash.startswith("#basket=") and len(old_weights) == 2
+                # The rejection is a fresh document request, not a fragment transition.
+                rejected = page.goto(url + old_hash)
+                assert rejected is not None and rejected.ok
+                assert page.locator("#error").is_visible()
+                assert "unavailable catalog" in page.locator("#error").inner_text().lower()
+                assert "historical 54-game basket" in page.locator("#error").inner_text()
+                assert page.locator("#seeds > li").count() == 0
+                assert page.evaluate("location.hash") == old_hash
+                # Opening the same URL fragment on the original tab can return None.
+                # Use a fresh tab in the same origin/context to exercise a real shared entry.
+                historical_page.close()
+                historical_page = context.new_page()
+                restored = historical_page.goto(historical_url + old_hash)
+                assert restored is not None and restored.ok
+                assert historical_page.locator("#error").is_hidden()
+                assert historical_page.evaluate("location.hash") == old_hash
+                assert historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])") == old_weights
+                historical_page.close()
+                # Start the candidate journey from a fresh document as well, retaining
+                # the error/request observations collected during the rejected replay.
+                page.close()
+                page = context.new_page()
+                page.on("pageerror",lambda e: errors.append(str(e)))
+                page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
                 assert page.goto(url).ok
+                assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-58-2026-11-27"
+                assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "8ebc922447aa80c032802d7ab0709b15bafbf85f"
                 page.get_by_role("button",name="Try a sample",exact=True).click()
                 original_hash = page.evaluate("location.hash")
                 assert original_hash.startswith("#basket=")
@@ -82,7 +119,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-58-{width}.png"),full_page=True)
                 context.close()
-                print(f"58-profile unbound candidate: 12 exact store URLs, title, scope, evidence and replay PASS at {width}px")
+                print(f"58-profile bound release: 12 exact store URLs, title, scope, evidence and replay PASS at {width}px")
             browser.close()
     finally:
         server.shutdown()

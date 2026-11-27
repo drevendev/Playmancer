@@ -87,8 +87,15 @@ jobs:
         run: python scripts/browser-itch-identity-acceptance.py
       - name: Exercise reviewed mixed-store candidate on real local HTTP
         run: python scripts/browser-mixed-candidate-acceptance.py
-      - name: Exercise next reviewed mixed-store candidate (unbound preview)
+      - name: Exercise next reviewed mixed-store release candidate and historical recovery
         run: python scripts/browser-mixed-58-acceptance.py
+      - name: Exercise Gameplay Facts on the exact 58-game release candidate
+        env:
+          PLAYMANCER_EXPECTED_CATALOG_COUNT: "58"
+        run: |
+          node scripts/build-release.mjs /tmp/playmancer-release58 --candidate-58
+          python scripts/release-preflight.py /tmp/playmancer-release58 --candidate-58
+          python scripts/browser-observations-acceptance.py --site /tmp/playmancer-release58
       - name: Exercise 1,000-profile synthetic catalog discovery and share restoration
         run: python scripts/browser-large-catalog-acceptance.py
       - name: Exercise bounded Gameplay Facts on the validated sparse release fixture
