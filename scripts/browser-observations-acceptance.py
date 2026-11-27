@@ -430,7 +430,7 @@ try:
                       explore.locator('#comparison a[href="https://www.bay12games.com/dwarves/features.html"]').count() >= 1,
                       f'{engine}/{width}: Dwarf Fortress / Terraria shared digging retains source receipt')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '54')), f'{engine}/{width}: complete catalog with unknowns')
+                check(explore.locator('.game-card').count() == int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '58')), f'{engine}/{width}: complete catalog with unknowns')
                 explore.locator('#query').fill('Half-Life 2')
                 late_card = explore.locator('.game-card[data-game-id="wikidata:q193581"]')
                 check(late_card.count() == 1 and late_card.locator('.fact-list a').count() == 0,

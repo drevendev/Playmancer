@@ -1,5 +1,7 @@
-"""Opt-in 58-profile full release: exact evidence binding and historical recovery."""
+"""58-profile full release: exact local or hosted evidence binding and historical recovery."""
 import json
+import os
+from hosted_validation import validate_hosted_identity
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -23,10 +25,16 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     historical = work / "historical54"
     subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-54"],cwd=ROOT,check=True)
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-54"],cwd=ROOT,check=True)
-    rows = json.loads(BATCH.read_text())["games"]
+    rows = [(row, BATCH.name) for row in json.loads(BATCH.read_text())["games"]]
+    prior_batch = ROOT / "examples/reviewed-mixed-batch-2026-11-26.json"
+    rows += [(row, prior_batch.name) for row in json.loads(prior_batch.read_text())["games"]]
     server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(work)))
     threading.Thread(target=server.serve_forever,daemon=True).start()
-    url = f"http://127.0.0.1:{server.server_port}/site/"
+    hosted = os.environ.get("PLAYMANCER_HOSTED_URL")
+    expected_sha = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+    if hosted or expected_sha:
+        validate_hosted_identity(hosted, expected_sha)
+    url = hosted.rstrip("/") + "/" if hosted else f"http://127.0.0.1:{server.server_port}/site/"
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
@@ -46,6 +54,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 # The rejection is a fresh document request, not a fragment transition.
                 rejected = page.goto(url + old_hash)
                 assert rejected is not None and rejected.ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.locator("#error").is_visible()
                 assert "unavailable catalog" in page.locator("#error").inner_text().lower()
                 assert "historical 54-game basket" in page.locator("#error").inner_text()
@@ -68,6 +78,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
                 assert page.goto(url).ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-58-2026-11-27"
                 assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "8ebc922447aa80c032802d7ab0709b15bafbf85f"
@@ -78,7 +90,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 results = page.locator("#search-results > li")
                 assert any(h.endswith("/examples/reviewed-mixed-batch-2026-11-27.json") for h in page.locator(".source-receipts a").evaluate_all("(nodes)=>nodes.map(n=>n.href)"))
                 assert any(h.endswith("/examples/reviewed-mixed-batch-2026-11-26.json") for h in page.locator(".source-receipts a").evaluate_all("(nodes)=>nodes.map(n=>n.href)"))
-                for row in rows:
+                for row, receipt_name in rows:
                     for query in [row["name"]] + [s["url"] for s in row["stores"]]:
                         search.fill(query)
                         assert results.count() == 1,(width,query,results.count())
@@ -102,9 +114,12 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                     evidence.locator("summary").click()
                     assert "no reviewed genre source" in evidence.inner_text()
                     assert "Catalog mechanics: unknown. Co-op: unknown." in evidence.inner_text()
+                    assert "No separately reviewed gameplay facts" in evidence.inner_text()
                     links = evidence.locator("a").evaluate_all("(nodes)=>nodes.map(n=>n.href)")
                     assert row["identity"]["reference"] in links and row["releaseEvidence"] in links
-                    assert any(h.endswith("/examples/reviewed-mixed-batch-2026-11-27.json") for h in links)
+                    assert any(h.endswith("/examples/" + receipt_name) for h in links)
+                    if row["identity"]["provider"] == "github":
+                        assert not any("wikidata.org/wiki/" in h for h in links)
                     assert not any(h.endswith("/docs/STOREFRONTS.md") for h in links)
                     favorite.get_by_role("button",name="Remove "+row["name"],exact=True).click()
                     assert page.evaluate("location.hash") == original_hash
@@ -119,7 +134,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-58-{width}.png"),full_page=True)
                 context.close()
-                print(f"58-profile bound release: 12 exact store URLs, title, scope, evidence and replay PASS at {width}px")
+                print(f"58-profile {'HOSTED' if hosted else 'LOCAL_HTTP'} bound release: 19 exact store URLs, title, scope, evidence and replay PASS at {width}px")
             browser.close()
     finally:
         server.shutdown()
