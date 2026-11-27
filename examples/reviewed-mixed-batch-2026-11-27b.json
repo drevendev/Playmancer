@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-62-2026-11-27",
+  "reviewedAt": "2026-11-27",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q127164835",
+        "reference": "https://www.wikidata.org/wiki/Q127164835",
+        "redirectQids": []
+      },
+      "name": "Disco Elysium - The Final Cut",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/632470",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "632470",
+          "url": "https://store.steampowered.com/app/632470"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q106483475",
+        "reference": "https://www.wikidata.org/wiki/Q106483475",
+        "redirectQids": []
+      },
+      "name": "Suzerain",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/1207650",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1207650",
+          "url": "https://store.steampowered.com/app/1207650"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.torporgames.suzerain",
+          "url": "https://play.google.com/store/apps/details?id=com.torporgames.suzerain"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q113622732",
+        "reference": "https://www.wikidata.org/wiki/Q113622732",
+        "redirectQids": []
+      },
+      "name": "I Was a Teenage Exocolonist",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/1148760",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1148760",
+          "url": "https://store.steampowered.com/app/1148760"
+        },
+        {
+          "store": "itch",
+          "id": "finji.itch.io/exocolonist",
+          "url": "https://finji.itch.io/exocolonist"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q56808989",
+        "reference": "https://www.wikidata.org/wiki/Q56808989",
+        "redirectQids": []
+      },
+      "name": "The Gardens Between",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/600990",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "600990",
+          "url": "https://store.steampowered.com/app/600990"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.thevoxelagents.thegardensbetween",
+          "url": "https://play.google.com/store/apps/details?id=com.thevoxelagents.thegardensbetween"
+        }
+      ]
+    }
+  ]
+}

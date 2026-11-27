@@ -1,6 +1,6 @@
 import { blendCandidates, rankCandidates } from "./ranking.js";
 import { validateCatalogSnapshot } from "./catalog.js";
-import { BRIDGE_ROUTE_METHOD_VERSION } from "./bridge-preview.js";
+import { BRIDGE_ROUTE_METHOD_VERSION, reviewedPilot } from "./bridge-preview.js";
 
 // The bounded static builder replaces this slot with an already allowlisted
 // JSON snapshot. Direct module use retains the authored default below.
@@ -230,7 +230,7 @@ export function pairEvidence(a, b) {
     shared.push(...overlap);
     notShared.push(...[...second].filter((tag) => !first.has(tag)));
   }
-  const requiredCoverage = DEMO_SNAPSHOT.kind === "real" && (CATALOG_VERSION.startsWith("wikidata-genre-pilot-") || CATALOG_VERSION.startsWith("multi-store-genre-pilot-") || (CATALOG_VERSION === "multi-store-identity-candidate-54-2026-11-26" || CATALOG_VERSION === "multi-store-identity-candidate-58-2026-11-27")) ? 0.3 : 0.7;
+  const requiredCoverage = DEMO_SNAPSHOT.kind === "real" && reviewedPilot(CATALOG_VERSION) ? 0.3 : 0.7;
   // Explicit CC0 pilot genre-only lane: 30% observed data, never invented mechanics.
   // Keep synthetic/full-feature semantics unchanged and report actual coverage.
   return { affinity: coverage >= requiredCoverage ? weightedSimilarity / coverage : null,
