@@ -31,6 +31,8 @@ def geometry(page, name):
         const action = card.querySelector('.storefront-links a, .explanation summary');
         return {cardY: rect.top + scrollY, cardScroll: Math.max(0, rect.top - innerHeight + 1),
                 actionY: action ? action.getBoundingClientRect().top + scrollY : null,
+                actionBottom: action ? action.getBoundingClientRect().bottom + scrollY : null,
+                titleY: card.querySelector('h3').getBoundingClientRect().top + scrollY,
                 scrollY, overflow: document.documentElement.scrollWidth - innerWidth,
                 ids: [...document.querySelectorAll('#results > li')].map(n => n.dataset.gameId),
                 favorites: [...document.querySelectorAll('#seeds .seed-name')].map(n => n.textContent),
@@ -79,11 +81,30 @@ try:
                 assert old["hash"] == new["hash"] and old["scrollY"] == new["scrollY"] == 0
                 assert new["overflow"] <= 1
                 if width <= 390:
-                    minimum = 50 if LABEL == "quick-path" else 100
+                    minimum = 50 if LABEL in ("quick-path", "first-screen") else 100
                     assert new["cardY"] < old["cardY"] - minimum, report[-1]
-                    if LABEL == "quick-path":
+                    if LABEL in ("quick-path", "first-screen"):
                         assert new["actionY"] < old["actionY"] - minimum, report[-1]
                     assert new["cardScroll"] <= old["cardScroll"], report[-1]
+            if LABEL == "first-screen":
+                # Unmodified default entry: capture actual first card/title/action
+                # without focusing or scrolling anything before the measurement.
+                defaults = []
+                for label, url, sha in (("before", before, BASE), ("after", after, CURRENT)):
+                    probe = ctx.new_page()
+                    probe.goto(url)
+                    assert probe.locator('meta[name="playmancer-revision"]').get_attribute("content") == sha
+                    probe.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+                    defaults.append(geometry(probe, f"{width}-default-{label}"))
+                    probe.close()
+                old, new = defaults
+                report.append({"width": width, "count": "default", "before": old, "after": new})
+                assert old["favorites"] == new["favorites"] and old["ids"] == new["ids"]
+                assert old["hash"] == new["hash"] and old["scrollY"] == new["scrollY"] == 0
+                assert new["overflow"] <= 1
+                if width <= 390:
+                    assert new["cardY"] < old["cardY"] - 50, report[-1]
+                    assert new["actionY"] < old["actionY"] - 50, report[-1]
             if LABEL == "quick-path":
                 probe = ctx.new_page()
                 probe.goto(after + "#" + two)

@@ -449,12 +449,25 @@ try:
                   nav.is_visible() == (label == "mobile"))
             if label == "mobile":
                 initial_hash = page.evaluate("location.hash")
-                check(label + ": shortcuts stay sticky", nav.evaluate(
-                    "element => getComputedStyle(element).position === 'sticky'"))
+                check(label + ": shortcuts follow recommendations in normal document flow",
+                      nav.evaluate("""element => {
+                          const results = document.querySelector('#recommendations');
+                          return getComputedStyle(element).position === 'static'
+                              && !!(results.compareDocumentPosition(element) &
+                                    Node.DOCUMENT_POSITION_FOLLOWING)
+                              && element.getBoundingClientRect().top >=
+                                 results.getBoundingClientRect().bottom;
+                      }"""))
                 for button, destination in (("jump-bridge", "bridge-title"),
                                             ("jump-results", "recommendations"),
                                             ("jump-basket", "basket-title")):
-                    page.locator("#" + button).click()
+                    shortcut = page.locator("#" + button)
+                    shortcut.focus()
+                    check(label + ": " + button + " is a visible keyboard-focusable shortcut",
+                          shortcut.is_visible() and shortcut.evaluate(
+                              "element => document.activeElement === element")
+                          and page.evaluate("location.hash") == initial_hash)
+                    shortcut.press("Enter")
                     check(label + ": " + button + " focuses its section without rewriting the share URL",
                           page.locator("#" + destination).evaluate(
                               "element => document.activeElement === element")

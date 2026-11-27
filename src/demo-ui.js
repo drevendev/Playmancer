@@ -344,6 +344,21 @@ function prepareRealQuickPath() {
     document.querySelector(".results-head p.hint"),
     $("basket-fact-comparisons")
   );
+  // Keep search, sample and browse in the primary path. Secondary actions
+  // remain native controls in the existing tools section, not hidden links.
+  const secondary = element("div", undefined, "actions");
+  secondary.id = "secondary-player-actions";
+  secondary.append($("intro-empty"));
+  $("tools-title").after(secondary);
+  tools.parentElement.after($("quick-nav"));
+  // Bridge and the optional production library mount later in this same
+  // synchronous module. Move their existing buttons before the next paint.
+  queueMicrotask(() => {
+    for (const id of ["intro-bridge", "intro-library"]) {
+      const action = $(id);
+      if (action) secondary.append(action);
+    }
+  });
   $("results-title").textContent = "Recommendations";
   const filters = element("button", undefined);
   filters.id = "active-ranking-filters";

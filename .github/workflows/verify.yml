@@ -196,6 +196,23 @@ jobs:
           PLAYMANCER_GEOMETRY_LABEL: quick-path
           PLAYMANCER_GEOMETRY_SITE: _site-geometry51
         run: python scripts/browser-compact-basket-acceptance.py .quick-path-baseline/_site
+      - name: Check out exact public 54-game first-screen baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 4952aa102626aff8a3615c3945ac38e04bdb5e05
+          path: .first-screen-baseline
+          persist-credentials: false
+      - name: Build exact public first-screen baseline
+        working-directory: .first-screen-baseline
+        env:
+          PLAYMANCER_REVISION: 4952aa102626aff8a3615c3945ac38e04bdb5e05
+        run: npm run build
+      - name: Measure first-screen navigation with identical 54-game inputs
+        env:
+          HOME: /root
+          PLAYMANCER_GEOMETRY_BASE: 4952aa102626aff8a3615c3945ac38e04bdb5e05
+          PLAYMANCER_GEOMETRY_LABEL: first-screen
+        run: python scripts/browser-compact-basket-acceptance.py .first-screen-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -220,6 +237,8 @@ jobs:
             .test-artifacts/compact-basket-geometry.json
             .test-artifacts/quick-path-*.png
             .test-artifacts/quick-path-geometry.json
+            .test-artifacts/first-screen-*.png
+            .test-artifacts/first-screen-geometry.json
             .test-artifacts/focus35/http-cross-browser.json
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png

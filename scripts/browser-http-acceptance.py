@@ -165,6 +165,19 @@ def exercise(browser, base_url, engine, label, width, height):
                              full_page=False, animations="disabled")
 
         initial_picker(page, "default")
+        check(case, "primary actions stay with search; secondary shortcuts follow recommendations",
+              page.locator(".intro-actions button").evaluate_all("nodes => nodes.map(n => n.id)") ==
+                  ["intro-sample", "intro-browse"]
+              and page.locator("#secondary-player-actions button").evaluate_all("nodes => nodes.map(n => n.id)") ==
+                  ["intro-empty", "intro-bridge", "intro-library"]
+              and all(page.locator("#" + action).is_visible()
+                      for action in ("intro-empty", "intro-bridge", "intro-library"))
+              and page.evaluate("""() => {
+                  const results = document.querySelector('#recommendations');
+                  return ['#secondary-player-actions', '#quick-nav'].every(selector =>
+                    !!(results.compareDocumentPosition(document.querySelector(selector)) &
+                        Node.DOCUMENT_POSITION_FOLLOWING));
+              }"""))
         check(case, "search precedes secondary actions, recommendations precede advanced tools",
               page.evaluate("""() => {
                   const before = (a,b) => !!(document.querySelector(a).compareDocumentPosition(
@@ -329,7 +342,7 @@ def exercise(browser, base_url, engine, label, width, height):
         page.locator('#platform').select_option('linux')
         page.locator('#coop').check()
         page.locator('#intro-empty').click()
-        check(case, 'first-screen empty start keeps filters, focus and a shareable empty basket',
+        check(case, 'secondary empty start keeps filters, focus and a shareable empty basket',
               page.locator('#seeds > li').count() == 0
               and page.locator('#results > li').count() == 0
               and page.locator('#platform').input_value() == 'linux'
@@ -1190,7 +1203,7 @@ def exercise(browser, base_url, engine, label, width, height):
                                              Node.DOCUMENT_POSITION_FOLLOWING)
                         };
                     })(),
-                    actions: Array.from(document.querySelectorAll('.intro-actions button')).map(node => {
+                    actions: Array.from(document.querySelectorAll('.intro-actions button, #secondary-player-actions button')).map(node => {
                         const box = node.getBoundingClientRect();
                         return {id: node.id, left: box.left, right: box.right,
                                 inner: node.scrollWidth, width: node.clientWidth};
