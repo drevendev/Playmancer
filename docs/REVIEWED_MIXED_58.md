@@ -1,6 +1,6 @@
 # Reviewed mixed-store candidate: 58 games (2026-11-27)
 
-Refs #268. The reviewed tranche adds four distinct base games to the exact 54-profile catalog (blob ce7c193254894f6cd633a01e290c2e4a693bd984). The default release configuration binds the same 30 reviewed gameplay profiles to the exact new catalog; four new profiles remain unknown.
+Refs #268. The reviewed tranche adds four distinct base games to the exact 54-profile catalog (blob ce7c193254894f6cd633a01e290c2e4a693bd984). The historical 58-game release configuration binds the same 30 reviewed gameplay profiles to the exact new catalog; four new profiles remain unknown.
 
 | Game | Identity | Steam | Google Play | itch.io |
 | --- | --- | --- | --- | --- |
@@ -16,4 +16,4 @@ Reproduce without overwriting:
 node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-54.real.json examples/reviewed-mixed-batch-2026-11-27.json /tmp/playmancer-58.json
 node scripts/build-demo.mjs /tmp/playmancer-58 --catalog /tmp/playmancer-58.json
 ```
-Expected default build: 58 distinct profiles, 57 linked, 50 Steam, 9 Google Play, 11 itch (overlap). The immutable historical 54-profile snapshot remains available locally. The full five-file release is built with `node scripts/build-release.mjs _site-58 --candidate-58` and checked with `python3 scripts/release-preflight.py _site-58 --candidate-58`. Preserve the original 54-version share fragment; rebuild with `node scripts/build-release.mjs _site-54 --candidate-54` and serve over local HTTP. No historical hosted path is promised. The old fragment is rejected visibly on 58; the matching 54 build restores it unchanged. Default configuration and live verification remain separate gates; check the exact Pages workflow before claiming publication.
+Expected historical 58-game build: 58 distinct profiles, 57 linked, 50 Steam, 9 Google Play, 11 itch (overlap). The immutable historical 54-profile snapshot remains available locally. The full five-file release is built with `node scripts/build-release.mjs _site-58 --candidate-58` and checked with `python3 scripts/release-preflight.py _site-58 --candidate-58`. Preserve the original 54-version share fragment; rebuild with `node scripts/build-release.mjs _site-54 --candidate-54` and serve over local HTTP. No historical hosted path is promised. The old fragment is rejected visibly on 58; the matching 54 build restores it unchanged. Default configuration and live verification remain separate gates; check the exact Pages workflow before claiming publication.

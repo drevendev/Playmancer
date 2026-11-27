@@ -24,10 +24,10 @@ saved link. Unrecognized storefront URLs retain an explicit no-fetch warning.
 ## Play in your browser — GitHub Pages
 
 **[🎮 Open Playmancer](https://drevendev.github.io/Playmancer/)** ·
-[58-game source receipts](docs/REVIEWED_MIXED_58.md) ·
+[62-game source receipts](docs/REVIEWED_MIXED_62.md) ·
 [Pages deployment status](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 
-> **Default build:** 58 real games (57 with supported store links), with first-screen browsing. Live availability depends on the deployed revision. The
+> **Default build:** 62 real games (61 with supported store links), with first-screen browsing. Live availability depends on the deployed revision. The
 > [Pages workflow](https://github.com/drevendev/Playmancer/actions/workflows/pages.yml)
 > tests the served `master` revision, same-origin Bridge worker, and hosted desktop/mobile
 > player journeys after each successful deployment. **This README is not a live
@@ -84,7 +84,7 @@ runtime API dependency; external storefront links open only when selected.
 ### Current real-catalog pilot
 
 The default build selects immutable snapshot
-`multi-store-identity-candidate-58-2026-11-27`: **58 identifiable games** (57 with supported storefront links, including six owner-associated Dreven Games titles). Peglin, Baba Is You, Dicey Dungeons and A Dance of Fire and Ice add twelve recorded storefront links. Mindustry, Unciv and Sparklite remain in the catalog; unreviewed genre and gameplay features remain unknown. See [the 58-game release receipts](docs/REVIEWED_MIXED_58.md), [the 54-game release receipts](docs/REVIEWED_MIXED_54.md), [the 51-game release receipts](docs/REAL_EXPANSION_51.md),
+`multi-store-identity-candidate-62-2026-11-27`: **62 identifiable games** (61 with supported storefront links, including six owner-associated Dreven Games titles). Disco Elysium - The Final Cut, Suzerain, I Was a Teenage Exocolonist and The Gardens Between add seven recorded storefront links. Peglin, Baba Is You, Dicey Dungeons and A Dance of Fire and Ice remain available. Mindustry, Unciv and Sparklite remain in the catalog; unreviewed genre and gameplay features remain unknown. See [the 62-game release receipts](docs/REVIEWED_MIXED_62.md), [the 58-game release receipts](docs/REVIEWED_MIXED_58.md), [the 54-game release receipts](docs/REVIEWED_MIXED_54.md), [the 51-game release receipts](docs/REAL_EXPANSION_51.md),
 [the 35-game release receipts](docs/REAL_EXPANSION_35.md), the
 [30-game expansion](docs/REAL_EXPANSION_30.md), the
 [previous expansion](docs/REAL_EXPANSION.md), the
@@ -137,11 +137,11 @@ The 12-item Wikidata-only and fictional sample fixtures also remain separate.
 Share links pin catalog and method versions; incompatible versions fail visibly
 rather than silently substituting newer entries.
 
-## Player capabilities — 58-game pilot
+## Player capabilities — 62-game pilot
 
-Catalog search prefers whole-name/phrase and exact recorded store-link matches. If a multi-word search finds no whole-phrase match, it can match **all** words across recorded game names/IDs, genre labels and selected positive gameplay facts (for example `Factorio Automating`). Each such result is explicitly marked as partial evidence rather than a recommendation-fit score; unrecorded facts remain unknown. Search neither alters ranking nor relaxes hard filters. The 58-game catalog still has limited, non-exhaustive coverage.
+Catalog search prefers whole-name/phrase and exact recorded store-link matches. If a multi-word search finds no whole-phrase match, it can match **all** words across recorded game names/IDs, genre labels and selected positive gameplay facts (for example `Factorio Automating`). Each such result is explicitly marked as partial evidence rather than a recommendation-fit score; unrecorded facts remain unknown. Search neither alters ranking nor relaxes hard filters. The 62-game catalog still has limited, non-exhaustive coverage.
 
-The default 58-game snapshot powers the player capabilities below.
+The default 62-game snapshot powers the player capabilities below.
 The earlier 17-game release is historical, not the current Pages catalog.
 For isolated tests, `node scripts/build-demo.mjs` builds a fictional
 twelve-profile fixture; a separate six-profile synthetic fixture covers aliases,
@@ -149,7 +149,7 @@ editions/DLC and unknown metadata. Share links preserve catalog and method
 versions: the current site visibly rejects incompatible historical links instead
 of silently substituting games from a different snapshot.
 
-- Browse the 58 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time, inspect recorded Steam/Google Play/itch.io links **before adding a favorite**, and add games without losing existing choices. Store links are optional outbound navigation, never automatic requests or a ranking signal. The **Browse by store** selector narrows *catalog discovery* to games with recorded Steam, Google Play or itch.io links; it combines with name/genre search, does not constrain recommendations, and is deliberately not part of shared-basket state. In the production release, catalog discovery also shows the count of individually reviewed **selected positive gameplay facts** and a version-pinned evidence lookup before adding a favorite. A zero-count/unreviewed game is explicitly **unknown**, not known to lack features. Matching a particular fact already provides its more specific source link. The independent fact inventory does not affect ranking, filters or shares; fictional and legacy previews do not invent it.
+- Browse the 62 recorded games directly from the first-screen **Browse games** action, reveal eight results at a time, inspect recorded Steam/Google Play/itch.io links **before adding a favorite**, and add games without losing existing choices. Store links are optional outbound navigation, never automatic requests or a ranking signal. The **Browse by store** selector narrows *catalog discovery* to games with recorded Steam, Google Play or itch.io links; it combines with name/genre search, does not constrain recommendations, and is deliberately not part of shared-basket state. In the production release, catalog discovery also shows the count of individually reviewed **selected positive gameplay facts** and a version-pinned evidence lookup before adding a favorite. A zero-count/unreviewed game is explicitly **unknown**, not known to lack features. Matching a particular fact already provides its more specific source link. The independent fact inventory does not affect ranking, filters or shares; fictional and legacy previews do not invent it.
 - Search names (including titles typed without punctuation, such as `Papers Please`), canonical IDs, declared aliases and source-recorded genre labels. Name and alias matches are shown before generic genre or partial gameplay-fact matches, with source-catalog order preserved within each class; this only changes discovery, not recommendation ranking. The real pilot also finds games by independently reviewed **positive gameplay facts** (for example, “Automating production”) and labels that match as **partial evidence**, not verified complete tags; a missing observation is unknown, not a negative. A matched positive fact links to its version-pinned original source in the Gameplay Facts explorer before adding a game. These facts affect catalog discovery only, never fit scores, hard constraints or shared-basket state. Synthetic profiles retain their authored feature-tag search. Add/remove up to five profiles.
 - Promote any visible recommendation directly into a new favorite with **Add to favorites**; it receives weight 1, disappears from the candidate list, and preserves filters, share state and keyboard focus. At five favorites the add action is disabled until one is removed.
 - Edit explicit integer weights with keyboard controls.
@@ -201,7 +201,7 @@ python3 scripts/pages-preflight.py _site-real
 python3 -m http.server 8080 --directory _site-real
 ```
 
-Use the current `npm run build` command below for the default 58-game input.
+Use the current `npm run build` command below for the default 62-game input.
 All snapshots retain their own catalog versions and provenance.
 
 ## Run and verify
@@ -219,7 +219,7 @@ python3 scripts/release-preflight.py _site
 python3 -m http.server 8080 --directory _site
 ```
 
-With this build configuration, `npm run build` selects the 58-game multistore snapshot. Rebuild the historical 30-game full release with `node scripts/build-release.mjs _site-30 --candidate-30` and validate it with `python3 scripts/release-preflight.py _site-30 --candidate-30`. Historical links are not silently migrated. For a saved-basket library spanning catalog versions, retain the original exported JSON backup. Restore each basket on its matching version: build 35 with `node scripts/build-release.mjs _site-35 --candidate-35` 51 with `node scripts/build-release.mjs _site-51 --candidate-51`, or 54 with `node scripts/build-release.mjs _site-54 --candidate-54` and serve the build over local HTTP. The library is origin-scoped; use different paths on the same origin to retain the same local saves. Mixed-version backups are rejected atomically on import; retain the original and import version-specific copies without rewriting any stored share hash. The explicit 51 flag rebuilds the historical snapshot, not the current default. A 51- or 54-version URL will be rejected visibly on the 58 build: keep its original fragment and paste it unchanged after the matching locally served version URL. A local server has separate storage from public Pages; use the original exported backup to recover local saves. No historical hosted path is promised. The explicit `--candidate-54` flag rebuilds the historical 54 snapshot; `--candidate-58` matches the current default. To build
+With this build configuration, `npm run build` selects the 62-game multistore snapshot. Rebuild the historical 30-game full release with `node scripts/build-release.mjs _site-30 --candidate-30` and validate it with `python3 scripts/release-preflight.py _site-30 --candidate-30`. Historical links are not silently migrated. For a saved-basket library spanning catalog versions, retain the original exported JSON backup. Restore each basket on its matching version: build 35 with `node scripts/build-release.mjs _site-35 --candidate-35`, 51 with `node scripts/build-release.mjs _site-51 --candidate-51`, 54 with `node scripts/build-release.mjs _site-54 --candidate-54`, or 58 with `node scripts/build-release.mjs _site-58 --candidate-58` and serve the build over local HTTP. The library is origin-scoped; use different paths on the same origin to retain the same local saves. Mixed-version backups are rejected atomically on import; retain the original and import version-specific copies without rewriting any stored share hash. The explicit 51 flag rebuilds the historical snapshot, not the current default. A 51-, 54- or 58-version URL will be rejected visibly on the 62 build: keep its original fragment and paste it unchanged after the matching locally served version URL. A local server has separate storage from public Pages; use the original exported backup to recover local saves. No historical hosted path is promised. The explicit `--candidate-54` flag rebuilds the historical 54 snapshot; `--candidate-58` rebuilds the historical 58 snapshot; `--candidate-62` matches the current default. To build
 the fictional sample independently, invoke `node scripts/build-demo.mjs`
 without a catalog argument. Older synthetic basket links are intentionally
 rejected by the real snapshot's visible version check instead of silently

@@ -171,11 +171,11 @@ jobs:
           HOME: /root
           PLAYMANCER_HOSTED_URL: ${{ needs.publish.outputs.page_url }}
           PLAYMANCER_EXPECTED_SHA: ${{ github.sha }}
-          PLAYMANCER_EXPECTED_CATALOG_COUNT: "58"
+          PLAYMANCER_EXPECTED_CATALOG_COUNT: "62"
         run: |
           python scripts/browser-http-acceptance.py
           python scripts/browser-observations-acceptance.py --engine all
-          python scripts/browser-mixed-58-acceptance.py
+          python scripts/browser-mixed-62-acceptance.py
       # A second exact-revision check catches a native branch/Jekyll publisher
       # overwriting the validated bundle while multi-engine browser tests run.
       # Do not retry away this post-journey regression: fail on the first mismatch.
@@ -197,7 +197,7 @@ jobs:
             .test-artifacts/http-*.png
             .test-artifacts/observations-browser.json
             .test-artifacts/observations-*.png
-            .test-artifacts/mixed-58-*.png
+            .test-artifacts/mixed-62-*.png
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
