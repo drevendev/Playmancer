@@ -95,7 +95,7 @@ The **ranking interface** uses source-backed genres, selected platform facts and
 carefully normalized publisher-authored tags; mechanics and co-op remain unknown
 in its scoring snapshot. A **separate source-backed gameplay fact explorer**
 (`observations.html`) exposes 122 independently written, dated non-genre facts for
-30 real games. The 24 profiles without reviewed facts (including DevMatch and Hades II) remain unreviewed, never verified lacking those features. [Bellbloom source receipts](docs/SEMANTIC_TAGS_BELLBLOOM_CANDIDATE.md) and [earlier dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_29.md) and
+30 real games. The 32 profiles without reviewed facts (including DevMatch and Hades II) remain unreviewed, never verified lacking those features. [Bellbloom source receipts](docs/SEMANTIC_TAGS_BELLBLOOM_CANDIDATE.md) and [earlier dated source receipts](docs/SEMANTIC_TAGS_REVIEWED_29.md) and
 [latest 29-profile v2 release-gate audit](docs/REVIEWED_TAG_READINESS_29.md).
 This inventory is not a new recommendation mode or a claim of
 improved ranking quality. Artwork and third-party descriptions are not copied.
