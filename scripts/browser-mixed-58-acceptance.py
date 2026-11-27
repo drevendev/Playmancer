@@ -43,18 +43,32 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 old_hash = historical_page.evaluate("location.hash")
                 old_weights = historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])")
                 assert old_hash.startswith("#basket=") and len(old_weights) == 2
-                assert page.goto(url + old_hash).ok
+                # The rejection is a fresh document request, not a fragment transition.
+                rejected = page.goto(url + old_hash)
+                assert rejected is not None and rejected.ok
                 assert page.locator("#error").is_visible()
                 assert "unavailable catalog" in page.locator("#error").inner_text().lower()
                 assert "historical 54-game basket" in page.locator("#error").inner_text()
                 assert page.locator("#seeds > li").count() == 0
                 assert page.evaluate("location.hash") == old_hash
-                assert historical_page.goto(historical_url + old_hash).ok
+                # Opening the same URL fragment on the original tab can return None.
+                # Use a fresh tab in the same origin/context to exercise a real shared entry.
+                historical_page.close()
+                historical_page = context.new_page()
+                restored = historical_page.goto(historical_url + old_hash)
+                assert restored is not None and restored.ok
                 assert historical_page.locator("#error").is_hidden()
                 assert historical_page.evaluate("location.hash") == old_hash
                 assert historical_page.locator('#seeds input[type="range"]').evaluate_all("(nodes)=>nodes.map(n=>[n.id,n.value])") == old_weights
                 historical_page.close()
+                # Start the candidate journey from a fresh document as well, retaining
+                # the error/request observations collected during the rejected replay.
+                page.close()
+                page = context.new_page()
+                page.on("pageerror",lambda e: errors.append(str(e)))
+                page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
                 assert page.goto(url).ok
+                assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-58-2026-11-27"
                 assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "8ebc922447aa80c032802d7ab0709b15bafbf85f"
                 page.get_by_role("button",name="Try a sample",exact=True).click()
