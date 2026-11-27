@@ -143,9 +143,22 @@ try:
                         back.press("Enter")
                         assert probe.evaluate("document.activeElement.id") == "recommendations"
                         assert probe.evaluate("location.hash") == original
+                        # A focused native weight control remains the same node when
+                        # the responsive editor moves between desktop and mobile.
+                        weight.focus()
+                        probe.set_viewport_size({"width": 1280, "height": 844})
+                        probe.wait_for_function("document.querySelector('#mobile-favorites').hidden")
+                        assert weight.evaluate("n => n === document.activeElement")
+                        probe.set_viewport_size({"width": width, "height": 844})
+                        probe.wait_for_function("!document.querySelector('#mobile-favorites').hidden")
+                        assert weight.evaluate("n => n === document.activeElement")
+                        assert probe.evaluate("location.hash") == original
                         probe.locator("#clear").click()
                         empty = probe.evaluate("location.hash")
+                        probe.close()
+                        probe = ctx.new_page()
                         probe.goto(after + empty)
+                        edit = probe.locator("#mobile-favorites")
                         probe.wait_for_function("document.querySelector('#mobile-favorites').textContent.includes('0 / 5')")
                         assert probe.locator("#results > li").count() == 0
                         assert probe.locator("#empty").is_visible()
