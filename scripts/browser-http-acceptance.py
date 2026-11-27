@@ -306,6 +306,30 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.locator("#results > li .storefront-links a").first.is_visible())
         page.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-top-five.png"),
                         full_page=True, animations="disabled")
+        guide = page.locator("#result-count-guide")
+        counts = page.locator("#uncertainty > summary")
+        check(case, "compact result status keeps counts and defers longer definitions",
+              page.locator("#status").get_attribute("role") == "status"
+              and " excluded." in page.locator("#status").inner_text()
+              and "including seeds and hidden results" not in page.locator("#status").inner_text()
+              and guide.count() == 1 and not guide.is_visible()
+              and "Uncertain (" in counts.inner_text() and "excluded (" in counts.inner_text())
+        counts.focus()
+        counts.press("Enter")
+        check(case, "keyboard opens complete result-count definitions without changing the basket",
+              guide.is_visible()
+              and "lack sufficient evidence" in guide.inner_text()
+              and "hidden results and known filter failures" in guide.inner_text()
+              and "not a demonstrated whole-basket match" in guide.inner_text()
+              and "not a positive match" in guide.inner_text()
+              and page.evaluate("location.hash") == before_hash
+              and page.evaluate("document.activeElement.id") == "uncertainty-title")
+        counts.press("Enter")
+        check(case, "keyboard collapses definitions and retains the current ranking",
+              not guide.is_visible()
+              and page.locator("#results > li").evaluate_all(
+                  "cards => cards.map(card => card.dataset.gameId)") == compact_ids
+              and page.evaluate("location.hash") == before_hash)
         view.focus()
         view.press("Enter")
         all_ids = page.locator("#results > li").evaluate_all(

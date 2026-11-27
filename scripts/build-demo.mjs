@@ -79,6 +79,7 @@ for (const [index, path] of modules.entries()) {
     for (const line of [
       'if (!syntheticCatalog) prepareRealQuickPath();\n',
       '  if (!syntheticCatalog) renderRealFilterSummary();\n',
+      "  if (!syntheticCatalog) $(\"status\").textContent = conciseRealResultStatus(visible.length, result, zeroFit, partialIntersection); else\n",
       "  if (!syntheticCatalog) $(\"mobile-favorites\").textContent = `${state.seeds.length} / 5 games · ${state.seeds.length ? \"Edit favorites\" : \"Choose favorites\"}`;\n",
       "    if (CATALOG_VERSION === \"multi-store-identity-candidate-54-2026-11-26\" && /unavailable catalog/i.test(error.message)) $(\"error-message\").textContent += \" Keep the original share link. To recover a historical 51-game basket, see the README local build instructions; do not rewrite its fragment.\";\n",
     ]) {
