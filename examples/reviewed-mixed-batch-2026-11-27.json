@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-58-2026-11-27",
+  "reviewedAt": "2026-11-27",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q119802718",
+        "reference": "https://www.wikidata.org/wiki/Q119802718",
+        "redirectQids": []
+      },
+      "name": "Peglin",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://gedig.itch.io/peglin",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1296610",
+          "url": "https://store.steampowered.com/app/1296610"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.RedNexusGamesInc.Peglin",
+          "url": "https://play.google.com/store/apps/details?id=com.RedNexusGamesInc.Peglin"
+        },
+        {
+          "store": "itch",
+          "id": "gedig.itch.io/peglin",
+          "url": "https://gedig.itch.io/peglin"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q62061666",
+        "reference": "https://www.wikidata.org/wiki/Q62061666",
+        "redirectQids": []
+      },
+      "name": "Baba Is You",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://hempuli.itch.io/baba",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "736260",
+          "url": "https://store.steampowered.com/app/736260"
+        },
+        {
+          "store": "googleplay",
+          "id": "org.hempuli.baba",
+          "url": "https://play.google.com/store/apps/details?id=org.hempuli.baba"
+        },
+        {
+          "store": "itch",
+          "id": "hempuli.itch.io/baba",
+          "url": "https://hempuli.itch.io/baba"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q66311564",
+        "reference": "https://www.wikidata.org/wiki/Q66311564",
+        "redirectQids": []
+      },
+      "name": "Dicey Dungeons",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://terrycavanagh.itch.io/dicey-dungeons",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "861540",
+          "url": "https://store.steampowered.com/app/861540"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.terrycavanaghgames.diceydungeons",
+          "url": "https://play.google.com/store/apps/details?id=com.terrycavanaghgames.diceydungeons"
+        },
+        {
+          "store": "itch",
+          "id": "terrycavanagh.itch.io/dicey-dungeons",
+          "url": "https://terrycavanagh.itch.io/dicey-dungeons"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q104762097",
+        "reference": "https://www.wikidata.org/wiki/Q104762097",
+        "redirectQids": []
+      },
+      "name": "A Dance of Fire and Ice",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://fizzd.itch.io/a-dance-of-fire-and-ice",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "977950",
+          "url": "https://store.steampowered.com/app/977950"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.fizzd.connectedworlds",
+          "url": "https://play.google.com/store/apps/details?id=com.fizzd.connectedworlds"
+        },
+        {
+          "store": "itch",
+          "id": "fizzd.itch.io/a-dance-of-fire-and-ice",
+          "url": "https://fizzd.itch.io/a-dance-of-fire-and-ice"
+        }
+      ]
+    }
+  ]
+}

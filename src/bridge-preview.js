@@ -106,7 +106,8 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   // positive platform receipts. Do not infer that policy for other fixtures.
   const positiveOnlyPlatforms = snapshotId.startsWith('wikidata-genre-pilot-') ||
     snapshotId.startsWith('multi-store-genre-pilot-') ||
-    snapshotId === 'multi-store-identity-candidate-54-2026-11-26';
+    snapshotId === 'multi-store-identity-candidate-54-2026-11-26' ||
+    snapshotId === 'multi-store-identity-candidate-58-2026-11-27';
   const states=new Map([...ids.values()].map(g=>[g.id,classify(g,constraints,exclusions,positiveOnlyPlatforms)]));
   const common={catalog_snapshot_id:snapshotId,route_method_version:VERSION,
     start_id:startId,end_id:endId,max_hops:maxHops,min_similarity:minSimilarity,
