@@ -161,10 +161,50 @@ def exercise(browser, base_url, engine, label, width, height):
                   and geometry["bottom"] <= geometry["viewport"]
                   and geometry["width"] > 0 and geometry["overflow"] <= 1,
                   details=geometry)
+            edit = probe.locator("#mobile-favorites")
+            expected = probe.locator("#seeds > li").count()
+            check(case, name + " responsive favorites entry keeps real editor reachable",
+                  edit.is_visible() == (width <= 800)
+                  and probe.locator("#basket-editor-return").is_visible() == (width <= 800)
+                  and probe.locator("#basket-editor").count() == 1
+                  and probe.evaluate("""narrow => {
+                      const before = (a,b) => !!(document.querySelector(a).compareDocumentPosition(
+                          document.querySelector(b)) & Node.DOCUMENT_POSITION_FOLLOWING);
+                      return narrow ? before('#mobile-favorites','#recommendations') &&
+                          before('#recommendations','#basket-editor') &&
+                          before('#basket-editor','#player-tools') :
+                          before('#basket-editor','#recommendations');
+                  }""", width <= 800)
+                  and (width > 800 or (
+                      f"{expected} / 5 games" in edit.inner_text()
+                      and edit.evaluate("""el => {
+                          const r = el.getBoundingClientRect();
+                          return r.height >= 44 && r.top >= 0 && r.bottom <= innerHeight;
+                      }"""))))
             probe.screenshot(path=str(ARTIFACTS / f"http-{engine}-{label}-{name}-first-screen.png"),
                              full_page=False, animations="disabled")
 
         initial_picker(page, "default")
+        if width <= 800:
+            probe = context.new_page()
+            probe.goto(base_url + "/", wait_until="load")
+            probe.wait_for_function("document.querySelectorAll('#seeds > li').length === 2")
+            original = probe.evaluate("location.hash")
+            edit = probe.locator("#mobile-favorites")
+            edit.focus()
+            edit.press("Enter")
+            check(case, "mobile Edit favorites opens the actual editor by keyboard without rewriting the share",
+                  probe.evaluate("document.activeElement.id") == "basket-title"
+                  and probe.locator("#seeds .remove").first.is_visible()
+                  and probe.evaluate("location.hash") == original)
+            back = probe.locator("#basket-editor-return")
+            back.focus()
+            back.press("Enter")
+            check(case, "mobile editor return focuses recommendations without changing selection",
+                  probe.evaluate("document.activeElement.id") == "recommendations"
+                  and probe.locator("#seeds > li").count() == 2
+                  and probe.evaluate("location.hash") == original)
+            probe.close()
         check(case, "primary actions stay with search; secondary shortcuts follow recommendations",
               page.locator(".intro-actions button").evaluate_all("nodes => nodes.map(n => n.id)") ==
                   ["intro-sample", "intro-browse"]

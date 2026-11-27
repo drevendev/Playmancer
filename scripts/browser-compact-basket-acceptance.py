@@ -81,12 +81,18 @@ try:
                 assert old["hash"] == new["hash"] and old["scrollY"] == new["scrollY"] == 0
                 assert new["overflow"] <= 1
                 if width <= 390:
-                    minimum = 50 if LABEL in ("quick-path", "first-screen") else 100
+                    minimum = 50 if LABEL in ("quick-path", "first-screen", "mobile-favorites") else 100
                     assert new["cardY"] < old["cardY"] - minimum, report[-1]
-                    if LABEL in ("quick-path", "first-screen"):
+                    if LABEL in ("quick-path", "first-screen", "mobile-favorites"):
                         assert new["actionY"] < old["actionY"] - minimum, report[-1]
                     assert new["cardScroll"] <= old["cardScroll"], report[-1]
-            if LABEL == "first-screen":
+                if LABEL == "mobile-favorites":
+                    if width == 390:
+                        assert 0 <= new["titleY"] < 844 and new["actionBottom"] <= 844, report[-1]
+                    if width == 1280:
+                        assert abs(new["cardY"] - old["cardY"]) <= 1, report[-1]
+                        assert abs(new["actionY"] - old["actionY"]) <= 1, report[-1]
+            if LABEL in ("first-screen", "mobile-favorites"):
                 # Unmodified default entry: capture actual first card/title/action
                 # without focusing or scrolling anything before the measurement.
                 defaults = []
@@ -105,6 +111,69 @@ try:
                 if width <= 390:
                     assert new["cardY"] < old["cardY"] - 50, report[-1]
                     assert new["actionY"] < old["actionY"] - 50, report[-1]
+                if LABEL == "mobile-favorites":
+                    if width == 390:
+                        assert 0 <= new["titleY"] < 844 and new["actionBottom"] <= 844, report[-1]
+                    if width == 1280:
+                        assert abs(new["cardY"] - old["cardY"]) <= 1, report[-1]
+                        assert abs(new["actionY"] - old["actionY"]) <= 1, report[-1]
+                    if width <= 390:
+                        probe = ctx.new_page()
+                        probe.goto(after + "#" + five)
+                        probe.wait_for_function("document.querySelectorAll('#seeds > li').length === 5")
+                        original = probe.evaluate("location.hash")
+                        edit = probe.locator("#mobile-favorites")
+                        assert "5 / 5 games" in edit.inner_text()
+                        edit.focus()
+                        edit.press("Enter")
+                        assert probe.evaluate("document.activeElement.id") == "basket-title"
+                        options = probe.locator("#seeds .seed-options > summary").first
+                        options.focus()
+                        options.press("Enter")
+                        weight = probe.locator("#seeds input[type=range]").first
+                        assert weight.is_visible()
+                        old_weight = int(weight.input_value())
+                        weight.focus()
+                        weight.press("ArrowRight")
+                        assert int(weight.input_value()) == old_weight + 1
+                        weight.press("ArrowLeft")
+                        assert probe.evaluate("location.hash") == original
+                        back = probe.locator("#basket-editor-return")
+                        back.focus()
+                        back.press("Enter")
+                        assert probe.evaluate("document.activeElement.id") == "recommendations"
+                        assert probe.evaluate("location.hash") == original
+                        # A focused native weight control remains the same node when
+                        # the responsive editor moves between desktop and mobile.
+                        weight.focus()
+                        probe.set_viewport_size({"width": 1280, "height": 844})
+                        probe.wait_for_function("document.querySelector('#mobile-favorites').hidden")
+                        assert weight.evaluate("n => n === document.activeElement")
+                        probe.set_viewport_size({"width": width, "height": 844})
+                        probe.wait_for_function("!document.querySelector('#mobile-favorites').hidden")
+                        assert weight.evaluate("n => n === document.activeElement")
+                        assert probe.evaluate("location.hash") == original
+                        probe.locator("#clear").click()
+                        empty = probe.evaluate("location.hash")
+                        probe.close()
+                        probe = ctx.new_page()
+                        probe.goto(after + empty)
+                        edit = probe.locator("#mobile-favorites")
+                        probe.wait_for_function("document.querySelector('#mobile-favorites').textContent.includes('0 / 5')")
+                        assert probe.locator("#results > li").count() == 0
+                        assert probe.locator("#empty").is_visible()
+                        assert probe.evaluate("scrollY") == 0
+                        assert probe.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+                        probe.screenshot(path=str(OUT / f"{LABEL}-{width}-empty.png"), animations="disabled")
+                        edit.focus()
+                        edit.press("Enter")
+                        assert probe.evaluate("document.activeElement.id") == "search"
+                        assert probe.evaluate("location.hash") == empty
+                        probe.locator("#search").fill("Stardew Valley")
+                        probe.locator("#search").press("Enter")
+                        assert probe.locator("#seeds > li").count() == 1
+                        assert "1 / 5 games" in edit.inner_text()
+                        probe.close()
             if LABEL == "quick-path":
                 probe = ctx.new_page()
                 probe.goto(after + "#" + two)

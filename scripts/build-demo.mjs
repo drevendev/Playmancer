@@ -68,13 +68,18 @@ for (const [index, path] of modules.entries()) {
   // their strict <95 kB self-contained bundle, keeping an inert call site.
   if (path === "src/demo-ui.js" && effectiveSnapshot.kind === "synthetic") {
     // The real-only quick path is not emitted into the fixed-size fictional build.
-    const quickStart = source.indexOf("// Real quick-path layout: secondary evidence and guidance remain in tools.");
-    const quickEnd = source.indexOf("let state;", quickStart);
-    if (quickStart < 0 || quickEnd <= quickStart) throw new Error("Unexpected real quick-path boundary");
+    const mobileStartMarker = "// Narrow screens show a single selection count/action above results. Move the";
+    const quickStart = source.indexOf(mobileStartMarker);
+    const quickLayout = source.indexOf("// Real quick-path layout: secondary evidence and guidance remain in tools.", quickStart);
+    const quickEnd = source.indexOf("let state;", quickLayout);
+    if (source.split(mobileStartMarker).length !== 2 || quickStart < 0 ||
+        quickLayout <= quickStart || quickEnd <= quickLayout)
+      throw new Error("Unexpected real quick-path boundary");
     source = source.slice(0, quickStart) + source.slice(quickEnd);
     for (const line of [
       'if (!syntheticCatalog) prepareRealQuickPath();\n',
       '  if (!syntheticCatalog) renderRealFilterSummary();\n',
+      "  if (!syntheticCatalog) $(\"mobile-favorites\").textContent = `${state.seeds.length} / 5 games · ${state.seeds.length ? \"Edit favorites\" : \"Choose favorites\"}`;\n",
       "    if (CATALOG_VERSION === \"multi-store-identity-candidate-54-2026-11-26\" && /unavailable catalog/i.test(error.message)) $(\"error-message\").textContent += \" Keep the original share link. To recover a historical 51-game basket, see the README local build instructions; do not rewrite its fragment.\";\n",
     ]) {
       if (source.split(line).length !== 2) throw new Error("Unexpected real quick-path call");

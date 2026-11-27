@@ -335,6 +335,48 @@ function showCatalogIdentity() {
   document.querySelector("#bridge-lab .eyebrow").textContent = syntheticCatalog
     ? "Synthetic research · separate route experiment" : "Catalog evidence · separate route experiment";
 }
+// Narrow screens show a single selection count/action above results. Move the
+// existing editor (not a cloned basket) below the results so reading and Tab
+// order agree. Desktop retains its two-column editor; layout is not share state.
+function prepareMobileFavoritesEntry() {
+  const editor = document.querySelector('aside[aria-labelledby="basket-title"]');
+  const results = $("recommendations");
+  editor.id = "basket-editor";
+  const edit = element("button", undefined);
+  edit.id = "mobile-favorites";
+  edit.type = "button";
+  edit.hidden = true;
+  editor.before(edit);
+  const back = element("button", "Back to recommendations");
+  back.id = "basket-editor-return";
+  back.type = "button";
+  back.hidden = true;
+  editor.append(back);
+  const navigate = target => {
+    target.scrollIntoView();
+    target.focus({preventScroll:true});
+  };
+  edit.addEventListener("click", () => navigate(state.seeds.length ? $("basket-title") : $("search")));
+  back.addEventListener("click", () => navigate(results));
+  const narrow = window.matchMedia("(max-width: 800px)");
+  const sync = () => {
+    const focused = document.activeElement;
+    const inEditor = editor.contains(focused);
+    if (narrow.matches) {
+      if (editor.previousElementSibling !== results) results.after(editor);
+    } else if (editor.previousElementSibling !== edit) {
+      edit.after(editor);
+    }
+    edit.hidden = back.hidden = !narrow.matches;
+    // Reparenting can blur a focused control. Preserve it across a breakpoint,
+    // except a mobile-only control that has just become hidden.
+    if (!narrow.matches && focused === edit) $("basket-title").focus({preventScroll:true});
+    else if (!narrow.matches && focused === back) results.focus({preventScroll:true});
+    else if (inEditor && document.activeElement !== focused) focused.focus({preventScroll:true});
+  };
+  narrow.addEventListener("change", sync);
+  sync();
+}
 // Real quick-path layout: secondary evidence and guidance remain in tools.
 function prepareRealQuickPath() {
   document.querySelector(".wrap").classList.add("real-quick-path");
@@ -366,6 +408,7 @@ function prepareRealQuickPath() {
   filters.hidden = true;
   filters.addEventListener("click", () => $("jump-tools").click());
   $("status").before(filters);
+  prepareMobileFavoritesEntry();
 }
 function renderRealFilterSummary() {
   const labels = [];
@@ -1021,6 +1064,7 @@ function drawResults() {
 }
 function render(rebuildSeeds) {
   $("seed-count").textContent = `${state.seeds.length} / 5 games`;
+  if (!syntheticCatalog) $("mobile-favorites").textContent = `${state.seeds.length} / 5 games · ${state.seeds.length ? "Edit favorites" : "Choose favorites"}`;
   $("mode").value = state.mode; $("platform").value = state.platform; $("coop").checked = state.coopOnly;
   $("lambda").value = String(state.lambda); $("lambda-value").value = String(state.lambda);
   $("blend-control").hidden = state.mode !== "blend";

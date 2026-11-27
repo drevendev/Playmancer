@@ -6,6 +6,9 @@ Choose one to five favorite profiles, set weights and hard filters, and see why
 recommendations fit each preference or require a compromise. Favorites have
 **Move up** and **Move down** keyboard-accessible buttons: reorder them without
 removing them or losing weights, filters, exclusions or their share-link order.
+On narrow real-player screens, the selected-count **Edit favorites** button jumps
+straight to the full editor below recommendations. **Back to recommendations**
+returns focus without changing the basket. Desktop keeps the side-by-side editor.
 The first screen offers
 **Browse games** (preserving favorites), **Try the sample basket**, or **Start empty**
 (clearing starter favorites without silently changing hard filters). With no
