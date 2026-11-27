@@ -138,11 +138,12 @@ def exercise(browser, base_url, engine, label, width, height):
                   verified_same_origin_worker(context.request, base_url))
         page.wait_for_function("document.querySelectorAll('#seeds > li').length >= 2")
         catalog_id = page.locator('meta[name="playmancer-catalog"]').get_attribute("content")
-        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "58"))
+        expected_count = int(os.environ.get("PLAYMANCER_EXPECTED_CATALOG_COUNT", "62"))
         expected_catalog = {35: "multi-store-genre-pilot-35-2026-11-24",
                             51: "multi-store-genre-pilot-51-2026-11-25",
                             54: "multi-store-identity-candidate-54-2026-11-26",
-                            58: "multi-store-identity-candidate-58-2026-11-27"}[expected_count]
+                            58: "multi-store-identity-candidate-58-2026-11-27",
+                            62: "multi-store-identity-candidate-62-2026-11-27"}[expected_count]
         is_real_pilot = catalog_id == expected_catalog
         check(case, "real catalog sample and honest data provenance",
               is_real_pilot and page.locator("#seeds > li").count() >= 2
@@ -234,9 +235,10 @@ def exercise(browser, base_url, engine, label, width, height):
             "docs/REAL_EXPANSION_30.md",
             "docs/REAL_EXPANSION_31.md",
             "examples/reviewed-steam-batch-2026-11-24.json",
-            *(("docs/REAL_EXPANSION_51.md", "examples/reviewed-steam-batch-2026-11-25.json") if expected_count in (51, 54, 58) else ()),
-            *(("docs/REVIEWED_MIXED_54.md", "examples/reviewed-mixed-batch-2026-11-26.json") if expected_count in (54, 58) else ()),
-            *(("docs/REVIEWED_MIXED_58.md", "examples/reviewed-mixed-batch-2026-11-27.json") if expected_count == 58 else ()),
+            *(("docs/REAL_EXPANSION_51.md", "examples/reviewed-steam-batch-2026-11-25.json") if expected_count in (51, 54, 58, 62) else ()),
+            *(("docs/REVIEWED_MIXED_54.md", "examples/reviewed-mixed-batch-2026-11-26.json") if expected_count in (54, 58, 62) else ()),
+            *(("docs/REVIEWED_MIXED_58.md", "examples/reviewed-mixed-batch-2026-11-27.json") if expected_count in (58, 62) else ()),
+            *(("docs/REVIEWED_MIXED_62.md", "examples/reviewed-mixed-batch-2026-11-27b.json") if expected_count == 62 else ()),
             "docs/STOREFRONTS.md",
         )
         # A published player's receipts must not drift when master advances.
@@ -570,7 +572,7 @@ def exercise(browser, base_url, engine, label, width, height):
         # Verify each appended identity on the same default release, by exact store URL.
         late_hash = page.evaluate("location.hash")
         for name, app in (("Half-Life 2", 220), ("Portal", 400), ("Left 4 Dead", 500), ("Left 4 Dead 2", 550),
-                          *([("Hades II", 1145350), ("Deep Rock Galactic", 548430)] if expected_count in (51, 54, 58) else [])):
+                          *([("Hades II", 1145350), ("Deep Rock Galactic", 548430)] if expected_count in (51, 54, 58, 62) else [])):
             url = f"https://store.steampowered.com/app/{app}"
             page.locator("#search").fill(url)
             row = page.locator("#search-results > li")
@@ -764,7 +766,7 @@ def exercise(browser, base_url, engine, label, width, height):
         check(case, "Tab reaches the first real-catalog search result before browse actions",
               page.locator("#search-results button").first.evaluate(
                   "node => document.activeElement === node"), {"before": before, "after": after})
-        if expected_count in (51, 54, 58):
+        if expected_count in (51, 54, 58, 62):
             # Tab through actual links/buttons, including the later row in the scrollport.
             target = page.get_by_role("button", name="Add Hades II", exact=True)
             steps = 0
@@ -812,9 +814,9 @@ def exercise(browser, base_url, engine, label, width, height):
               and page.evaluate("location.hash") == hash_before_search_paging)
         page.locator("#search").fill("Hades")
         check(case, "typing a new query resets pagination and preserves distinct title matches",
-              page.locator("#search-results li > button").count() == (2 if expected_count in (51, 54, 58) else 1)
+              page.locator("#search-results li > button").count() == (2 if expected_count in (51, 54, 58, 62) else 1)
               and page.get_by_role("button", name="Add Hades", exact=True).count() == 1
-              and (expected_count not in (51, 54, 58) or page.get_by_role("button", name="Add Hades II", exact=True).count() == 1))
+              and (expected_count not in (51, 54, 58, 62) or page.get_by_role("button", name="Add Hades II", exact=True).count() == 1))
         page.locator("#search").fill("e")
         choices = page.locator("#search-results button:not([disabled])")
         check(case, "search exposes multiple keyboard-navigable suggestions",
