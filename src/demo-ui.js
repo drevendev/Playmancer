@@ -458,6 +458,7 @@ function readLocation() {
     state = { ...initialState(), seeds: [] };
     $("error-message").textContent = error.message + " This basket was not restored.";
     if (CATALOG_VERSION === "multi-store-identity-candidate-54-2026-11-26" && /unavailable catalog/i.test(error.message)) $("error-message").textContent += " Keep the original share link. To recover a historical 51-game basket, see the README local build instructions; do not rewrite its fragment.";
+    if (CATALOG_VERSION === "multi-store-identity-candidate-58-2026-11-27" && /unavailable catalog/i.test(error.message)) $("error-message").textContent += " Keep the original share link. To recover a historical 54-game basket, see the README local build instructions; do not rewrite its fragment.";
     $("error").hidden = false;
     invalidLink = true;
   }

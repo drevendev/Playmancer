@@ -82,6 +82,7 @@ for (const [index, path] of modules.entries()) {
       "  if (!syntheticCatalog) $(\"status\").textContent = conciseRealResultStatus(visible.length, result, zeroFit, partialIntersection); else\n",
       "  if (!syntheticCatalog) $(\"mobile-favorites\").textContent = `${state.seeds.length} / 5 games · ${state.seeds.length ? \"Edit favorites\" : \"Choose favorites\"}`;\n",
       "    if (CATALOG_VERSION === \"multi-store-identity-candidate-54-2026-11-26\" && /unavailable catalog/i.test(error.message)) $(\"error-message\").textContent += \" Keep the original share link. To recover a historical 51-game basket, see the README local build instructions; do not rewrite its fragment.\";\n",
+      "    if (CATALOG_VERSION === \"multi-store-identity-candidate-58-2026-11-27\" && /unavailable catalog/i.test(error.message)) $(\"error-message\").textContent += \" Keep the original share link. To recover a historical 54-game basket, see the README local build instructions; do not rewrite its fragment.\";\n",
     ]) {
       if (source.split(line).length !== 2) throw new Error("Unexpected real quick-path call");
       source = source.replace(line, "");
