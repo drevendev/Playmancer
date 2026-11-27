@@ -216,11 +216,16 @@ jobs:
         env:
           PLAYMANCER_REVISION: 4952aa102626aff8a3615c3945ac38e04bdb5e05
         run: npm run build
+      - name: Build current UI on identical historical 54-game geometry input
+        run: |
+          node scripts/build-release.mjs _site-geometry54 --candidate-54
+          python scripts/release-preflight.py _site-geometry54 --candidate-54
       - name: Measure first-screen navigation with identical 54-game inputs
         env:
           HOME: /root
           PLAYMANCER_GEOMETRY_BASE: 4952aa102626aff8a3615c3945ac38e04bdb5e05
           PLAYMANCER_GEOMETRY_LABEL: first-screen
+          PLAYMANCER_GEOMETRY_SITE: _site-geometry54
         run: python scripts/browser-compact-basket-acceptance.py .first-screen-baseline/_site
       - name: Check out exact public 54-game favorites-entry baseline
         uses: actions/checkout@v4
@@ -238,6 +243,7 @@ jobs:
           HOME: /root
           PLAYMANCER_GEOMETRY_BASE: 77f5653509bb69d753fee4a7fa8ddb2bbb530897
           PLAYMANCER_GEOMETRY_LABEL: mobile-favorites
+          PLAYMANCER_GEOMETRY_SITE: _site-geometry54
         run: python scripts/browser-compact-basket-acceptance.py .favorites-entry-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}

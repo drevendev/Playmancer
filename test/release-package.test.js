@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { linkObservationExplorer } from '../scripts/build-observations.mjs';
-import { prepareObservations, OBSERVATIONS_54_SHA } from '../src/observations.js';
+import { prepareObservations, OBSERVATIONS_58_SHA } from '../src/observations.js';
 import { addBasketLibrary, BASKET_LIBRARY_CSS } from '../scripts/build-basket-library.mjs';
 import { appendToSealedStylesheet } from '../scripts/stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -15,7 +15,7 @@ test('production adds explicit tools without changing player scoring/worker byte
   t.after(() => rm(dir, { recursive:true, force:true }));
   const base = join(dir,'base'), release = join(dir,'release');
   const run = args => execFileSync(process.execPath,args,{cwd:root,stdio:'pipe'});
-  run(['scripts/build-demo.mjs',base,'--catalog','examples/catalog.multistore-54.real.json']);
+  run(['scripts/build-demo.mjs',base,'--catalog','examples/catalog.multistore-58.real.json']);
   run(['scripts/build-release.mjs',release]);
   assert.deepEqual((await readdir(release)).sort(), ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css']);
   for (const file of ['.nojekyll','bridge-worker.js'])
@@ -27,9 +27,9 @@ test('production adds explicit tools without changing player scoring/worker byte
     appendToSealedStylesheet(baseCss, BASKET_LIBRARY_CSS));
   assert.throws(() => appendToSealedStylesheet(baseCss.slice(0,150), BASKET_LIBRARY_CSS),
     /Missing or corrupt stylesheet seal/);
-  const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-54.real.json'),'utf8'));
-  const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-30.catalog54.v1.json'),'utf8'));
-  const pinnedPositiveFacts = prepareObservations(catalog, observations, OBSERVATIONS_54_SHA);
+  const catalog = JSON.parse(await readFile(join(root,'examples/catalog.multistore-58.real.json'),'utf8'));
+  const observations = JSON.parse(await readFile(join(root,'examples/semantic-tags-reviewed-30.catalog58.v1.json'),'utf8'));
+  const pinnedPositiveFacts = prepareObservations(catalog, observations, OBSERVATIONS_58_SHA);
   assert.equal(await readFile(join(release,'index.html'),'utf8'),
     await addBasketLibrary(root, linkObservationExplorer(baseIndex, pinnedPositiveFacts)));
   const files = ['.nojekyll','bridge-worker.js','index.html','observations.html','player.css'];
@@ -38,6 +38,15 @@ test('production adds explicit tools without changing player scoring/worker byte
   for (const [i, file] of files.entries())
     assert.deepEqual(await readFile(join(release,file)), firstBuild[i],
       `${file} must rebuild deterministically`);
+  // The public default must match the explicitly pinned 58 release byte-for-byte.
+  const explicit = join(dir,'explicit58'), historical = join(dir,'historical54');
+  run(['scripts/build-release.mjs',explicit,'--candidate-58']);
+  for (const file of files) assert.deepEqual(await readFile(join(release,file)), await readFile(join(explicit,file)), file);
+  run(['scripts/build-release.mjs',historical,'--candidate-54']);
+  const old = spawnSync('python3',['scripts/release-preflight.py',historical,'--candidate-54'],{cwd:root,encoding:'utf8'});
+  assert.equal(old.status,0,old.stdout+old.stderr);
+  assert.notEqual(spawnSync('python3',['scripts/release-preflight.py',historical],{cwd:root,encoding:'utf8'}).status,0,
+    'historical 54 cannot pass the new default release gate');
   const first = await readFile(join(release,'observations.html'),'utf8');
   const check = () => spawnSync('python3',['scripts/release-preflight.py',release],{cwd:root,encoding:'utf8'});
   const valid = check(); assert.equal(valid.status,0,valid.stdout+valid.stderr);

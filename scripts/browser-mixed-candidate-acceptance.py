@@ -22,8 +22,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-mixed-") as directory:
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs",
                     "examples/catalog.multistore-51.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-54.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-release.mjs",str(site)],cwd=ROOT,check=True)
-    subprocess.run(["python3","scripts/release-preflight.py",str(site)],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-54"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-54"],cwd=ROOT,check=True)
     historical = work / "historical51"
     subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-51"],cwd=ROOT,check=True)
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-51"],cwd=ROOT,check=True)

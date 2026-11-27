@@ -130,6 +130,7 @@ function renderCatalogReceipts() {
       ["Three reviewed mixed-store game receipts", "examples/reviewed-mixed-batch-2026-11-26.json"],
     ] : []),
     ...(CATALOG_VERSION === "multi-store-identity-candidate-58-2026-11-27" ? [
+      ["58-game mixed-store expansion receipts", "docs/REVIEWED_MIXED_58.md"],
       ["Four additional reviewed mixed-store receipts", "examples/reviewed-mixed-batch-2026-11-27.json"],
     ] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
