@@ -409,6 +409,14 @@ function prepareRealQuickPath() {
   filters.addEventListener("click", () => $("jump-tools").click());
   $("status").before(filters);
   prepareMobileFavoritesEntry();
+  const guide = element("p", "Ranked profiles have comparable recorded features and meet required filters. Uncertain profiles lack sufficient evidence. Excluded profiles include your favorites, hidden results and known filter failures. Zero demonstrated fit is exploratory, not a positive match; partial genre overlap is not a demonstrated whole-basket match. Missing recorded overlap does not prove unrelated gameplay.");
+  guide.id = "result-count-guide";
+  $("partition-list").before(guide);
+}
+function conciseRealResultStatus(shown, result, zeroFit, partialIntersection) {
+  return `${shown} of ${result.ranked.length} ranked shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded.` +
+    (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit (exploratory).` : "") +
+    (partialIntersection ? ` ${partialIntersection} lack recorded genre overlap with at least one favorite.` : "");
 }
 function renderRealFilterSummary() {
   const labels = [];
@@ -1014,6 +1022,7 @@ function drawResults() {
   const zeroFit = !syntheticCatalog ? visible.filter((item) => item.scores.arithmetic === 0).length : 0;
   const partialIntersection = !syntheticCatalog && state.mode === "intersection"
     ? visible.filter((item) => item.scores.intersection === 0 && item.scores.arithmetic > 0).length : 0;
+  if (!syntheticCatalog) $("status").textContent = conciseRealResultStatus(visible.length, result, zeroFit, partialIntersection); else
   $("status").textContent = `${visible.length} of ${result.ranked.length} ranked shown · ${result.uncertain.length} uncertain · ${result.excluded.length} excluded (including seeds and hidden results).` +
     (zeroFit ? ` ${zeroFit} shown with zero demonstrated basket fit; these are exploratory, not positive matches.` : "") +
     (partialIntersection ? ` ${partialIntersection} lack recorded genre overlap with at least one favorite; not demonstrated whole-basket matches.` : "");
