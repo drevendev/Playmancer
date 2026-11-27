@@ -147,6 +147,11 @@ select{min-width:0;max-width:100%;font-size:clamp(16px,.75rem,32px);overflow:hid
 .real-quick-path #status{margin:4px 0}
 .real-quick-path #active-ranking-filters{max-width:100%;min-height:45px;text-align:left;background:transparent;color:var(--accent);white-space:normal;overflow-wrap:anywhere}
 @media(max-width:800px){.real-quick-path aside[aria-labelledby="basket-title"]{padding:12px}.real-quick-path #basket-feedback{margin:4px 0}}
+/* A narrow real player keeps the selection entry compact, not the whole editor.
+   Native document order is synchronized with the same responsive breakpoint. */
+#mobile-favorites,#basket-editor-return{min-height:45px;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+#mobile-favorites{width:100%;background:transparent;color:var(--accent)}
+#basket-editor-return{margin:6px 0;background:transparent;color:var(--accent)}
 /* Real-player section navigation is secondary, never above recommendations. */
 .real-quick-path #quick-nav{position:static;margin-top:14px}
 .real-quick-path #secondary-player-actions{margin:8px 0}

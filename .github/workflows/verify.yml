@@ -213,6 +213,23 @@ jobs:
           PLAYMANCER_GEOMETRY_BASE: 4952aa102626aff8a3615c3945ac38e04bdb5e05
           PLAYMANCER_GEOMETRY_LABEL: first-screen
         run: python scripts/browser-compact-basket-acceptance.py .first-screen-baseline/_site
+      - name: Check out exact public 54-game favorites-entry baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 77f5653509bb69d753fee4a7fa8ddb2bbb530897
+          path: .favorites-entry-baseline
+          persist-credentials: false
+      - name: Build exact public favorites-entry baseline
+        working-directory: .favorites-entry-baseline
+        env:
+          PLAYMANCER_REVISION: 77f5653509bb69d753fee4a7fa8ddb2bbb530897
+        run: npm run build
+      - name: Measure mobile favorites entry and exercise real editor with identical inputs
+        env:
+          HOME: /root
+          PLAYMANCER_GEOMETRY_BASE: 77f5653509bb69d753fee4a7fa8ddb2bbb530897
+          PLAYMANCER_GEOMETRY_LABEL: mobile-favorites
+        run: python scripts/browser-compact-basket-acceptance.py .favorites-entry-baseline/_site
       - name: Compare historical 35-game Firefox focus in the same image
         if: ${{ !cancelled() }}
         env:
@@ -239,6 +256,8 @@ jobs:
             .test-artifacts/quick-path-geometry.json
             .test-artifacts/first-screen-*.png
             .test-artifacts/first-screen-geometry.json
+            .test-artifacts/mobile-favorites-*.png
+            .test-artifacts/mobile-favorites-geometry.json
             .test-artifacts/focus35/http-cross-browser.json
             .test-artifacts/focus35/http-*.png
             .test-artifacts/observations-*.png
