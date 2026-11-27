@@ -77,6 +77,13 @@ function classify(game, {platform, coopOnly}, exclusions, positiveOnlyPlatforms)
   if (coopOnly && game.coop === null) unknown = true;
   return unknown ? 'unknown' : 'pass';
 }
+export function reviewedPilot(snapshotId) {
+  return snapshotId.startsWith('wikidata-genre-pilot-') ||
+    snapshotId.startsWith('multi-store-genre-pilot-') ||
+    snapshotId === 'multi-store-identity-candidate-54-2026-11-26' ||
+    snapshotId === 'multi-store-identity-candidate-58-2026-11-27' ||
+    snapshotId === 'multi-store-identity-candidate-62-2026-11-27';
+}
 export function buildBridgePreview({catalog, snapshotId, startId, endId,
     platform='any',coopOnly=false,excluded=[],maxHops=4,minSimilarity=.1}={}) {
   requireId(startId,'startId');requireId(endId,'endId');
@@ -104,11 +111,7 @@ export function buildBridgePreview({catalog, snapshotId, startId, endId,
   const constraints={platform,coopOnly};
   // Only the declared CC0/owner real-pilot snapshots use non-exhaustive
   // positive platform receipts. Do not infer that policy for other fixtures.
-  const positiveOnlyPlatforms = snapshotId.startsWith('wikidata-genre-pilot-') ||
-    snapshotId.startsWith('multi-store-genre-pilot-') ||
-    snapshotId === 'multi-store-identity-candidate-54-2026-11-26' ||
-    snapshotId === 'multi-store-identity-candidate-58-2026-11-27' ||
-    snapshotId === 'multi-store-identity-candidate-62-2026-11-27';
+  const positiveOnlyPlatforms = reviewedPilot(snapshotId);
   const states=new Map([...ids.values()].map(g=>[g.id,classify(g,constraints,exclusions,positiveOnlyPlatforms)]));
   const common={catalog_snapshot_id:snapshotId,route_method_version:VERSION,
     start_id:startId,end_id:endId,max_hops:maxHops,min_similarity:minSimilarity,
