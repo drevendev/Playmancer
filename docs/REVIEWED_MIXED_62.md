@@ -1,6 +1,6 @@
 # Reviewed mixed-store candidate: 62 games (2026-11-27)
 
-Refs #268. Four distinct base games and seven official storefront links added to the immutable 58-profile catalog (blob 4b53da90a07cdefc57997a3233d0296c7f593298). The historical 62-game release remains reproducible; the current default selects 66.
+Refs #268. Four distinct base games and seven official storefront links added to the immutable 58-profile catalog (blob 4b53da90a07cdefc57997a3233d0296c7f593298). The historical 62-game release remains reproducible using the explicit flag below.
 
 | Game | Identity | Official storefronts |
 | --- | --- | --- |
