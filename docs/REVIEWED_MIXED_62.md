@@ -1,6 +1,6 @@
 # Reviewed mixed-store candidate: 62 games (2026-11-27)
 
-Refs #268. Four distinct base games and seven official storefront links added to the immutable 58-profile catalog (blob 4b53da90a07cdefc57997a3233d0296c7f593298). The default release configuration selects 62; public delivery requires exact hosted verification.
+Refs #268. Four distinct base games and seven official storefront links added to the immutable 58-profile catalog (blob 4b53da90a07cdefc57997a3233d0296c7f593298). The historical 62-game release remains reproducible; the current default selects 66.
 
 | Game | Identity | Official storefronts |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-58.real.json 
 node scripts/build-demo.mjs /tmp/playmancer-62 --catalog /tmp/playmancer-62.json
 ```
 
-62 unique profiles, 61 linked; 54 Steam, 11 Google Play, 12 itch (overlap). The full default release binds the exact catalog blob `9bb65478b0b8cc4853fd6f9f252be293bff44b47` and observation blob `1d02909f335531ede09db8cd1665c12cf6f0f404` without changing any of the 30 reviewed profiles, 30 receipts or 122 recorded facts. All four added profiles have unknown gameplay observations. Build and validate the five-file release:
+62 unique profiles, 61 linked; 54 Steam, 11 Google Play, 12 itch (overlap). The full historical release binds the exact catalog blob `9bb65478b0b8cc4853fd6f9f252be293bff44b47` and observation blob `1d02909f335531ede09db8cd1665c12cf6f0f404` without changing any of the 30 reviewed profiles, 30 receipts or 122 recorded facts. All four added profiles have unknown gameplay observations. Build and validate the five-file release:
 
 ```sh
 node scripts/build-release.mjs _site-62 --candidate-62

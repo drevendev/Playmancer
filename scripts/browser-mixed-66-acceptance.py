@@ -1,5 +1,7 @@
-"""66-profile full release candidate: exact evidence binding, search, receipts and historical replay."""
+"""66-profile full release: exact local or hosted evidence binding and historical replay."""
 import json
+import os
+from hosted_validation import validate_hosted_identity
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -25,9 +27,17 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-62"],cwd=ROOT,check=True)
     rows = [(row, BATCH.name) for row in json.loads(BATCH.read_text())["games"]]
     assert len(rows) == 4 and sum(len(row["stores"]) for row, _ in rows) == 8
+    new_rows = rows[:]
+    for name in ("reviewed-mixed-batch-2026-11-27b.json", "reviewed-mixed-batch-2026-11-27.json", "reviewed-mixed-batch-2026-11-26.json"):
+        rows += [(row, name) for row in json.loads((ROOT / "examples" / name).read_text())["games"]]
+    assert len(rows) == 15 and sum(len(row["stores"]) for row, _ in rows) == 34
     server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(work)))
     threading.Thread(target=server.serve_forever,daemon=True).start()
-    url = f"http://127.0.0.1:{server.server_port}/site/"
+    hosted = os.environ.get("PLAYMANCER_HOSTED_URL")
+    expected_sha = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+    if hosted or expected_sha:
+        validate_hosted_identity(hosted, expected_sha)
+    url = hosted.rstrip("/") + "/" if hosted else f"http://127.0.0.1:{server.server_port}/site/"
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
@@ -47,6 +57,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 # The rejection is a fresh document request, not a fragment transition.
                 rejected = page.goto(url + old_hash)
                 assert rejected is not None and rejected.ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.locator("#error").is_visible()
                 assert "unavailable catalog" in page.locator("#error").inner_text().lower()
                 assert page.locator("#seeds > li").count() == 0
@@ -68,11 +80,15 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
                 assert page.goto(url).ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-66-2026-11-28"
                 assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "99cfc494fb1f5e6bffd5b57476d1259358f7651c"
                 explore = context.new_page()
                 assert explore.goto(url + "observations.html").ok
+                if hosted:
+                    assert explore.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert explore.locator('meta[name="playmancer-observations"]').get_attribute("content") == "99cfc494fb1f5e6bffd5b57476d1259358f7651c"
                 # The real explorer switches to bounded pages above 64 profiles.
                 expected_ids = {game["id"] for game in json.loads(snapshot.read_text())["games"]}
@@ -100,7 +116,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 for side in ("left", "right"):
                     assert explore.locator(f"#{side}-filter").is_visible()
                     assert explore.locator(f"#{side} option").count() <= 25
-                for row, _ in rows:
+                for row, _ in new_rows:
                     explore.locator("#query").fill(row["name"])
                     card = explore.locator(".game-card")
                     assert card.count() == 1 and row["name"] in card.inner_text()
@@ -153,6 +169,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                     evidence.locator("summary").click()
                     assert "no reviewed genre source" in evidence.inner_text()
                     assert "Catalog mechanics: unknown. Co-op: unknown." in evidence.inner_text()
+                    assert "No separately reviewed gameplay facts" in evidence.inner_text()
                     links = evidence.locator("a").evaluate_all("(nodes)=>nodes.map(n=>n.href)")
                     assert row["identity"]["reference"] in links and row["releaseEvidence"] in links
                     assert any(h.endswith("/examples/" + receipt_name) for h in links)
@@ -166,13 +183,15 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 share = page.evaluate("location.hash")
                 assert share != original_hash
                 page.reload()
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert "Vampire Survivors" in page.locator("#seeds").inner_text()
                 assert page.evaluate("location.hash") == share
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-66-{width}.png"),full_page=True)
                 context.close()
-                print(f"66-profile LOCAL_HTTP candidate: 8 exact store URLs, title, scope, evidence and replay PASS at {width}px")
+                print(f"66-profile {'HOSTED' if hosted else 'LOCAL_HTTP'} bound release: 34 exact store URLs, title, scope, evidence and replay PASS at {width}px")
             browser.close()
     finally:
         server.shutdown()
