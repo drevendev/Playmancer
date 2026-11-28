@@ -116,6 +116,13 @@ jobs:
           node scripts/build-release.mjs /tmp/playmancer-release66 --candidate-66
           python scripts/release-preflight.py /tmp/playmancer-release66 --candidate-66
           python scripts/browser-observations-acceptance.py --site /tmp/playmancer-release66
+      - name: Exercise Gameplay Facts on the exact 70-game release candidate
+        env:
+          PLAYMANCER_EXPECTED_CATALOG_COUNT: "70"
+        run: |
+          node scripts/build-release.mjs /tmp/playmancer-release70 --candidate-70
+          python scripts/release-preflight.py /tmp/playmancer-release70 --candidate-70
+          python scripts/browser-observations-acceptance.py --site /tmp/playmancer-release70
       - name: Exercise 1,000-profile synthetic catalog discovery and share restoration
         run: python scripts/browser-large-catalog-acceptance.py
       - name: Exercise bounded Gameplay Facts on the validated sparse release fixture

@@ -1,5 +1,7 @@
-"""70-profile unpublished candidate: exact local search, receipts and historical replay."""
+"""70-profile full release: exact local or hosted evidence binding and historical replay."""
 import json
+import os
+from hosted_validation import validate_hosted_identity
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -18,15 +20,24 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     site = work / "site"
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs","examples/catalog.multistore-66.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-70.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-demo.mjs",str(site),"--catalog",str(snapshot)],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-70"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-70"],cwd=ROOT,check=True)
     historical = work / "historical66"
     subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-66"],cwd=ROOT,check=True)
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-66"],cwd=ROOT,check=True)
     rows = [(row, BATCH.name) for row in json.loads(BATCH.read_text())["games"]]
     assert len(rows) == 4 and sum(len(row["stores"]) for row, _ in rows) == 4
+    new_rows = rows[:]
+    for name in ("reviewed-mixed-batch-2026-11-28.json", "reviewed-mixed-batch-2026-11-27b.json", "reviewed-mixed-batch-2026-11-27.json", "reviewed-mixed-batch-2026-11-26.json"):
+        rows += [(row, name) for row in json.loads((ROOT / "examples" / name).read_text())["games"]]
+    assert len(rows) == 19 and sum(len(row["stores"]) for row, _ in rows) == 38
     server = ThreadingHTTPServer(("127.0.0.1",0),partial(SimpleHTTPRequestHandler,directory=str(work)))
     threading.Thread(target=server.serve_forever,daemon=True).start()
-    url = f"http://127.0.0.1:{server.server_port}/site/"
+    hosted = os.environ.get("PLAYMANCER_HOSTED_URL")
+    expected_sha = os.environ.get("PLAYMANCER_EXPECTED_SHA")
+    if hosted or expected_sha:
+        validate_hosted_identity(hosted, expected_sha)
+    url = hosted.rstrip("/") + "/" if hosted else f"http://127.0.0.1:{server.server_port}/site/"
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch()
@@ -46,6 +57,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 # The rejection is a fresh document request, not a fragment transition.
                 rejected = page.goto(url + old_hash)
                 assert rejected is not None and rejected.ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.locator("#error").is_visible()
                 assert "unavailable catalog" in page.locator("#error").inner_text().lower()
                 assert page.locator("#seeds > li").count() == 0
@@ -67,9 +80,62 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 page.on("pageerror",lambda e: errors.append(str(e)))
                 page.on("request",lambda r: external.append(r.url) if not r.url.startswith(url) else None)
                 assert page.goto(url).ok
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-70-2026-11-28"
-                assert page.locator('#observation-explorer-entry').count() == 0
+                assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "bf459c7e6b9c417d4a9c91e91142f7b474a04ad0"
+                explore = context.new_page()
+                assert explore.goto(url + "observations.html").ok
+                if hosted:
+                    assert explore.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
+                assert explore.locator('meta[name="playmancer-observations"]').get_attribute("content") == "bf459c7e6b9c417d4a9c91e91142f7b474a04ad0"
+                # The real explorer switches to bounded pages above 64 profiles.
+                expected_ids = {game["id"] for game in json.loads(snapshot.read_text())["games"]}
+                assert len(expected_ids) == 70
+                prev = explore.locator("#observation-prev")
+                nxt = explore.locator("#observation-next")
+                pages = []
+                for index, size in enumerate((24, 24, 22)):
+                    ids = explore.locator(".game-card").evaluate_all("(cards)=>cards.map(c=>c.dataset.gameId)")
+                    assert len(ids) == size and len(set(ids)) == size, (width, index, ids)
+                    assert prev.is_disabled() == (index == 0)
+                    assert nxt.is_disabled() == (index == 2)
+                    assert f"Showing {index * 24 + 1}–{index * 24 + size}" in explore.locator("#search-status").inner_text()
+                    pages.append(ids)
+                    if index < 2:
+                        nxt.focus()
+                        nxt.press("Enter")
+                flattened = [game_id for batch in pages for game_id in batch]
+                assert len(set(flattened)) == 70 and set(flattened) == expected_ids
+                for index in (1, 0):
+                    prev.focus()
+                    prev.press("Enter")
+                    assert explore.locator(".game-card").evaluate_all("(cards)=>cards.map(c=>c.dataset.gameId)") == pages[index]
+                assert prev.is_disabled() and nxt.is_enabled()
+                for side in ("left", "right"):
+                    assert explore.locator(f"#{side}-filter").is_visible()
+                    assert explore.locator(f"#{side} option").count() <= 25
+                for row, _ in new_rows:
+                    explore.locator("#query").fill(row["name"])
+                    card = explore.locator(".game-card")
+                    assert card.count() == 1 and row["name"] in card.inner_text()
+                    assert card.locator(".fact-list a").count() == 0
+                explore.locator("#query").fill("")
+                explore.locator("#left-filter").fill("wikidata:q16972008")
+                explore.locator("#left").select_option("wikidata:q16972008")
+                explore.locator("#right-filter").fill("wikidata:q20829312")
+                explore.locator("#right").select_option("wikidata:q20829312")
+                assert explore.locator("#left").input_value() == "wikidata:q16972008"
+                assert explore.locator("#right").input_value() == "wikidata:q20829312"
+                explore.locator("#right-filter").fill("")
+                assert explore.locator("#right").input_value() == "wikidata:q20829312"
+                assert explore.locator("#right option").count() <= 26
+                explore.locator("#query").fill("Stellaris")
+                explore.locator('.game-card[data-game-id="wikidata:q20829312"]').get_by_role("button", name="Compare Stellaris on right").click()
+                assert explore.locator("#right").input_value() == "wikidata:q20829312"
+                assert "not a zero match" in explore.locator("#comparison").inner_text()
+                explore.close()
                 page.get_by_role("button",name="Try a sample",exact=True).click()
                 original_hash = page.evaluate("location.hash")
                 assert original_hash.startswith("#basket=")
@@ -104,6 +170,7 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                     evidence.locator("summary").click()
                     assert "no reviewed genre source" in evidence.inner_text()
                     assert "Catalog mechanics: unknown. Co-op: unknown." in evidence.inner_text()
+                    assert "No separately reviewed gameplay facts" in evidence.inner_text()
                     links = evidence.locator("a").evaluate_all("(nodes)=>nodes.map(n=>n.href)")
                     assert row["identity"]["reference"] in links and row["releaseEvidence"] in links
                     assert any(h.endswith("/examples/" + receipt_name) for h in links)
@@ -117,13 +184,15 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 share = page.evaluate("location.hash")
                 assert share != original_hash
                 page.reload()
+                if hosted:
+                    assert page.locator('meta[name="playmancer-revision"]').get_attribute("content") == expected_sha
                 assert "Stellaris" in page.locator("#seeds").inner_text()
                 assert page.evaluate("location.hash") == share
                 assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
                 assert not errors and not external,(errors,external)
                 page.screenshot(path=str(ARTIFACTS / f"mixed-70-{width}.png"),full_page=True)
                 context.close()
-                print(f"70-profile LOCAL_HTTP candidate: 4 exact store URLs, title, scope, evidence and replay PASS at {width}px")
+                print(f"70-profile {'HOSTED' if hosted else 'LOCAL_HTTP'} bound release: 38 exact store URLs, title, scope, evidence and replay PASS at {width}px")
             browser.close()
     finally:
         server.shutdown()
