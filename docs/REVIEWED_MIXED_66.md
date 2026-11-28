@@ -1,6 +1,6 @@
 # Reviewed mixed-store candidate: 66 games (2026-11-28)
 
-Refs #268. Four distinct released base games and eight official links are added to the immutable 62-profile catalog (blob 9bb65478b0b8cc4853fd6f9f252be293bff44b47). The default release configuration selects 66; public delivery requires exact hosted verification.
+Refs #268. Four distinct released base games and eight official links are added to the immutable 62-profile catalog (blob 9bb65478b0b8cc4853fd6f9f252be293bff44b47). The historical 66-game release remains reproducible using the explicit flag below.
 
 | Game | Identity | Official storefronts |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-62.real.json 
 node scripts/build-demo.mjs /tmp/playmancer-66 --catalog /tmp/playmancer-66.json
 ```
 
-66 unique profiles, 65 linked; 58 Steam, 15 Google Play, 12 itch (overlap). The full default release pins catalog blob `f23f2bbb56e82e772d5c26c27e3e412e5a7c8300` and observation blob `99cfc494fb1f5e6bffd5b57476d1259358f7651c`. It retains all 30 reviewed profiles, 30 receipts and 122 recorded facts; the four new games have unknown gameplay observations.
+66 unique profiles, 65 linked; 58 Steam, 15 Google Play, 12 itch (overlap). The full historical release pins catalog blob `f23f2bbb56e82e772d5c26c27e3e412e5a7c8300` and observation blob `99cfc494fb1f5e6bffd5b57476d1259358f7651c`. It retains all 30 reviewed profiles, 30 receipts and 122 recorded facts; the four new games have unknown gameplay observations.
 
 ```sh
 node scripts/build-release.mjs _site-66 --candidate-66
