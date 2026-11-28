@@ -40,7 +40,7 @@ if not hosted:
     thread.start()
 base = hosted.rstrip('/') + '/' if hosted else f'http://127.0.0.1:{server.server_port}/'
 results = []
-expected_count = int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '62'))
+expected_count = int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '66'))
 large_catalog = expected_count > 64
 
 def choose_game(page, side, game_id):
