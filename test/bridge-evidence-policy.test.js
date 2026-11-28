@@ -61,9 +61,10 @@ test('reviewed snapshot policy is shared and does not admit unreviewed identity 
   const admitted = ['wikidata-genre-pilot-1', 'multi-store-genre-pilot-1',
     'multi-store-identity-candidate-54-2026-11-26',
     'multi-store-identity-candidate-58-2026-11-27',
-    'multi-store-identity-candidate-62-2026-11-27'];
+    'multi-store-identity-candidate-62-2026-11-27',
+    'multi-store-identity-candidate-66-2026-11-28'];
   const rejected = ['synthetic-demo-1', 'multi-store-identity-candidate-63-2026-11-27',
-    'multi-store-identity-candidate-62-2026-11-28', admitted[4] + '-other'];
+    'multi-store-identity-candidate-62-2026-11-28', admitted[4] + '-other', admitted[5] + '-other'];
   const catalog = [game('a', null, ['nature']), game('b', null, ['nature'])];
   for (const snapshotId of admitted) {
     assert.equal(reviewedPilot(snapshotId), true);
