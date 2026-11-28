@@ -1,6 +1,6 @@
 # Reviewed mixed-store candidate: 66 games (2026-11-28)
 
-Refs #268. Four distinct released base games and eight official links are added to the immutable 62-profile catalog (blob 9bb65478b0b8cc4853fd6f9f252be293bff44b47). Default release remains 62; this is an opt-in player candidate, not a published release.
+Refs #268. Four distinct released base games and eight official links are added to the immutable 62-profile catalog (blob 9bb65478b0b8cc4853fd6f9f252be293bff44b47). Default release remains 62; this is an opt-in full release candidate, not a published release.
 
 | Game | Identity | Official storefronts |
 | --- | --- | --- |
@@ -16,4 +16,11 @@ node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-62.real.json 
 node scripts/build-demo.mjs /tmp/playmancer-66 --catalog /tmp/playmancer-66.json
 ```
 
-66 unique profiles, 65 linked; 58 Steam, 15 Google Play, 12 itch (overlap). Full observation binding and production promotion remain independent release gates.
+66 unique profiles, 65 linked; 58 Steam, 15 Google Play, 12 itch (overlap). The opt-in full release pins catalog blob `f23f2bbb56e82e772d5c26c27e3e412e5a7c8300` and observation blob `99cfc494fb1f5e6bffd5b57476d1259358f7651c`. It retains all 30 reviewed profiles, 30 receipts and 122 recorded facts; the four new games have unknown gameplay observations.
+
+```sh
+node scripts/build-release.mjs _site-66 --candidate-66
+python3 scripts/release-preflight.py _site-66 --candidate-66
+```
+
+Historical 62-version basket URLs remain incompatible with 66. Preserve the original fragment and recover it unchanged on the matching local HTTP build (`node scripts/build-release.mjs _site-62 --candidate-62`); 58 remains available via `--candidate-58`. Local origin storage is distinct from public Pages; retain exported backups. Default promotion and hosted verification remain separate gates.

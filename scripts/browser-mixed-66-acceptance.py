@@ -1,4 +1,4 @@
-"""66-profile unpublished candidate: exact local search, receipts and historical replay."""
+"""66-profile full release candidate: exact evidence binding, search, receipts and historical replay."""
 import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -18,7 +18,8 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
     site = work / "site"
     subprocess.run(["node","scripts/import-reviewed-mixed.mjs","examples/catalog.multistore-62.real.json",str(BATCH),str(snapshot)],cwd=ROOT,check=True)
     assert snapshot.read_bytes() == (ROOT / "examples/catalog.multistore-66.real.json").read_bytes()
-    subprocess.run(["node","scripts/build-demo.mjs",str(site),"--catalog",str(snapshot)],cwd=ROOT,check=True)
+    subprocess.run(["node","scripts/build-release.mjs",str(site),"--candidate-66"],cwd=ROOT,check=True)
+    subprocess.run(["python3","scripts/release-preflight.py",str(site),"--candidate-66"],cwd=ROOT,check=True)
     historical = work / "historical62"
     subprocess.run(["node","scripts/build-release.mjs",str(historical),"--candidate-62"],cwd=ROOT,check=True)
     subprocess.run(["python3","scripts/release-preflight.py",str(historical),"--candidate-62"],cwd=ROOT,check=True)
@@ -69,7 +70,21 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 assert page.goto(url).ok
                 assert page.evaluate("location.hash") == ""
                 assert page.locator('meta[name="playmancer-catalog"]').get_attribute("content") == "multi-store-identity-candidate-66-2026-11-28"
-                assert page.locator('#observation-explorer-entry').count() == 0
+                assert page.locator("#observation-explorer-entry").get_attribute("data-observation-evidence") == "99cfc494fb1f5e6bffd5b57476d1259358f7651c"
+                explore = context.new_page()
+                assert explore.goto(url + "observations.html").ok
+                assert explore.locator('meta[name="playmancer-observations"]').get_attribute("content") == "99cfc494fb1f5e6bffd5b57476d1259358f7651c"
+                assert explore.locator(".game-card").count() == 66
+                for row, _ in rows:
+                    explore.locator("#query").fill(row["name"])
+                    card = explore.locator(".game-card")
+                    assert card.count() == 1 and row["name"] in card.inner_text()
+                    assert card.locator(".fact-list a").count() == 0
+                explore.locator("#query").fill("")
+                explore.locator("#left").select_option("wikidata:q16972008")
+                explore.locator("#right").select_option("wikidata:q110726215")
+                assert "not a zero match" in explore.locator("#comparison").inner_text()
+                explore.close()
                 page.get_by_role("button",name="Try a sample",exact=True).click()
                 original_hash = page.evaluate("location.hash")
                 assert original_hash.startswith("#basket=")
