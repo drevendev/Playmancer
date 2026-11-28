@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-70-2026-11-28",
+  "reviewedAt": "2026-11-28",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q18361009",
+        "reference": "https://www.wikidata.org/wiki/Q18361009",
+        "redirectQids": [
+          "Q6004466"
+        ]
+      },
+      "name": "Mount & Blade II: Bannerlord",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/261550",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "261550",
+          "url": "https://store.steampowered.com/app/261550"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q71701894",
+        "reference": "https://www.wikidata.org/wiki/Q71701894",
+        "redirectQids": []
+      },
+      "name": "Crusader Kings III",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/1158310",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1158310",
+          "url": "https://store.steampowered.com/app/1158310"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q20829312",
+        "reference": "https://www.wikidata.org/wiki/Q20829312",
+        "redirectQids": []
+      },
+      "name": "Stellaris",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/281990",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "281990",
+          "url": "https://store.steampowered.com/app/281990"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q88802315",
+        "reference": "https://www.wikidata.org/wiki/Q88802315",
+        "redirectQids": []
+      },
+      "name": "Thea 2: The Shattering",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/606230",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "606230",
+          "url": "https://store.steampowered.com/app/606230"
+        }
+      ]
+    }
+  ]
+}
