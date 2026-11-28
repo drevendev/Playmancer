@@ -80,10 +80,7 @@ function classify(game, {platform, coopOnly}, exclusions, positiveOnlyPlatforms)
 export function reviewedPilot(snapshotId) {
   return snapshotId.startsWith('wikidata-genre-pilot-') ||
     snapshotId.startsWith('multi-store-genre-pilot-') ||
-    snapshotId === 'multi-store-identity-candidate-54-2026-11-26' ||
-    snapshotId === 'multi-store-identity-candidate-58-2026-11-27' ||
-    snapshotId === 'multi-store-identity-candidate-62-2026-11-27' ||
-    snapshotId === 'multi-store-identity-candidate-66-2026-11-28';
+    ['54-2026-11-26','58-2026-11-27','62-2026-11-27','66-2026-11-28','70-2026-11-28'].some(suffix => snapshotId === 'multi-store-identity-candidate-' + suffix);
 }
 export function buildBridgePreview({catalog, snapshotId, startId, endId,
     platform='any',coopOnly=false,excluded=[],maxHops=4,minSimilarity=.1}={}) {

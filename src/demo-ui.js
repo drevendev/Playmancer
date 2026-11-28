@@ -111,35 +111,39 @@ function catalogReceiptBase() {
 // Keep historical source receipts explicit for each immutable snapshot.
 // Later reviewed Steam identities do not acquire earlier genre evidence.
 function renderCatalogReceipts() {
-  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION)) return null;
+  if (!["multi-store-genre-pilot-2026-10-28", "multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION)) return null;
   const base = catalogReceiptBase();
   const row = element("span", undefined, "source-receipts");
   row.append("Snapshot field receipts: ");
   const references = [
     ["Original Wikidata games", "docs/REAL_PILOT.md"],
     ["Seven added Wikidata games", "docs/REAL_EXPANSION.md"],
-    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
-    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
-    ...(["multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
-    ...(["multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [
+    ...(["multi-store-genre-pilot-30-2026-10-28", "multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [["Six new Wikidata games", "docs/REAL_EXPANSION_30.md"]] : []),
+    ...(["multi-store-genre-pilot-31-2026-11-24", "multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [["Bellbloom source receipt", "docs/REAL_EXPANSION_31.md"]] : []),
+    ...(["multi-store-genre-pilot-35-2026-11-24", "multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [["Four reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-24.json"]] : []),
+    ...(["multi-store-genre-pilot-51-2026-11-25", "multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [
       ["51-game expansion receipts", "docs/REAL_EXPANSION_51.md"],
       ["Sixteen reviewed Steam game receipts", "examples/reviewed-steam-batch-2026-11-25.json"],
     ] : []),
-    ...(["multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [
+    ...(["multi-store-identity-candidate-54-2026-11-26", "multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [
       ["Mixed-store expansion receipts", "docs/REVIEWED_MIXED_54.md"],
       ["Three reviewed mixed-store game receipts", "examples/reviewed-mixed-batch-2026-11-26.json"],
     ] : []),
-    ...(["multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [
+    ...(["multi-store-identity-candidate-58-2026-11-27", "multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [
       ["58-game mixed-store expansion receipts", "docs/REVIEWED_MIXED_58.md"],
       ["Four additional reviewed mixed-store receipts", "examples/reviewed-mixed-batch-2026-11-27.json"],
     ] : []),
-    ...(["multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28"].includes(CATALOG_VERSION) ? [
+    ...(["multi-store-identity-candidate-62-2026-11-27", "multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [
       ["62-game mixed-store expansion receipts", "docs/REVIEWED_MIXED_62.md"],
       ["Four additional reviewed game receipts", "examples/reviewed-mixed-batch-2026-11-27b.json"],
     ] : []),
-    ...(CATALOG_VERSION === "multi-store-identity-candidate-66-2026-11-28" ? [
+    ...(["multi-store-identity-candidate-66-2026-11-28", "multi-store-identity-candidate-70-2026-11-28"].includes(CATALOG_VERSION) ? [
       ["66-game mixed-store expansion receipts", "docs/REVIEWED_MIXED_66.md"],
       ["Four additional reviewed game receipts", "examples/reviewed-mixed-batch-2026-11-28.json"],
+    ] : []),
+    ...(CATALOG_VERSION === "multi-store-identity-candidate-70-2026-11-28" ? [
+      ["70-game expansion receipts", "docs/REVIEWED_MIXED_70.md"],
+      ["Four additional reviewed Steam receipts", "examples/reviewed-mixed-batch-2026-11-28b.json"],
     ] : []),
     ["Dreven Games storefronts", "docs/STOREFRONTS.md"],
   ];
@@ -164,6 +168,10 @@ function renderBasketEvidence(game) {
     ["wikidata-cc0-multi-store-genre-pilot-51-2026-11-25", "examples/reviewed-steam-batch-2026-11-25.json"],
   ]).get(game.sourceId);
   const mixedReceipt = new Map([
+    ["reviewed-mixed-multi-store-identity-candidate-70-2026-11-28-wikidata-q18361009", { identity: "https://www.wikidata.org/wiki/Q18361009", release: "https://store.steampowered.com/app/261550", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28b.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-70-2026-11-28-wikidata-q71701894", { identity: "https://www.wikidata.org/wiki/Q71701894", release: "https://store.steampowered.com/app/1158310", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28b.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-70-2026-11-28-wikidata-q20829312", { identity: "https://www.wikidata.org/wiki/Q20829312", release: "https://store.steampowered.com/app/281990", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28b.json" }],
+    ["reviewed-mixed-multi-store-identity-candidate-70-2026-11-28-wikidata-q88802315", { identity: "https://www.wikidata.org/wiki/Q88802315", release: "https://store.steampowered.com/app/606230", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28b.json" }],
     ["reviewed-mixed-multi-store-identity-candidate-66-2026-11-28-wikidata-q93395906", { identity: "https://www.wikidata.org/wiki/Q93395906", release: "https://store.steampowered.com/app/1267910", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28.json" }],
     ["reviewed-mixed-multi-store-identity-candidate-66-2026-11-28-wikidata-q31605829", { identity: "https://www.wikidata.org/wiki/Q31605829", release: "https://store.steampowered.com/app/610080", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28.json" }],
     ["reviewed-mixed-multi-store-identity-candidate-66-2026-11-28-wikidata-q110726215", { identity: "https://www.wikidata.org/wiki/Q110726215", release: "https://store.steampowered.com/app/1794680", wikidata: true, receipt: "examples/reviewed-mixed-batch-2026-11-28.json" }],
