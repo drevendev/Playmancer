@@ -74,15 +74,50 @@ with tempfile.TemporaryDirectory(prefix="playmancer-next-mixed-") as directory:
                 explore = context.new_page()
                 assert explore.goto(url + "observations.html").ok
                 assert explore.locator('meta[name="playmancer-observations"]').get_attribute("content") == "99cfc494fb1f5e6bffd5b57476d1259358f7651c"
-                assert explore.locator(".game-card").count() == 66
+                # The real explorer switches to bounded pages above 64 profiles.
+                expected_ids = {game["id"] for game in json.loads(snapshot.read_text())["games"]}
+                assert len(expected_ids) == 66
+                prev = explore.locator("#observation-prev")
+                nxt = explore.locator("#observation-next")
+                pages = []
+                for index, size in enumerate((24, 24, 18)):
+                    ids = explore.locator(".game-card").evaluate_all("(cards)=>cards.map(c=>c.dataset.gameId)")
+                    assert len(ids) == size and len(set(ids)) == size, (width, index, ids)
+                    assert prev.is_disabled() == (index == 0)
+                    assert nxt.is_disabled() == (index == 2)
+                    assert f"Showing {index * 24 + 1}–{index * 24 + size}" in explore.locator("#search-status").inner_text()
+                    pages.append(ids)
+                    if index < 2:
+                        nxt.focus()
+                        nxt.press("Enter")
+                flattened = [game_id for batch in pages for game_id in batch]
+                assert len(set(flattened)) == 66 and set(flattened) == expected_ids
+                for index in (1, 0):
+                    prev.focus()
+                    prev.press("Enter")
+                    assert explore.locator(".game-card").evaluate_all("(cards)=>cards.map(c=>c.dataset.gameId)") == pages[index]
+                assert prev.is_disabled() and nxt.is_enabled()
+                for side in ("left", "right"):
+                    assert explore.locator(f"#{side}-filter").is_visible()
+                    assert explore.locator(f"#{side} option").count() <= 25
                 for row, _ in rows:
                     explore.locator("#query").fill(row["name"])
                     card = explore.locator(".game-card")
                     assert card.count() == 1 and row["name"] in card.inner_text()
                     assert card.locator(".fact-list a").count() == 0
                 explore.locator("#query").fill("")
+                explore.locator("#left-filter").fill("wikidata:q16972008")
                 explore.locator("#left").select_option("wikidata:q16972008")
+                explore.locator("#right-filter").fill("wikidata:q110726215")
                 explore.locator("#right").select_option("wikidata:q110726215")
+                assert explore.locator("#left").input_value() == "wikidata:q16972008"
+                assert explore.locator("#right").input_value() == "wikidata:q110726215"
+                explore.locator("#right-filter").fill("")
+                assert explore.locator("#right").input_value() == "wikidata:q110726215"
+                assert explore.locator("#right option").count() <= 26
+                explore.locator("#query").fill("Vampire Survivors")
+                explore.locator('.game-card[data-game-id="wikidata:q110726215"]').get_by_role("button", name="Compare Vampire Survivors on right").click()
+                assert explore.locator("#right").input_value() == "wikidata:q110726215"
                 assert "not a zero match" in explore.locator("#comparison").inner_text()
                 explore.close()
                 page.get_by_role("button",name="Try a sample",exact=True).click()
