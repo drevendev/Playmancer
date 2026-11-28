@@ -40,6 +40,51 @@ if not hosted:
     thread.start()
 base = hosted.rstrip('/') + '/' if hosted else f'http://127.0.0.1:{server.server_port}/'
 results = []
+expected_count = int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '62'))
+large_catalog = expected_count > 64
+
+def choose_game(page, side, game_id):
+    # Use the public side filter instead of assuming every option is mounted.
+    if large_catalog:
+        page.locator(f'#{side}-filter').fill(game_id)
+    page.locator(f'#{side}').select_option(game_id)
+    if large_catalog:
+        page.locator(f'#{side}-filter').fill('')
+        assert page.locator(f'#{side}').input_value() == game_id
+        assert page.locator(f'#{side} option').count() <= 26
+
+def check_catalog_pages(page, label):
+    cards = page.locator('.game-card')
+    if not large_catalog:
+        check(cards.count() == expected_count, f'{label}: complete catalog with unknowns')
+        return
+    expected_ids = {game['id'] for game in json.loads(
+        (ROOT / f'examples/catalog.multistore-{expected_count}.real.json').read_text())['games']}
+    check(len(expected_ids) == expected_count, f'{label}: pinned catalog unique IDs')
+    prev = page.locator('#observation-prev')
+    nxt = page.locator('#observation-next')
+    pages = []
+    for start in range(0, expected_count, 24):
+        ids = cards.evaluate_all('(cards)=>cards.map(c=>c.dataset.gameId)')
+        size = min(24, expected_count - start)
+        check(len(ids) == size and len(set(ids)) == size, f'{label}: bounded page at {start}')
+        check(prev.is_disabled() == (start == 0) and
+              nxt.is_disabled() == (start + size == expected_count), f'{label}: page boundaries at {start}')
+        check(f'Showing {start + 1}–{start + size}' in page.locator('#search-status').inner_text(),
+              f'{label}: visible page range at {start}')
+        pages.append(ids)
+        if start + size < expected_count:
+            nxt.focus()
+            nxt.press('Enter')
+    flattened = [game_id for batch in pages for game_id in batch]
+    check(len(flattened) == expected_count and set(flattened) == expected_ids,
+          f'{label}: complete pinned catalog across pages without duplicates')
+    for ids in reversed(pages[:-1]):
+        prev.focus()
+        prev.press('Enter')
+        check(cards.evaluate_all('(cards)=>cards.map(c=>c.dataset.gameId)') == ids,
+              f'{label}: reverse paging preserves exact order')
+    check(prev.is_disabled() and nxt.is_enabled(), f'{label}: first page restored')
 
 def check(condition, name):
     results.append({'name': name, 'pass': bool(condition)})
@@ -418,19 +463,19 @@ try:
                 check(explore.locator('.game-card').count() == 2,
                       f'{engine}/{width}: Dwarf Fortress and Terraria have sourced digging observations')
                 explore.locator('#query').fill('')
-                explore.locator('#left').select_option('wikidata:q109051201')
-                explore.locator('#right').select_option('wikidata:q48078440')
+                choose_game(explore, 'left', 'wikidata:q109051201')
+                choose_game(explore, 'right', 'wikidata:q48078440')
                 check(explore.locator('#comparison').get_by_text('Deck building', exact=True).count() == 1,
                       f'{engine}/{width}: Inscryption and Slay the Spire share sourced deck building')
                 check(explore.locator('#comparison a[href="https://www.inscryption.com/steam"]').count() >= 1,
                       f'{engine}/{width}: official Inscryption field receipt linked')
-                explore.locator('#left').select_option('wikidata:q248810')
-                explore.locator('#right').select_option('wikidata:q332697')
+                choose_game(explore, 'left', 'wikidata:q248810')
+                choose_game(explore, 'right', 'wikidata:q332697')
                 check(explore.locator('#comparison').get_by_text('Digging into terrain', exact=True).count() == 1 and
                       explore.locator('#comparison a[href="https://www.bay12games.com/dwarves/features.html"]').count() >= 1,
                       f'{engine}/{width}: Dwarf Fortress / Terraria shared digging retains source receipt')
                 explore.locator('#query').fill('')
-                check(explore.locator('.game-card').count() == int(os.environ.get('PLAYMANCER_EXPECTED_CATALOG_COUNT', '62')), f'{engine}/{width}: complete catalog with unknowns')
+                check_catalog_pages(explore, f'{engine}/{width}')
                 explore.locator('#query').fill('Half-Life 2')
                 late_card = explore.locator('.game-card[data-game-id="wikidata:q193581"]')
                 check(late_card.count() == 1 and late_card.locator('.fact-list a').count() == 0,
@@ -492,9 +537,9 @@ try:
                     check(explore.locator('#share-box').is_visible(), f'{engine}/{width}: {activation} skip retains share controls')
                 explore.screenshot(path=str(OUT / f'observations-{engine}-{width}-skip.png'), full_page=False)
                 explore.locator('#query').fill('')
-                explore.locator('#right').select_option('dreven:devmatch')
+                choose_game(explore, 'right', 'dreven:devmatch')
                 check('not a zero match' in explore.locator('#comparison').inner_text(), f'{engine}/{width}: unknown comparison')
-                explore.locator('#left').select_option('dreven:devmatch')
+                choose_game(explore, 'left', 'dreven:devmatch')
                 check('Choose two different games' in explore.locator('#action-status').inner_text(), f'{engine}/{width}: duplicate pair rejected')
                 explore.goto(base + 'observations.html#facts=%7B%22version%22%3A%22future%22%7D')
                 explore.locator('#link-error').wait_for(state='visible')
@@ -520,14 +565,24 @@ try:
                       f'{engine}/{width}: no speculative factory-automation tag')
                 for locator in ('#query', '#tag', '#left', '#right', '#sample', '#show-link'):
                     check(explore.locator(locator).bounding_box()['height'] >= 44, f'{engine}/{width}: touch size {locator}')
+                if large_catalog:
+                    for side in ('left', 'right'):
+                        filter_input = explore.locator(f'#{side}-filter')
+                        check(filter_input.is_visible() and filter_input.bounding_box()['height'] >= 44,
+                              f'{engine}/{width}: visible touch-sized {side} filter')
+                        filter_input.focus()
+                        explore.keyboard.press('Tab')
+                        check(explore.locator(f'#{side}').evaluate('(el)=>el===document.activeElement'),
+                              f'{engine}/{width}: {side} filter keyboard flow')
                 explore.locator('#left').focus()
                 explore.keyboard.press('Tab')
-                check(explore.locator('#right').evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: keyboard flow')
+                next_control = '#right-filter' if large_catalog else '#right'
+                check(explore.locator(next_control).evaluate('(el)=>el===document.activeElement'), f'{engine}/{width}: keyboard flow')
                 explore.locator('#query').fill('')
                 explore.screenshot(path=str(OUT / f'observations-{engine}-{width}.png'), full_page=True)
                 # An unknown game's long native option is intentionally truncated at
                 # extreme zoom; the external, fully wrapping readout must not be.
-                explore.locator('#right').select_option('dreven:devmatch')
+                choose_game(explore, 'right', 'dreven:devmatch')
                 for scale in (200, 400):
                     explore.evaluate('(scale)=>document.documentElement.style.fontSize=scale+"%"', scale)
                     layout = explore.evaluate("""() => ({

@@ -9,9 +9,9 @@ import { addBasketLibrary, BASKET_LIBRARY_CSS } from './build-basket-library.mjs
 import { appendToSealedStylesheet } from './stylesheet-integrity.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
-const candidates = new Map([['--candidate-30', 30], ['--candidate-31', 31], ['--candidate-35', 35], ['--candidate-51', 51], ['--candidate-54', 54], ['--candidate-58', 58], ['--candidate-62', 62]]);
+const candidates = new Map([['--candidate-30', 30], ['--candidate-31', 31], ['--candidate-35', 35], ['--candidate-51', 51], ['--candidate-54', 54], ['--candidate-58', 58], ['--candidate-62', 62], ['--candidate-66', 66]]);
 if (args.length > 2 || (args.length === 2 && !candidates.has(args[1])) || args[0]?.startsWith('-'))
-  throw new Error('Usage: node scripts/build-release.mjs [output-directory [--candidate-30|--candidate-31|--candidate-35|--candidate-51|--candidate-54|--candidate-58|--candidate-62]]');
+  throw new Error('Usage: node scripts/build-release.mjs [output-directory [--candidate-30|--candidate-31|--candidate-35|--candidate-51|--candidate-54|--candidate-58|--candidate-62|--candidate-66]]');
 const output = resolve(args[0] ?? join(root, '_site'));
 const catalogPath = join(root, `examples/catalog.multistore-${candidates.get(args[1]) ?? 62}.real.json`);
 const bytes = await readFile(catalogPath);

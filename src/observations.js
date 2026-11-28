@@ -21,6 +21,9 @@ export const OBSERVATIONS_58_SHA = '8ebc922447aa80c032802d7ab0709b15bafbf85f';
 export const CATALOG_62_ID = 'multi-store-identity-candidate-62-2026-11-27';
 export const CATALOG_62_SHA = '9bb65478b0b8cc4853fd6f9f252be293bff44b47';
 export const OBSERVATIONS_62_SHA = '1d02909f335531ede09db8cd1665c12cf6f0f404';
+export const CATALOG_66_ID = 'multi-store-identity-candidate-66-2026-11-28';
+export const CATALOG_66_SHA = 'f23f2bbb56e82e772d5c26c27e3e412e5a7c8300';
+export const OBSERVATIONS_66_SHA = '99cfc494fb1f5e6bffd5b57476d1259358f7651c';
 const observationOrder = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 function observationText(value, name, max = 160) {
   if (typeof value !== 'string' || !value.trim() || value.length > max || /[\u0000-\u001f]/u.test(value))
@@ -64,7 +67,9 @@ function freezeObservations(value) {
 export function prepareObservations(catalog, reviewed, evidenceId = REVIEWED_OBSERVATIONS_SHA) {
   if (!catalog || !reviewed || reviewed.schemaVersion !== 1 ||
       catalog.snapshotId !== reviewed.catalogSnapshotId ||
-      (catalog.snapshotId === CATALOG_62_ID
+      (catalog.snapshotId === CATALOG_66_ID
+        ? reviewed.catalogGitBlobSha1 !== CATALOG_66_SHA || evidenceId !== OBSERVATIONS_66_SHA
+        : catalog.snapshotId === CATALOG_62_ID
         ? reviewed.catalogGitBlobSha1 !== CATALOG_62_SHA || evidenceId !== OBSERVATIONS_62_SHA
         : catalog.snapshotId === CATALOG_58_ID
         ? reviewed.catalogGitBlobSha1 !== CATALOG_58_SHA || evidenceId !== OBSERVATIONS_58_SHA
@@ -76,7 +81,7 @@ export function prepareObservations(catalog, reviewed, evidenceId = REVIEWED_OBS
         ? reviewed.catalogGitBlobSha1 !== CATALOG_35_SHA || evidenceId !== OBSERVATIONS_35_SHA
         : catalog.snapshotId === CANDIDATE_CATALOG_ID
           ? reviewed.catalogGitBlobSha1 !== CANDIDATE_CATALOG_SHA || evidenceId !== CANDIDATE_OBSERVATIONS_SHA
-          : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || [CANDIDATE_OBSERVATIONS_SHA, OBSERVATIONS_35_SHA, OBSERVATIONS_51_SHA, OBSERVATIONS_54_SHA, OBSERVATIONS_58_SHA, OBSERVATIONS_62_SHA].includes(evidenceId)) ||
+          : reviewed.catalogGitBlobSha1 !== REVIEWED_CATALOG_SHA || [CANDIDATE_OBSERVATIONS_SHA, OBSERVATIONS_35_SHA, OBSERVATIONS_51_SHA, OBSERVATIONS_54_SHA, OBSERVATIONS_58_SHA, OBSERVATIONS_62_SHA, OBSERVATIONS_66_SHA].includes(evidenceId)) ||
       !/^[a-f0-9]{40}$/.test(evidenceId)) throw new Error('Observation/catalog revision mismatch');
   // Match the player build's identity capacity, not the separate reviewed evidence cap.
   const records = observationList(catalog.games, 'catalog games', 2000);

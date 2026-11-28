@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { appendReviewedMixedStore } from '../scripts/import-reviewed-mixed.mjs';
+import { readReleaseObservations, gitObservationBlob } from '../scripts/build-observations.mjs';
+import { CATALOG_66_ID, CATALOG_66_SHA, OBSERVATIONS_66_SHA, compareObservations, encodeObservationState, decodeObservationState, prepareObservations, OBSERVATIONS_62_SHA } from '../src/observations.js';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const read = path => readFileSync(join(root,path));
+test('66 production candidate pins exact importer bytes and preserves 30 observation receipts', async () => {
+  const oldBytes = read('examples/catalog.multistore-62.real.json');
+  const bytes = read('examples/catalog.multistore-66.real.json');
+  const old = JSON.parse(oldBytes), catalog = JSON.parse(bytes);
+  const batch = JSON.parse(read('examples/reviewed-mixed-batch-2026-11-28.json'));
+  assert.equal(JSON.stringify(appendReviewedMixedStore(old,batch),null,2)+'\n',bytes.toString());
+  assert.equal(gitObservationBlob(bytes), CATALOG_66_SHA);
+  assert.deepEqual(catalog.games.slice(0,62),old.games);
+  assert.deepEqual(catalog.sources.slice(0,old.sources.length),old.sources);
+  assert.equal(catalog.games.length,66);
+  assert.equal(catalog.games.filter(g=>g.kind==='game' && g.storeLinks.length).length,65);
+  const prior = await readReleaseObservations(root,old,oldBytes);
+  const model = await readReleaseObservations(root,catalog,bytes);
+  assert.equal(model.catalog,CATALOG_66_ID); assert.equal(model.evidence,OBSERVATIONS_66_SHA);
+  assert.equal(model.games.length,66); assert.equal(model.observedGames,30); assert.equal(model.factCount,122);
+  const a=JSON.parse(read('examples/semantic-tags-reviewed-30.catalog62.v1.json'));
+  const b=JSON.parse(read('examples/semantic-tags-reviewed-30.catalog66.v1.json'));
+  assert.deepEqual(b,{...a,catalogSnapshotId:CATALOG_66_ID,catalogGitBlobSha1:CATALOG_66_SHA});
+  for(const game of prior.games) assert.deepEqual(model.games.find(g=>g.id===game.id),game);
+  for(const game of catalog.games.slice(62)) {
+    assert.deepEqual(model.games.find(g=>g.id===game.id),{id:game.id,name:game.name,coverage:'unknown',facts:[]});
+    assert.equal(compareObservations(model,prior.games.find(g=>g.facts.length).id,game.id).status,'unknown');
+  }
+  const state={version:prior.version,catalog:prior.catalog,evidence:prior.evidence,pair:[],query:'',tag:''};
+  const hash=encodeObservationState(prior,state);
+  assert.deepEqual(decodeObservationState(prior,hash),state);
+  assert.throws(()=>decodeObservationState(model,hash));
+  assert.throws(()=>prepareObservations(catalog,b,OBSERVATIONS_62_SHA),/revision mismatch/);
+  await assert.rejects(readReleaseObservations(root,catalog,Buffer.concat([bytes,Buffer.from(' ')])),/blob mismatch/);
+});
