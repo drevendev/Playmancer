@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-66-2026-11-28",
+  "reviewedAt": "2026-11-28",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q93395906",
+        "reference": "https://www.wikidata.org/wiki/Q93395906",
+        "redirectQids": []
+      },
+      "name": "Melvor Idle",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/1267910",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1267910",
+          "url": "https://store.steampowered.com/app/1267910"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.malcs.melvoridle",
+          "url": "https://play.google.com/store/apps/details?id=com.malcs.melvoridle"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q31605829",
+        "reference": "https://www.wikidata.org/wiki/Q31605829",
+        "redirectQids": []
+      },
+      "name": "Realm Grinder",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/610080",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "610080",
+          "url": "https://store.steampowered.com/app/610080"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.kongregate.mobile.realmgrinder.google",
+          "url": "https://play.google.com/store/apps/details?id=com.kongregate.mobile.realmgrinder.google"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q110726215",
+        "reference": "https://www.wikidata.org/wiki/Q110726215",
+        "redirectQids": [
+          "Q130721351"
+        ]
+      },
+      "name": "Vampire Survivors",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/1794680",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1794680",
+          "url": "https://store.steampowered.com/app/1794680"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.poncle.vampiresurvivors",
+          "url": "https://play.google.com/store/apps/details?id=com.poncle.vampiresurvivors"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q56278431",
+        "reference": "https://www.wikidata.org/wiki/Q56278431",
+        "redirectQids": []
+      },
+      "name": "Graveyard Keeper",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/599140",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "599140",
+          "url": "https://store.steampowered.com/app/599140"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.tinybuild.graveyardkeeper",
+          "url": "https://play.google.com/store/apps/details?id=com.tinybuild.graveyardkeeper"
+        }
+      ]
+    }
+  ]
+}
