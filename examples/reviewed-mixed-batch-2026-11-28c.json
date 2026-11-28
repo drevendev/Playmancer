@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "multi-store-identity-candidate-74-2026-11-28",
+  "reviewedAt": "2026-11-28",
+  "rightsBasis": "factual-identifiers-and-links-only",
+  "games": [
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q2625075",
+        "reference": "https://www.wikidata.org/wiki/Q2625075",
+        "redirectQids": []
+      },
+      "name": "Europa Universalis IV",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/236850",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "236850",
+          "url": "https://store.steampowered.com/app/236850"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q1366277",
+        "reference": "https://www.wikidata.org/wiki/Q1366277",
+        "redirectQids": []
+      },
+      "name": "Victoria II",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/42960",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "42960",
+          "url": "https://store.steampowered.com/app/42960"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q106928099",
+        "reference": "https://www.wikidata.org/wiki/Q106928099",
+        "redirectQids": []
+      },
+      "name": "Victoria 3",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://store.steampowered.com/app/529340",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "529340",
+          "url": "https://store.steampowered.com/app/529340"
+        }
+      ]
+    },
+    {
+      "identity": {
+        "provider": "wikidata",
+        "id": "Q110740273",
+        "reference": "https://www.wikidata.org/wiki/Q110740273",
+        "redirectQids": []
+      },
+      "name": "The Life and Suffering of Sir Brante",
+      "reviewedBaseGame": true,
+      "releaseEvidence": "https://corp.101xp.com/news/mobile-version",
+      "stores": [
+        {
+          "store": "steam",
+          "id": "1272160",
+          "url": "https://store.steampowered.com/app/1272160"
+        },
+        {
+          "store": "googleplay",
+          "id": "com.xp101.rpg.fearless.fantasy.game",
+          "url": "https://play.google.com/store/apps/details?id=com.xp101.rpg.fearless.fantasy.game"
+        }
+      ]
+    }
+  ]
+}
