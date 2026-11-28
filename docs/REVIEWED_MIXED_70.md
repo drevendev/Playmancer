@@ -16,4 +16,11 @@ node scripts/import-reviewed-mixed.mjs examples/catalog.multistore-66.real.json 
 node scripts/build-demo.mjs /tmp/playmancer-70 --catalog /tmp/playmancer-70.json
 ```
 
-70 unique profiles, 69 storefront-linked; 62 Steam, 15 Google Play, 12 itch (overlap). All 66 previous games and sources remain unchanged. Full observation binding, strict release preflight and default promotion are separate gates. Preserve old basket fragments and restore them with the matching historical build, including `--candidate-66`.
+70 unique profiles, 69 storefront-linked; 62 Steam, 15 Google Play, 12 itch (overlap). All 66 previous games and sources remain unchanged. The opt-in five-file release pins catalog blob `ea7f0dbf799351ad37085504dcfc10e2e2e8e994` and observation blob `bf459c7e6b9c417d4a9c91e91142f7b474a04ad0`. It retains 30 reviewed profiles, 30 receipts and 122 positive facts without alteration. The four added games have unknown gameplay observations; no new ranking evidence is inferred. Default promotion and exact hosted verification are separate gates. Preserve old basket fragments and restore them with the matching historical build, including `--candidate-66`.
+
+```sh
+node scripts/build-release.mjs _site-70 --candidate-70
+python3 scripts/release-preflight.py _site-70 --candidate-70
+```
+
+The previous 66 release remains the default, and `--candidate-66` and `--candidate-62` remain available. Restore historical links unchanged using the matching local HTTP build; local storage is origin-scoped. The 70-profile explorer pages through 24/24/22 cards and tests exact identity coverage, comparison filters and an unknown-versus-observed comparison.
